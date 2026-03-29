@@ -35,7 +35,7 @@ export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (updates: { display_name?: string; position?: string; team_name?: string; jersey_number?: number; avatar_url?: string }) => {
+    mutationFn: async (updates: { display_name?: string; position?: string; team_name?: string; jersey_number?: number; avatar_url?: string; phone?: string; birth_date?: string; role?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
       const { data, error } = await supabase
