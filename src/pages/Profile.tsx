@@ -87,7 +87,11 @@ const ProfilePage = () => {
 
       {/* Logout */}
       <div className="px-5 mt-6">
-        <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+        >
           <LogOut size={16} className="mr-2" /> Sair da Conta
         </Button>
       </div>
