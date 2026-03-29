@@ -17,7 +17,7 @@ const positionCoords: Record<string, { top: string; left: string }> = {
 };
 
 const positionAbbrev: Record<string, string> = {
-  "Goleiro": "GOL",
+  "Goleiro": "GK",
   "Zagueiro": "ZAG",
   "Lateral Direito": "LD",
   "Lateral Esquerdo": "LE",
@@ -26,10 +26,46 @@ const positionAbbrev: Record<string, string> = {
   "Atacante": "ATA",
 };
 
+const sectorLabels: { label: string; top: string }[] = [
+  { label: "ATAQUE", top: "8%" },
+  { label: "MEIO-CAMPO", top: "44%" },
+  { label: "DEFESA", top: "66%" },
+];
+
+const statusBorderColor: Record<string, string> = {
+  pending: "border-warning",
+  confirmed: "border-success",
+  declined: "border-destructive",
+};
+
+const statusDotColor: Record<string, string> = {
+  pending: "bg-warning",
+  confirmed: "bg-success",
+  declined: "bg-destructive",
+};
+
 const getCoordKey = (position: string, index: number): string => {
   const dupeKey = `${position}_${index + 1}`;
   if (positionCoords[dupeKey]) return dupeKey;
   return position;
+};
+
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+// Color palette for player circles
+const playerColors = [
+  "bg-emerald-600", "bg-red-500", "bg-purple-500", "bg-blue-500",
+  "bg-amber-500", "bg-pink-500", "bg-cyan-500", "bg-orange-500",
+];
+
+const getPlayerColor = (name: string): string => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return playerColors[Math.abs(hash) % playerColors.length];
 };
 
 interface PlayerOnField {
@@ -59,13 +95,9 @@ interface SoccerFieldProps {
   onDropPlayer?: (playerId: string, position: string) => void;
   onRemovePlayer?: (lineupId: string) => void;
   onAddGuest?: (position: string) => void;
+  matchInfo?: { home: string; away?: string; dateLabel?: string };
+  counters?: { confirmed: number; pending: number; vacant: number };
 }
-
-const summonDot: Record<string, string> = {
-  pending: "bg-warning",
-  confirmed: "bg-success",
-  declined: "bg-destructive",
-};
 
 const SoccerField = ({
   players,
@@ -77,6 +109,8 @@ const SoccerField = ({
   onDropPlayer,
   onRemovePlayer,
   onAddGuest,
+  matchInfo,
+  counters,
 }: SoccerFieldProps) => {
   const [dragOverPosition, setDragOverPosition] = useState<string | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
@@ -103,17 +137,13 @@ const SoccerField = ({
     setDragOverPosition(position);
   };
 
-  const handleDragLeave = () => {
-    setDragOverPosition(null);
-  };
+  const handleDragLeave = () => setDragOverPosition(null);
 
   const handleDrop = (e: DragEvent, position: string) => {
     e.preventDefault();
     setDragOverPosition(null);
     const playerId = e.dataTransfer.getData("playerId");
-    if (playerId && onDropPlayer) {
-      onDropPlayer(playerId, position);
-    }
+    if (playerId && onDropPlayer) onDropPlayer(playerId, position);
   };
 
   const handleEmptyClick = (pos: string) => {
@@ -130,7 +160,6 @@ const SoccerField = ({
     }
   };
 
-  // Filter available players: matching position first, then others
   const matchingPlayers = selectedPosition
     ? availablePlayers.filter((p) => p.position === selectedPosition)
     : [];
@@ -156,11 +185,22 @@ const SoccerField = ({
           <rect x="100" y="10" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
           <rect x="70" y="330" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
           <rect x="100" y="360" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
-          <path d="M10,20 A10,10 0 0,1 20,10" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
-          <path d="M280,10 A10,10 0 0,1 290,20" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
-          <path d="M10,380 A10,10 0 0,0 20,390" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
-          <path d="M280,390 A10,10 0 0,0 290,380" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
         </svg>
+
+        {/* Match info header */}
+        {matchInfo && (
+          <div className="absolute top-2 left-3 right-3 flex items-center justify-between text-white/70 text-[10px] font-semibold z-10">
+            <span>{matchInfo.home}{matchInfo.away ? ` × ${matchInfo.away}` : ""}</span>
+            {matchInfo.dateLabel && <span>{matchInfo.dateLabel}</span>}
+          </div>
+        )}
+
+        {/* Sector labels */}
+        {sectorLabels.map((s) => (
+          <div key={s.label} className="absolute left-1/2 -translate-x-1/2 text-white/15 text-[9px] font-bold tracking-[0.3em] pointer-events-none" style={{ top: s.top }}>
+            {s.label}
+          </div>
+        ))}
 
         {/* Empty position spots */}
         {emptyPositions.map((pos) => {
@@ -181,15 +221,15 @@ const SoccerField = ({
               }`}
               style={{ top: coords.top, left: coords.left }}
             >
-              <div className={`w-9 h-9 rounded-lg border-2 border-dashed flex items-center justify-center transition-all duration-200 ${
+              <div className={`w-11 h-11 rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-200 ${
                 isOver || isSelected
-                  ? "border-primary bg-primary/40 shadow-lg shadow-primary/30"
-                  : "border-white/30 bg-white/5 group-hover:bg-white/15 group-hover:border-white/50"
+                  ? "border-primary bg-primary/30 shadow-lg shadow-primary/30"
+                  : "border-white/25 bg-white/5 group-hover:bg-white/15 group-hover:border-white/50"
               }`}>
-                <span className={`text-[10px] font-bold ${isOver || isSelected ? "text-white" : "text-white/50 group-hover:text-white/80"}`}>
-                  {abbrev}
-                </span>
+                <span className="text-white/30 text-lg">+</span>
               </div>
+              <span className="text-[9px] text-white/50 font-semibold">Vaga</span>
+              <span className="text-[7px] text-white/30 font-semibold">{abbrev}</span>
             </button>
           );
         })}
@@ -198,6 +238,10 @@ const SoccerField = ({
         {positionedPlayers.map((p) => {
           if (!p.coords) return null;
           const abbrev = positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase();
+          const initials = getInitials(p.name);
+          const bgColor = getPlayerColor(p.name);
+          const borderColor = p.status ? (statusBorderColor[p.status] || "border-white/60") : "border-white/60";
+
           return (
             <div
               key={p.id}
@@ -206,14 +250,14 @@ const SoccerField = ({
             >
               <div className="relative">
                 {p.avatarUrl ? (
-                  <img src={p.avatarUrl} alt={p.name} className="w-10 h-10 rounded-lg object-cover border-2 border-white/80 shadow-lg" />
+                  <img src={p.avatarUrl} alt={p.name} className={`w-11 h-11 rounded-full object-cover border-[2.5px] shadow-lg ${borderColor}`} />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-white/20 border-2 border-white/60 flex items-center justify-center shadow-lg backdrop-blur-sm">
-                    <User size={16} className="text-white" />
+                  <div className={`w-11 h-11 rounded-full ${bgColor} border-[2.5px] ${borderColor} flex items-center justify-center shadow-lg`}>
+                    <span className="text-white text-xs font-bold">{initials}</span>
                   </div>
                 )}
                 {showStatus && p.status && (
-                  <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-emerald-700 ${summonDot[p.status] || "bg-muted"}`} />
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-emerald-700 ${statusDotColor[p.status] || "bg-muted"}`} />
                 )}
                 {onRemovePlayer && (
                   <button
@@ -224,16 +268,34 @@ const SoccerField = ({
                   </button>
                 )}
               </div>
-              <span className="text-[9px] text-white font-bold max-w-[70px] text-center leading-tight drop-shadow-md truncate">
+              <span className="text-[10px] text-white font-bold max-w-[70px] text-center leading-tight drop-shadow-md truncate">
                 {p.name.split(" ")[0]}
               </span>
-              <span className="text-[7px] text-white/60 font-semibold bg-black/20 px-1.5 rounded-sm">{abbrev}</span>
+              <span className="text-[7px] text-white/50 font-semibold">{abbrev}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Player selection panel - appears when a position is selected */}
+      {/* Counters */}
+      {counters && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-card rounded-xl border border-border p-2 text-center">
+            <p className="text-lg font-bold text-success">{counters.confirmed}</p>
+            <p className="text-[9px] text-muted-foreground font-semibold">Confirmados</p>
+          </div>
+          <div className="bg-card rounded-xl border border-border p-2 text-center">
+            <p className="text-lg font-bold text-warning">{counters.pending}</p>
+            <p className="text-[9px] text-muted-foreground font-semibold">Aguardando</p>
+          </div>
+          <div className="bg-card rounded-xl border border-border p-2 text-center">
+            <p className="text-lg font-bold text-primary">{counters.vacant}</p>
+            <p className="text-[9px] text-muted-foreground font-semibold">Vaga livre</p>
+          </div>
+        </div>
+      )}
+
+      {/* Player selection panel */}
       {selectedPosition && (
         <div className="bg-card rounded-xl border border-primary/30 p-3 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between mb-2">
@@ -245,35 +307,37 @@ const SoccerField = ({
             </button>
           </div>
 
-          {/* Matching players */}
           {matchingPlayers.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {matchingPlayers.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => handleSelectPlayer(p.id)}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, p.id)}
-                  className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
-                >
-                  {p.avatarUrl ? (
-                    <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                  ) : (
-                    <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center shrink-0">
-                      <User size={10} className="text-primary" />
-                    </div>
-                  )}
-                  <span className="text-[10px] text-foreground font-semibold truncate max-w-[60px]">
-                    {p.name.split(" ")[0]}
-                  </span>
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {matchingPlayers.map((p) => {
+                const initials = getInitials(p.name);
+                const bgColor = getPlayerColor(p.name);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSelectPlayer(p.id)}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, p.id)}
+                    className="flex flex-col items-center gap-1 w-16 py-2 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/15 transition-colors cursor-pointer"
+                  >
+                    {p.avatarUrl ? (
+                      <img src={p.avatarUrl} alt={p.name} className="w-9 h-9 rounded-full object-cover border-2 border-primary/40" />
+                    ) : (
+                      <div className={`w-9 h-9 rounded-full ${bgColor} flex items-center justify-center border-2 border-primary/40`}>
+                        <span className="text-white text-[10px] font-bold">{initials}</span>
+                      </div>
+                    )}
+                    <span className="text-[9px] text-foreground font-semibold truncate max-w-[56px]">
+                      {p.name.split(" ")[0]}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
-            <p className="text-[10px] text-muted-foreground mb-2">Nenhum jogador cadastrado como {selectedPosition}.</p>
+            <p className="text-[10px] text-muted-foreground mb-2">Nenhum jogador confirmado como {selectedPosition}.</p>
           )}
 
-          {/* Show other players toggle */}
           {otherPlayers.length > 0 && (
             <div>
               <button
@@ -284,73 +348,88 @@ const SoccerField = ({
                 {showAllPlayers ? "Ocultar outras posições" : "Ver jogadores de outras posições"}
               </button>
               {showAllPlayers && (
-                <div className="flex flex-wrap gap-1.5 animate-in slide-in-from-top-1 duration-150">
-                  {otherPlayers.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => handleSelectPlayer(p.id)}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, p.id)}
-                      className="flex items-center gap-1.5 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer border border-transparent hover:border-border"
-                    >
-                      {p.avatarUrl ? (
-                        <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                      ) : (
-                        <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-                          <User size={10} className="text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="flex flex-col leading-none">
-                        <span className="text-[10px] text-foreground font-semibold truncate max-w-[60px]">
+                <div className="flex flex-wrap gap-2 animate-in slide-in-from-top-1 duration-150">
+                  {otherPlayers.map((p) => {
+                    const initials = getInitials(p.name);
+                    const bgColor = getPlayerColor(p.name);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => handleSelectPlayer(p.id)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, p.id)}
+                        className="flex flex-col items-center gap-1 w-16 py-2 rounded-xl bg-secondary border border-transparent hover:border-border transition-colors cursor-pointer"
+                      >
+                        {p.avatarUrl ? (
+                          <img src={p.avatarUrl} alt={p.name} className="w-9 h-9 rounded-full object-cover border-2 border-muted" />
+                        ) : (
+                          <div className={`w-9 h-9 rounded-full ${bgColor} flex items-center justify-center border-2 border-muted`}>
+                            <span className="text-white text-[10px] font-bold">{initials}</span>
+                          </div>
+                        )}
+                        <span className="text-[9px] text-foreground font-semibold truncate max-w-[56px]">
                           {p.name.split(" ")[0]}
                         </span>
                         {p.position && (
-                          <span className="text-[8px] text-muted-foreground">{positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase()}</span>
+                          <span className="text-[7px] text-muted-foreground">{positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase()}</span>
                         )}
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* Guest button */}
           {onAddGuest && (
             <button
               onClick={() => { onAddGuest(selectedPosition); setSelectedPosition(null); }}
-              className="flex items-center gap-1.5 mt-2 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors border border-dashed border-muted-foreground/30 hover:border-primary/40"
+              className="flex flex-col items-center gap-1 w-16 py-2 mt-2 rounded-xl bg-secondary border border-dashed border-muted-foreground/30 hover:border-primary/40 transition-colors"
             >
-              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                <UserPlus size={10} className="text-primary" />
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/30">
+                <UserPlus size={14} className="text-primary" />
               </div>
-              <span className="text-[10px] text-muted-foreground font-semibold">Convidado</span>
+              <span className="text-[9px] text-muted-foreground font-semibold">Convidado</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Unpositioned players */}
+      {/* Unpositioned / Reserves */}
       {unpositioned.length > 0 && (
         <div className="bg-card rounded-xl border border-border p-3">
-          <p className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Sem posição definida</p>
-          <div className="flex flex-wrap gap-1.5">
-            {unpositioned.map((p) => (
-              <button
-                key={p.id}
-                onClick={p.onClick}
-                className="flex items-center gap-1.5 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors"
-              >
-                {p.avatarUrl ? (
-                  <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                ) : (
-                  <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
-                    <User size={10} className="text-muted-foreground" />
-                  </div>
-                )}
-                <span className="text-[10px] text-foreground font-semibold">{p.name.split(" ")[0]}</span>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">Reservas</p>
+            {onAddGuest && (
+              <button onClick={() => onAddGuest("")} className="text-[10px] text-primary font-semibold hover:underline">
+                + Convidar →
               </button>
-            ))}
+            )}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {unpositioned.map((p) => {
+              const initials = getInitials(p.name);
+              const bgColor = getPlayerColor(p.name);
+              return (
+                <button
+                  key={p.id}
+                  onClick={p.onClick}
+                  className="flex flex-col items-center gap-1 w-16"
+                >
+                  {p.avatarUrl ? (
+                    <img src={p.avatarUrl} alt={p.name} className="w-11 h-11 rounded-full object-cover border-2 border-border" />
+                  ) : (
+                    <div className={`w-11 h-11 rounded-full ${bgColor} flex items-center justify-center border-2 border-border`}>
+                      <span className="text-white text-xs font-bold">{initials}</span>
+                    </div>
+                  )}
+                  <span className="text-[10px] text-foreground font-bold truncate max-w-[60px]">{p.name.split(" ")[0]}</span>
+                  {p.position && (
+                    <span className="text-[7px] text-muted-foreground">{positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase()}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

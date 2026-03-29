@@ -326,11 +326,30 @@ export const useCreateMatch = () => {
         .select()
         .single();
       if (error) throw error;
+
+      // Auto-summon all team players
+      const { data: teamPlayers } = await supabase
+        .from("players")
+        .select("id, position")
+        .eq("team_id", match.home_team_id);
+
+      if (teamPlayers && teamPlayers.length > 0) {
+        const summons = teamPlayers.map((p) => ({
+          match_id: data.id,
+          player_id: p.id,
+          position: p.position,
+          status: "pending",
+        }));
+        await supabase.from("match_summons").insert(summons);
+      }
+
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
-      toast({ title: "Partida criada! 🏟️" });
+      queryClient.invalidateQueries({ queryKey: ["match-summons", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["my-summons"] });
+      toast({ title: "Partida criada e jogadores convocados! 🏟️📣" });
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
