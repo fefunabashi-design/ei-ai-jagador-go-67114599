@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Settings, ChevronRight, Trophy, Target, Zap, Star, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
 const stats = [
