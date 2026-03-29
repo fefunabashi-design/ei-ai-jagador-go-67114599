@@ -30,7 +30,7 @@ const AuthPage = () => {
           ? "Login efetuado com sucesso."
           : "Sua conta foi criada. Bora pra pelada!",
       });
-      navigate("/");
+      navigate("/dashboard");
     }, 1200);
   };
 
