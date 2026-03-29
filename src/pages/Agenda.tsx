@@ -453,6 +453,14 @@ const AgendaPage = () => {
                       <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
                         <Users size={12} className="mr-1" /> Elenco
                       </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
+                        <MessageCircle size={12} className="mr-1" /> Chat
+                      </Button>
+                      {isOwner && (
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/payments/${match.id}`)}>
+                          <CreditCard size={12} className="mr-1" /> Vaquinha
+                        </Button>
+                      )}
                       {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
                         <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
                           <XCircle size={12} className="mr-1" /> Cancelar
