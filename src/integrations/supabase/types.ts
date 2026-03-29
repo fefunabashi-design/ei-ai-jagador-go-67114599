@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          message: string
+          message_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          message: string
+          message_type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          message?: string
+          message_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_chat_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_lineups: {
         Row: {
           created_at: string
@@ -46,6 +81,51 @@ export type Database = {
           },
           {
             foreignKeyName: "match_lineups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          match_id: string
+          paid_at: string | null
+          player_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          match_id: string
+          paid_at?: string | null
+          player_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          match_id?: string
+          paid_at?: string | null
+          player_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_payments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_payments_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"

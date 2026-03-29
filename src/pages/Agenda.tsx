@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle,
+  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,7 @@ const allPositions = [
 ];
 
 const AgendaPage = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterType>("upcoming");
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
@@ -451,6 +453,14 @@ const AgendaPage = () => {
                       <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
                         <Users size={12} className="mr-1" /> Elenco
                       </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
+                        <MessageCircle size={12} className="mr-1" /> Chat
+                      </Button>
+                      {isOwner && (
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/payments/${match.id}`)}>
+                          <CreditCard size={12} className="mr-1" /> Vaquinha
+                        </Button>
+                      )}
                       {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
                         <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
                           <XCircle size={12} className="mr-1" /> Cancelar

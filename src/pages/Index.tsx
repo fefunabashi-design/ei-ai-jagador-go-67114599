@@ -1,11 +1,17 @@
 import { motion } from "framer-motion";
-import { Search, Users, CreditCard, Trophy, Shield, Calendar, Clock, MapPin, ChevronRight, Bell } from "lucide-react";
+import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useProfile, useMyTeam, useMatches, usePlayers, useMySummons } from "@/hooks/useSupabaseData";
+import { useProfile, useMyTeam, useMatches, usePlayers, useMySummons, useMatchSummons } from "@/hooks/useSupabaseData";
 import logo from "@/assets/logo.png";
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,7 +27,7 @@ const Index = () => {
   const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   const firstName = profile?.display_name?.split(" ")[0] || "Craque";
 
-  // Find next upcoming match for user's team
+  // Next upcoming match
   const nextMatch = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
@@ -35,7 +41,7 @@ const Index = () => {
     })
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
-  // Player stats from player record
+  // Player stats
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
   const playerStats = {
     matches: myPlayer?.matches || 0,
@@ -43,14 +49,16 @@ const Index = () => {
     rating: myPlayer?.rating || 0,
   };
 
-  // Pending summons count
   const pendingSummons = summons.filter((s: any) => s.status === "pending").length;
+
+  // Is owner
+  const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
   const quickActions = [
     { icon: "🔍", label: "Buscar adversário", sub: "Match por região", path: "/match" },
     { icon: "👥", label: "Escalar time", sub: `${players.length} jogadores`, path: "/agenda" },
-    { icon: "💰", label: "Pagamentos", sub: "Em breve", path: "#" },
-    { icon: "👑", label: "Painel Admin", sub: "Gestão do time", path: "/agenda" },
+    { icon: "💰", label: "Pagamentos", sub: nextMatch ? "Ver vaquinha" : "Em breve", path: nextMatch ? `/payments/${nextMatch.id}` : "#" },
+    { icon: "👑", label: "Painel Admin", sub: isOwner ? "Gestão do time" : "Ver painel", path: "/admin" },
   ];
 
   return (
@@ -58,7 +66,7 @@ const Index = () => {
       {/* Status bar */}
       <div className="px-5 pt-4 flex items-center justify-between">
         <span className="text-xs text-muted-foreground font-semibold">{timeStr}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {pendingSummons > 0 && (
             <div className="relative">
               <Bell size={18} className="text-muted-foreground" />
@@ -70,28 +78,26 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Greeting */}
-      <div className="px-5 pt-4 pb-2">
+      {/* Greeting + Avatar */}
+      <div className="px-5 pt-3 pb-2">
         <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
         <div className="flex items-center gap-3 mt-2">
-          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt={firstName} className="w-12 h-12 rounded-full object-cover" />
             ) : (
-              firstName.slice(0, 2).toUpperCase()
+              getInitials(firstName)
             )}
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
-            {myTeam && (
-              <p className="text-xs text-muted-foreground">{myTeam.name} · {myTeam.format}</p>
-            )}
+            {myTeam && <p className="text-[10px] text-muted-foreground">{myTeam.name} · {myTeam.format}</p>}
           </div>
         </div>
       </div>
 
       {/* Player Stats */}
-      <div className="px-5 mt-4">
+      <div className="px-5 mt-3">
         <div className="grid grid-cols-4 gap-2">
           {[
             { value: playerStats.matches, label: "Partidas" },
@@ -114,62 +120,82 @@ const Index = () => {
       </div>
 
       {/* Next Match Card */}
-      {nextMatch && (
-        <div className="px-5 mt-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-              Próximo • {new Date(nextMatch.match_date).toLocaleDateString("pt-BR", { weekday: "short" })} {new Date(nextMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+      {nextMatch && (() => {
+        const homeTeam = nextMatch.home_team as any;
+        const awayTeam = nextMatch.away_team as any;
+        const matchDate = new Date(nextMatch.match_date);
+        const dayLabel = matchDate.toLocaleDateString("pt-BR", { weekday: "short" });
+        const timeLabel = matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+        return (
+          <div className="px-5 mt-4">
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1.5">
+              Próximo • {dayLabel} {timeLabel}
             </p>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border overflow-hidden"
-          >
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Shield size={18} className="text-primary" />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card rounded-2xl border border-border overflow-hidden"
+            >
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      {myTeam?.logo_url ? (
+                        <img src={myTeam.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                      ) : (
+                        <Shield size={18} className="text-primary" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-display text-foreground text-sm">{homeTeam?.name?.toUpperCase()}</p>
+                      <p className="text-[9px] text-muted-foreground">Seu time</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-display text-foreground text-sm">{(nextMatch.home_team as any)?.name?.toUpperCase()}</p>
-                    <p className="text-[9px] text-muted-foreground">Seu time</p>
+                  <span className="text-xs font-bold text-muted-foreground px-3">VS</span>
+                  <div className="flex items-center gap-2 flex-1 justify-end text-right">
+                    <div>
+                      <p className="font-display text-foreground text-sm">{awayTeam?.name?.toUpperCase() || "???"}</p>
+                      <p className="text-[9px] text-muted-foreground">Adversário</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                      <Shield size={18} className="text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-muted-foreground px-3">VS</span>
-                <div className="flex items-center gap-2 flex-1 justify-end text-right">
-                  <div>
-                    <p className="font-display text-foreground text-sm">{(nextMatch.away_team as any)?.name?.toUpperCase() || "???"}</p>
-                    <p className="text-[9px] text-muted-foreground">Adversário</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                    <Shield size={18} className="text-muted-foreground" />
-                  </div>
+                <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><MapPin size={10} /> {nextMatch.location}</span>
+                  <span className="flex items-center gap-1"><Users size={10} /> {nextMatch.format}</span>
+                  <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                    nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                  }`}>
+                    {nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin size={10} /> {nextMatch.location}</span>
-                <span className="flex items-center gap-1"><Users size={10} /> {nextMatch.format}</span>
-                <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                  nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                }`}>
-                  {nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+              {/* Chat link */}
+              <button
+                onClick={() => navigate(`/chat/${nextMatch.id}`)}
+                className="w-full px-4 py-2 bg-secondary/50 border-t border-border flex items-center justify-between hover:bg-secondary/80 transition-colors"
+              >
+                <span className="text-[11px] text-primary font-semibold flex items-center gap-1">
+                  <MessageCircle size={12} /> Ver chat da partida
                 </span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+                <ChevronRight size={14} className="text-primary" />
+              </button>
+            </motion.div>
+          </div>
+        );
+      })()}
 
       {/* Quick Actions */}
-      <div className="px-5 mt-5 space-y-2">
+      <div className="px-5 mt-4 space-y-2">
         {quickActions.map((action, i) => (
           <motion.button
             key={action.label}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 + i * 0.05 }}
+            transition={{ delay: 0.15 + i * 0.04 }}
             onClick={() => action.path !== "#" && navigate(action.path)}
             className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
           >
@@ -183,11 +209,11 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Presence section */}
-      {myTeam && (
+      {/* Presence / Summons */}
+      {myTeam && summons.length > 0 && (
         <div className="px-5 mt-5">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-display text-foreground">PRESENÇA — {myTeam.name.toUpperCase()}</h2>
+            <h2 className="text-sm font-display text-foreground">PRESENÇA — {myTeam.name.toUpperCase()}</h2>
             <button onClick={() => navigate("/agenda")} className="text-[10px] text-primary font-semibold">
               Ver escalação →
             </button>
@@ -195,6 +221,18 @@ const Index = () => {
           <PlayerSummons />
         </div>
       )}
+
+      {/* Feed section */}
+      <div className="px-5 mt-5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-display text-foreground">FEED DO CAMPO</h2>
+          <button className="text-[10px] text-primary font-semibold">Ver tudo →</button>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4 text-center">
+          <p className="text-sm text-muted-foreground">Em breve! 📸</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Poste fotos e atualizações do time</p>
+        </div>
+      </div>
 
       {/* No team CTA */}
       {!myTeam && (
