@@ -12,6 +12,8 @@ import logo from "@/assets/logo.png";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -198,7 +200,11 @@ const AuthPage = () => {
 
           {isLogin && (
             <div className="text-right">
-              <button type="button" className="text-xs text-primary hover:underline">
+              <button
+                type="button"
+                onClick={() => { setShowForgotPassword(true); setResetEmail(email); }}
+                className="text-xs text-primary hover:underline"
+              >
                 Esqueceu a senha?
               </button>
             </div>
@@ -260,6 +266,79 @@ const AuthPage = () => {
           </div>
         </motion.form>
       </div>
+
+      {/* Forgot Password Modal */}
+      <AnimatePresence>
+        {showForgotPassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6"
+            onClick={() => setShowForgotPassword(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-foreground mb-2">Recuperar Senha</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Informe seu e-mail e enviaremos um link para redefinir sua senha.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">E-mail</Label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      className="pl-9 bg-background border-border"
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+                  disabled={loading || !resetEmail}
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                      });
+                      if (error) throw error;
+                      toast({
+                        title: "E-mail enviado! 📧",
+                        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+                      });
+                      setShowForgotPassword(false);
+                    } catch (error: unknown) {
+                      const message = error instanceof Error ? error.message : "Erro desconhecido";
+                      toast({ title: "Erro", description: message, variant: "destructive" });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Enviar link de recuperação
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(false)}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer */}
       <motion.div
