@@ -105,7 +105,13 @@ const AdminPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
-              onClick={() => action.path !== "#" && navigate(action.path)}
+              onClick={() => {
+                if (action.path === "#squad") {
+                  setShowSquad(!showSquad);
+                } else if (action.path !== "#") {
+                  navigate(action.path);
+                }
+              }}
               className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
             >
               <action.icon size={18} className="text-primary" />
