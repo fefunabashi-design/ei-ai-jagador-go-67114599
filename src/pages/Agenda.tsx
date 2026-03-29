@@ -532,8 +532,7 @@ const AgendaPage = () => {
               </div>
             </>
           )}
-            </>
-          )}
+
 
           {selectedMatch && detailView === "summons" && (
             <>
