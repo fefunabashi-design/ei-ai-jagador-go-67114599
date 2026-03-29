@@ -606,6 +606,31 @@ const AgendaPage = () => {
                   <Plus size={12} className="mr-1" /> Escalar Manual
                 </Button>
               </div>
+
+              {/* Reserves / Available */}
+              {availableForDrag.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Reservas</h3>
+                    <span className="text-[10px] text-muted-foreground">{availableForDrag.length} disponíveis</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {availableForDrag.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between bg-secondary/80 rounded-xl px-3 py-2 border border-border/50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                            {p.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">{p.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{p.position || "—"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
