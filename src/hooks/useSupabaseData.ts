@@ -104,13 +104,26 @@ export const useMyTeam = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase
+      // First check if user owns a team
+      const { data: ownedTeam } = await supabase
         .from("teams")
         .select("*")
         .eq("owner_id", user.id)
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (ownedTeam) return ownedTeam;
+      // Otherwise check if user is a player in a team
+      const { data: playerRecord } = await supabase
+        .from("players")
+        .select("team_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!playerRecord) return null;
+      const { data: playerTeam } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("id", playerRecord.team_id)
+        .maybeSingle();
+      return playerTeam;
     },
   });
 };
