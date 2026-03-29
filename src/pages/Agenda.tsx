@@ -633,15 +633,24 @@ const AgendaPage = () => {
                       <div className="w-2.5 h-2.5 rounded-full bg-destructive" /> Recusado
                     </span>
                   </div>
-                  {/* List below */}
-                  <div className="space-y-2 mt-3">
+                  {/* Mini cards list */}
+                  <div className="space-y-1.5 mt-3">
                     {summons.map((s: any) => (
-                      <div key={s.id} className="flex items-center justify-between bg-secondary rounded-lg p-3">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{s.player?.name}</p>
-                          <p className="text-xs text-muted-foreground">{s.position || "Sem posição"}</p>
+                      <div key={s.id} className="flex items-center justify-between bg-secondary/80 rounded-xl px-4 py-3 border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                            {s.player?.name?.charAt(0) || "?"}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground leading-tight">{s.player?.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{s.position || "Sem posição"}</p>
+                          </div>
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${summonStatusStyles[s.status] || ""}`}>
+                        <span className={`text-[11px] font-semibold ${
+                          s.status === "confirmed" ? "text-success" :
+                          s.status === "declined" ? "text-destructive" :
+                          "text-warning"
+                        }`}>
                           {summonStatusLabels[s.status] || s.status}
                         </span>
                       </div>
