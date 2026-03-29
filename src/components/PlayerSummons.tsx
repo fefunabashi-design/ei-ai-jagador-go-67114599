@@ -3,6 +3,12 @@ import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMySummons, useRespondSummon } from "@/hooks/useSupabaseData";
 
+const statusBadge: Record<string, { label: string; className: string }> = {
+  confirmed: { label: "✅ Confirmado", className: "bg-success/10 text-success" },
+  declined: { label: "❌ Recusado", className: "bg-destructive/10 text-destructive" },
+  pending: { label: "⏳ Aguardando", className: "bg-warning/10 text-warning" },
+};
+
 const PlayerSummons = () => {
   const { data: summons = [], isLoading } = useMySummons();
   const respond = useRespondSummon();
@@ -16,6 +22,8 @@ const PlayerSummons = () => {
       {summons.map((s: any, i: number) => {
         const match = s.match;
         const date = match ? new Date(match.match_date) : null;
+        const badge = statusBadge[s.status] || statusBadge.pending;
+
         return (
           <motion.div
             key={s.id}
@@ -25,9 +33,12 @@ const PlayerSummons = () => {
             className="bg-card rounded-xl border border-border p-4 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                Nova Convocação
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
+                {badge.label}
               </span>
+              {match && (
+                <span className="text-[10px] text-muted-foreground">{match.format}</span>
+              )}
             </div>
             {match && (
               <>
@@ -54,25 +65,32 @@ const PlayerSummons = () => {
             <p className="text-xs text-muted-foreground">
               Posição: <span className="text-foreground font-semibold">{s.position || "Não definida"}</span>
             </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => respond.mutate({ id: s.id, status: "confirmed" })}
-                disabled={respond.isPending}
-                className="flex-1 bg-gradient-primary text-primary-foreground border-0"
-              >
-                <Check size={14} className="mr-1" /> Confirmar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => respond.mutate({ id: s.id, status: "declined" })}
-                disabled={respond.isPending}
-                className="flex-1"
-              >
-                <X size={14} className="mr-1" /> Recusar
-              </Button>
-            </div>
+
+            {s.status === "pending" ? (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => respond.mutate({ id: s.id, status: "confirmed" })}
+                  disabled={respond.isPending}
+                  className="flex-1 bg-gradient-primary text-primary-foreground border-0"
+                >
+                  <Check size={14} className="mr-1" /> Confirmar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => respond.mutate({ id: s.id, status: "declined" })}
+                  disabled={respond.isPending}
+                  className="flex-1"
+                >
+                  <X size={14} className="mr-1" /> Recusar
+                </Button>
+              </div>
+            ) : (
+              <div className="text-[11px] text-muted-foreground">
+                Respondido em {s.responded_at ? new Date(s.responded_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+              </div>
+            )}
           </motion.div>
         );
       })}
