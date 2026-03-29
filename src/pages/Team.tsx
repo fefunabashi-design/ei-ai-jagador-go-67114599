@@ -193,10 +193,10 @@ const TeamPage = () => {
     setPlayerName(player.name);
     setPlayerPosition(player.position || "");
     setPlayerNumber(player.jersey_number || 0);
-    setPlayerNickname("");
-    setPlayerPhone("");
-    setPlayerBirthDate("");
-    setPlayerRegion("");
+    setPlayerNickname(player.nickname || "");
+    setPlayerPhone(player.phone || "");
+    setPlayerBirthDate(player.birth_date || "");
+    setPlayerRegion(player.region || "");
     setSearchEmail("");
     setSearchResult(null);
     setSearchDone(false);
