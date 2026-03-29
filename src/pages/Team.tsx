@@ -164,12 +164,26 @@ const TeamPage = () => {
     uploadLogo.mutate({ teamId: team.id, file });
   };
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   // Player handlers
   const openNewPlayer = () => {
     setEditingPlayer(null);
     setPlayerName("");
+    setPlayerNickname("");
+    setPlayerPhone("");
+    setPlayerBirthDate("");
+    setPlayerRegion("");
     setPlayerPosition("");
     setPlayerNumber(0);
+    setSearchEmail("");
+    setSearchResult(null);
+    setSearchDone(false);
     setPlayerDialogOpen(true);
   };
 
@@ -178,16 +192,74 @@ const TeamPage = () => {
     setPlayerName(player.name);
     setPlayerPosition(player.position || "");
     setPlayerNumber(player.jersey_number || 0);
+    setPlayerNickname("");
+    setPlayerPhone("");
+    setPlayerBirthDate("");
+    setPlayerRegion("");
+    setSearchEmail("");
+    setSearchResult(null);
+    setSearchDone(false);
     setPlayerDialogOpen(true);
+  };
+
+  const handleSearchPlayer = async () => {
+    if (!searchEmail.trim()) return;
+    setSearchLoading(true);
+    setSearchResult(null);
+    setSearchDone(false);
+    try {
+      // Search profile by email via auth - we search profiles that match
+      // Since we can't query auth.users, we look for profiles with matching user
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("display_name", `%${searchEmail}%`);
+      
+      // Also try exact email approach - check if any user_id matches
+      // For now, search by name or nickname
+      const { data: byNickname } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("nickname", `%${searchEmail}%`);
+      
+      const allResults = [...(data || []), ...(byNickname || [])];
+      const unique = allResults.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+      
+      if (unique.length > 0) {
+        setSearchResult(unique[0]);
+        setPlayerName(unique[0].display_name || "");
+        setPlayerNickname(unique[0].nickname || "");
+        setPlayerPhone(unique[0].phone || "");
+        setPlayerBirthDate(unique[0].birth_date || "");
+        setPlayerRegion(unique[0].region || "");
+      } else {
+        setSearchResult(null);
+      }
+      setSearchDone(true);
+    } catch {
+      toast({ title: "Erro na busca", variant: "destructive" });
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   const handleSavePlayer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!team) return;
+    if (!playerName.trim()) {
+      toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
     if (editingPlayer) {
       updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, name: playerName, position: playerPosition, jersey_number: playerNumber });
     } else {
-      createPlayer.mutate({ team_id: team.id, name: playerName, position: playerPosition, jersey_number: playerNumber });
+      createPlayer.mutate({
+        team_id: team.id,
+        name: playerName,
+        position: playerPosition,
+        jersey_number: playerNumber,
+        ...(searchResult ? { user_id: searchResult.user_id } : {}),
+      } as any);
     }
     setPlayerDialogOpen(false);
   };
