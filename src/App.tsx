@@ -29,11 +29,15 @@ const ProtectedRoute = ({ children, session }: { children: React.ReactNode; sess
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+      if (_event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      }
       if (_event === "SIGNED_IN" || _event === "SIGNED_OUT") {
         queryClient.clear();
       }
@@ -62,7 +66,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Auth />} />
+            <Route path="/" element={isPasswordRecovery ? <Navigate to="/reset-password" replace /> : session ? <Navigate to="/dashboard" replace /> : <Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute session={session}><Index /></ProtectedRoute>} />
             <Route path="/match" element={<ProtectedRoute session={session}><Match /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute session={session}><Agenda /></ProtectedRoute>} />
