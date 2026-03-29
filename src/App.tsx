@@ -9,6 +9,7 @@ import type { Session } from "@supabase/supabase-js";
 import Auth from "./pages/Auth.tsx";
 import Index from "./pages/Index.tsx";
 import Match from "./pages/Match.tsx";
+import Agenda from "./pages/Agenda.tsx";
 import Team from "./pages/Team.tsx";
 import Ranking from "./pages/Ranking.tsx";
 import Profile from "./pages/Profile.tsx";
