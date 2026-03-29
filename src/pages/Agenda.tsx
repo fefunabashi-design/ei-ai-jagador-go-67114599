@@ -488,6 +488,9 @@ const AgendaPage = () => {
                 unpositioned={unpositionedLineups}
                 emptyPositions={emptyPositions}
                 onPositionClick={handlePositionClick}
+                availablePlayers={availableForDrag}
+                onDropPlayer={handleDropPlayer}
+                onRemovePlayer={handleRemoveFromLineup}
               />
               <div className="flex gap-2 mt-3">
                 <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">
