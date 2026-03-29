@@ -530,9 +530,8 @@ const AgendaPage = () => {
                   <Plus size={12} className="mr-1" /> Escalar Manual
                 </Button>
               </div>
-                  </Button>
-                )}
-              </div>
+            </>
+          )}
             </>
           )}
 
