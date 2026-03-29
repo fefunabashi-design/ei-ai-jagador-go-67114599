@@ -261,7 +261,7 @@ const AgendaPage = () => {
   // Counters
   const confirmedCount = summons.filter((s: any) => s.status === "confirmed").length;
   const pendingCount = summons.filter((s: any) => s.status === "pending").length;
-  const vacantCount = emptyPositions.length;
+  const declinedCount = summons.filter((s: any) => s.status === "declined").length;
 
   // Match info for field header
   const getMatchInfo = () => {
