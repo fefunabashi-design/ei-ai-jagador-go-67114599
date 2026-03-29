@@ -13,6 +13,9 @@ import Agenda from "./pages/Agenda.tsx";
 import Team from "./pages/Team.tsx";
 import Ranking from "./pages/Ranking.tsx";
 import Profile from "./pages/Profile.tsx";
+import Chat from "./pages/Chat.tsx";
+import Payments from "./pages/Payments.tsx";
+import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,7 +33,6 @@ const App = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
-      // Clear query cache on login/logout to avoid stale data from other users
       if (_event === "SIGNED_IN" || _event === "SIGNED_OUT") {
         queryClient.clear();
       }
@@ -66,6 +68,9 @@ const App = () => {
             <Route path="/team" element={<ProtectedRoute session={session}><Team /></ProtectedRoute>} />
             <Route path="/ranking" element={<ProtectedRoute session={session}><Ranking /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
+            <Route path="/chat/:matchId" element={<ProtectedRoute session={session}><Chat /></ProtectedRoute>} />
+            <Route path="/payments/:matchId" element={<ProtectedRoute session={session}><Payments /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute session={session}><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
