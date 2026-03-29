@@ -511,7 +511,9 @@ const AgendaPage = () => {
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">ESCALAÇÃO</DialogTitle>
               </DialogHeader>
-              <p className="text-xs text-muted-foreground mb-2">Toque em uma posição vazia no campo para escalar um jogador.</p>
+              <p className="text-xs text-muted-foreground mb-2">
+                Somente jogadores que <span className="text-success font-semibold">confirmaram</span> presença aparecem na lista principal.
+              </p>
               <SoccerField
                 players={fieldPlayers.filter((p) => p.position)}
                 unpositioned={unpositionedLineups}
@@ -520,14 +522,14 @@ const AgendaPage = () => {
                 availablePlayers={availableForDrag}
                 onDropPlayer={handleDropPlayer}
                 onRemovePlayer={handleRemoveFromLineup}
+                matchInfo={getMatchInfo()}
+                counters={{ confirmed: confirmedCount, pending: pendingCount, vacant: vacantCount }}
               />
               <div className="flex gap-2 mt-3">
                 <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">
                   <Plus size={12} className="mr-1" /> Escalar Manual
                 </Button>
-                {lineups.length > 0 && (
-                  <Button onClick={handleSendSummons} disabled={createSummons.isPending} className="flex-1 text-xs bg-gradient-primary text-primary-foreground border-0">
-                    <Send size={12} className="mr-1" /> Convocar
+              </div>
                   </Button>
                 )}
               </div>
