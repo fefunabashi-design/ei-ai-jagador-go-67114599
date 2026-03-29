@@ -187,6 +187,19 @@ const AgendaPage = () => {
     setLineupOpen(false);
   };
 
+  const handleDropPlayer = (playerId: string, position: string) => {
+    if (!selectedMatch) return;
+    createLineup.mutate({
+      match_id: selectedMatch.id,
+      player_id: playerId,
+      position,
+    });
+  };
+
+  const handleRemoveFromLineup = (lineupId: string) => {
+    deleteLineup.mutate(lineupId);
+  };
+
   const handlePositionClick = (position: string) => {
     setLineupPosition(position);
     setLineupPlayerId("");
