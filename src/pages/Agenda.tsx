@@ -445,11 +445,8 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
                         <Pencil size={12} className="mr-1" /> Editar
                       </Button>
-                      <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "lineup")}>
-                        <Users size={12} className="mr-1" /> Escalação
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "summons")}>
-                        <UserCheck size={12} className="mr-1" /> Convocação
+                      <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
+                        <Users size={12} className="mr-1" /> Elenco
                       </Button>
                       {match.status !== "cancelled" && match.status !== "completed" && (
                         <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
