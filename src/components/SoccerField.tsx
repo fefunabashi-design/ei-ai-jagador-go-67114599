@@ -2,18 +2,19 @@ import { User, UserPlus, X, ChevronDown } from "lucide-react";
 import { useState, DragEvent } from "react";
 
 const positionCoords: Record<string, { top: string; left: string }> = {
-  "Goleiro": { top: "88%", left: "50%" },
-  "Zagueiro": { top: "72%", left: "35%" },
-  "Zagueiro_2": { top: "72%", left: "65%" },
-  "Lateral Esquerdo": { top: "62%", left: "12%" },
-  "Lateral Direito": { top: "62%", left: "88%" },
-  "Volante": { top: "50%", left: "35%" },
-  "Volante_2": { top: "50%", left: "65%" },
-  "Meia": { top: "38%", left: "50%" },
-  "Meia_2": { top: "38%", left: "30%" },
-  "Atacante": { top: "15%", left: "50%" },
-  "Atacante_2": { top: "18%", left: "30%" },
-  "Atacante_3": { top: "18%", left: "70%" },
+  "Goleiro": { top: "90%", left: "50%" },
+  "Zagueiro": { top: "73%", left: "38%" },
+  "Zagueiro_2": { top: "73%", left: "62%" },
+  "Lateral Esquerdo": { top: "68%", left: "14%" },
+  "Lateral Direito": { top: "68%", left: "86%" },
+  "Volante": { top: "52%", left: "38%" },
+  "Volante_2": { top: "52%", left: "62%" },
+  "Meia": { top: "40%", left: "50%" },
+  "Meia_2": { top: "40%", left: "28%" },
+  "Meia_3": { top: "40%", left: "72%" },
+  "Atacante": { top: "20%", left: "50%" },
+  "Atacante_2": { top: "22%", left: "28%" },
+  "Atacante_3": { top: "22%", left: "72%" },
 };
 
 const positionAbbrev: Record<string, string> = {
@@ -27,9 +28,9 @@ const positionAbbrev: Record<string, string> = {
 };
 
 const sectorLabels: { label: string; top: string }[] = [
-  { label: "ATAQUE", top: "8%" },
-  { label: "MEIO-CAMPO", top: "44%" },
-  { label: "DEFESA", top: "66%" },
+  { label: "ATAQUE", top: "12%" },
+  { label: "MEIO-CAMPO", top: "45%" },
+  { label: "DEFESA", top: "78%" },
 ];
 
 const statusBorderColor: Record<string, string> = {
@@ -289,8 +290,8 @@ const SoccerField = ({
             <p className="text-[9px] text-muted-foreground font-semibold">Aguardando</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-2 text-center">
-            <p className="text-lg font-bold text-primary">{counters.vacant}</p>
-            <p className="text-[9px] text-muted-foreground font-semibold">Vaga livre</p>
+            <p className="text-lg font-bold text-destructive">{counters.vacant}</p>
+            <p className="text-[9px] text-muted-foreground font-semibold">Recusados</p>
           </div>
         </div>
       )}

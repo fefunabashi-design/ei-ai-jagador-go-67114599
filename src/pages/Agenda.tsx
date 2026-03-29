@@ -261,7 +261,7 @@ const AgendaPage = () => {
   // Counters
   const confirmedCount = summons.filter((s: any) => s.status === "confirmed").length;
   const pendingCount = summons.filter((s: any) => s.status === "pending").length;
-  const vacantCount = emptyPositions.length;
+  const declinedCount = summons.filter((s: any) => s.status === "declined").length;
 
   // Match info for field header
   const getMatchInfo = () => {
@@ -523,7 +523,7 @@ const AgendaPage = () => {
                 onDropPlayer={handleDropPlayer}
                 onRemovePlayer={handleRemoveFromLineup}
                 matchInfo={getMatchInfo()}
-                counters={{ confirmed: confirmedCount, pending: pendingCount, vacant: vacantCount }}
+                counters={{ confirmed: confirmedCount, pending: pendingCount, vacant: declinedCount }}
               />
               <div className="flex gap-2 mt-3">
                 <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">
