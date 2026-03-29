@@ -2,19 +2,19 @@ import { UserPlus, X, ChevronDown } from "lucide-react";
 import { useState, DragEvent } from "react";
 
 const positionCoords: Record<string, { top: string; left: string }> = {
-  "Goleiro":           { top: "91%", left: "50%" },
-  "Zagueiro":          { top: "74%", left: "38%" },
-  "Zagueiro_2":        { top: "74%", left: "62%" },
-  "Lateral Esquerdo":  { top: "70%", left: "12%" },
-  "Lateral Direito":   { top: "70%", left: "88%" },
-  "Volante":           { top: "54%", left: "38%" },
-  "Volante_2":         { top: "54%", left: "62%" },
-  "Meia":              { top: "42%", left: "12%" },
+  "Goleiro":           { top: "93%", left: "50%" },
+  "Zagueiro":          { top: "78%", left: "35%" },
+  "Zagueiro_2":        { top: "78%", left: "65%" },
+  "Lateral Esquerdo":  { top: "72%", left: "10%" },
+  "Lateral Direito":   { top: "72%", left: "90%" },
+  "Volante":           { top: "58%", left: "35%" },
+  "Volante_2":         { top: "58%", left: "65%" },
+  "Meia":              { top: "42%", left: "10%" },
   "Meia_2":            { top: "42%", left: "50%" },
-  "Meia_3":            { top: "42%", left: "88%" },
-  "Atacante":          { top: "18%", left: "38%" },
-  "Atacante_2":        { top: "18%", left: "62%" },
-  "Atacante_3":        { top: "22%", left: "50%" },
+  "Meia_3":            { top: "42%", left: "90%" },
+  "Atacante":          { top: "22%", left: "32%" },
+  "Atacante_2":        { top: "22%", left: "68%" },
+  "Atacante_3":        { top: "16%", left: "50%" },
 };
 
 const positionAbbrev: Record<string, string> = {
