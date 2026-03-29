@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown } from "lucide-react";
+import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PlayerSummons from "@/components/PlayerSummons";
@@ -75,6 +75,12 @@ const Index = () => {
               </span>
             </div>
           )}
+          <button
+            onClick={() => navigate(isOwner ? "/team" : "/profile")}
+            className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:border-primary/40 transition-colors"
+          >
+            <Settings size={16} className="text-muted-foreground" />
+          </button>
         </div>
       </div>
 
