@@ -35,7 +35,16 @@ export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (updates: { display_name?: string; position?: string; team_name?: string; jersey_number?: number; avatar_url?: string; phone?: string; birth_date?: string; role?: string }) => {
+    mutationFn: async (updates: {
+      display_name?: string;
+      nickname?: string;
+      phone?: string;
+      birth_date?: string;
+      region?: string;
+      avatar_url?: string;
+      role?: string;
+      is_pro?: boolean;
+    }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
       const { data, error } = await supabase
@@ -53,6 +62,37 @@ export const useUpdateProfile = () => {
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useUploadAvatar = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return urlData.publicUrl;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast({ title: "Foto atualizada! 📸" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     },
   });
 };
@@ -79,12 +119,13 @@ export const useCreateTeam = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (team: { name: string; abbreviation?: string; format?: string; region?: string }) => {
+    mutationFn: async (team: Record<string, any>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
+      const payload = { ...team, owner_id: user.id } as any;
       const { data, error } = await supabase
         .from("teams")
-        .insert({ ...team, owner_id: user.id })
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
@@ -104,10 +145,10 @@ export const useUpdateTeam = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; abbreviation?: string; format?: string; region?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
       const { data, error } = await supabase
         .from("teams")
-        .update(updates)
+        .update(updates as any)
         .eq("id", id)
         .select()
         .single();
@@ -120,6 +161,53 @@ export const useUpdateTeam = () => {
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useDeleteTeam = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("teams").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-team"] });
+      toast({ title: "Time excluído" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useUploadTeamLogo = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ teamId, file }: { teamId: string; file: File }) => {
+      const ext = file.name.split(".").pop();
+      const path = `${teamId}/logo.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("team-logos")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("team-logos").getPublicUrl(path);
+      const { error } = await supabase
+        .from("teams")
+        .update({ logo_url: urlData.publicUrl })
+        .eq("id", teamId);
+      if (error) throw error;
+      return urlData.publicUrl;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-team"] });
+      toast({ title: "Escudo atualizado! 🛡️" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     },
   });
 };
@@ -157,7 +245,7 @@ export const useCreatePlayer = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["players", data.team_id] });
-      toast({ title: "Jogador adicionado! ⚽", description: `${data.name} entrou no elenco.` });
+      toast({ title: "Jogador adicionado! ⚽" });
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -200,7 +288,7 @@ export const useDeletePlayer = () => {
     },
     onSuccess: (teamId) => {
       queryClient.invalidateQueries({ queryKey: ["players", teamId] });
-      toast({ title: "Jogador removido", variant: "destructive" });
+      toast({ title: "Jogador removido" });
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
