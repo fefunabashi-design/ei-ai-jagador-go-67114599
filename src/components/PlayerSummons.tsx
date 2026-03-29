@@ -1,12 +1,24 @@
 import { motion } from "framer-motion";
-import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMySummons, useRespondSummon } from "@/hooks/useSupabaseData";
 
-const statusBadge: Record<string, { label: string; className: string }> = {
-  confirmed: { label: "✅ Confirmado", className: "bg-success/10 text-success" },
-  declined: { label: "❌ Recusado", className: "bg-destructive/10 text-destructive" },
-  pending: { label: "⏳ Aguardando", className: "bg-warning/10 text-warning" },
+const statusStyles: Record<string, string> = {
+  confirmed: "text-success",
+  declined: "text-destructive",
+  pending: "text-warning",
+};
+
+const statusLabels: Record<string, string> = {
+  confirmed: "Confirmado",
+  declined: "Recusado",
+  pending: "Pendente",
+};
+
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
 const PlayerSummons = () => {
@@ -17,79 +29,54 @@ const PlayerSummons = () => {
   if (summons.length === 0) return null;
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-2xl text-foreground font-display">CONVOCAÇÕES</h2>
+    <div className="space-y-1.5">
       {summons.map((s: any, i: number) => {
-        const match = s.match;
-        const date = match ? new Date(match.match_date) : null;
-        const badge = statusBadge[s.status] || statusBadge.pending;
+        const playerName = s.player?.name || "Jogador";
+        const initials = getInitials(playerName);
+        const position = s.position || s.player?.position || "Sem posição";
 
         return (
           <motion.div
             key={s.id}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-card rounded-xl border border-border p-4 space-y-3"
+            transition={{ delay: i * 0.03 }}
+            className="flex items-center justify-between bg-secondary/80 rounded-xl px-4 py-3 border border-border/50"
           >
-            <div className="flex items-center justify-between">
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
-                {badge.label}
-              </span>
-              {match && (
-                <span className="text-[10px] text-muted-foreground">{match.format}</span>
-              )}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                {initials}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground leading-tight">{playerName}</p>
+                <p className="text-[11px] text-muted-foreground">{position}</p>
+              </div>
             </div>
-            {match && (
-              <>
-                <div className="flex items-center justify-between">
-                  <span className="font-display text-foreground">{match.home_team?.name?.toUpperCase()}</span>
-                  <span className="text-xs text-muted-foreground font-bold px-2">VS</span>
-                  <span className="font-display text-foreground">{match.away_team?.name?.toUpperCase() || "???"}</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  {date && (
-                    <>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} /> {date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} /> {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </>
-                  )}
-                  <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>
-                </div>
-              </>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Posição: <span className="text-foreground font-semibold">{s.position || "Não definida"}</span>
-            </p>
 
             {s.status === "pending" ? (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <Button
                   size="sm"
                   onClick={() => respond.mutate({ id: s.id, status: "confirmed" })}
                   disabled={respond.isPending}
-                  className="flex-1 bg-gradient-primary text-primary-foreground border-0"
+                  className="h-7 px-2.5 text-[10px] bg-success/10 text-success border border-success/20 hover:bg-success/20"
                 >
-                  <Check size={14} className="mr-1" /> Confirmar
+                  <Check size={12} />
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => respond.mutate({ id: s.id, status: "declined" })}
                   disabled={respond.isPending}
-                  className="flex-1"
+                  className="h-7 px-2.5 text-[10px]"
                 >
-                  <X size={14} className="mr-1" /> Recusar
+                  <X size={12} />
                 </Button>
               </div>
             ) : (
-              <div className="text-[11px] text-muted-foreground">
-                Respondido em {s.responded_at ? new Date(s.responded_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
-              </div>
+              <span className={`text-[11px] font-semibold ${statusStyles[s.status] || "text-muted-foreground"}`}>
+                {statusLabels[s.status] || s.status}
+              </span>
             )}
           </motion.div>
         );

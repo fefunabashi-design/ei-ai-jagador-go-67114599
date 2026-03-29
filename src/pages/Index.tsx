@@ -1,140 +1,212 @@
 import { motion } from "framer-motion";
-import { Zap, Trophy, Target, TrendingUp, Search, Users, CreditCard, Bell } from "lucide-react";
+import { Search, Users, CreditCard, Trophy, Shield, Calendar, Clock, MapPin, ChevronRight, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import StatCard from "@/components/StatCard";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useProfile, useMyTeam, useMatches } from "@/hooks/useSupabaseData";
-import heroBg from "@/assets/hero-bg.jpg";
+import { useProfile, useMyTeam, useMatches, usePlayers, useMySummons } from "@/hooks/useSupabaseData";
 import logo from "@/assets/logo.png";
-
-const quickActions = [
-  { icon: Search, label: "Buscar Adversário", path: "/match" },
-  { icon: Users, label: "Escalar Time", path: "/team" },
-  { icon: CreditCard, label: "Agenda", path: "/agenda" },
-  { icon: Trophy, label: "Artilharia", path: "/ranking" },
-];
 
 const Index = () => {
   const navigate = useNavigate();
   const { data: profile } = useProfile();
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
+  const { data: players = [] } = usePlayers(myTeam?.id);
+  const { data: summons = [] } = useMySummons();
 
-  const upcomingMatches = matches
-    .filter((m) => m.status === "open" || m.status === "confirmed")
-    .slice(0, 3);
+  const now = new Date();
+  const hours = now.getHours();
+  const greeting = hours < 12 ? "Bom dia" : hours < 18 ? "Boa tarde" : "Boa noite";
+  const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const firstName = profile?.display_name?.split(" ")[0] || "Craque";
+
+  // Find next upcoming match for user's team
+  const nextMatch = matches
+    .filter((m) => {
+      const homeTeam = m.home_team as any;
+      const awayTeam = m.away_team as any;
+      return (
+        new Date(m.match_date) >= now &&
+        (m.status === "open" || m.status === "confirmed") &&
+        myTeam &&
+        (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)
+      );
+    })
+    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
+
+  // Player stats from player record
+  const myPlayer = players.find((p) => p.user_id === profile?.user_id);
+  const playerStats = {
+    matches: myPlayer?.matches || 0,
+    goals: myPlayer?.goals || 0,
+    rating: myPlayer?.rating || 0,
+  };
+
+  // Pending summons count
+  const pendingSummons = summons.filter((s: any) => s.status === "pending").length;
+
+  const quickActions = [
+    { icon: "🔍", label: "Buscar adversário", sub: "Match por região", path: "/match" },
+    { icon: "👥", label: "Escalar time", sub: `${players.length} jogadores`, path: "/agenda" },
+    { icon: "💰", label: "Pagamentos", sub: "Em breve", path: "#" },
+    { icon: "👑", label: "Painel Admin", sub: "Gestão do time", path: "/agenda" },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Hero */}
-      <div className="relative h-56 overflow-hidden">
-        <img src={heroBg} alt="Campo de futebol" className="absolute inset-0 w-full h-full object-cover opacity-40" width={1920} height={1080} />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/30 to-background" />
-        <div className="relative z-10 flex flex-col items-start justify-end h-full px-5 pb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <img src={logo} alt="E Ai Jogador" width={32} height={32} />
-            <h1 className="text-3xl text-foreground tracking-wider">E AÍ JOGADOR</h1>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {profile?.display_name ? `Fala, ${profile.display_name.split(" ")[0]}! ⚽` : "Bora pra pelada! ⚽"}
-          </p>
+      {/* Status bar */}
+      <div className="px-5 pt-4 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground font-semibold">{timeStr}</span>
+        <div className="flex items-center gap-2">
+          {pendingSummons > 0 && (
+            <div className="relative">
+              <Bell size={18} className="text-muted-foreground" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                {pendingSummons}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="px-5 space-y-6 mt-4">
-        {/* Quick Actions */}
+      {/* Greeting */}
+      <div className="px-5 pt-4 pb-2">
+        <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
+        <div className="flex items-center gap-3 mt-2">
+          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={firstName} className="w-12 h-12 rounded-full object-cover" />
+            ) : (
+              firstName.slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <div>
+            <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
+            {myTeam && (
+              <p className="text-xs text-muted-foreground">{myTeam.name} · {myTeam.format}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Player Stats */}
+      <div className="px-5 mt-4">
         <div className="grid grid-cols-4 gap-2">
-          {quickActions.map((action, i) => (
-            <motion.button
-              key={action.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+          {[
+            { value: playerStats.matches, label: "Partidas" },
+            { value: playerStats.goals, label: "Gols" },
+            { value: 0, label: "Vitórias" },
+            { value: `★${playerStats.rating || "0"}`, label: "Rating" },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => navigate(action.path)}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
+              className="bg-card rounded-xl border border-border p-2.5 text-center"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <action.icon size={18} className="text-primary" />
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">
-                {action.label}
-              </span>
-            </motion.button>
+              <p className="text-lg font-bold text-foreground font-display">{stat.value}</p>
+              <p className="text-[9px] text-muted-foreground font-semibold">{stat.label}</p>
+            </motion.div>
           ))}
         </div>
+      </div>
 
-        {/* Info cards */}
-        {!myTeam && (
+      {/* Next Match Card */}
+      {nextMatch && (
+        <div className="px-5 mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+              Próximo • {new Date(nextMatch.match_date).toLocaleDateString("pt-BR", { weekday: "short" })} {new Date(nextMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-2xl border border-border overflow-hidden"
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Shield size={18} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-display text-foreground text-sm">{(nextMatch.home_team as any)?.name?.toUpperCase()}</p>
+                    <p className="text-[9px] text-muted-foreground">Seu time</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-muted-foreground px-3">VS</span>
+                <div className="flex items-center gap-2 flex-1 justify-end text-right">
+                  <div>
+                    <p className="font-display text-foreground text-sm">{(nextMatch.away_team as any)?.name?.toUpperCase() || "???"}</p>
+                    <p className="text-[9px] text-muted-foreground">Adversário</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                    <Shield size={18} className="text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><MapPin size={10} /> {nextMatch.location}</span>
+                <span className="flex items-center gap-1"><Users size={10} /> {nextMatch.format}</span>
+                <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                  nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                }`}>
+                  {nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="px-5 mt-5 space-y-2">
+        {quickActions.map((action, i) => (
+          <motion.button
+            key={action.label}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 + i * 0.05 }}
+            onClick={() => action.path !== "#" && navigate(action.path)}
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
+          >
+            <span className="text-xl">{action.icon}</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">{action.label}</p>
+              <p className="text-[10px] text-muted-foreground">{action.sub}</p>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Presence section */}
+      {myTeam && (
+        <div className="px-5 mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-display text-foreground">PRESENÇA — {myTeam.name.toUpperCase()}</h2>
+            <button onClick={() => navigate("/agenda")} className="text-[10px] text-primary font-semibold">
+              Ver escalação →
+            </button>
+          </div>
+          <PlayerSummons />
+        </div>
+      )}
+
+      {/* No team CTA */}
+      {!myTeam && (
+        <div className="px-5 mt-5">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
             <p className="text-sm text-primary mb-2">Você ainda não tem um time!</p>
             <Button size="sm" onClick={() => navigate("/team")} className="bg-gradient-primary text-primary-foreground border-0">
               Criar Time
             </Button>
           </motion.div>
-        )}
-
-        {myTeam && (
-          <div>
-            <h2 className="text-2xl text-foreground mb-3">MEU TIME</h2>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
-                {myTeam.abbreviation || myTeam.name.slice(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-display text-lg text-foreground">{myTeam.name.toUpperCase()}</p>
-                <p className="text-xs text-muted-foreground">{myTeam.format} · {myTeam.region || "Sem região"}</p>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Upcoming Matches */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl text-foreground">PRÓXIMAS PARTIDAS</h2>
-            <Button variant="ghost" size="sm" className="text-primary text-xs" onClick={() => navigate("/match")}>
-              Ver todas
-            </Button>
-          </div>
-          {upcomingMatches.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-6 bg-card rounded-xl border border-border">
-              Nenhuma partida agendada
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {upcomingMatches.map((match) => {
-                const homeTeam = match.home_team as any;
-                const awayTeam = match.away_team as any;
-                const date = new Date(match.match_date);
-                const timeStr = date.toLocaleDateString("pt-BR", { weekday: "short" }) + " " + date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-
-                return (
-                  <div key={match.id} className="bg-card rounded-xl border border-border p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                        match.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                      }`}>
-                        {match.status === "confirmed" ? "Confirmado" : "Aberto"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
-                      <span className="text-xs text-muted-foreground font-bold">VS</span>
-                      <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">{match.location} · {timeStr} · {match.format}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
-
-        {/* Player Summons */}
-        <PlayerSummons />
-      </div>
+      )}
 
       <BottomNav />
     </div>
