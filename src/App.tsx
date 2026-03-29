@@ -20,8 +20,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Auth />} />
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Auth />} />
+          <Route path="/dashboard" element={<Index />} />
           <Route path="/match" element={<Match />} />
           <Route path="/team" element={<Team />} />
           <Route path="/ranking" element={<Ranking />} />
