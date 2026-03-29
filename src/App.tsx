@@ -30,6 +30,10 @@ const App = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+      // Clear query cache on login/logout to avoid stale data from other users
+      if (_event === "SIGNED_IN" || _event === "SIGNED_OUT") {
+        queryClient.clear();
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

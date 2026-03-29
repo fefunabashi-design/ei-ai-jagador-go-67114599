@@ -1,20 +1,20 @@
-import { User, UserPlus, X, ChevronDown } from "lucide-react";
+import { UserPlus, X, ChevronDown } from "lucide-react";
 import { useState, DragEvent } from "react";
 
 const positionCoords: Record<string, { top: string; left: string }> = {
-  "Goleiro": { top: "90%", left: "50%" },
-  "Zagueiro": { top: "73%", left: "38%" },
-  "Zagueiro_2": { top: "73%", left: "62%" },
-  "Lateral Esquerdo": { top: "68%", left: "14%" },
-  "Lateral Direito": { top: "68%", left: "86%" },
-  "Volante": { top: "52%", left: "38%" },
-  "Volante_2": { top: "52%", left: "62%" },
-  "Meia": { top: "40%", left: "50%" },
-  "Meia_2": { top: "40%", left: "28%" },
-  "Meia_3": { top: "40%", left: "72%" },
-  "Atacante": { top: "20%", left: "50%" },
-  "Atacante_2": { top: "22%", left: "28%" },
-  "Atacante_3": { top: "22%", left: "72%" },
+  "Goleiro":           { top: "91%", left: "50%" },
+  "Zagueiro":          { top: "74%", left: "38%" },
+  "Zagueiro_2":        { top: "74%", left: "62%" },
+  "Lateral Esquerdo":  { top: "70%", left: "12%" },
+  "Lateral Direito":   { top: "70%", left: "88%" },
+  "Volante":           { top: "54%", left: "38%" },
+  "Volante_2":         { top: "54%", left: "62%" },
+  "Meia":              { top: "42%", left: "12%" },
+  "Meia_2":            { top: "42%", left: "50%" },
+  "Meia_3":            { top: "42%", left: "88%" },
+  "Atacante":          { top: "18%", left: "38%" },
+  "Atacante_2":        { top: "18%", left: "62%" },
+  "Atacante_3":        { top: "22%", left: "50%" },
 };
 
 const positionAbbrev: Record<string, string> = {
@@ -26,12 +26,6 @@ const positionAbbrev: Record<string, string> = {
   "Meia": "MEI",
   "Atacante": "ATA",
 };
-
-const sectorLabels: { label: string; top: string }[] = [
-  { label: "ATAQUE", top: "12%" },
-  { label: "MEIO-CAMPO", top: "45%" },
-  { label: "DEFESA", top: "78%" },
-];
 
 const statusBorderColor: Record<string, string> = {
   pending: "border-warning",
@@ -57,10 +51,9 @@ const getInitials = (name: string): string => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-// Color palette for player circles
 const playerColors = [
-  "bg-emerald-600", "bg-red-500", "bg-purple-500", "bg-blue-500",
-  "bg-amber-500", "bg-pink-500", "bg-cyan-500", "bg-orange-500",
+  "bg-blue-600", "bg-blue-700", "bg-blue-500", "bg-indigo-600",
+  "bg-blue-800", "bg-sky-600", "bg-indigo-500", "bg-blue-900",
 ];
 
 const getPlayerColor = (name: string): string => {
@@ -171,37 +164,61 @@ const SoccerField = ({
   return (
     <div className="space-y-3">
       {/* Field */}
-      <div className="relative w-full rounded-2xl overflow-hidden border border-border shadow-lg" style={{ aspectRatio: "3/4" }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800" />
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 8%, rgba(255,255,255,0.3) 8%, rgba(255,255,255,0.3) 16%)",
+      <div
+        className="relative w-full rounded-2xl overflow-hidden border border-border shadow-lg"
+        style={{ aspectRatio: "2/3" }}
+      >
+        {/* Grass background with stripes */}
+        <div className="absolute inset-0" style={{
+          background: "repeating-linear-gradient(180deg, #4a8c3f 0%, #4a8c3f 8.33%, #3f7a35 8.33%, #3f7a35 16.66%)",
         }} />
 
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" preserveAspectRatio="none">
-          <rect x="10" y="10" width="280" height="380" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" rx="4" />
-          <line x1="10" y1="200" x2="290" y2="200" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
-          <circle cx="150" cy="200" r="40" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
-          <circle cx="150" cy="200" r="3" fill="white" fillOpacity="0.25" />
-          <rect x="70" y="10" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
-          <rect x="100" y="10" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
-          <rect x="70" y="330" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
-          <rect x="100" y="360" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
+        {/* Field lines SVG */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 340 510" preserveAspectRatio="none">
+          {/* Outer boundary */}
+          <rect x="20" y="15" width="300" height="480" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.6" />
+
+          {/* Half line */}
+          <line x1="20" y1="255" x2="320" y2="255" stroke="white" strokeWidth="2" strokeOpacity="0.5" />
+
+          {/* Center circle */}
+          <circle cx="170" cy="255" r="48" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.5" />
+          <circle cx="170" cy="255" r="3" fill="white" fillOpacity="0.5" />
+
+          {/* Top penalty area */}
+          <rect x="65" y="15" width="210" height="80" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.5" />
+          <rect x="110" y="15" width="120" height="35" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.4" />
+          {/* Top penalty arc */}
+          <path d="M 120 95 Q 170 120 220 95" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.4" />
+          <circle cx="170" cy="75" r="3" fill="white" fillOpacity="0.4" />
+
+          {/* Bottom penalty area */}
+          <rect x="65" y="415" width="210" height="80" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.5" />
+          <rect x="110" y="460" width="120" height="35" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.4" />
+          {/* Bottom penalty arc */}
+          <path d="M 120 415 Q 170 390 220 415" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.4" />
+          <circle cx="170" cy="435" r="3" fill="white" fillOpacity="0.4" />
+
+          {/* Corner arcs */}
+          <path d="M 20 25 Q 30 15 40 15" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.4" />
+          <path d="M 300 15 Q 320 15 320 25" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.4" />
+          <path d="M 20 485 Q 20 495 30 495" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.4" />
+          <path d="M 310 495 Q 320 495 320 485" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.4" />
         </svg>
 
         {/* Match info header */}
         {matchInfo && (
-          <div className="absolute top-2 left-3 right-3 flex items-center justify-between text-white/70 text-[10px] font-semibold z-10">
-            <span>{matchInfo.home}{matchInfo.away ? ` × ${matchInfo.away}` : ""}</span>
-            {matchInfo.dateLabel && <span>{matchInfo.dateLabel}</span>}
+          <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10">
+            <span className="text-white/80 text-[10px] font-bold tracking-wide bg-black/30 px-2 py-0.5 rounded">
+              {matchInfo.home}{matchInfo.away ? ` × ${matchInfo.away}` : ""}
+            </span>
+            {matchInfo.dateLabel && (
+              <span className="text-white/80 text-[10px] font-bold bg-black/30 px-2 py-0.5 rounded">
+                {matchInfo.dateLabel}
+              </span>
+            )}
           </div>
         )}
-
-        {/* Sector labels */}
-        {sectorLabels.map((s) => (
-          <div key={s.label} className="absolute left-1/2 -translate-x-1/2 text-white/15 text-[9px] font-bold tracking-[0.3em] pointer-events-none" style={{ top: s.top }}>
-            {s.label}
-          </div>
-        ))}
 
         {/* Empty position spots */}
         {emptyPositions.map((pos) => {
@@ -222,15 +239,14 @@ const SoccerField = ({
               }`}
               style={{ top: coords.top, left: coords.left }}
             >
-              <div className={`w-11 h-11 rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-200 ${
+              <div className={`w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-200 ${
                 isOver || isSelected
-                  ? "border-primary bg-primary/30 shadow-lg shadow-primary/30"
-                  : "border-white/25 bg-white/5 group-hover:bg-white/15 group-hover:border-white/50"
+                  ? "border-white bg-white/30 shadow-lg shadow-white/20"
+                  : "border-white/30 bg-white/10 group-hover:bg-white/20 group-hover:border-white/50"
               }`}>
-                <span className="text-white/30 text-lg">+</span>
+                <span className="text-white/50 text-lg font-light">+</span>
               </div>
-              <span className="text-[9px] text-white/50 font-semibold">Vaga</span>
-              <span className="text-[7px] text-white/30 font-semibold">{abbrev}</span>
+              <span className="text-[9px] text-white/70 font-bold drop-shadow-md">{abbrev}</span>
             </button>
           );
         })}
@@ -238,10 +254,9 @@ const SoccerField = ({
         {/* Players on field */}
         {positionedPlayers.map((p) => {
           if (!p.coords) return null;
-          const abbrev = positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase();
           const initials = getInitials(p.name);
           const bgColor = getPlayerColor(p.name);
-          const borderColor = p.status ? (statusBorderColor[p.status] || "border-white/60") : "border-white/60";
+          const borderColor = p.status ? (statusBorderColor[p.status] || "border-white/80") : "border-white/80";
 
           return (
             <div
@@ -258,7 +273,7 @@ const SoccerField = ({
                   </div>
                 )}
                 {showStatus && p.status && (
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-emerald-700 ${statusDotColor[p.status] || "bg-muted"}`} />
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#4a8c3f] ${statusDotColor[p.status] || "bg-muted"}`} />
                 )}
                 {onRemovePlayer && (
                   <button
@@ -269,10 +284,9 @@ const SoccerField = ({
                   </button>
                 )}
               </div>
-              <span className="text-[10px] text-white font-bold max-w-[70px] text-center leading-tight drop-shadow-md truncate">
+              <span className="text-[10px] text-white font-bold max-w-[70px] text-center leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate">
                 {p.name.split(" ")[0]}
               </span>
-              <span className="text-[7px] text-white/50 font-semibold">{abbrev}</span>
             </div>
           );
         })}
