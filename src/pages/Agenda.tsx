@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Calendar, Clock, MapPin, Users, ChevronRight, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Filter,
+  Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
+  Send, XCircle, Trash2, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import BottomNav from "@/components/BottomNav";
+import SoccerField from "@/components/SoccerField";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
-  usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups,
+  usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
 } from "@/hooks/useSupabaseData";
 
 const statusStyles: Record<string, string> = {
@@ -61,7 +62,7 @@ const filterOptions: { value: FilterType; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
-const positions = [
+const allPositions = [
   "Goleiro", "Zagueiro", "Lateral Direito", "Lateral Esquerdo",
   "Volante", "Meia", "Ponta Direita", "Ponta Esquerda", "Atacante",
 ];
@@ -69,11 +70,17 @@ const positions = [
 const AgendaPage = () => {
   const [filter, setFilter] = useState<FilterType>("upcoming");
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | null>(null);
+  const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
+
+  // Create match
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newLocation, setNewLocation] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newFormat, setNewFormat] = useState("8x8");
 
   // Lineup dialog
   const [lineupOpen, setLineupOpen] = useState(false);
@@ -82,6 +89,7 @@ const AgendaPage = () => {
 
   const { data: matches = [], isLoading } = useMatches();
   const { data: myTeam } = useMyTeam();
+  const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
   const { data: players = [] } = usePlayers(myTeam?.id);
@@ -89,6 +97,7 @@ const AgendaPage = () => {
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
   const createSummons = useCreateSummons();
   const createLineup = useCreateLineup();
+  const deleteLineup = useDeleteLineup();
 
   const now = new Date();
 
@@ -107,16 +116,26 @@ const AgendaPage = () => {
     }
   });
 
-  const getConfirmedCount = (matchId: string) => summons.filter((s) => s.match_id === matchId && (s as any).status === "confirmed").length;
-  const getPendingCount = (matchId: string) => summons.filter((s) => s.match_id === matchId && (s as any).status === "pending").length;
-  const getDeclinedCount = (matchId: string) => summons.filter((s) => s.match_id === matchId && (s as any).status === "declined").length;
-
   const openEdit = (match: any) => {
     setSelectedMatch(match);
     setEditLocation(match.location);
     setEditDate(match.match_date.slice(0, 16));
     setEditFormat(match.format);
     setEditOpen(true);
+  };
+
+  const handleCreateMatch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!myTeam) return;
+    createMatch.mutate({
+      home_team_id: myTeam.id,
+      location: newLocation,
+      match_date: new Date(newDate).toISOString(),
+      format: newFormat,
+    });
+    setCreateOpen(false);
+    setNewLocation("");
+    setNewDate("");
   };
 
   const handleUpdateMatch = (e: React.FormEvent) => {
@@ -141,7 +160,7 @@ const AgendaPage = () => {
     setSelectedMatch(null);
   };
 
-  const openDetails = (match: any, view: "details" | "lineup" | "summons") => {
+  const openDetails = (match: any, view: "details" | "lineup" | "summons" | "field") => {
     setSelectedMatch(match);
     setDetailView(view);
   };
@@ -168,7 +187,44 @@ const AgendaPage = () => {
     setLineupOpen(false);
   };
 
-  // Auto-suggest: filter players by position
+  const handlePositionClick = (position: string) => {
+    setLineupPosition(position);
+    setLineupPlayerId("");
+    setLineupOpen(true);
+  };
+
+  // Build field players from lineups
+  const fieldPlayers = lineups.map((l: any) => ({
+    id: l.id,
+    name: l.player?.name || "???",
+    position: l.position || l.player?.position || "",
+    avatarUrl: null, // players table doesn't have avatar, could link to profile
+  }));
+
+  // Build summons field players
+  const summonsFieldPlayers = summons.map((s: any) => ({
+    id: s.id,
+    name: s.player?.name || "???",
+    position: s.position || "",
+    avatarUrl: null,
+    status: s.status,
+  }));
+
+  // Empty positions not yet filled
+  const filledPositions = lineups.map((l: any) => l.position || l.player?.position).filter(Boolean);
+  const emptyPositions = allPositions.filter((p) => !filledPositions.includes(p));
+
+  // Players without position in lineups
+  const unpositionedLineups = lineups
+    .filter((l: any) => !l.position && !l.player?.position)
+    .map((l: any) => ({
+      id: l.id,
+      name: l.player?.name || "???",
+      position: "",
+      avatarUrl: null,
+    }));
+
+  // Suggested players filtered by position
   const suggestedPlayers = lineupPosition
     ? players.filter((p) => p.position === lineupPosition && !lineups.some((l: any) => l.player_id === p.id))
     : players.filter((p) => !lineups.some((l: any) => l.player_id === p.id));
@@ -176,8 +232,17 @@ const AgendaPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-12 pb-4">
-        <h1 className="text-4xl text-foreground font-display">AGENDA</h1>
-        <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl text-foreground font-display">AGENDA</h1>
+            <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
+          </div>
+          {myTeam && (
+            <Button onClick={() => setCreateOpen(true)} className="bg-gradient-primary text-primary-foreground border-0">
+              <Plus size={16} className="mr-1" /> Nova Partida
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="px-5 space-y-4">
@@ -244,7 +309,7 @@ const AgendaPage = () => {
                     <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>
                   </div>
 
-                  {/* Actions row */}
+                  {/* Actions */}
                   <div className="flex flex-wrap gap-1.5">
                     <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => openDetails(match, "details")}>
                       <Eye size={12} className="mr-1" /> Detalhes
@@ -275,6 +340,39 @@ const AgendaPage = () => {
           </div>
         )}
       </div>
+
+      {/* Create Match Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">NOVA PARTIDA</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateMatch} className="space-y-4">
+            <div>
+              <Label>Local</Label>
+              <Input value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Ex: Campo do Zé" className="bg-secondary border-border" required />
+            </div>
+            <div>
+              <Label>Data e Hora</Label>
+              <Input type="datetime-local" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="bg-secondary border-border" required />
+            </div>
+            <div>
+              <Label>Formato</Label>
+              <Select value={newFormat} onValueChange={setNewFormat}>
+                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5x5">5x5</SelectItem>
+                  <SelectItem value="8x8">8x8</SelectItem>
+                  <SelectItem value="11x11">11x11</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={createMatch.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
+              Criar Partida
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Match Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -309,9 +407,9 @@ const AgendaPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Details / Lineup / Summons Dialog */}
+      {/* Details / Lineup (Field) / Summons Dialog */}
       <Dialog open={!!detailView} onOpenChange={() => setDetailView(null)}>
-        <DialogContent className="bg-card border-border max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto sm:max-w-lg">
           {selectedMatch && detailView === "details" && (
             <>
               <DialogHeader>
@@ -360,24 +458,20 @@ const AgendaPage = () => {
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">ESCALAÇÃO</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3">
-                {lineups.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum jogador escalado ainda.</p>
-                )}
-                {lineups.map((l: any) => (
-                  <div key={l.id} className="flex items-center justify-between bg-secondary rounded-lg p-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{l.player?.name}</p>
-                      <p className="text-xs text-muted-foreground">{l.position || l.player?.position || "Sem posição"}</p>
-                    </div>
-                  </div>
-                ))}
-                <Button onClick={() => setLineupOpen(true)} className="w-full bg-gradient-primary text-primary-foreground border-0">
-                  <Users size={14} className="mr-1" /> Escalar Jogador
+              <p className="text-xs text-muted-foreground mb-2">Toque em uma posição vazia no campo para escalar um jogador.</p>
+              <SoccerField
+                players={fieldPlayers.filter((p) => p.position)}
+                unpositioned={unpositionedLineups}
+                emptyPositions={emptyPositions}
+                onPositionClick={handlePositionClick}
+              />
+              <div className="flex gap-2 mt-3">
+                <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">
+                  <Plus size={12} className="mr-1" /> Escalar Manual
                 </Button>
                 {lineups.length > 0 && (
-                  <Button onClick={handleSendSummons} disabled={createSummons.isPending} variant="outline" className="w-full">
-                    <Send size={14} className="mr-1" /> Enviar Convocação
+                  <Button onClick={handleSendSummons} disabled={createSummons.isPending} className="flex-1 text-xs bg-gradient-primary text-primary-foreground border-0">
+                    <Send size={12} className="mr-1" /> Convocar
                   </Button>
                 )}
               </div>
@@ -387,24 +481,45 @@ const AgendaPage = () => {
           {selectedMatch && detailView === "summons" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-2xl">CONVOCAÇÕES</DialogTitle>
+                <DialogTitle className="font-display text-2xl">ELENCO DA PARTIDA</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3">
-                {summons.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma convocação enviada.</p>
-                )}
-                {summons.map((s: any) => (
-                  <div key={s.id} className="flex items-center justify-between bg-secondary rounded-lg p-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{s.player?.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.position || "Sem posição"}</p>
-                    </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${summonStatusStyles[s.status] || ""}`}>
-                      {summonStatusLabels[s.status] || s.status}
+              {summons.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma convocação enviada.</p>
+              ) : (
+                <>
+                  <SoccerField
+                    players={summonsFieldPlayers.filter((p) => p.position)}
+                    unpositioned={summonsFieldPlayers.filter((p) => !p.position)}
+                    showStatus
+                  />
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 mt-2 justify-center">
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <div className="w-2.5 h-2.5 rounded-full bg-warning" /> Pendente
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <div className="w-2.5 h-2.5 rounded-full bg-success" /> Confirmado
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <div className="w-2.5 h-2.5 rounded-full bg-destructive" /> Recusado
                     </span>
                   </div>
-                ))}
-              </div>
+                  {/* List below */}
+                  <div className="space-y-2 mt-3">
+                    {summons.map((s: any) => (
+                      <div key={s.id} className="flex items-center justify-between bg-secondary rounded-lg p-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{s.player?.name}</p>
+                          <p className="text-xs text-muted-foreground">{s.position || "Sem posição"}</p>
+                        </div>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${summonStatusStyles[s.status] || ""}`}>
+                          {summonStatusLabels[s.status] || s.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </DialogContent>
@@ -419,17 +534,22 @@ const AgendaPage = () => {
           <div className="space-y-4">
             <div>
               <Label>Posição</Label>
-              <Select value={lineupPosition} onValueChange={setLineupPosition}>
+              <Select value={lineupPosition} onValueChange={(val) => { setLineupPosition(val); setLineupPlayerId(""); }}>
                 <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
-                  {positions.map((p) => (
+                  {allPositions.map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Jogador {lineupPosition && `(sugestão: ${lineupPosition})`}</Label>
+              <Label>
+                Jogador
+                {lineupPosition && suggestedPlayers.length > 0 && (
+                  <span className="text-primary ml-1 text-xs">(sugestão automática por posição)</span>
+                )}
+              </Label>
               <Select value={lineupPlayerId} onValueChange={setLineupPlayerId}>
                 <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
@@ -438,6 +558,9 @@ const AgendaPage = () => {
                       {p.name} {p.position ? `(${p.position})` : ""}
                     </SelectItem>
                   ))}
+                  {suggestedPlayers.length === 0 && (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum jogador disponível</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
