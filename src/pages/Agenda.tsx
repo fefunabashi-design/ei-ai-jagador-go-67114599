@@ -63,8 +63,8 @@ const filterOptions: { value: FilterType; label: string }[] = [
 ];
 
 const allPositions = [
-  "Goleiro", "Zagueiro", "Lateral Direito", "Lateral Esquerdo",
-  "Volante", "Meia", "Ponta Direita", "Ponta Esquerda", "Atacante",
+  "Goleiro", "Zagueiro", "Lateral Esquerdo", "Lateral Direito",
+  "Volante", "Meia", "Atacante",
 ];
 
 const AgendaPage = () => {
