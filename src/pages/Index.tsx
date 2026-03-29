@@ -12,7 +12,7 @@ import logo from "@/assets/logo.png";
 const quickActions = [
   { icon: Search, label: "Buscar Adversário", path: "/match" },
   { icon: Users, label: "Escalar Time", path: "/team" },
-  { icon: CreditCard, label: "Vaquinha", path: "/match" },
+  { icon: CreditCard, label: "Agenda", path: "/agenda" },
   { icon: Trophy, label: "Artilharia", path: "/ranking" },
 ];
 
