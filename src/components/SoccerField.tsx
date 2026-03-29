@@ -1,19 +1,19 @@
-import { User, UserPlus, X } from "lucide-react";
+import { User, UserPlus, X, ChevronDown } from "lucide-react";
 import { useState, DragEvent } from "react";
 
 const positionCoords: Record<string, { top: string; left: string }> = {
   "Goleiro": { top: "88%", left: "50%" },
   "Zagueiro": { top: "72%", left: "35%" },
   "Zagueiro_2": { top: "72%", left: "65%" },
-  "Lateral Direito": { top: "65%", left: "85%" },
-  "Lateral Esquerdo": { top: "65%", left: "15%" },
-  "Volante": { top: "52%", left: "35%" },
-  "Volante_2": { top: "52%", left: "65%" },
-  "Meia": { top: "40%", left: "50%" },
-  "Ponta Direita": { top: "25%", left: "80%" },
-  "Ponta Esquerda": { top: "25%", left: "20%" },
+  "Lateral Esquerdo": { top: "62%", left: "12%" },
+  "Lateral Direito": { top: "62%", left: "88%" },
+  "Volante": { top: "50%", left: "35%" },
+  "Volante_2": { top: "50%", left: "65%" },
+  "Meia": { top: "38%", left: "50%" },
+  "Meia_2": { top: "38%", left: "30%" },
   "Atacante": { top: "15%", left: "50%" },
-  "Atacante_2": { top: "18%", left: "35%" },
+  "Atacante_2": { top: "18%", left: "30%" },
+  "Atacante_3": { top: "18%", left: "70%" },
 };
 
 const positionAbbrev: Record<string, string> = {
@@ -23,8 +23,6 @@ const positionAbbrev: Record<string, string> = {
   "Lateral Esquerdo": "LE",
   "Volante": "VOL",
   "Meia": "MEI",
-  "Ponta Direita": "PD",
-  "Ponta Esquerda": "PE",
   "Atacante": "ATA",
 };
 
@@ -81,6 +79,8 @@ const SoccerField = ({
   onAddGuest,
 }: SoccerFieldProps) => {
   const [dragOverPosition, setDragOverPosition] = useState<string | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
 
   const positionCount: Record<string, number> = {};
   const positionedPlayers = players.map((p) => {
@@ -116,17 +116,37 @@ const SoccerField = ({
     }
   };
 
+  const handleEmptyClick = (pos: string) => {
+    setSelectedPosition(pos === selectedPosition ? null : pos);
+    setShowAllPlayers(false);
+    onPositionClick?.(pos);
+  };
+
+  const handleSelectPlayer = (playerId: string) => {
+    if (selectedPosition && onDropPlayer) {
+      onDropPlayer(playerId, selectedPosition);
+      setSelectedPosition(null);
+      setShowAllPlayers(false);
+    }
+  };
+
+  // Filter available players: matching position first, then others
+  const matchingPlayers = selectedPosition
+    ? availablePlayers.filter((p) => p.position === selectedPosition)
+    : [];
+  const otherPlayers = selectedPosition
+    ? availablePlayers.filter((p) => p.position !== selectedPosition)
+    : availablePlayers;
+
   return (
     <div className="space-y-3">
       {/* Field */}
       <div className="relative w-full rounded-2xl overflow-hidden border border-border shadow-lg" style={{ aspectRatio: "3/4" }}>
-        {/* Grass background with stripes */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800" />
         <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 8%, rgba(255,255,255,0.3) 8%, rgba(255,255,255,0.3) 16%)",
         }} />
 
-        {/* Field lines */}
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" preserveAspectRatio="none">
           <rect x="10" y="10" width="280" height="380" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.35" rx="4" />
           <line x1="10" y1="200" x2="290" y2="200" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
@@ -136,7 +156,6 @@ const SoccerField = ({
           <rect x="100" y="10" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
           <rect x="70" y="330" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
           <rect x="100" y="360" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.2" />
-          {/* Corner arcs */}
           <path d="M10,20 A10,10 0 0,1 20,10" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
           <path d="M280,10 A10,10 0 0,1 290,20" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
           <path d="M10,380 A10,10 0 0,0 20,390" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.2" />
@@ -148,25 +167,26 @@ const SoccerField = ({
           const coords = positionCoords[pos];
           if (!coords) return null;
           const isOver = dragOverPosition === pos;
+          const isSelected = selectedPosition === pos;
           const abbrev = positionAbbrev[pos] || pos.slice(0, 3).toUpperCase();
           return (
             <button
               key={`empty-${pos}`}
-              onClick={() => onPositionClick?.(pos)}
+              onClick={() => handleEmptyClick(pos)}
               onDragOver={(e) => handleDragOver(e, pos)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, pos)}
               className={`absolute flex flex-col items-center gap-0.5 -translate-x-1/2 -translate-y-1/2 group transition-all duration-200 ${
-                isOver ? "scale-110" : ""
+                isOver || isSelected ? "scale-110" : ""
               }`}
               style={{ top: coords.top, left: coords.left }}
             >
               <div className={`w-9 h-9 rounded-lg border-2 border-dashed flex items-center justify-center transition-all duration-200 ${
-                isOver
+                isOver || isSelected
                   ? "border-primary bg-primary/40 shadow-lg shadow-primary/30"
                   : "border-white/30 bg-white/5 group-hover:bg-white/15 group-hover:border-white/50"
               }`}>
-                <span className={`text-[10px] font-bold ${isOver ? "text-white" : "text-white/50 group-hover:text-white/80"}`}>
+                <span className={`text-[10px] font-bold ${isOver || isSelected ? "text-white" : "text-white/50 group-hover:text-white/80"}`}>
                   {abbrev}
                 </span>
               </div>
@@ -213,50 +233,100 @@ const SoccerField = ({
         })}
       </div>
 
-      {/* Player chips grid */}
-      {(availablePlayers.length > 0 || onAddGuest) && (
-        <div className="bg-card rounded-xl border border-border p-3">
-          <p className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">
-            Arraste ou toque para escalar
-          </p>
-          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-            {availablePlayers.map((p) => (
-              <div
-                key={p.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, p.id)}
-                className="flex items-center gap-1.5 bg-secondary rounded-lg px-2 py-1.5 cursor-grab active:cursor-grabbing hover:bg-accent transition-colors select-none border border-transparent hover:border-primary/20"
-              >
-                {p.avatarUrl ? (
-                  <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                ) : (
-                  <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-                    <User size={10} className="text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex flex-col leading-none">
+      {/* Player selection panel - appears when a position is selected */}
+      {selectedPosition && (
+        <div className="bg-card rounded-xl border border-primary/30 p-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+              {positionAbbrev[selectedPosition] || selectedPosition} — Selecione o jogador
+            </p>
+            <button onClick={() => { setSelectedPosition(null); setShowAllPlayers(false); }} className="text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Matching players */}
+          {matchingPlayers.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {matchingPlayers.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectPlayer(p.id)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, p.id)}
+                  className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2 py-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  {p.avatarUrl ? (
+                    <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                  ) : (
+                    <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center shrink-0">
+                      <User size={10} className="text-primary" />
+                    </div>
+                  )}
                   <span className="text-[10px] text-foreground font-semibold truncate max-w-[60px]">
                     {p.name.split(" ")[0]}
                   </span>
-                  {p.position && (
-                    <span className="text-[8px] text-muted-foreground">{positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase()}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-            {/* Guest button */}
-            {onAddGuest && (
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground mb-2">Nenhum jogador cadastrado como {selectedPosition}.</p>
+          )}
+
+          {/* Show other players toggle */}
+          {otherPlayers.length > 0 && (
+            <div>
               <button
-                onClick={() => onAddGuest("")}
-                className="flex items-center gap-1.5 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors border border-dashed border-muted-foreground/30 hover:border-primary/40"
+                onClick={() => setShowAllPlayers(!showAllPlayers)}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground font-semibold mb-1.5 transition-colors"
               >
-                <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                  <UserPlus size={10} className="text-primary" />
-                </div>
-                <span className="text-[10px] text-muted-foreground font-semibold">Convidado</span>
+                <ChevronDown size={12} className={`transition-transform ${showAllPlayers ? "rotate-180" : ""}`} />
+                {showAllPlayers ? "Ocultar outras posições" : "Ver jogadores de outras posições"}
               </button>
-            )}
-          </div>
+              {showAllPlayers && (
+                <div className="flex flex-wrap gap-1.5 animate-in slide-in-from-top-1 duration-150">
+                  {otherPlayers.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSelectPlayer(p.id)}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, p.id)}
+                      className="flex items-center gap-1.5 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer border border-transparent hover:border-border"
+                    >
+                      {p.avatarUrl ? (
+                        <img src={p.avatarUrl} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+                          <User size={10} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex flex-col leading-none">
+                        <span className="text-[10px] text-foreground font-semibold truncate max-w-[60px]">
+                          {p.name.split(" ")[0]}
+                        </span>
+                        {p.position && (
+                          <span className="text-[8px] text-muted-foreground">{positionAbbrev[p.position] || p.position.slice(0, 3).toUpperCase()}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Guest button */}
+          {onAddGuest && (
+            <button
+              onClick={() => { onAddGuest(selectedPosition); setSelectedPosition(null); }}
+              className="flex items-center gap-1.5 mt-2 bg-secondary rounded-lg px-2 py-1.5 hover:bg-accent transition-colors border border-dashed border-muted-foreground/30 hover:border-primary/40"
+            >
+              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                <UserPlus size={10} className="text-primary" />
+              </div>
+              <span className="text-[10px] text-muted-foreground font-semibold">Convidado</span>
+            </button>
+          )}
         </div>
       )}
 
