@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      matches: {
+        Row: {
+          away_score: number | null
+          away_team_id: string | null
+          compatibility: number | null
+          created_at: string
+          format: string
+          home_score: number | null
+          home_team_id: string
+          id: string
+          location: string
+          match_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          away_score?: number | null
+          away_team_id?: string | null
+          compatibility?: number | null
+          created_at?: string
+          format?: string
+          home_score?: number | null
+          home_team_id: string
+          id?: string
+          location: string
+          match_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number | null
+          away_team_id?: string | null
+          compatibility?: number | null
+          created_at?: string
+          format?: string
+          home_score?: number | null
+          home_team_id?: string
+          id?: string
+          location?: string
+          match_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          created_at: string
+          goals: number | null
+          id: string
+          jersey_number: number | null
+          matches: number | null
+          name: string
+          position: string | null
+          rating: number | null
+          team_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          goals?: number | null
+          id?: string
+          jersey_number?: number | null
+          matches?: number | null
+          name: string
+          position?: string | null
+          rating?: number | null
+          team_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          goals?: number | null
+          id?: string
+          jersey_number?: number | null
+          matches?: number | null
+          name?: string
+          position?: string | null
+          rating?: number | null
+          team_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -47,6 +157,42 @@ export type Database = {
           team_name?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          abbreviation: string | null
+          created_at: string
+          format: string | null
+          id: string
+          name: string
+          owner_id: string
+          rating: number | null
+          region: string | null
+          updated_at: string
+        }
+        Insert: {
+          abbreviation?: string | null
+          created_at?: string
+          format?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          rating?: number | null
+          region?: string | null
+          updated_at?: string
+        }
+        Update: {
+          abbreviation?: string | null
+          created_at?: string
+          format?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          rating?: number | null
+          region?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
