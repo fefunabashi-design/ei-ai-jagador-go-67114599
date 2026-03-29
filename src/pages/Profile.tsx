@@ -22,6 +22,13 @@ const menuItems = [
 ];
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
