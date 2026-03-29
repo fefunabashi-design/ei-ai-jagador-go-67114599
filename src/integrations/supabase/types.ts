@@ -76,40 +76,52 @@ export type Database = {
       }
       players: {
         Row: {
+          birth_date: string | null
           created_at: string
           goals: number | null
           id: string
           jersey_number: number | null
           matches: number | null
           name: string
+          nickname: string | null
+          phone: string | null
           position: string | null
           rating: number | null
+          region: string | null
           team_id: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          birth_date?: string | null
           created_at?: string
           goals?: number | null
           id?: string
           jersey_number?: number | null
           matches?: number | null
           name: string
+          nickname?: string | null
+          phone?: string | null
           position?: string | null
           rating?: number | null
+          region?: string | null
           team_id: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          birth_date?: string | null
           created_at?: string
           goals?: number | null
           id?: string
           jersey_number?: number | null
           matches?: number | null
           name?: string
+          nickname?: string | null
+          phone?: string | null
           position?: string | null
           rating?: number | null
+          region?: string | null
           team_id?: string
           updated_at?: string
           user_id?: string | null
