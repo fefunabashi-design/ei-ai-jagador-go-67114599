@@ -555,10 +555,31 @@ export const useRespondSummon = () => {
         .select()
         .single();
       if (error) throw error;
+
+      // Auto-add to lineup when confirmed
+      if (status === "confirmed" && data) {
+        // Check if already in lineup
+        const { data: existing } = await supabase
+          .from("match_lineups")
+          .select("id")
+          .eq("match_id", data.match_id)
+          .eq("player_id", data.player_id)
+          .maybeSingle();
+
+        if (!existing) {
+          await supabase.from("match_lineups").insert({
+            match_id: data.match_id,
+            player_id: data.player_id,
+            position: data.position,
+          });
+        }
+      }
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["match-summons", data.match_id] });
+      queryClient.invalidateQueries({ queryKey: ["match-lineups", data.match_id] });
       queryClient.invalidateQueries({ queryKey: ["my-summons"] });
       toast({ title: data.status === "confirmed" ? "Presença confirmada! ✅" : "Participação recusada" });
     },
