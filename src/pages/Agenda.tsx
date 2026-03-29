@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle,
+  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
