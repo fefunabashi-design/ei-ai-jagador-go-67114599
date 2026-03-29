@@ -46,7 +46,16 @@ const AuthPage = () => {
         });
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      const rawMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const friendlyMessages: Record<string, string> = {
+        "User already registered": "Este e-mail já está cadastrado. Tente fazer login.",
+        "Invalid login credentials": "E-mail ou senha incorretos.",
+        "Email not confirmed": "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.",
+        "Password should be at least 6 characters": "A senha deve ter pelo menos 6 caracteres.",
+        "Signup requires a valid password": "Informe uma senha válida.",
+        "Unable to validate email address: invalid format": "Formato de e-mail inválido.",
+      };
+      const message = friendlyMessages[rawMessage] || rawMessage;
       toast({ title: "Erro", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
