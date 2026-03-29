@@ -3,6 +3,7 @@ import { Zap, Trophy, Target, TrendingUp, Search, Users, CreditCard, Bell } from
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
+import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useProfile, useMyTeam, useMatches } from "@/hooks/useSupabaseData";
 import heroBg from "@/assets/hero-bg.jpg";
