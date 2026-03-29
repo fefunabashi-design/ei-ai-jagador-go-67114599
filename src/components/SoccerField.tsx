@@ -290,8 +290,8 @@ const SoccerField = ({
             <p className="text-[9px] text-muted-foreground font-semibold">Aguardando</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-2 text-center">
-            <p className="text-lg font-bold text-primary">{counters.vacant}</p>
-            <p className="text-[9px] text-muted-foreground font-semibold">Vaga livre</p>
+            <p className="text-lg font-bold text-destructive">{counters.vacant}</p>
+            <p className="text-[9px] text-muted-foreground font-semibold">Recusados</p>
           </div>
         </div>
       )}
