@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Settings, ChevronRight, Trophy, Target, Zap, Star, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 
 const stats = [
@@ -20,6 +22,13 @@ const menuItems = [
 ];
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -78,7 +87,11 @@ const ProfilePage = () => {
 
       {/* Logout */}
       <div className="px-5 mt-6">
-        <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+        >
           <LogOut size={16} className="mr-2" /> Sair da Conta
         </Button>
       </div>
