@@ -375,46 +375,88 @@ const AgendaPage = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="bg-card rounded-xl border border-border p-4 hover:border-primary/30 transition-all"
+                  className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 transition-all"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[match.status] || ""}`}>
+                  {/* Header bar */}
+                  <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between">
+                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[match.status] || ""}`}>
                       {statusLabels[match.status] || match.status}
                     </span>
-                    <span className="text-xs text-muted-foreground">{match.format}</span>
+                    <span className="text-[11px] text-muted-foreground font-semibold">{match.format}</span>
                   </div>
 
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-display text-lg text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
-                    <span className="text-xs text-muted-foreground font-bold px-2">VS</span>
-                    <span className="font-display text-lg text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
-                  </div>
+                  <div className="p-4 space-y-3">
+                    {/* Teams */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Shield size={16} className="text-primary" />
+                        </div>
+                        <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
+                        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                          <Shield size={16} className="text-muted-foreground" />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1"><Calendar size={12} /> {dateStr}</span>
-                    <span className="flex items-center gap-1"><Clock size={12} /> {timeStr}</span>
-                    <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>
-                  </div>
+                    {/* Info row */}
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Calendar size={11} /> {dateStr}</span>
+                      <span className="flex items-center gap-1"><Clock size={11} /> {timeStr}</span>
+                      <span className="flex items-center gap-1"><MapPin size={11} /> {match.location}</span>
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => openDetails(match, "details")}>
-                      <Eye size={12} className="mr-1" /> Detalhes
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => openEdit(match)}>
-                      <Pencil size={12} className="mr-1" /> Editar
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => openDetails(match, "lineup")}>
-                      <Users size={12} className="mr-1" /> Escalação
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => openDetails(match, "summons")}>
-                      <UserCheck size={12} className="mr-1" /> Convocação
-                    </Button>
-                    {match.status !== "cancelled" && match.status !== "completed" && (
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2 text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
-                        <XCircle size={12} className="mr-1" /> Cancelar
+                    {/* Summon counters */}
+                    {(() => {
+                      const counts = getSummonCounts(match.id);
+                      if (counts.total === 0) return null;
+                      return (
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1">
+                            <CheckCircle2 size={12} className="text-success" />
+                            <span className="text-[11px] font-semibold text-success">{counts.confirmed}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <AlertCircle size={12} className="text-warning" />
+                            <span className="text-[11px] font-semibold text-warning">{counts.pending}</span>
+                          </div>
+                          {counts.declined > 0 && (
+                            <div className="flex items-center gap-1">
+                              <XCircle size={12} className="text-destructive" />
+                              <span className="text-[11px] font-semibold text-destructive">{counts.declined}</span>
+                            </div>
+                          )}
+                          <span className="text-[10px] text-muted-foreground ml-auto">
+                            {counts.confirmed}/{counts.total} confirmados
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
+                        <Eye size={12} className="mr-1" /> Detalhes
                       </Button>
-                    )}
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
+                        <Pencil size={12} className="mr-1" /> Editar
+                      </Button>
+                      <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "lineup")}>
+                        <Users size={12} className="mr-1" /> Escalação
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "summons")}>
+                        <UserCheck size={12} className="mr-1" /> Convocação
+                      </Button>
+                      {match.status !== "cancelled" && match.status !== "completed" && (
+                        <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
+                          <XCircle size={12} className="mr-1" /> Cancelar
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
