@@ -494,7 +494,7 @@ const TeamPage = () => {
                 <Input
                   value={searchEmail}
                   onChange={(e) => setSearchEmail(e.target.value)}
-                  placeholder="Nome ou apelido do jogador"
+                  placeholder="Digite o e-mail do jogador"
                   className="bg-secondary border-border flex-1"
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchPlayer())}
                 />
