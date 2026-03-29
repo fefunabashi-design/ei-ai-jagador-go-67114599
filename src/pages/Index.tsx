@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown } from "lucide-react";
+import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PlayerSummons from "@/components/PlayerSummons";
