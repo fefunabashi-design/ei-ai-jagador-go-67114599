@@ -28,9 +28,9 @@ const positionAbbrev: Record<string, string> = {
 };
 
 const sectorLabels: { label: string; top: string }[] = [
-  { label: "ATAQUE", top: "8%" },
-  { label: "MEIO-CAMPO", top: "44%" },
-  { label: "DEFESA", top: "66%" },
+  { label: "ATAQUE", top: "12%" },
+  { label: "MEIO-CAMPO", top: "45%" },
+  { label: "DEFESA", top: "78%" },
 ];
 
 const statusBorderColor: Record<string, string> = {
