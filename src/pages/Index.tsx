@@ -3,6 +3,7 @@ import { Zap, Trophy, Target, TrendingUp, Search, Users, CreditCard, Bell } from
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
+import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useProfile, useMyTeam, useMatches } from "@/hooks/useSupabaseData";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -11,7 +12,7 @@ import logo from "@/assets/logo.png";
 const quickActions = [
   { icon: Search, label: "Buscar Adversário", path: "/match" },
   { icon: Users, label: "Escalar Time", path: "/team" },
-  { icon: CreditCard, label: "Vaquinha", path: "/match" },
+  { icon: CreditCard, label: "Agenda", path: "/agenda" },
   { icon: Trophy, label: "Artilharia", path: "/ranking" },
 ];
 
@@ -130,6 +131,9 @@ const Index = () => {
             </div>
           )}
         </div>
+
+        {/* Player Summons */}
+        <PlayerSummons />
       </div>
 
       <BottomNav />

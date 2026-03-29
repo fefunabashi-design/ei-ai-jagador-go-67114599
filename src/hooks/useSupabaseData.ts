@@ -361,3 +361,190 @@ export const useAcceptMatch = () => {
     },
   });
 };
+
+export const useUpdateMatch = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { data, error } = await supabase
+        .from("matches")
+        .update(updates as any)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      toast({ title: "Partida atualizada! ✅" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useDeleteMatch = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("matches").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      toast({ title: "Partida excluída" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+// ==================== LINEUPS ====================
+export const useMatchLineups = (matchId: string | undefined) => {
+  return useQuery({
+    queryKey: ["match-lineups", matchId],
+    queryFn: async () => {
+      if (!matchId) return [];
+      const { data, error } = await supabase
+        .from("match_lineups")
+        .select("*, player:players(*)")
+        .eq("match_id", matchId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!matchId,
+  });
+};
+
+export const useCreateLineup = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (lineup: { match_id: string; player_id: string; position?: string }) => {
+      const { data, error } = await supabase
+        .from("match_lineups")
+        .insert(lineup)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["match-lineups", data.match_id] });
+      toast({ title: "Jogador escalado! ⚽" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useDeleteLineup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, matchId }: { id: string; matchId: string }) => {
+      const { error } = await supabase.from("match_lineups").delete().eq("id", id);
+      if (error) throw error;
+      return matchId;
+    },
+    onSuccess: (matchId) => {
+      queryClient.invalidateQueries({ queryKey: ["match-lineups", matchId] });
+    },
+  });
+};
+
+// ==================== SUMMONS ====================
+export const useMatchSummons = (matchId: string | undefined) => {
+  return useQuery({
+    queryKey: ["match-summons", matchId],
+    queryFn: async () => {
+      if (!matchId) return [];
+      const { data, error } = await supabase
+        .from("match_summons")
+        .select("*, player:players(*)")
+        .eq("match_id", matchId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!matchId,
+  });
+};
+
+export const useMySummons = () => {
+  return useQuery({
+    queryKey: ["my-summons"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      // Find player records for this user
+      const { data: playerRecords } = await supabase
+        .from("players")
+        .select("id")
+        .eq("user_id", user.id);
+      if (!playerRecords?.length) return [];
+      const playerIds = playerRecords.map((p) => p.id);
+      const { data, error } = await supabase
+        .from("match_summons")
+        .select("*, player:players(*), match:matches(*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name))")
+        .in("player_id", playerIds)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateSummons = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (summons: { match_id: string; player_id: string; position?: string }[]) => {
+      const { data, error } = await supabase
+        .from("match_summons")
+        .insert(summons)
+        .select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.[0]) {
+        queryClient.invalidateQueries({ queryKey: ["match-summons", data[0].match_id] });
+      }
+      toast({ title: "Convocação enviada! 📣" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};
+
+export const useRespondSummon = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "confirmed" | "declined" }) => {
+      const { data, error } = await supabase
+        .from("match_summons")
+        .update({ status, responded_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["match-summons", data.match_id] });
+      queryClient.invalidateQueries({ queryKey: ["my-summons"] });
+      toast({ title: data.status === "confirmed" ? "Presença confirmada! ✅" : "Participação recusada" });
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+};

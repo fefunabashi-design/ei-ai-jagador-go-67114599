@@ -1,12 +1,12 @@
-import { Home, Search, Users, Trophy, User } from "lucide-react";
+import { Home, Search, Users, CalendarDays, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
   { icon: Search, label: "Match", path: "/match" },
+  { icon: CalendarDays, label: "Agenda", path: "/agenda" },
   { icon: Users, label: "Time", path: "/team" },
-  { icon: Trophy, label: "Ranking", path: "/ranking" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
 
