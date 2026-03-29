@@ -209,30 +209,20 @@ const TeamPage = () => {
     setSearchResult(null);
     setSearchDone(false);
     try {
-      // Search profile by email via auth - we search profiles that match
-      // Since we can't query auth.users, we look for profiles with matching user
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .ilike("display_name", `%${searchEmail}%`);
-      
-      // Also try exact email approach - check if any user_id matches
-      // For now, search by name or nickname
-      const { data: byNickname } = await supabase
-        .from("profiles")
-        .select("*")
-        .ilike("nickname", `%${searchEmail}%`);
-      
-      const allResults = [...(data || []), ...(byNickname || [])];
-      const unique = allResults.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-      
-      if (unique.length > 0) {
-        setSearchResult(unique[0]);
-        setPlayerName(unique[0].display_name || "");
-        setPlayerNickname(unique[0].nickname || "");
-        setPlayerPhone(unique[0].phone || "");
-        setPlayerBirthDate(unique[0].birth_date || "");
-        setPlayerRegion(unique[0].region || "");
+      const { data, error } = await supabase.functions.invoke("search-player-by-email", {
+        body: { email: searchEmail.trim() },
+      });
+      if (error) throw error;
+      if (data?.found && data.profile) {
+        setSearchResult({ ...data.profile, email: data.email });
+        setPlayerName(data.profile.display_name || "");
+        setPlayerNickname(data.profile.nickname || "");
+        setPlayerPhone(data.profile.phone || "");
+        setPlayerBirthDate(data.profile.birth_date || "");
+        setPlayerRegion(data.profile.region || "");
+      } else if (data?.found) {
+        setSearchResult({ user_id: data.user_id, email: data.email, display_name: data.email });
+        setPlayerName("");
       } else {
         setSearchResult(null);
       }
