@@ -241,14 +241,21 @@ const TeamPage = () => {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
+    const playerData = {
+      name: playerName,
+      nickname: playerNickname || null,
+      phone: playerPhone || null,
+      birth_date: playerBirthDate || null,
+      region: playerRegion || null,
+      position: playerPosition,
+      jersey_number: playerNumber,
+    };
     if (editingPlayer) {
-      updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, name: playerName, position: playerPosition, jersey_number: playerNumber });
+      updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, ...playerData } as any);
     } else {
       createPlayer.mutate({
         team_id: team.id,
-        name: playerName,
-        position: playerPosition,
-        jersey_number: playerNumber,
+        ...playerData,
         ...(searchResult ? { user_id: searchResult.user_id } : {}),
       } as any);
     }
