@@ -148,7 +148,7 @@ export const useUpdateTeam = () => {
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
       const { data, error } = await supabase
         .from("teams")
-        .update(updates)
+        .update(updates as any)
         .eq("id", id)
         .select()
         .single();
