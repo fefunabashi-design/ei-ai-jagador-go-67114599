@@ -487,33 +487,111 @@ const TeamPage = () => {
         isPending={createTeam.isPending || updateTeam.isPending}
       />
 
-      {/* Player Dialog */}
+      {/* Player Dialog - styled like Profile page */}
       <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">
               {editingPlayer ? "EDITAR JOGADOR" : "NOVO JOGADOR"}
             </DialogTitle>
           </DialogHeader>
+
+          {/* Search section - only for new players */}
+          {!editingPlayer && (
+            <div className="space-y-3 pb-4 border-b border-border">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Buscar jogador cadastrado</p>
+              <div className="flex gap-2">
+                <Input
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  placeholder="Nome ou apelido do jogador"
+                  className="bg-secondary border-border flex-1"
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchPlayer())}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSearchPlayer}
+                  disabled={searchLoading || !searchEmail.trim()}
+                  className="shrink-0"
+                >
+                  <Search size={16} />
+                </Button>
+              </div>
+              {searchLoading && (
+                <div className="flex justify-center py-2">
+                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                </div>
+              )}
+              {searchDone && searchResult && (
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-sm shrink-0">
+                    {searchResult.avatar_url ? (
+                      <img src={searchResult.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      (searchResult.display_name || "?").slice(0, 2).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{searchResult.display_name || "Sem nome"}</p>
+                    <p className="text-xs text-muted-foreground">{searchResult.nickname || searchResult.region || "Jogador encontrado"}</p>
+                  </div>
+                  <User size={16} className="text-primary shrink-0" />
+                </motion.div>
+              )}
+              {searchDone && !searchResult && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-secondary/50 rounded-xl p-3 text-center">
+                  <p className="text-sm text-muted-foreground">Nenhum jogador encontrado</p>
+                  <p className="text-xs text-muted-foreground mt-1">Preencha os dados abaixo para cadastrar um novo</p>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Player form - same layout as Profile */}
           <form onSubmit={handleSavePlayer} className="space-y-4">
             <div>
-              <Label>Nome</Label>
-              <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Nome do jogador" className="bg-secondary border-border" required />
+              <Label>Nome *</Label>
+              <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Nome completo" className="bg-secondary border-border" required />
             </div>
             <div>
-              <Label>Posição</Label>
-              <Select value={playerPosition} onValueChange={setPlayerPosition}>
-                <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {positions.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Label>Apelido</Label>
+              <Input value={playerNickname} onChange={(e) => setPlayerNickname(e.target.value)} placeholder="Como é conhecido" className="bg-secondary border-border" />
             </div>
             <div>
-              <Label>Número</Label>
-              <Input type="number" value={playerNumber} onChange={(e) => setPlayerNumber(parseInt(e.target.value) || 0)} min={0} max={99} className="bg-secondary border-border" />
+              <Label>Celular</Label>
+              <Input value={playerPhone} onChange={(e) => setPlayerPhone(formatPhone(e.target.value))} placeholder="(11) 99999-9999" className="bg-secondary border-border" />
             </div>
+            <div>
+              <Label>Data de Nascimento</Label>
+              <Input type="date" value={playerBirthDate} onChange={(e) => setPlayerBirthDate(e.target.value)} className="bg-secondary border-border" />
+            </div>
+            <div>
+              <Label>Região</Label>
+              <Input value={playerRegion} onChange={(e) => setPlayerRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">Dados no Time</p>
+              <div className="space-y-3">
+                <div>
+                  <Label>Posição</Label>
+                  <Select value={playerPosition} onValueChange={setPlayerPosition}>
+                    <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Selecione a posição" /></SelectTrigger>
+                    <SelectContent>
+                      {positions.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Número da Camisa</Label>
+                  <Input type="number" value={playerNumber} onChange={(e) => setPlayerNumber(parseInt(e.target.value) || 0)} min={0} max={99} className="bg-secondary border-border" />
+                </div>
+              </div>
+            </div>
+
             <Button type="submit" disabled={createPlayer.isPending || updatePlayer.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
+              <UserPlus size={16} className="mr-2" />
               {editingPlayer ? "Salvar Alterações" : "Adicionar Jogador"}
             </Button>
           </form>
