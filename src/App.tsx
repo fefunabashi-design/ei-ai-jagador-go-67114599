@@ -72,6 +72,7 @@ const App = () => {
             <Route path="/chat/:matchId" element={<ProtectedRoute session={session}><Chat /></ProtectedRoute>} />
             <Route path="/payments/:matchId" element={<ProtectedRoute session={session}><Payments /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute session={session}><Admin /></ProtectedRoute>} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
