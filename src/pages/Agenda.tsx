@@ -212,7 +212,7 @@ const AgendaPage = () => {
     id: l.id,
     name: l.player?.name || "???",
     position: l.position || l.player?.position || "",
-    avatarUrl: null, // players table doesn't have avatar, could link to profile
+    avatarUrl: null,
   }));
 
   // Build summons field players
@@ -238,15 +238,44 @@ const AgendaPage = () => {
       avatarUrl: null,
     }));
 
-  // Players available for drag (not yet in lineup)
-  const availableForDrag = players
-    .filter((p) => !lineups.some((l: any) => l.player_id === p.id))
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      position: p.position,
-      avatarUrl: null,
-    }));
+  // Split available players by summon status:
+  // Confirmed summons → main list; others → secondary
+  const confirmedPlayerIds = summons
+    .filter((s: any) => s.status === "confirmed")
+    .map((s: any) => s.player_id);
+  const declinedPlayerIds = summons
+    .filter((s: any) => s.status === "declined")
+    .map((s: any) => s.player_id);
+
+  const confirmedAvailable = players
+    .filter((p) => confirmedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
+    .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
+
+  const otherAvailable = players
+    .filter((p) => !confirmedPlayerIds.includes(p.id) && !declinedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
+    .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
+
+  // Combine: confirmed first, then others (pending/no summon)
+  const availableForDrag = [...confirmedAvailable, ...otherAvailable];
+
+  // Counters
+  const confirmedCount = summons.filter((s: any) => s.status === "confirmed").length;
+  const pendingCount = summons.filter((s: any) => s.status === "pending").length;
+  const vacantCount = emptyPositions.length;
+
+  // Match info for field header
+  const getMatchInfo = () => {
+    if (!selectedMatch) return undefined;
+    const homeTeam = selectedMatch.home_team as any;
+    const awayTeam = selectedMatch.away_team as any;
+    const date = new Date(selectedMatch.match_date);
+    const dayLabel = date.toLocaleDateString("pt-BR", { weekday: "short" }) + " " + date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return {
+      home: homeTeam?.name || "???",
+      away: awayTeam?.name,
+      dateLabel: dayLabel,
+    };
+  };
 
   // Suggested players filtered by position
   const suggestedPlayers = lineupPosition
