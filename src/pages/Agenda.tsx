@@ -365,6 +365,7 @@ const AgendaPage = () => {
             {filtered.map((match, i) => {
               const homeTeam = match.home_team as any;
               const awayTeam = match.away_team as any;
+              const isOwner = myTeam && homeTeam?.owner_id === myTeam.owner_id;
               const date = new Date(match.match_date);
               const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
               const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -442,13 +443,15 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
                         <Eye size={12} className="mr-1" /> Detalhes
                       </Button>
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
-                        <Pencil size={12} className="mr-1" /> Editar
-                      </Button>
+                      {isOwner && (
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
+                          <Pencil size={12} className="mr-1" /> Editar
+                        </Button>
+                      )}
                       <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
                         <Users size={12} className="mr-1" /> Elenco
                       </Button>
-                      {match.status !== "cancelled" && match.status !== "completed" && (
+                      {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
                         <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
                           <XCircle size={12} className="mr-1" /> Cancelar
                         </Button>
