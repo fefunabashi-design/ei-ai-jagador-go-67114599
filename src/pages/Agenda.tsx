@@ -238,6 +238,16 @@ const AgendaPage = () => {
       avatarUrl: null,
     }));
 
+  // Players available for drag (not yet in lineup)
+  const availableForDrag = players
+    .filter((p) => !lineups.some((l: any) => l.player_id === p.id))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      avatarUrl: null,
+    }));
+
   // Suggested players filtered by position
   const suggestedPlayers = lineupPosition
     ? players.filter((p) => p.position === lineupPosition && !lineups.some((l: any) => l.player_id === p.id))
