@@ -131,11 +131,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
-          jersey_number: number | null
+          is_pro: boolean
+          nickname: string | null
           phone: string | null
-          position: string | null
+          region: string | null
           role: string
-          team_name: string | null
           updated_at: string
           user_id: string
         }
@@ -145,11 +145,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          jersey_number?: number | null
+          is_pro?: boolean
+          nickname?: string | null
           phone?: string | null
-          position?: string | null
+          region?: string | null
           role?: string
-          team_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -159,11 +159,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
-          jersey_number?: number | null
+          is_pro?: boolean
+          nickname?: string | null
           phone?: string | null
-          position?: string | null
+          region?: string | null
           role?: string
-          team_name?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -172,36 +172,84 @@ export type Database = {
       teams: {
         Row: {
           abbreviation: string | null
+          admin_email: string | null
+          admin_name: string | null
+          admin_phone: string | null
+          coach_name: string | null
           created_at: string
+          email: string | null
+          field_address: string | null
+          field_name: string | null
           format: string | null
+          foundation_date: string | null
+          founder_name: string | null
           id: string
+          instagram: string | null
+          logo_url: string | null
           name: string
           owner_id: string
+          phone: string | null
+          president_email: string | null
+          president_name: string | null
           rating: number | null
           region: string | null
+          substitute_name: string | null
           updated_at: string
+          war_cry: string | null
         }
         Insert: {
           abbreviation?: string | null
+          admin_email?: string | null
+          admin_name?: string | null
+          admin_phone?: string | null
+          coach_name?: string | null
           created_at?: string
+          email?: string | null
+          field_address?: string | null
+          field_name?: string | null
           format?: string | null
+          foundation_date?: string | null
+          founder_name?: string | null
           id?: string
+          instagram?: string | null
+          logo_url?: string | null
           name: string
           owner_id: string
+          phone?: string | null
+          president_email?: string | null
+          president_name?: string | null
           rating?: number | null
           region?: string | null
+          substitute_name?: string | null
           updated_at?: string
+          war_cry?: string | null
         }
         Update: {
           abbreviation?: string | null
+          admin_email?: string | null
+          admin_name?: string | null
+          admin_phone?: string | null
+          coach_name?: string | null
           created_at?: string
+          email?: string | null
+          field_address?: string | null
+          field_name?: string | null
           format?: string | null
+          foundation_date?: string | null
+          founder_name?: string | null
           id?: string
+          instagram?: string | null
+          logo_url?: string | null
           name?: string
           owner_id?: string
+          phone?: string | null
+          president_email?: string | null
+          president_name?: string | null
           rating?: number | null
           region?: string | null
+          substitute_name?: string | null
           updated_at?: string
+          war_cry?: string | null
         }
         Relationships: []
       }
