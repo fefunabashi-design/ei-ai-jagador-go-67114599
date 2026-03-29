@@ -66,7 +66,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Auth />} />
+            <Route path="/" element={isPasswordRecovery ? <Navigate to="/reset-password" replace /> : session ? <Navigate to="/dashboard" replace /> : <Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute session={session}><Index /></ProtectedRoute>} />
             <Route path="/match" element={<ProtectedRoute session={session}><Match /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute session={session}><Agenda /></ProtectedRoute>} />
