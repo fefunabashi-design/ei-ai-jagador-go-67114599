@@ -58,6 +58,7 @@ const App = () => {
             <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute session={session}><Index /></ProtectedRoute>} />
             <Route path="/match" element={<ProtectedRoute session={session}><Match /></ProtectedRoute>} />
+            <Route path="/agenda" element={<ProtectedRoute session={session}><Agenda /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute session={session}><Team /></ProtectedRoute>} />
             <Route path="/ranking" element={<ProtectedRoute session={session}><Ranking /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
