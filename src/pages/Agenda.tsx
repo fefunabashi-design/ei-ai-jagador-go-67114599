@@ -187,6 +187,20 @@ const AgendaPage = () => {
     setLineupOpen(false);
   };
 
+  const handleDropPlayer = (playerId: string, position: string) => {
+    if (!selectedMatch) return;
+    createLineup.mutate({
+      match_id: selectedMatch.id,
+      player_id: playerId,
+      position,
+    });
+  };
+
+  const handleRemoveFromLineup = (lineupId: string) => {
+    if (!selectedMatch) return;
+    deleteLineup.mutate({ id: lineupId, matchId: selectedMatch.id });
+  };
+
   const handlePositionClick = (position: string) => {
     setLineupPosition(position);
     setLineupPlayerId("");
@@ -221,6 +235,16 @@ const AgendaPage = () => {
       id: l.id,
       name: l.player?.name || "???",
       position: "",
+      avatarUrl: null,
+    }));
+
+  // Players available for drag (not yet in lineup)
+  const availableForDrag = players
+    .filter((p) => !lineups.some((l: any) => l.player_id === p.id))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      position: p.position,
       avatarUrl: null,
     }));
 
@@ -464,6 +488,9 @@ const AgendaPage = () => {
                 unpositioned={unpositionedLineups}
                 emptyPositions={emptyPositions}
                 onPositionClick={handlePositionClick}
+                availablePlayers={availableForDrag}
+                onDropPlayer={handleDropPlayer}
+                onRemovePlayer={handleRemoveFromLineup}
               />
               <div className="flex gap-2 mt-3">
                 <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">

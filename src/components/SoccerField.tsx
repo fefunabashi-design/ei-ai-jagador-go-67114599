@@ -1,7 +1,7 @@
-import { User } from "lucide-react";
+import { User, GripVertical } from "lucide-react";
+import { useState, DragEvent } from "react";
 
 // Position coordinates on field (percentage-based for responsive layout)
-// Layout: goalkeeper at bottom, attackers at top
 const positionCoords: Record<string, { top: string; left: string }> = {
   "Goleiro": { top: "88%", left: "50%" },
   "Zagueiro": { top: "72%", left: "35%" },
@@ -17,7 +17,6 @@ const positionCoords: Record<string, { top: string; left: string }> = {
   "Atacante_2": { top: "18%", left: "35%" },
 };
 
-// Map a position to coordinate key (handles duplicates by index)
 const getCoordKey = (position: string, index: number): string => {
   const dupeKey = `${position}_${index + 1}`;
   if (positionCoords[dupeKey]) return dupeKey;
@@ -33,12 +32,22 @@ interface PlayerOnField {
   onClick?: () => void;
 }
 
+interface AvailablePlayer {
+  id: string;
+  name: string;
+  position?: string | null;
+  avatarUrl?: string | null;
+}
+
 interface SoccerFieldProps {
   players: PlayerOnField[];
   unpositioned?: PlayerOnField[];
   onPositionClick?: (position: string) => void;
   showStatus?: boolean;
   emptyPositions?: string[];
+  availablePlayers?: AvailablePlayer[];
+  onDropPlayer?: (playerId: string, position: string) => void;
+  onRemovePlayer?: (lineupId: string) => void;
 }
 
 const summonDot: Record<string, string> = {
@@ -47,10 +56,19 @@ const summonDot: Record<string, string> = {
   declined: "bg-destructive",
 };
 
-const SoccerField = ({ players, unpositioned = [], onPositionClick, showStatus = false, emptyPositions = [] }: SoccerFieldProps) => {
-  // Group players by position, track per-position index for coords
-  const positionCount: Record<string, number> = {};
+const SoccerField = ({
+  players,
+  unpositioned = [],
+  onPositionClick,
+  showStatus = false,
+  emptyPositions = [],
+  availablePlayers = [],
+  onDropPlayer,
+  onRemovePlayer,
+}: SoccerFieldProps) => {
+  const [dragOverPosition, setDragOverPosition] = useState<string | null>(null);
 
+  const positionCount: Record<string, number> = {};
   const positionedPlayers = players.map((p) => {
     const pos = p.position || "";
     const idx = positionCount[pos] || 0;
@@ -60,43 +78,72 @@ const SoccerField = ({ players, unpositioned = [], onPositionClick, showStatus =
     return { ...p, coords };
   });
 
+  const handleDragStart = (e: DragEvent, playerId: string) => {
+    e.dataTransfer.setData("playerId", playerId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: DragEvent, position: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverPosition(position);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverPosition(null);
+  };
+
+  const handleDrop = (e: DragEvent, position: string) => {
+    e.preventDefault();
+    setDragOverPosition(null);
+    const playerId = e.dataTransfer.getData("playerId");
+    if (playerId && onDropPlayer) {
+      onDropPlayer(playerId, position);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Field */}
       <div className="relative w-full rounded-2xl overflow-hidden border border-border" style={{ aspectRatio: "3/4" }}>
         {/* Grass background */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-700 to-emerald-800" />
-        
+
         {/* Field lines */}
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" preserveAspectRatio="none">
-          {/* Border */}
           <rect x="10" y="10" width="280" height="380" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.4" rx="4" />
-          {/* Center line */}
           <line x1="10" y1="200" x2="290" y2="200" stroke="white" strokeWidth="1" strokeOpacity="0.3" />
-          {/* Center circle */}
           <circle cx="150" cy="200" r="40" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.3" />
           <circle cx="150" cy="200" r="3" fill="white" fillOpacity="0.3" />
-          {/* Top box (attacking) */}
           <rect x="70" y="10" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.3" />
           <rect x="100" y="10" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
-          {/* Bottom box (defending/goalkeeper) */}
           <rect x="70" y="330" width="160" height="60" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.3" />
           <rect x="100" y="360" width="100" height="30" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.25" />
         </svg>
 
-        {/* Empty position spots (clickable) */}
+        {/* Empty position spots (clickable + droppable) */}
         {emptyPositions.map((pos) => {
           const coords = positionCoords[pos];
           if (!coords) return null;
+          const isOver = dragOverPosition === pos;
           return (
             <button
               key={`empty-${pos}`}
               onClick={() => onPositionClick?.(pos)}
-              className="absolute flex flex-col items-center gap-0.5 -translate-x-1/2 -translate-y-1/2 group"
+              onDragOver={(e) => handleDragOver(e, pos)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, pos)}
+              className={`absolute flex flex-col items-center gap-0.5 -translate-x-1/2 -translate-y-1/2 group transition-transform ${
+                isOver ? "scale-125" : ""
+              }`}
               style={{ top: coords.top, left: coords.left }}
             >
-              <div className="w-9 h-9 rounded-full border-2 border-dashed border-white/40 flex items-center justify-center bg-white/10 group-hover:bg-white/20 transition-colors">
-                <span className="text-white/60 text-lg">+</span>
+              <div className={`w-9 h-9 rounded-full border-2 border-dashed flex items-center justify-center transition-colors ${
+                isOver
+                  ? "border-primary bg-primary/30 shadow-lg shadow-primary/20"
+                  : "border-white/40 bg-white/10 group-hover:bg-white/20"
+              }`}>
+                <span className={`text-lg ${isOver ? "text-primary-foreground" : "text-white/60"}`}>+</span>
               </div>
               <span className="text-[8px] text-white/50 font-medium max-w-[60px] text-center leading-tight">{pos}</span>
             </button>
@@ -109,9 +156,10 @@ const SoccerField = ({ players, unpositioned = [], onPositionClick, showStatus =
           return (
             <button
               key={p.id}
-              onClick={p.onClick}
+              onClick={p.onClick || (onRemovePlayer ? () => onRemovePlayer(p.id) : undefined)}
               className="absolute flex flex-col items-center gap-0.5 -translate-x-1/2 -translate-y-1/2 group"
               style={{ top: p.coords.top, left: p.coords.left }}
+              title={onRemovePlayer ? "Clique para remover" : undefined}
             >
               <div className="relative">
                 {p.avatarUrl ? (
@@ -133,6 +181,40 @@ const SoccerField = ({ players, unpositioned = [], onPositionClick, showStatus =
           );
         })}
       </div>
+
+      {/* Draggable player list */}
+      {availablePlayers.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            JOGADORES DISPONÍVEIS — arraste para o campo
+          </p>
+          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+            {availablePlayers.map((p) => (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, p.id)}
+                className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2 cursor-grab active:cursor-grabbing hover:bg-secondary/80 transition-colors select-none"
+              >
+                <GripVertical size={14} className="text-muted-foreground shrink-0" />
+                {p.avatarUrl ? (
+                  <img src={p.avatarUrl} alt={p.name} className="w-7 h-7 rounded-full object-cover" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                    <User size={12} className="text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs text-foreground font-medium block truncate">{p.name}</span>
+                  {p.position && (
+                    <span className="text-[10px] text-muted-foreground">{p.position}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Unpositioned players */}
       {unpositioned.length > 0 && (
