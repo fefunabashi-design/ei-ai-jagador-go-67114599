@@ -71,6 +71,7 @@ const allPositions = [
 ];
 
 const AgendaPage = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterType>("upcoming");
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
