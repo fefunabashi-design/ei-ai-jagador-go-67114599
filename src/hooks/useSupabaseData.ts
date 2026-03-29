@@ -122,9 +122,10 @@ export const useCreateTeam = () => {
     mutationFn: async (team: Record<string, any>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
+      const payload = { ...team, owner_id: user.id } as any;
       const { data, error } = await supabase
         .from("teams")
-        .insert({ ...team, owner_id: user.id })
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
