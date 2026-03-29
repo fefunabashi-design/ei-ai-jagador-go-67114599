@@ -524,7 +524,6 @@ export const useMySummons = () => {
         .from("match_summons")
         .select("*, player:players(*), match:matches(*, home_team:teams!matches_home_team_id_fkey(name), away_team:teams!matches_away_team_id_fkey(name))")
         .in("player_id", playerIds)
-        .eq("status", "pending")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
