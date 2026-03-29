@@ -131,6 +131,9 @@ const Index = () => {
             </div>
           )}
         </div>
+
+        {/* Player Summons */}
+        <PlayerSummons />
       </div>
 
       <BottomNav />
