@@ -80,8 +80,18 @@ const TeamPage = () => {
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [playerName, setPlayerName] = useState("");
+  const [playerNickname, setPlayerNickname] = useState("");
+  const [playerPhone, setPlayerPhone] = useState("");
+  const [playerBirthDate, setPlayerBirthDate] = useState("");
+  const [playerRegion, setPlayerRegion] = useState("");
   const [playerPosition, setPlayerPosition] = useState("");
   const [playerNumber, setPlayerNumber] = useState(0);
+
+  // Search state
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchDone, setSearchDone] = useState(false);
 
   const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
 
