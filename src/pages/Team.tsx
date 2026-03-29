@@ -44,6 +44,7 @@ import {
   useDeletePlayer,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const positions = [
   "Goleiro", "Zagueiro", "Lateral Direito", "Lateral Esquerdo",
