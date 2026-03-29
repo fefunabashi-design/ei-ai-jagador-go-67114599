@@ -31,20 +31,42 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
+  const isRecoveryUrl = () => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const searchParams = new URLSearchParams(window.location.search);
+
+    return (
+      hashParams.get("type") === "recovery" ||
+      searchParams.get("type") === "recovery" ||
+      window.location.pathname === "/reset-password"
+    );
+  };
+
   useEffect(() => {
+    setIsPasswordRecovery(isRecoveryUrl());
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+
       if (_event === "PASSWORD_RECOVERY") {
         setIsPasswordRecovery(true);
       }
-      if (_event === "SIGNED_IN" || _event === "SIGNED_OUT") {
+
+      if (_event === "SIGNED_IN") {
+        setIsPasswordRecovery(isRecoveryUrl());
+        queryClient.clear();
+      }
+
+      if (_event === "SIGNED_OUT") {
+        setIsPasswordRecovery(false);
         queryClient.clear();
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setIsPasswordRecovery(isRecoveryUrl());
       setLoading(false);
     });
 
@@ -59,6 +81,8 @@ const App = () => {
     );
   }
 
+  const shouldGoToResetPassword = isPasswordRecovery || isRecoveryUrl();
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -66,7 +90,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={isPasswordRecovery ? <Navigate to="/reset-password" replace /> : session ? <Navigate to="/dashboard" replace /> : <Auth />} />
+            <Route path="/" element={shouldGoToResetPassword ? <Navigate to="/reset-password" replace /> : session ? <Navigate to="/dashboard" replace /> : <Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute session={session}><Index /></ProtectedRoute>} />
             <Route path="/match" element={<ProtectedRoute session={session}><Match /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute session={session}><Agenda /></ProtectedRoute>} />
