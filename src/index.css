@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,56 +6,56 @@
 
 @layer base {
   :root {
-    --background: 220 20% 7%;
-    --foreground: 210 20% 95%;
+    --background: 210 25% 8%;
+    --foreground: 210 15% 93%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 210 20% 95%;
+    --card: 210 22% 12%;
+    --card-foreground: 210 15% 93%;
 
-    --popover: 220 18% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 210 22% 14%;
+    --popover-foreground: 210 15% 93%;
 
-    --primary: 24 95% 53%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 162 63% 48%;
+    --primary-foreground: 210 25% 8%;
 
-    --secondary: 220 15% 16%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 210 18% 17%;
+    --secondary-foreground: 210 15% 85%;
 
-    --muted: 220 14% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 210 16% 15%;
+    --muted-foreground: 210 12% 50%;
 
-    --accent: 24 80% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 42 90% 55%;
+    --accent-foreground: 210 25% 8%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 18%;
-    --input: 220 13% 18%;
-    --ring: 24 95% 53%;
+    --border: 210 15% 20%;
+    --input: 210 15% 20%;
+    --ring: 162 63% 48%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    --sidebar-background: 220 18% 8%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 24 95% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 14%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 13% 18%;
-    --sidebar-ring: 24 95% 53%;
+    --sidebar-background: 210 22% 9%;
+    --sidebar-foreground: 210 15% 85%;
+    --sidebar-primary: 162 63% 48%;
+    --sidebar-primary-foreground: 210 25% 8%;
+    --sidebar-accent: 210 18% 15%;
+    --sidebar-accent-foreground: 210 15% 85%;
+    --sidebar-border: 210 15% 20%;
+    --sidebar-ring: 162 63% 48%;
 
     /* Custom tokens */
-    --surface: 220 16% 12%;
-    --surface-hover: 220 16% 15%;
+    --surface: 210 20% 13%;
+    --surface-hover: 210 20% 16%;
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
-    --gradient-primary: linear-gradient(135deg, hsl(24, 95%, 53%), hsl(32, 98%, 60%));
-    --gradient-dark: linear-gradient(180deg, hsl(220, 20%, 7%), hsl(220, 18%, 4%));
-    --shadow-glow: 0 0 30px -5px hsl(24 95% 53% / 0.3);
-    --font-display: 'Bebas Neue', sans-serif;
+    --gradient-primary: linear-gradient(135deg, hsl(162, 63%, 48%), hsl(172, 66%, 55%));
+    --gradient-dark: linear-gradient(180deg, hsl(210, 25%, 8%), hsl(210, 25%, 5%));
+    --shadow-glow: 0 0 30px -5px hsl(162 63% 48% / 0.25);
+    --font-display: 'Nunito', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
 }
