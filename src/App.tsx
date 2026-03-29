@@ -17,6 +17,7 @@ import Chat from "./pages/Chat.tsx";
 import Payments from "./pages/Payments.tsx";
 import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 const queryClient = new QueryClient();
 
