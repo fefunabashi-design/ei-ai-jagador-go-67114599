@@ -73,9 +73,7 @@ const AdminPage = () => {
         <div className="grid grid-cols-2 gap-2">
           {[
             { icon: Users, value: players.length, label: "Jogadores ativos", trend: `▲ +${players.length} no elenco`, color: "text-primary" },
-            { icon: Trophy, value: myMatches.length, label: "Jogos temporada", trend: `${wins}V ${draws}E ${losses}D`, color: "text-success" },
             { icon: DollarSign, value: "R$0", label: "Caixa atual", trend: "Em breve", color: "text-warning" },
-            { icon: Star, value: myTeam?.rating || 0, label: "Avaliação", trend: "Rating do time", color: "text-primary" },
           ].map((kpi, i) => (
             <motion.div
               key={kpi.label}

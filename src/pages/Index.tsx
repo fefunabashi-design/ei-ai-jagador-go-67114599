@@ -118,8 +118,8 @@ const Index = () => {
           {[
             { value: playerStats.matches, label: "Partidas" },
             { value: playerStats.goals, label: "Gols" },
-            { value: 0, label: "Vitórias" },
-            { value: `★${playerStats.rating || "0"}`, label: "Rating" },
+            { value: myMatches.length, label: "Jogos temporada", sub: `${wins}V ${draws}E ${losses}D` },
+            { value: `★${myTeam?.rating || "0"}`, label: "Avaliação" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
