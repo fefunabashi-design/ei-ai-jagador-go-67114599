@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, Trophy, DollarSign, Star, Pencil, CreditCard, MessageCircle, Search, Camera, BarChart3, Shield } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers } from "@/hooks/useSupabaseData";
