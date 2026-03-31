@@ -15,7 +15,7 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
-  const [showSquad, setShowSquad] = useState(false);
+  
 
   // Check if user is team owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
