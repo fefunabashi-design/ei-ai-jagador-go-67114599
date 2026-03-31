@@ -1,13 +1,10 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, Trophy, DollarSign, Star, Pencil, CreditCard, MessageCircle, Search, Camera, BarChart3, Shield, UserCheck } from "lucide-react";
+import { Users, Trophy, DollarSign, Star, Pencil, CreditCard, MessageCircle, Search, Camera, BarChart3, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers } from "@/hooks/useSupabaseData";
 import { useProfile } from "@/hooks/useSupabaseData";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -15,7 +12,7 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
-  const [showSquad, setShowSquad] = useState(false);
+  
 
   // Check if user is team owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
@@ -43,7 +40,7 @@ const AdminPage = () => {
     .slice(0, 3);
 
   const quickActions = [
-    { icon: UserCheck, label: "Elenco", path: "#squad" },
+    
     { icon: Pencil, label: "Editar escalação", path: "/agenda" },
     { icon: CreditCard, label: "Cobrar pagamentos", path: "#" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
@@ -106,9 +103,7 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
-                if (action.path === "#squad") {
-                  setShowSquad(!showSquad);
-                } else if (action.path !== "#") {
+                if (action.path !== "#") {
                   navigate(action.path);
                 }
               }}
@@ -120,78 +115,6 @@ const AdminPage = () => {
           ))}
         </div>
 
-        {/* Squad - All registered players */}
-        {showSquad && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-display text-foreground">ELENCO COMPLETO — {players.length} JOGADORES</h2>
-            </div>
-            {players.length === 0 ? (
-              <div className="bg-card rounded-xl border border-border p-4 text-center">
-                <p className="text-sm text-muted-foreground">Nenhum jogador cadastrado ainda.</p>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {(() => {
-                  const positionOrder: Record<string, number> = {
-                    goleiro: 0, gol: 0, gk: 0,
-                    zagueiro: 1, defensor: 1, def: 1,
-                    lateral: 2,
-                    meia: 3, meio: 3, mid: 3,
-                    atacante: 4, ata: 4, atk: 4, ponta: 4,
-                  };
-                  const getOrder = (pos: string | null) => {
-                    if (!pos) return 99;
-                    const key = pos.toLowerCase().trim();
-                    for (const [k, v] of Object.entries(positionOrder)) {
-                      if (key.includes(k)) return v;
-                    }
-                    return 50;
-                  };
-                  const sorted = [...players].sort((a, b) => getOrder(a.position) - getOrder(b.position));
-
-                  return sorted.map((p, i) => {
-                    const initials = p.name.trim().split(/\s+/).length > 1
-                      ? (p.name.trim().split(/\s+/)[0][0] + p.name.trim().split(/\s+/).slice(-1)[0][0]).toUpperCase()
-                      : p.name.slice(0, 2).toUpperCase();
-
-                    return (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="flex items-center justify-between bg-secondary/80 rounded-xl px-4 py-3 border border-border/50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground leading-tight">{p.name}</p>
-                            <p className="text-[11px] text-muted-foreground">{p.position || "Sem posição"}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          {p.jersey_number && (
-                            <span className="bg-card border border-border rounded-md px-1.5 py-0.5 font-bold text-foreground">
-                              #{p.jersey_number}
-                            </span>
-                          )}
-                          <span>★{p.rating || 0}</span>
-                        </div>
-                      </motion.div>
-                    );
-                  });
-                })()}
-              </div>
-            )}
-          </motion.div>
-        )}
 
         {/* Pending match requests */}
         {pendingRequests.length > 0 && (
