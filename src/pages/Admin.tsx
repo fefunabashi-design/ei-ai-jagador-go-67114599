@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers } from "@/hooks/useSupabaseData";
 import { useProfile } from "@/hooks/useSupabaseData";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
 
 const AdminPage = () => {
   const navigate = useNavigate();
