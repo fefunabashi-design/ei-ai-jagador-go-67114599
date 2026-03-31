@@ -106,9 +106,7 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
-                if (action.path === "#squad") {
-                  setShowSquad(!showSquad);
-                } else if (action.path !== "#") {
+                if (action.path !== "#") {
                   navigate(action.path);
                 }
               }}
