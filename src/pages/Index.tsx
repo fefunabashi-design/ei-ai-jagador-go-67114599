@@ -54,6 +54,16 @@ const Index = () => {
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
+  // Team season stats
+  const myMatches = matches.filter((m) => {
+    const homeTeam = m.home_team as any;
+    return myTeam && homeTeam?.id === myTeam.id;
+  });
+  const completedMatches = myMatches.filter((m) => m.status === "completed");
+  const wins = completedMatches.filter((m) => (m.home_score || 0) > (m.away_score || 0)).length;
+  const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
+  const losses = completedMatches.length - wins - draws;
+
   const quickActions = [
     { icon: "🔍", label: "Buscar adversário", sub: "Match por região", path: "/match" },
     { icon: "👥", label: "Escalar time", sub: `${players.length} jogadores`, path: "/agenda" },
@@ -108,8 +118,8 @@ const Index = () => {
           {[
             { value: playerStats.matches, label: "Partidas" },
             { value: playerStats.goals, label: "Gols" },
-            { value: 0, label: "Vitórias" },
-            { value: `★${playerStats.rating || "0"}`, label: "Rating" },
+            { value: myMatches.length, label: "Jogos temporada", sub: `${wins}V ${draws}E ${losses}D` },
+            { value: `★${myTeam?.rating || "0"}`, label: "Avaliação" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
