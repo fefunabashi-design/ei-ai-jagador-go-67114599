@@ -43,7 +43,7 @@ const AdminPage = () => {
     .slice(0, 3);
 
   const quickActions = [
-    { icon: UserCheck, label: "Elenco", path: "#squad" },
+    
     { icon: Pencil, label: "Editar escalação", path: "/agenda" },
     { icon: CreditCard, label: "Cobrar pagamentos", path: "#" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
