@@ -91,7 +91,7 @@ const MensalidadesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mensalidade_config", selectedYear] });
-      toast({ title: "Valor salvo! ✅" });
+      toast({ title: `Valor salvo para ${selectedYear}! ✅` });
     },
     onError: (error: any) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
