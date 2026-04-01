@@ -15,6 +15,7 @@ import Ranking from "./pages/Ranking.tsx";
 import Profile from "./pages/Profile.tsx";
 import Chat from "./pages/Chat.tsx";
 import Payments from "./pages/Payments.tsx";
+import Mensalidades from "./pages/Mensalidades.tsx";
 import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
