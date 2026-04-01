@@ -109,6 +109,39 @@ const PaymentsPage = () => {
     },
   });
 
+  // Delete all payments for this match (delete vaquinha)
+  const deleteVaquinha = useMutation({
+    mutationFn: async () => {
+      if (!matchId) throw new Error("No match");
+      const { error } = await supabase.from("match_payments").delete().eq("match_id", matchId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+      toast({ title: "Vaquinha excluída com sucesso ✅" });
+      setDeleteVaquinhaOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Delete single payment
+  const deletePayment = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { error } = await supabase.from("match_payments").delete().eq("id", paymentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+      toast({ title: "Contribuição removida com sucesso ✅" });
+      setDeletePaymentId(null);
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
   const totalAmount = payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const paidAmount = payments.filter((p: any) => p.status === "paid").reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const paidCount = payments.filter((p: any) => p.status === "paid").length;
