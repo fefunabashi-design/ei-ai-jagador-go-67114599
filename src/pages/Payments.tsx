@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard } from "lucide-react";
+import { ArrowLeft, CreditCard, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMatchSummons } from "@/hooks/useSupabaseData";
@@ -38,6 +42,8 @@ const PaymentsPage = () => {
   const { toast } = useToast();
   const [setupOpen, setSetupOpen] = useState(false);
   const [amountPerPlayer, setAmountPerPlayer] = useState("15");
+  const [deleteVaquinhaOpen, setDeleteVaquinhaOpen] = useState(false);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   // Match info
   const { data: match } = useQuery({
@@ -103,6 +109,39 @@ const PaymentsPage = () => {
     },
   });
 
+  // Delete all payments for this match (delete vaquinha)
+  const deleteVaquinha = useMutation({
+    mutationFn: async () => {
+      if (!matchId) throw new Error("No match");
+      const { error } = await supabase.from("match_payments").delete().eq("match_id", matchId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+      toast({ title: "Vaquinha excluída com sucesso ✅" });
+      setDeleteVaquinhaOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Delete single payment
+  const deletePayment = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { error } = await supabase.from("match_payments").delete().eq("id", paymentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+      toast({ title: "Contribuição removida com sucesso ✅" });
+      setDeletePaymentId(null);
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
   const totalAmount = payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const paidAmount = payments.filter((p: any) => p.status === "paid").reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const paidCount = payments.filter((p: any) => p.status === "paid").length;
@@ -140,7 +179,12 @@ const PaymentsPage = () => {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground font-semibold">Vaquinha do jogo</p>
-                <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(0)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(0)}</p>
+                  <button onClick={() => setDeleteVaquinhaOpen(true)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                    <Trash2 size={16} className="text-destructive" />
+                  </button>
+                </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
                 R$ {perPlayer.toFixed(2)} por jogador · {payments.length} jogadores
@@ -195,11 +239,16 @@ const PaymentsPage = () => {
                           <p className="text-[10px] text-muted-foreground">{player?.position || "—"}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-foreground">R${Number(p.amount).toFixed(0)}</p>
-                        <p className={`text-[10px] font-semibold ${statusStyles[p.status] || "text-muted-foreground"}`}>
-                          {statusLabels[p.status] || p.status}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-foreground">R${Number(p.amount).toFixed(0)}</p>
+                          <p className={`text-[10px] font-semibold ${statusStyles[p.status] || "text-muted-foreground"}`}>
+                            {statusLabels[p.status] || p.status}
+                          </p>
+                        </div>
+                        <button onClick={() => setDeletePaymentId(p.id)} className="p-1 rounded-lg hover:bg-destructive/10 transition-colors">
+                          <Trash2 size={14} className="text-destructive/70" />
+                        </button>
                       </div>
                     </motion.div>
                   );
@@ -246,6 +295,48 @@ const PaymentsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete vaquinha confirmation */}
+      <AlertDialog open={deleteVaquinhaOpen} onOpenChange={setDeleteVaquinhaOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir vaquinha?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a vaquinha? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteVaquinha.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete single payment confirmation */}
+      <AlertDialog open={!!deletePaymentId} onOpenChange={(open) => !open && setDeletePaymentId(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover contribuição?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta contribuição? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletePaymentId && deletePayment.mutate(deletePaymentId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
