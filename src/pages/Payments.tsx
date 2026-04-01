@@ -239,13 +239,17 @@ const PaymentsPage = () => {
                           <p className="text-[10px] text-muted-foreground">{player?.position || "—"}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-foreground">R${Number(p.amount).toFixed(0)}</p>
-                        <p className={`text-[10px] font-semibold ${statusStyles[p.status] || "text-muted-foreground"}`}>
-                          {statusLabels[p.status] || p.status}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-foreground">R${Number(p.amount).toFixed(0)}</p>
+                          <p className={`text-[10px] font-semibold ${statusStyles[p.status] || "text-muted-foreground"}`}>
+                            {statusLabels[p.status] || p.status}
+                          </p>
+                        </div>
+                        <button onClick={() => setDeletePaymentId(p.id)} className="p-1 rounded-lg hover:bg-destructive/10 transition-colors">
+                          <Trash2 size={14} className="text-destructive/70" />
+                        </button>
                       </div>
-                    </motion.div>
                   );
                 })}
               </div>
