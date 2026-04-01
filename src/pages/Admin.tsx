@@ -42,7 +42,7 @@ const AdminPage = () => {
   const quickActions = [
     
     { icon: Pencil, label: "Editar escalação", path: "/agenda" },
-    { icon: CreditCard, label: "Mensalidade", path: "#" },
+    { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
     { icon: Search, label: "Buscar adversário", path: "/match" },
     { icon: Camera, label: "Postar fotos", path: "#" },

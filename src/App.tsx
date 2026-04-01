@@ -15,6 +15,7 @@ import Ranking from "./pages/Ranking.tsx";
 import Profile from "./pages/Profile.tsx";
 import Chat from "./pages/Chat.tsx";
 import Payments from "./pages/Payments.tsx";
+import Mensalidades from "./pages/Mensalidades.tsx";
 import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
@@ -99,6 +100,7 @@ const App = () => {
             <Route path="/profile" element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
             <Route path="/chat/:matchId" element={<ProtectedRoute session={session}><Chat /></ProtectedRoute>} />
             <Route path="/payments/:matchId" element={<ProtectedRoute session={session}><Payments /></ProtectedRoute>} />
+            <Route path="/mensalidades" element={<ProtectedRoute session={session}><Mensalidades /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute session={session}><Admin /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />

@@ -238,6 +238,44 @@ export type Database = {
           },
         ]
       }
+      mensalidades: {
+        Row: {
+          ano: number
+          created_at: string
+          data_pagamento: string | null
+          id: string
+          mes: number
+          pago: boolean
+          player_id: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          data_pagamento?: string | null
+          id?: string
+          mes: number
+          pago?: boolean
+          player_id: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          data_pagamento?: string | null
+          id?: string
+          mes?: number
+          pago?: boolean
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensalidades_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           birth_date: string | null
