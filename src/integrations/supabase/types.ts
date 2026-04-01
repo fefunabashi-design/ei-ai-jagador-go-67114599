@@ -238,6 +238,30 @@ export type Database = {
           },
         ]
       }
+      mensalidade_config: {
+        Row: {
+          ano: number
+          id: string
+          team_id: string
+          updated_at: string
+          valor_mensal: number
+        }
+        Insert: {
+          ano: number
+          id?: string
+          team_id: string
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Update: {
+          ano?: number
+          id?: string
+          team_id?: string
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Relationships: []
+      }
       mensalidades: {
         Row: {
           ano: number
