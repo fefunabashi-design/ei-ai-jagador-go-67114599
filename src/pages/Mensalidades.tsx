@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, Users, DollarSign } from "lucide-react";
@@ -68,12 +68,14 @@ const MensalidadesPage = () => {
       if (error) throw error;
       return data as any;
     },
-    onSuccess: (data: any) => {
-      setValorInput(data?.valor_mensal ? String(data.valor_mensal) : "");
-    },
-  } as any);
+  });
 
-  const valorMensal = config && (config as any).valor_mensal ? Number((config as any).valor_mensal) : 0;
+  // Sync valorInput when config data changes or year changes
+  useEffect(() => {
+    setValorInput(config?.valor_mensal ? String(config.valor_mensal) : "");
+  }, [config, selectedYear]);
+
+  const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
 
   // Upsert config mutation
   const upsertConfig = useMutation({
@@ -89,7 +91,7 @@ const MensalidadesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mensalidade_config", selectedYear] });
-      toast({ title: "Valor salvo! ✅" });
+      toast({ title: `Valor salvo para ${selectedYear}! ✅` });
     },
     onError: (error: any) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
