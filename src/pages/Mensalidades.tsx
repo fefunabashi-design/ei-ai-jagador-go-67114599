@@ -150,6 +150,9 @@ const MensalidadesPage = () => {
   const emDiaCount = players.filter((p) => !isInadimplente(p.id)).length;
   const inadimplenteCount = players.filter((p) => isInadimplente(p.id)).length;
   const totalArrecadado = players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
+  const monthsUntilNow = selectedYear === currentYear ? currentMonth - 1 : 12;
+  const totalExpected = players.length * monthsUntilNow * valorMensal;
+  const aArrecadar = totalExpected - totalArrecadado;
 
   const filteredPlayers = players.filter((p) => {
     if (filter === "ok") return !isInadimplente(p.id);
