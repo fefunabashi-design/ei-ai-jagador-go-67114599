@@ -179,7 +179,12 @@ const PaymentsPage = () => {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground font-semibold">Vaquinha do jogo</p>
-                <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(0)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(0)}</p>
+                  <button onClick={() => setDeleteVaquinhaOpen(true)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                    <Trash2 size={16} className="text-destructive" />
+                  </button>
+                </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
                 R$ {perPlayer.toFixed(2)} por jogador · {payments.length} jogadores
