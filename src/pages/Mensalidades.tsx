@@ -222,25 +222,40 @@ const MensalidadesPage = () => {
 
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-2">
-              {[
-                { icon: Users, value: players.length, label: "Total", color: "text-primary", bg: "bg-primary/10" },
-                { icon: CheckCircle, value: emDiaCount, label: "Em dia", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                { icon: AlertCircle, value: inadimplenteCount, label: "Inadimplentes", color: "text-destructive", bg: "bg-destructive/10" },
-                { icon: DollarSign, value: formatCurrency(totalArrecadado), label: "Arrecadado", color: "text-primary", bg: "bg-primary/10" },
-              ].map((stat) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-xl border border-border p-3 text-center"
-                >
-                  <div className={`w-8 h-8 rounded-full ${stat.bg} flex items-center justify-center mx-auto mb-1`}>
-                    <stat.icon size={14} className={stat.color} />
-                  </div>
-                  <p className="text-base font-display text-foreground">{stat.value}</p>
-                  <p className="text-[9px] text-muted-foreground font-semibold">{stat.label}</p>
-                </motion.div>
-              ))}
+              {/* Total card */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-3 text-center"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1">
+                  <Users size={14} className="text-primary" />
+                </div>
+                <p className="text-base font-display text-foreground">{players.length}</p>
+                <div className="flex justify-center gap-3 mt-1">
+                  <span className="text-[9px] font-semibold text-emerald-500">Em dia: {emDiaCount}</span>
+                  <span className="text-[9px] font-semibold text-destructive">Inad: {inadimplenteCount}</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground font-semibold mt-1">Total</p>
+              </motion.div>
+
+              {/* Arrecadado card */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-3 text-center"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1">
+                  <DollarSign size={14} className="text-primary" />
+                </div>
+                <p className="text-base font-display text-foreground">{formatCurrency(totalArrecadado)}</p>
+                <p className="text-[9px] text-muted-foreground font-semibold">Arrecadado</p>
+                {aArrecadar > 0 && (
+                  <p className="text-[9px] font-semibold text-destructive mt-1">
+                    A arrecadar: {formatCurrency(aArrecadar)}
+                  </p>
+                )}
+              </motion.div>
             </div>
 
             {/* Filter buttons */}
