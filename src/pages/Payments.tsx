@@ -250,6 +250,7 @@ const PaymentsPage = () => {
                           <Trash2 size={14} className="text-destructive/70" />
                         </button>
                       </div>
+                    </motion.div>
                   );
                 })}
               </div>
