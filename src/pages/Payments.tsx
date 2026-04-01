@@ -42,6 +42,8 @@ const PaymentsPage = () => {
   const { toast } = useToast();
   const [setupOpen, setSetupOpen] = useState(false);
   const [amountPerPlayer, setAmountPerPlayer] = useState("15");
+  const [deleteVaquinhaOpen, setDeleteVaquinhaOpen] = useState(false);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   // Match info
   const { data: match } = useQuery({
