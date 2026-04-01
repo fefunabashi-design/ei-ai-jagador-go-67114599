@@ -100,6 +100,7 @@ const App = () => {
             <Route path="/profile" element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
             <Route path="/chat/:matchId" element={<ProtectedRoute session={session}><Chat /></ProtectedRoute>} />
             <Route path="/payments/:matchId" element={<ProtectedRoute session={session}><Payments /></ProtectedRoute>} />
+            <Route path="/mensalidades" element={<ProtectedRoute session={session}><Mensalidades /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute session={session}><Admin /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
