@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, Users, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Check, Users, CheckCircle, AlertCircle, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
@@ -19,6 +21,13 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+const formatCurrency = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const currentYear = new Date().getFullYear();
+const currentMonth = new Date().getMonth() + 1;
+const yearOptions = Array.from({ length: 4 }, (_, i) => currentYear - i);
+
 const MensalidadesPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -26,73 +35,136 @@ const MensalidadesPage = () => {
   const { data: myTeam, isLoading: teamLoading } = useMyTeam();
   const { data: players = [], isLoading: playersLoading } = usePlayers(myTeam?.id);
   const [filter, setFilter] = useState<"all" | "ok" | "late">("all");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [valorInput, setValorInput] = useState("");
 
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1; // 1-12
-
-  // Fetch mensalidades for current year
+  // Fetch mensalidades for selected year
   const { data: mensalidades = [], isLoading: mensalidadesLoading } = useQuery({
-    queryKey: ["mensalidades", myTeam?.id, currentYear],
+    queryKey: ["mensalidades", myTeam?.id, selectedYear],
     queryFn: async () => {
       if (!myTeam?.id) return [];
       const playerIds = players.map((p) => p.id);
       if (playerIds.length === 0) return [];
       const { data, error } = await supabase
-        .from("mensalidades" as any)
+        .from("mensalidades")
         .select("*")
         .in("player_id", playerIds)
-        .eq("ano", currentYear);
+        .eq("ano", selectedYear);
       if (error) throw error;
       return data as any[];
     },
     enabled: !!myTeam?.id && players.length > 0,
   });
 
-  // Upsert mutation
+  // Fetch config for selected year
+  const { data: config, isLoading: configLoading } = useQuery({
+    queryKey: ["mensalidade_config", selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("mensalidade_config" as any)
+        .select("*")
+        .eq("ano", selectedYear)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data: any) => {
+      setValorInput(data?.valor_mensal ? String(data.valor_mensal) : "");
+    },
+  } as any);
+
+  const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
+
+  // Upsert config mutation
+  const upsertConfig = useMutation({
+    mutationFn: async (valor: number) => {
+      if (!myTeam?.id) throw new Error("Sem time");
+      const { error } = await supabase
+        .from("mensalidade_config" as any)
+        .upsert(
+          { ano: selectedYear, valor_mensal: valor, team_id: myTeam.id, updated_at: new Date().toISOString() } as any,
+          { onConflict: "ano" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mensalidade_config", selectedYear] });
+      toast({ title: "Valor salvo! ✅" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Upsert mensalidade mutation
   const upsertMensalidade = useMutation({
     mutationFn: async ({ playerId, mes, pago }: { playerId: string; mes: number; pago: boolean }) => {
       const { error } = await supabase
-        .from("mensalidades" as any)
+        .from("mensalidades")
         .upsert(
           {
             player_id: playerId,
-            ano: currentYear,
+            ano: selectedYear,
             mes,
             pago,
             data_pagamento: pago ? new Date().toISOString() : null,
-          } as any,
+          },
           { onConflict: "player_id,ano,mes" }
         );
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mensalidades", myTeam?.id, currentYear] });
+      queryClient.invalidateQueries({ queryKey: ["mensalidades", myTeam?.id, selectedYear] });
       toast({ title: "Mensalidade atualizada! ✅" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     },
   });
 
-  const isMonthPaid = (playerId: string, mes: number) => {
-    return mensalidades.some((m: any) => m.player_id === playerId && m.mes === mes && m.pago);
+  const isMonthPaid = (playerId: string, mes: number) =>
+    mensalidades.some((m: any) => m.player_id === playerId && m.mes === mes && m.pago);
+
+  const paidMonthsCount = (playerId: string) =>
+    MONTH_LABELS.reduce((acc, _, i) => acc + (isMonthPaid(playerId, i + 1) ? 1 : 0), 0);
+
+  const unpaidMonthsUntilNow = (playerId: string) => {
+    const limit = selectedYear === currentYear ? currentMonth - 1 : 12;
+    let count = 0;
+    for (let m = 1; m <= limit; m++) {
+      if (!isMonthPaid(playerId, m)) count++;
+    }
+    return count;
   };
 
   const isInadimplente = (playerId: string) => {
-    if (currentMonth === 1) return false; // No previous month in January
+    if (selectedYear < currentYear) {
+      return unpaidMonthsUntilNow(playerId) > 0;
+    }
+    if (currentMonth === 1) return false;
     return !isMonthPaid(playerId, currentMonth - 1);
   };
 
-  const loading = teamLoading || playersLoading || mensalidadesLoading;
+  const loading = teamLoading || playersLoading || mensalidadesLoading || configLoading;
 
   const emDiaCount = players.filter((p) => !isInadimplente(p.id)).length;
   const inadimplenteCount = players.filter((p) => isInadimplente(p.id)).length;
+  const totalArrecadado = players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
 
   const filteredPlayers = players.filter((p) => {
     if (filter === "ok") return !isInadimplente(p.id);
     if (filter === "late") return isInadimplente(p.id);
     return true;
   });
+
+  const handleSaveValor = () => {
+    const val = parseFloat(valorInput.replace(",", "."));
+    if (isNaN(val) || val < 0) {
+      toast({ title: "Valor inválido", variant: "destructive" });
+      return;
+    }
+    upsertConfig.mutate(val);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -107,19 +179,51 @@ const MensalidadesPage = () => {
       <div className="px-5 space-y-4">
         {loading ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+            <Skeleton className="h-10 rounded-xl" />
+            <div className="grid grid-cols-2 gap-2">
+              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
             </div>
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
           </div>
         ) : (
           <>
+            {/* Year selector + Valor config */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">ANO</label>
+                <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-[2]">
+                <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">VALOR MENSAL (R$)</label>
+                <div className="flex gap-1.5">
+                  <Input
+                    className="h-9 text-sm"
+                    placeholder="0,00"
+                    value={valorInput}
+                    onChange={(e) => setValorInput(e.target.value)}
+                    onBlur={handleSaveValor}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveValor()}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { icon: Users, value: players.length, label: "Total", color: "text-primary", bg: "bg-primary/10" },
                 { icon: CheckCircle, value: emDiaCount, label: "Em dia", color: "text-emerald-500", bg: "bg-emerald-500/10" },
                 { icon: AlertCircle, value: inadimplenteCount, label: "Inadimplentes", color: "text-destructive", bg: "bg-destructive/10" },
+                { icon: DollarSign, value: formatCurrency(totalArrecadado), label: "Arrecadado", color: "text-primary", bg: "bg-primary/10" },
               ].map((stat) => (
                 <motion.div
                   key={stat.label}
@@ -130,7 +234,7 @@ const MensalidadesPage = () => {
                   <div className={`w-8 h-8 rounded-full ${stat.bg} flex items-center justify-center mx-auto mb-1`}>
                     <stat.icon size={14} className={stat.color} />
                   </div>
-                  <p className="text-lg font-display text-foreground">{stat.value}</p>
+                  <p className="text-base font-display text-foreground">{stat.value}</p>
                   <p className="text-[9px] text-muted-foreground font-semibold">{stat.label}</p>
                 </motion.div>
               ))}
@@ -159,6 +263,8 @@ const MensalidadesPage = () => {
             <div className="space-y-3">
               {filteredPlayers.map((player, idx) => {
                 const late = isInadimplente(player.id);
+                const paid = paidMonthsCount(player.id);
+                const unpaid = unpaidMonthsUntilNow(player.id);
                 return (
                   <motion.div
                     key={player.id}
@@ -172,7 +278,7 @@ const MensalidadesPage = () => {
                     }`}
                   >
                     {/* Player header */}
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
                           {getInitials(player.name)}
@@ -194,11 +300,25 @@ const MensalidadesPage = () => {
                       </Badge>
                     </div>
 
+                    {/* Financial summary */}
+                    {valorMensal > 0 && (
+                      <div className="flex gap-3 mb-2 text-[10px]">
+                        <span className="text-emerald-600 font-medium">
+                          💰 {formatCurrency(paid * valorMensal)}
+                        </span>
+                        {unpaid > 0 && (
+                          <span className="text-destructive font-medium">
+                            ⚠️ {formatCurrency(unpaid * valorMensal)} em aberto
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {/* Month grid */}
                     <div className="grid grid-cols-6 gap-1.5">
                       {MONTH_LABELS.map((label, i) => {
                         const mes = i + 1;
-                        const paid = isMonthPaid(player.id, mes);
+                        const isPaid = isMonthPaid(player.id, mes);
                         return (
                           <button
                             key={mes}
@@ -206,17 +326,17 @@ const MensalidadesPage = () => {
                               upsertMensalidade.mutate({
                                 playerId: player.id,
                                 mes,
-                                pago: !paid,
+                                pago: !isPaid,
                               })
                             }
                             disabled={upsertMensalidade.isPending}
                             className={`flex flex-col items-center justify-center rounded-lg py-1.5 text-[9px] font-medium transition-colors ${
-                              paid
+                              isPaid
                                 ? "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
                                 : "bg-secondary text-muted-foreground border border-border hover:border-primary/30"
                             }`}
                           >
-                            {paid && <Check size={10} className="mb-0.5" />}
+                            {isPaid && <Check size={10} className="mb-0.5" />}
                             {label}
                           </button>
                         );
