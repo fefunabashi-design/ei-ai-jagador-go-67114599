@@ -12,10 +12,6 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
-  
-
-  // Check if user is team owner
-  const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
@@ -43,24 +39,12 @@ const AdminPage = () => {
     
     { icon: Pencil, label: "Editar escalação", path: "/agenda" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
+    { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
     { icon: Search, label: "Buscar adversário", path: "/match" },
     { icon: Camera, label: "Postar fotos", path: "#" },
   ];
 
-  if (!isOwner) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="px-5 pt-12 pb-4">
-          <h1 className="text-4xl text-foreground font-display">PAINEL ADMIN 👑</h1>
-        </div>
-        <div className="px-5 text-center py-12">
-          <p className="text-muted-foreground">Acesso restrito ao administrador do time.</p>
-        </div>
-        <BottomNav />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
