@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMatchSummons } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
@@ -48,16 +48,7 @@ const PaymentsPage = () => {
   // Match info
   const { data: match } = useQuery({
     queryKey: ["match-detail", matchId],
-    queryFn: async () => {
-      if (!matchId) return null;
-      const { data, error } = await supabase
-        .from("matches")
-        .select("*, home_team:teams!matches_home_team_id_fkey(name)")
-        .eq("id", matchId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
     enabled: !!matchId,
   });
 
@@ -67,15 +58,7 @@ const PaymentsPage = () => {
   // Payments
   const { data: payments = [] } = useQuery({
     queryKey: ["match-payments", matchId],
-    queryFn: async () => {
-      if (!matchId) return [];
-      const { data, error } = await supabase
-        .from("match_payments")
-        .select("*, player:players(name, position)")
-        .eq("match_id", matchId);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => (matchId ? mockDb.getPayments(matchId) : []),
     enabled: !!matchId,
   });
 
@@ -86,7 +69,7 @@ const PaymentsPage = () => {
       const confirmedPlayers = summons
         .filter((s: any) => s.status === "confirmed")
         .map((s: any) => s.player_id);
-      
+
       if (confirmedPlayers.length === 0) throw new Error("Nenhum jogador confirmado");
 
       const paymentRecords = confirmedPlayers.map((playerId: string) => ({
@@ -96,8 +79,7 @@ const PaymentsPage = () => {
         status: "pending",
       }));
 
-      const { error } = await supabase.from("match_payments").insert(paymentRecords);
-      if (error) throw error;
+      mockDb.createPayments(paymentRecords);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
@@ -113,8 +95,7 @@ const PaymentsPage = () => {
   const deleteVaquinha = useMutation({
     mutationFn: async () => {
       if (!matchId) throw new Error("No match");
-      const { error } = await supabase.from("match_payments").delete().eq("match_id", matchId);
-      if (error) throw error;
+      mockDb.deletePaymentsByMatch(matchId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
@@ -129,8 +110,7 @@ const PaymentsPage = () => {
   // Delete single payment
   const deletePayment = useMutation({
     mutationFn: async (paymentId: string) => {
-      const { error } = await supabase.from("match_payments").delete().eq("id", paymentId);
-      if (error) throw error;
+      mockDb.deletePayment(paymentId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });

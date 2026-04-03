@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Send, MoreHorizontal, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { useProfile, useMatchSummons } from "@/hooks/useSupabaseData";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,49 +26,21 @@ const ChatPage = () => {
   // Fetch match info
   const { data: match } = useQuery({
     queryKey: ["match-detail", matchId],
-    queryFn: async () => {
-      if (!matchId) return null;
-      const { data, error } = await supabase
-        .from("matches")
-        .select("*, home_team:teams!matches_home_team_id_fkey(name, abbreviation), away_team:teams!matches_away_team_id_fkey(name, abbreviation)")
-        .eq("id", matchId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
     enabled: !!matchId,
   });
 
   // Fetch messages
   const { data: messages = [] } = useQuery({
     queryKey: ["chat-messages", matchId],
-    queryFn: async () => {
-      if (!matchId) return [];
-      const { data, error } = await supabase
-        .from("match_chat_messages")
-        .select("*, profile:profiles!match_chat_messages_user_id_fkey(display_name, avatar_url)")
-        .eq("match_id", matchId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => (matchId ? mockDb.getMessages(matchId) : []),
     enabled: !!matchId,
   });
 
   // Fetch summons for confirmation status
   const { data: summons = [] } = useMatchSummons(matchId);
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!matchId) return;
-    const channel = supabase
-      .channel(`chat-${matchId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` },
-        () => { queryClient.invalidateQueries({ queryKey: ["chat-messages", matchId] }); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [matchId, queryClient]);
+  // (sem realtime em modo dev)
 
   // Auto-scroll
   useEffect(() => {
@@ -76,15 +48,10 @@ const ChatPage = () => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!message.trim() || !matchId || !profile) return;
+    if (!message.trim() || !matchId) return;
     setSending(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("match_chat_messages").insert({
-      match_id: matchId,
-      user_id: user.id,
-      message: message.trim(),
-    });
+    mockDb.addMessage(matchId, message.trim());
+    queryClient.invalidateQueries({ queryKey: ["chat-messages", matchId] });
     setMessage("");
     setSending(false);
   };

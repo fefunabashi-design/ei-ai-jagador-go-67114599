@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Pencil, Trash2, Lock, Crown, Camera, Search, UserPlus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,6 @@ import {
   useDeletePlayer,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const positions = [
   "Goleiro", "Zagueiro", "Lateral Direito", "Lateral Esquerdo",
@@ -95,6 +94,20 @@ const TeamPage = () => {
   const [searchDone, setSearchDone] = useState(false);
 
   const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+
+  // On /team with no team yet, open create dialog directly (all users for dev)
+  useEffect(() => {
+    if (!team) {
+      setIsEditingTeam(false);
+      setForm({
+        name: "", field_name: "", field_address: "", phone: "", email: "",
+        instagram: "", foundation_date: "", founder_name: "", war_cry: "",
+        coach_name: "", admin_name: "", admin_email: "", admin_phone: "",
+        substitute_name: "", president_name: "", president_email: "", format: "8x8", region: "",
+      });
+      setTeamDialogOpen(true);
+    }
+  }, [team]);
 
   const openCreateTeam = () => {
     if (!isPro) return;
@@ -208,30 +221,12 @@ const TeamPage = () => {
     setSearchLoading(true);
     setSearchResult(null);
     setSearchDone(false);
-    try {
-      const { data, error } = await supabase.functions.invoke("search-player-by-email", {
-        body: { email: searchEmail.trim() },
-      });
-      if (error) throw error;
-      if (data?.found && data.profile) {
-        setSearchResult({ ...data.profile, email: data.email });
-        setPlayerName(data.profile.display_name || "");
-        setPlayerNickname(data.profile.nickname || "");
-        setPlayerPhone(data.profile.phone || "");
-        setPlayerBirthDate(data.profile.birth_date || "");
-        setPlayerRegion(data.profile.region || "");
-      } else if (data?.found) {
-        setSearchResult({ user_id: data.user_id, email: data.email, display_name: data.email });
-        setPlayerName("");
-      } else {
-        setSearchResult(null);
-      }
+    // Em modo dev, busca não encontra usuários externos
+    setTimeout(() => {
+      setSearchResult(null);
       setSearchDone(true);
-    } catch {
-      toast({ title: "Erro na busca", variant: "destructive" });
-    } finally {
       setSearchLoading(false);
-    }
+    }, 500);
   };
 
   const handleSavePlayer = (e: React.FormEvent) => {
@@ -275,35 +270,35 @@ const TeamPage = () => {
     );
   }
 
-  // PRO gate: user is NOT pro and has no team
-  if (!isPro && !team) {
-    return (
-      <div className="min-h-screen bg-background pb-20">
-        <div className="px-5 pt-12 pb-4">
-          <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
-        </div>
-        <div className="px-5">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl border border-border p-8 text-center space-y-4"
-          >
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-              <Lock size={28} className="text-primary" />
-            </div>
-            <h2 className="text-lg font-display text-foreground">RECURSO PRO</h2>
-            <p className="text-sm text-muted-foreground">
-              O cadastro de time é exclusivo para usuários PRO. Faça upgrade do seu plano para criar e gerenciar seu time.
-            </p>
-            <Button className="bg-gradient-primary text-primary-foreground border-0">
-              <Crown size={16} className="mr-2" /> Fazer Upgrade para PRO
-            </Button>
-          </motion.div>
-        </div>
-        <BottomNav />
-      </div>
-    );
-  }
+  // PRO gate temporarily disabled for local development
+  // if (!isPro && !team) {
+  //   return (
+  //     <div className="min-h-screen bg-background pb-20">
+  //       <div className="px-5 pt-12 pb-4">
+  //         <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
+  //       </div>
+  //       <div className="px-5">
+  //         <motion.div
+  //           initial={{ opacity: 0, y: 10 }}
+  //           animate={{ opacity: 1, y: 0 }}
+  //           className="bg-card rounded-xl border border-border p-8 text-center space-y-4"
+  //         >
+  //           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+  //             <Lock size={28} className="text-primary" />
+  //           </div>
+  //           <h2 className="text-lg font-display text-foreground">RECURSO PRO</h2>
+  //           <p className="text-sm text-muted-foreground">
+  //             O cadastro de time é exclusivo para usuários PRO. Faça upgrade do seu plano para criar e gerenciar seu time.
+  //           </p>
+  //           <Button className="bg-gradient-primary text-primary-foreground border-0">
+  //             <Crown size={16} className="mr-2" /> Fazer Upgrade para PRO
+  //           </Button>
+  //         </motion.div>
+  //       </div>
+  //       <BottomNav />
+  //     </div>
+  //   );
+  // }
 
   // No team yet (PRO user)
   if (!team) {
@@ -319,10 +314,7 @@ const TeamPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl border border-border border-dashed p-8 text-center"
           >
-            <p className="text-muted-foreground text-sm mb-4">Crie seu time para começar</p>
-            <Button onClick={openCreateTeam} className="bg-gradient-primary text-primary-foreground border-0">
-              <Plus size={16} className="mr-1" /> Criar Time
-            </Button>
+            <p className="text-muted-foreground text-sm mb-4">Abrindo automaticamente o formulário de cadastro do time...</p>
           </motion.div>
         </div>
 

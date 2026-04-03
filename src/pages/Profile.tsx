@@ -22,7 +22,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +43,6 @@ const ProfilePage = () => {
   const [editRegion, setEditRegion] = useState("");
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     navigate("/");
   };
 
@@ -91,9 +89,7 @@ const ProfilePage = () => {
   };
 
   const handleDeleteAccount = async () => {
-    // Deactivate profile by clearing data
     updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
-    await supabase.auth.signOut();
     navigate("/");
     toast({ title: "Conta desativada" });
   };

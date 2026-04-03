@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
@@ -45,13 +45,7 @@ const MensalidadesPage = () => {
       if (!myTeam?.id) return [];
       const playerIds = players.map((p) => p.id);
       if (playerIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("mensalidades")
-        .select("*")
-        .in("player_id", playerIds)
-        .eq("ano", selectedYear);
-      if (error) throw error;
-      return data as any[];
+      return mockDb.getMensalidades(playerIds, selectedYear);
     },
     enabled: !!myTeam?.id && players.length > 0,
   });
@@ -59,15 +53,7 @@ const MensalidadesPage = () => {
   // Fetch config for selected year
   const { data: config, isLoading: configLoading } = useQuery({
     queryKey: ["mensalidade_config", selectedYear],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("mensalidade_config" as any)
-        .select("*")
-        .eq("ano", selectedYear)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
+    queryFn: async () => mockDb.getMensalidadeConfig(selectedYear),
   });
 
   // Sync valorInput when config data changes or year changes
@@ -81,13 +67,7 @@ const MensalidadesPage = () => {
   const upsertConfig = useMutation({
     mutationFn: async (valor: number) => {
       if (!myTeam?.id) throw new Error("Sem time");
-      const { error } = await supabase
-        .from("mensalidade_config" as any)
-        .upsert(
-          { ano: selectedYear, valor_mensal: valor, team_id: myTeam.id, updated_at: new Date().toISOString() } as any,
-          { onConflict: "ano" }
-        );
-      if (error) throw error;
+      mockDb.upsertMensalidadeConfig({ ano: selectedYear, valor_mensal: valor, team_id: myTeam.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mensalidade_config", selectedYear] });
@@ -101,19 +81,13 @@ const MensalidadesPage = () => {
   // Upsert mensalidade mutation
   const upsertMensalidade = useMutation({
     mutationFn: async ({ playerId, mes, pago }: { playerId: string; mes: number; pago: boolean }) => {
-      const { error } = await supabase
-        .from("mensalidades")
-        .upsert(
-          {
-            player_id: playerId,
-            ano: selectedYear,
-            mes,
-            pago,
-            data_pagamento: pago ? new Date().toISOString() : null,
-          },
-          { onConflict: "player_id,ano,mes" }
-        );
-      if (error) throw error;
+      mockDb.upsertMensalidade({
+        player_id: playerId,
+        ano: selectedYear,
+        mes,
+        pago,
+        data_pagamento: pago ? new Date().toISOString() : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mensalidades", myTeam?.id, selectedYear] });
