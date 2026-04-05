@@ -39,19 +39,42 @@ export const useSaveLineup = () => {
 export const useMyTeam = () => {
   const [data, setData] = useState<any>(null);
   useEffect(() => {
-    setData(mockDb.getTeam());
+    const sync = () => setData(mockDb.getTeam());
+    sync();
+
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
   }, []);
-  return { data };
+  return { data, isLoading: false };
 };
 
 export const usePlayers = (teamId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
-    if (teamId) {
-      setData(mockDb.getPlayers(teamId));
-    }
+    const sync = () => {
+      if (teamId) {
+        setData(mockDb.getPlayers(teamId));
+        return;
+      }
+
+      setData([]);
+    };
+
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
   }, [teamId]);
-  return { data };
+  return { data, isLoading: false };
 };
 
 export const useMatches = () => {
@@ -73,6 +96,10 @@ export const useMatchSummons = (matchId?: string) => {
 };
 
 // ── Stubs para hooks não implementados no mockDb ─────────────────────────────
+const emitMockDbChange = () => {
+  window.dispatchEvent(new CustomEvent("mock-db-change"));
+};
+
 const noop = () => {};
 const pendingMutation = { mutate: noop, mutateAsync: async () => {}, isPending: false, isLoading: false };
 
@@ -86,14 +113,152 @@ export const useUpdateMatch    = ()           => pendingMutation;
 export const useDeleteMatch    = ()           => pendingMutation;
 export const useAcceptMatch    = ()           => pendingMutation;
 
-export const useCreateTeam     = ()           => pendingMutation;
-export const useUpdateTeam     = ()           => pendingMutation;
-export const useDeleteTeam     = ()           => pendingMutation;
-export const useUploadTeamLogo = ()           => pendingMutation;
+export const useCreateTeam = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
 
-export const useCreatePlayer   = ()           => pendingMutation;
-export const useUpdatePlayer   = ()           => pendingMutation;
-export const useDeletePlayer   = ()           => pendingMutation;
+  const mutate = async (data: Record<string, unknown>) => {
+    setIsPending(true);
+    try {
+      mockDb.createTeam(data);
+      emitMockDbChange();
+      toast({ title: "Time cadastrado com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao cadastrar time", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdateTeam = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async (data: Record<string, unknown> & { id: string }) => {
+    setIsPending(true);
+    try {
+      mockDb.updateTeam(data.id, data);
+      emitMockDbChange();
+      toast({ title: "Dados do time atualizados!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar time", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeleteTeam = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async (_id: string) => {
+    setIsPending(true);
+    try {
+      mockDb.deleteTeam();
+      emitMockDbChange();
+      toast({ title: "Time excluido com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao excluir time", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUploadTeamLogo = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async ({ teamId, file }: { teamId: string; file: File }) => {
+    setIsPending(true);
+    try {
+      const logoUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+
+      mockDb.updateTeam(teamId, { logo_url: logoUrl });
+      emitMockDbChange();
+      toast({ title: "Escudo atualizado!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar escudo", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useCreatePlayer = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async (data: Record<string, unknown>) => {
+    setIsPending(true);
+    try {
+      mockDb.createPlayer(data);
+      emitMockDbChange();
+      toast({ title: "Jogador adicionado com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao adicionar jogador", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUpdatePlayer = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async (data: Record<string, unknown> & { id: string }) => {
+    setIsPending(true);
+    try {
+      mockDb.updatePlayer(data.id, data);
+      emitMockDbChange();
+      toast({ title: "Jogador atualizado com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar jogador", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useDeletePlayer = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = async ({ id }: { id: string; teamId: string }) => {
+    setIsPending(true);
+    try {
+      mockDb.deletePlayer(id);
+      emitMockDbChange();
+      toast({ title: "Jogador removido com sucesso!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao remover jogador", description: error.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutate, isPending, isLoading: isPending };
+};
 
 export const useMatchLineups   = (_id?: string) => ({ data: [] });
 export const useCreateLineup   = ()           => pendingMutation;

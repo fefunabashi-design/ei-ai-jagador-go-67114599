@@ -144,6 +144,20 @@ const AgendaPage = () => {
     return myTeam && homeTeam?.owner_id === myTeam.owner_id;
   });
 
+  const availableDays = Array.isArray((myTeam as any)?.play_days)
+    ? ((myTeam as any).play_days as string[])
+        .map((day) => ({
+          domingo: 0,
+          segunda: 1,
+          terca: 2,
+          quarta: 3,
+          quinta: 4,
+          sexta: 5,
+          sabado: 6,
+        }[day]))
+        .filter((day): day is number => typeof day === "number")
+    : [2, 4, 6];
+
   const filtered = myMatches.filter((m) => {
     const matchDate = new Date(m.match_date);
     switch (filter) {
@@ -398,7 +412,7 @@ const AgendaPage = () => {
               title: (m.away_team as any)?.name || "Partida",
               status: m.status,
             }))}
-            availableDays={[2, 4, 6]} // Segunda, Quarta, Sexta (customize based on team settings)
+              availableDays={availableDays}
             onDateClick={(date, dateMatches) => {
               if (dateMatches.length > 0) {
                 const match = myMatches.find((m) => {

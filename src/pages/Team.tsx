@@ -51,10 +51,55 @@ const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
-const EMPTY_TEAM_FORM = {
+const WEEK_DAYS = [
+  { value: "domingo", label: "Domingo" },
+  { value: "segunda", label: "Segunda" },
+  { value: "terca", label: "Terça" },
+  { value: "quarta", label: "Quarta" },
+  { value: "quinta", label: "Quinta" },
+  { value: "sexta", label: "Sexta" },
+  { value: "sabado", label: "Sábado" },
+];
+
+type TeamForm = {
+  name: string;
+  region: string;
+  categoria: string;
+  play_days: string[];
+  play_time_start: string;
+  play_time_end: string;
+  addr_cep: string;
+  addr_rua: string;
+  addr_numero: string;
+  addr_bairro: string;
+  addr_cidade: string;
+  addr_uf: string;
+  phone: string;
+  mobile: string;
+  email: string;
+  instagram: string;
+  foundation_date: string;
+  founder_name: string;
+  president_name: string;
+  president_phone: string;
+  coach_name: string;
+  coach_phone: string;
+  admin_name: string;
+  admin_phone: string;
+  sub1_name: string;
+  sub1_phone: string;
+  sub2_name: string;
+  sub2_phone: string;
+  observacoes: string;
+};
+
+const EMPTY_TEAM_FORM: TeamForm = {
   name: "",
   region: "",
   categoria: "",
+  play_days: [],
+  play_time_start: "",
+  play_time_end: "",
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
@@ -127,7 +172,8 @@ const TeamPage = () => {
   // Filter
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
-  const setTF = (key: string, value: string) => setTeamForm((p) => ({ ...p, [key]: value }));
+  const setTF = <K extends keyof TeamForm>(key: K, value: TeamForm[K]) =>
+    setTeamForm((p) => ({ ...p, [key]: value }));
   const setPF = (key: string, value: string) => setPlayerForm((p) => ({ ...p, [key]: value }));
 
   useEffect(() => {
@@ -145,6 +191,9 @@ const TeamPage = () => {
       name: team.name || "",
       region: (team as any).region || "",
       categoria: (team as any).categoria || "",
+      play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
+      play_time_start: (team as any).play_time_start || "",
+      play_time_end: (team as any).play_time_end || "",
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
@@ -317,6 +366,15 @@ const TeamPage = () => {
 
   const activePlayers = players.filter((p) => p.is_active !== false);
   const inactivePlayers = players.filter((p) => p.is_active === false);
+  const formattedPlayDays = Array.isArray((team as any).play_days)
+    ? WEEK_DAYS.filter(({ value }) => (team as any).play_days.includes(value))
+        .map(({ label }) => label)
+        .join(", ")
+    : "";
+  const formattedPlayTime =
+    (team as any).play_time_start && (team as any).play_time_end
+      ? `${(team as any).play_time_start} até ${(team as any).play_time_end}`
+      : (team as any).play_time_start || (team as any).play_time_end || "";
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -377,6 +435,8 @@ const TeamPage = () => {
                   {[
                     { label: "Categoria", value: (team as any).categoria },
                     { label: "Região", value: (team as any).region },
+                    { label: "Dias de jogo", value: formattedPlayDays },
+                    { label: "Horário", value: formattedPlayTime },
                     { label: "CEP", value: (team as any).addr_cep },
                     { label: "Rua", value: (team as any).addr_rua ? `${(team as any).addr_rua}${(team as any).addr_numero ? ", " + (team as any).addr_numero : ""}` : undefined },
                     { label: "Bairro", value: (team as any).addr_bairro },
@@ -711,13 +771,26 @@ const TeamFormDialog = ({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   isEditing: boolean;
-  form: Record<string, string>;
-  setField: (key: string, value: string) => void;
+  form: TeamForm;
+  setField: <K extends keyof TeamForm>(key: K, value: TeamForm[K]) => void;
   onSubmit: (e: React.FormEvent) => void;
   isPending: boolean;
 }) => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [showAllWeekDays, setShowAllWeekDays] = useState(false);
+
+  const togglePlayDay = (day: string) => {
+    const nextDays = form.play_days.includes(day)
+      ? form.play_days.filter((item) => item !== day)
+      : [...form.play_days, day];
+
+    setField("play_days", nextDays);
+  };
+
+  const visibleWeekDays = showAllWeekDays || form.play_days.length === 0
+    ? WEEK_DAYS
+    : WEEK_DAYS.filter((day) => form.play_days.includes(day.value));
 
   const handleCepChange = async (raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, 8);
@@ -826,6 +899,53 @@ const TeamFormDialog = ({
           </div>
 
           {/* Endereço */}
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <Label className="block">Dias da semana que o time joga</Label>
+              {form.play_days.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllWeekDays((value) => !value)}
+                  className="text-[11px] font-medium text-primary"
+                >
+                  {showAllWeekDays ? "Ocultar não selecionados" : "Editar dias"}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
+              {visibleWeekDays.map((day) => (
+                <label key={day.value} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={form.play_days.includes(day.value)}
+                    onCheckedChange={() => togglePlayDay(day.value)}
+                  />
+                  <span className="text-sm text-foreground">{day.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>De</Label>
+              <Input
+                type="time"
+                value={form.play_time_start}
+                onChange={(e) => setField("play_time_start", e.target.value)}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Até</Label>
+              <Input
+                type="time"
+                value={form.play_time_end}
+                onChange={(e) => setField("play_time_end", e.target.value)}
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
           <div>
             <Label>CEP</Label>
             <div className="relative">
