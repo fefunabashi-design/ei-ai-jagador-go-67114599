@@ -42,56 +42,86 @@ const FALLBACK_SQUAD: Player[] = [
 
 function truncate(s: string, n = 7) { return s.length > n ? s.slice(0, n-1)+"." : s; }
 
-// Camiseta centrada em (cx, cy) — corpo + mangas em SVG puro
-function ShirtFilled({ cx, cy, name, selected }: { cx:number; cy:number; name:string; selected:boolean }) {
-  const body   = selected ? "#facc15" : "#ffffff";
-  const sleeve = selected ? "#d4a800" : "#dddddd";
-  const stroke = selected ? "#b45309" : "#555";
-  const txt    = selected ? "#7c2d00" : "#1a5c2e";
-  const label  = truncate(name);
-  const fs     = label.length > 6 ? 13 : label.length > 4 ? 14 : 16;
-  // camiseta: 60 wide, 54 tall, centrada
-  const x = cx - 30; const y = cy - 27;
-  return (
-    <g>
-      {/* manga esq */}
-      <polygon points={`${x},${y+15} ${x+14},${y+7} ${x+18},${y+20} ${x+5},${y+26}`}
-        fill={sleeve} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round"/>
-      {/* manga dir */}
-      <polygon points={`${x+60},${y+15} ${x+46},${y+7} ${x+42},${y+20} ${x+55},${y+26}`}
-        fill={sleeve} stroke={stroke} strokeWidth="1.5" strokeLinejoin="round"/>
-      {/* corpo */}
-      <path d={`M${x+14} ${y+7} Q${x+30} ${y+1} ${x+46} ${y+7} L${x+46} ${y+53} Q${x+46} ${y+55} ${x+44} ${y+55} L${x+16} ${y+55} Q${x+14} ${y+55} ${x+14} ${y+53} Z`}
-        fill={body} stroke={stroke} strokeWidth="1.5"/>
-      {/* gola */}
-      <path d={`M${x+22} ${y+7} Q${x+30} ${y+14} ${x+38} ${y+7}`}
-        fill="none" stroke={stroke} strokeWidth="2"/>
-      {/* nome */}
-      <text x={cx} y={cy+14} textAnchor="middle" fontSize={fs} fontWeight="800"
-        fill={txt} fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="-0.5">
-        {label}
-      </text>
-    </g>
-  );
-}
+function PlayerCard({
+  cx,
+  cy,
+  role,
+  name,
+  selected,
+}: {
+  cx: number;
+  cy: number;
+  role: string;
+  name?: string;
+  selected: boolean;
+}) {
+  const w = 54;
+  const h = 34;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  const isGoalkeeper = role === "GOL";
 
-function ShirtEmpty({ cx, cy, label, highlight }: { cx:number; cy:number; label:string; highlight:boolean }) {
-  const s = highlight ? "rgba(250,204,21,0.9)" : "rgba(255,255,255,0.4)";
-  const f = highlight ? "rgba(250,204,21,0.15)" : "rgba(255,255,255,0.1)";
-  const dash = highlight ? "" : "5,3";
-  const x = cx - 30; const y = cy - 27;
+  if (!name) {
+    return (
+      <g>
+        <rect
+          x={x}
+          y={y}
+          rx="7"
+          width={w}
+          height={h}
+          fill="rgba(255,255,255,0.06)"
+          stroke={selected ? "rgba(250,204,21,0.9)" : "rgba(255,255,255,0.35)"}
+          strokeWidth="1.4"
+          strokeDasharray="5,3"
+        />
+        <text
+          x={cx}
+          y={cy + 5}
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="800"
+          fill={selected ? "rgba(250,204,21,0.95)" : "rgba(255,255,255,0.72)"}
+          fontFamily="system-ui,sans-serif"
+        >
+          {role}
+        </text>
+      </g>
+    );
+  }
+
   return (
     <g>
-      <polygon points={`${x},${y+15} ${x+14},${y+7} ${x+18},${y+20} ${x+5},${y+26}`}
-        fill={f} stroke={s} strokeWidth="1.5" strokeDasharray={dash} strokeLinejoin="round"/>
-      <polygon points={`${x+60},${y+15} ${x+46},${y+7} ${x+42},${y+20} ${x+55},${y+26}`}
-        fill={f} stroke={s} strokeWidth="1.5" strokeDasharray={dash} strokeLinejoin="round"/>
-      <path d={`M${x+14} ${y+7} Q${x+30} ${y+1} ${x+46} ${y+7} L${x+46} ${y+53} Q${x+46} ${y+55} ${x+44} ${y+55} L${x+16} ${y+55} Q${x+14} ${y+55} ${x+14} ${y+53} Z`}
-        fill={f} stroke={s} strokeWidth="1.5" strokeDasharray={dash}/>
-      <text x={cx} y={cy+6} textAnchor="middle" fontSize="14" fontWeight="700"
-        fill={highlight ? "rgba(250,204,21,0.9)" : "rgba(255,255,255,0.5)"}
-        fontFamily="system-ui,sans-serif">
-        {label}
+      <rect x={x} y={y} rx="7" width={w} height={h} fill="rgba(10,18,16,0.88)" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+      <rect
+        x={x + 4}
+        y={y + 4}
+        rx="6"
+        width={w - 8}
+        height={h - 14}
+        fill={isGoalkeeper ? (selected ? "#fde047" : "#facc15") : (selected ? "#22c55e" : "#16a34a")}
+      />
+      <text
+        x={cx}
+        y={y + 18}
+        textAnchor="middle"
+        fontSize="12"
+        fontWeight="900"
+        fill={isGoalkeeper ? "#1f2937" : "#ecfdf5"}
+        fontFamily="system-ui,sans-serif"
+      >
+        {role}
+      </text>
+      <text
+        x={cx}
+        y={y + h + 12}
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="800"
+        fill="rgba(255,255,255,0.9)"
+        fontFamily="system-ui,sans-serif"
+      >
+        {truncate(name, 8).toUpperCase()}
       </text>
     </g>
   );
@@ -203,7 +233,7 @@ export default function EscalacaoPage() {
   const VBWW=400, VBHH=600;
 
   return (
-    <div className="relative min-h-screen bg-background pb-24 md:pb-8 overflow-x-hidden" style={{userSelect:"none"}}>
+    <div className="relative h-[100dvh] bg-background overflow-hidden flex flex-col" style={{userSelect:"none"}}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.1),transparent_35%)]" />
 
       {/* Header */}
@@ -212,6 +242,9 @@ export default function EscalacaoPage() {
           <button onClick={()=>navigate(-1)}><ArrowLeft size={20} className="text-muted-foreground"/></button>
           <h1 className="text-lg md:text-xl font-display text-foreground flex-1">ESCALAÇÃO</h1>
           <span className="text-[10px] font-semibold bg-primary/15 text-primary px-2 py-1 rounded-lg border border-primary/30">4-4-2</span>
+          <Button onClick={save} size="sm" className="h-8 text-[10px] md:text-xs bg-gradient-primary text-primary-foreground border-0 shadow-[0_10px_20px_-12px_hsl(var(--primary))]">
+            <Save size={11} className="mr-1"/> Salvar
+          </Button>
         </div>
       </div>
 
@@ -223,10 +256,10 @@ export default function EscalacaoPage() {
       )}
 
       {/* Campo + Sidebar */}
-      <div className="relative grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto">
+      <div className="relative grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto flex-1 min-h-0 w-full">
 
         {/* Campo SVG */}
-        <div className="min-w-0 bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur">
+        <div className="min-w-0 bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur flex flex-col min-h-0">
           {/* Zoom controls */}
           <div className="flex gap-1 justify-end mb-2">
             <button onClick={()=>setZoom(z=>Math.min(z+0.2,2.4))}
@@ -239,7 +272,7 @@ export default function EscalacaoPage() {
             </button>
           </div>
 
-          <div className="overflow-auto rounded-xl" style={{maxHeight:"min(68dvh, 640px)"}}>
+          <div className="overflow-auto rounded-xl flex-1 min-h-0">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox={`0 0 ${VBWW} ${VBHH}`}
@@ -322,7 +355,7 @@ export default function EscalacaoPage() {
                   >
                     {occ ? (
                       <>
-                        <ShirtFilled cx={slot.x} cy={slot.y} name={occ.name} selected={isSel}/>
+                        <PlayerCard cx={slot.x} cy={slot.y} role={slot.label} name={occ.name} selected={isSel} />
                         <g
                           onClick={(e: any) => {
                             e.stopPropagation();
@@ -344,7 +377,7 @@ export default function EscalacaoPage() {
                         </g>
                       </>
                     ) : (
-                      <ShirtEmpty  cx={slot.x} cy={slot.y} label={slot.label} highlight={!!sel || !!draggingPlayer}/>
+                      <PlayerCard cx={slot.x} cy={slot.y} role={slot.label} selected={!!sel || !!draggingPlayer} />
                     )}
                   </g>
                 );
@@ -423,13 +456,10 @@ export default function EscalacaoPage() {
       </div>
 
       {/* Botões */}
-      <div className="fixed md:static bottom-16 left-0 right-0 px-3 md:px-6 max-w-6xl mx-auto pb-1 pt-1.5 md:pt-3 bg-background/90 md:bg-transparent backdrop-blur md:backdrop-blur-none">
+      <div className="px-3 md:px-6 max-w-6xl mx-auto w-full mt-2 mb-16 md:mb-3 shrink-0">
         <div className="flex gap-2 rounded-2xl border border-white/10 bg-card/80 backdrop-blur p-1 shadow-[0_16px_35px_-28px_hsl(var(--primary))]">
-          <Button variant="outline" size="sm" onClick={reset} className="text-[10px] md:text-xs h-8 md:h-9 border-border/80 bg-background/70 hover:bg-background">
+          <Button variant="outline" size="sm" onClick={reset} className="w-full text-[10px] md:text-xs h-8 md:h-9 border-border/80 bg-background/70 hover:bg-background">
             <RotateCcw size={11} className="mr-1"/> Resetar
-          </Button>
-          <Button onClick={save} className="flex-1 bg-gradient-primary text-primary-foreground border-0 text-[10px] md:text-xs h-8 md:h-9 shadow-[0_10px_20px_-12px_hsl(var(--primary))]">
-            <Save size={11} className="mr-1"/> Salvar
           </Button>
         </div>
       </div>

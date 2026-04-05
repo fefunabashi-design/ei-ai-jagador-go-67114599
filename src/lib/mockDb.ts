@@ -24,6 +24,12 @@ function set(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function getMatchLabel(match: any) {
+  const homeName = match?.home_team_name || "Meu Time";
+  const awayName = match?.away_team_name || "Adversário";
+  return `${homeName} x ${awayName}`;
+}
+
 // ==================== PROFILE ====================
 
 const DEFAULT_PROFILE = {
@@ -82,6 +88,20 @@ const DEFAULT_PLAYERS_SEED = [
   created_at: now(),
   updated_at: now(),
 }));
+
+const DEFAULT_MATCH_SEED = {
+  id: "m-seed-01",
+  home_team_id: DEFAULT_TEAM_SEED.id,
+  away_team_id: null,
+  home_team_name: DEFAULT_TEAM_SEED.name,
+  away_team_name: "Amigos da Bola",
+  match_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  location: "Arena Municipal",
+  format: "Futebol 7",
+  status: "open",
+  created_at: now(),
+  updated_at: now(),
+};
 
 export const mockDb = {
   getProfile: () => get("mock_profile", DEFAULT_PROFILE),
@@ -368,6 +388,75 @@ export const mockDb = {
     return updated.find((p) => p.id === id);
   },
 
+  // ==================== FOTOS ====================
+
+  getPhotoEvents: (teamId: string): any[] => {
+    const matches = get<any[]>("mock_matches", []);
+
+    const teamMatches = matches
+      .filter((m) => m.home_team_id === teamId || m.away_team_id === teamId)
+      .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+
+    const events: any[] = [];
+
+    teamMatches.forEach((match) => {
+      const baseLabel = getMatchLabel(match);
+
+      events.push({
+        id: `partida-${match.id}`,
+        type: "partida",
+        type_label: "Partida",
+        title: baseLabel,
+        date: match.match_date,
+        location: match.location || "Local a definir",
+        status: match.status,
+        match_id: match.id,
+      });
+
+      // A vaquinha já existe no fluxo de partidas; geramos o evento automaticamente.
+      events.push({
+        id: `vaquinha-${match.id}`,
+        type: "vaquinha",
+        type_label: "Vaquinha",
+        title: `Vaquinha • ${baseLabel}`,
+        date: match.match_date,
+        location: match.location || "Local a definir",
+        status: match.status,
+        match_id: match.id,
+      });
+    });
+
+    return events;
+  },
+
+  getPhotoPosts: (teamId: string): any[] => {
+    const posts = get<any[]>("mock_photo_posts", []);
+    return posts
+      .filter((p) => p.team_id === teamId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  },
+
+  createPhotoPost: (data: {
+    team_id: string;
+    event_id: string;
+    event_type: "partida" | "vaquinha";
+    event_title: string;
+    match_id?: string;
+    photo_url: string;
+    comment?: string;
+  }) => {
+    const posts = get<any[]>("mock_photo_posts", []);
+    const post = {
+      ...data,
+      id: genId(),
+      created_at: now(),
+      updated_at: now(),
+    };
+
+    set("mock_photo_posts", [post, ...posts]);
+    return post;
+  },
+
   // ==================== CHAT ====================
 
   getMessages: (matchId: string): any[] =>
@@ -484,6 +573,10 @@ function seedMockData() {
   const hasPlayers = !!rawPlayers;
   const parsedPlayers = rawPlayers ? get<any[]>("mock_players", []) : [];
   const hasNonEmptyPlayers = Array.isArray(parsedPlayers) && parsedPlayers.length > 0;
+  const rawMatches = localStorage.getItem("mock_matches");
+  const hasMatches = !!rawMatches;
+  const parsedMatches = rawMatches ? get<any[]>("mock_matches", []) : [];
+  const hasNonEmptyMatches = Array.isArray(parsedMatches) && parsedMatches.length > 0;
 
   if (!hasTeam) {
     set("mock_team", DEFAULT_TEAM_SEED);
@@ -491,6 +584,10 @@ function seedMockData() {
 
   if (!hasPlayers || !hasNonEmptyPlayers) {
     set("mock_players", DEFAULT_PLAYERS_SEED);
+  }
+
+  if (!hasMatches || !hasNonEmptyMatches) {
+    set("mock_matches", [DEFAULT_MATCH_SEED]);
   }
 }
 

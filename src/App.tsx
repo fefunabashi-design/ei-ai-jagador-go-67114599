@@ -18,6 +18,7 @@ import Mensalidades from "./pages/Mensalidades.tsx";
 import Caixa from "./pages/Caixa.tsx";
 import Escalacao from "./pages/Escalacao.tsx";
 import Admin from "./pages/Admin.tsx";
+import Fotos from "./pages/Fotos.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 
@@ -51,6 +52,7 @@ const App = () => {
             <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
             <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
