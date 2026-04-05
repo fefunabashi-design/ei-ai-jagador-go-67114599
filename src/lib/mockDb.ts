@@ -44,35 +44,110 @@ const DEFAULT_PROFILE = {
 const DEFAULT_TEAM_SEED = {
   id: "mock-team-seed-001",
   owner_id: "mock-user-id",
-  name: "Jagador FC",
-  abbreviation: "JFC",
-  region: "Z/S",
-  categoria: "40+",
-  play_days: ["sabado"],
-  play_time_start: "13:00",
-  play_time_end: "17:00",
-  phone: "(11) 3333-2222",
-  mobile: "(11) 98888-7777",
-  email: "contato@jagadorfc.com",
-  instagram: "@jagadorfc",
+  name: "Corinthias",
+  abbreviation: "COR",
+  region: "Z/L",
+  categoria: "Esporte",
+  play_days: ["domingo"],
+  play_time_start: "10:30",
+  play_time_end: "12:30",
+  phone: "(11) 3333-1910",
+  mobile: "(11) 99100-1910",
+  email: "contato@corinthias.com",
+  instagram: "@corinthias",
   rating: 0,
   created_at: now(),
   updated_at: now(),
 };
 
+const DEFAULT_REGISTERED_TEAMS = [
+  DEFAULT_TEAM_SEED,
+  {
+    id: "mock-team-seed-002",
+    owner_id: "mock-user-id-2",
+    name: "Santos",
+    abbreviation: "SAN",
+    region: "Z/S",
+    categoria: "Esporte",
+    play_days: ["domingo"],
+    play_time_start: "08:30",
+    play_time_end: "10:30",
+    phone: "(11) 3333-1911",
+    mobile: "(11) 99100-1911",
+    email: "contato@santos.com",
+    instagram: "@santos",
+    rating: 0,
+    created_at: now(),
+    updated_at: now(),
+  },
+  {
+    id: "mock-team-seed-003",
+    owner_id: "mock-user-id-3",
+    name: "Palmeiras",
+    abbreviation: "PAL",
+    region: "Z/O",
+    categoria: "Esporte",
+    play_days: ["sabado"],
+    play_time_start: "15:00",
+    play_time_end: "17:00",
+    phone: "(11) 3333-1912",
+    mobile: "(11) 99100-1912",
+    email: "contato@palmeiras.com",
+    instagram: "@palmeiras",
+    rating: 0,
+    created_at: now(),
+    updated_at: now(),
+  },
+  {
+    id: "mock-team-seed-004",
+    owner_id: "mock-user-id-4",
+    name: "Sao Paulo",
+    abbreviation: "SAO",
+    region: "Z/N",
+    categoria: "40+",
+    play_days: ["domingo"],
+    play_time_start: "10:30",
+    play_time_end: "12:30",
+    phone: "(11) 3333-1913",
+    mobile: "(11) 99100-1913",
+    email: "contato@saopaulo.com",
+    instagram: "@saopaulo",
+    rating: 0,
+    created_at: now(),
+    updated_at: now(),
+  },
+  {
+    id: "mock-team-seed-005",
+    owner_id: "mock-user-id-5",
+    name: "Portuguesa",
+    abbreviation: "POR",
+    region: "Z/L",
+    categoria: "35+",
+    play_days: ["sabado"],
+    play_time_start: "09:00",
+    play_time_end: "11:00",
+    phone: "(11) 3333-1914",
+    mobile: "(11) 99100-1914",
+    email: "contato@portuguesa.com",
+    instagram: "@portuguesa",
+    rating: 0,
+    created_at: now(),
+    updated_at: now(),
+  },
+];
+
 const DEFAULT_PLAYERS_SEED = [
-  { id: "p-seed-01", name: "Carlos", last_name: "Silva", nickname: "Carlão", position: "Gol", jersey_number: 1, is_active: true },
-  { id: "p-seed-02", name: "Rafael", last_name: "Souza", nickname: "Rafa", position: "Lat Dir", jersey_number: 2, is_active: true },
-  { id: "p-seed-03", name: "Marcos", last_name: "Oliveira", nickname: "Marcão", position: "Zaga", jersey_number: 3, is_active: true },
-  { id: "p-seed-04", name: "Bruno", last_name: "Costa", nickname: "Bruninho", position: "Zaga", jersey_number: 4, is_active: true },
-  { id: "p-seed-05", name: "Leandro", last_name: "Pereira", nickname: "Léo", position: "Lat Esq", jersey_number: 6, is_active: true },
-  { id: "p-seed-06", name: "Diego", last_name: "Almeida", nickname: "Didi", position: "Volante", jersey_number: 5, is_active: true },
-  { id: "p-seed-07", name: "Fernando", last_name: "Lima", nickname: "Nando", position: "Meia", jersey_number: 8, is_active: true },
-  { id: "p-seed-08", name: "Paulo", last_name: "Rocha", nickname: "Paulinho", position: "Meia", jersey_number: 10, is_active: true },
-  { id: "p-seed-09", name: "Ricardo", last_name: "Mendes", nickname: "Rick", position: "Atacante", jersey_number: 7, is_active: true },
-  { id: "p-seed-10", name: "Gabriel", last_name: "Nunes", nickname: "Gabi", position: "Atacante", jersey_number: 9, is_active: true },
-  { id: "p-seed-11", name: "Tiago", last_name: "Santos", nickname: "Thi", position: "Atacante", jersey_number: 11, is_active: true },
-  { id: "p-seed-12", name: "André", last_name: "Ribeiro", nickname: "Dedé", position: "Meia", jersey_number: 12, is_active: true },
+  { id: "p-seed-01", name: "Hugo", last_name: "Souza", nickname: "Hugo", position: "Gol", jersey_number: 1, is_active: true },
+  { id: "p-seed-02", name: "Matheus", last_name: "Franca", nickname: "Matheuzinho", position: "Lat Dir", jersey_number: 2, is_active: true },
+  { id: "p-seed-03", name: "Andre", last_name: "Ramalho", nickname: "Ramalho", position: "Zaga", jersey_number: 4, is_active: true },
+  { id: "p-seed-04", name: "Caca", last_name: "Oliveira", nickname: "Caca", position: "Zaga", jersey_number: 25, is_active: true },
+  { id: "p-seed-05", name: "Fabricio", last_name: "Angileri", nickname: "Angileri", position: "Lat Esq", jersey_number: 6, is_active: true },
+  { id: "p-seed-06", name: "Raniele", last_name: "Almeida", nickname: "Raniele", position: "Volante", jersey_number: 14, is_active: true },
+  { id: "p-seed-07", name: "Jose", last_name: "Martinez", nickname: "Martinez", position: "Volante", jersey_number: 70, is_active: true },
+  { id: "p-seed-08", name: "Rodrigo", last_name: "Garro", nickname: "Garro", position: "Meia", jersey_number: 10, is_active: true },
+  { id: "p-seed-09", name: "Igor", last_name: "Coronado", nickname: "Coronado", position: "Meia", jersey_number: 77, is_active: true },
+  { id: "p-seed-10", name: "Yuri", last_name: "Alberto", nickname: "Yuri", position: "Atacante", jersey_number: 9, is_active: true },
+  { id: "p-seed-11", name: "Memphis", last_name: "Depay", nickname: "Memphis", position: "Atacante", jersey_number: 94, is_active: true },
 ].map((player) => ({
   ...player,
   team_id: DEFAULT_TEAM_SEED.id,
@@ -95,6 +170,7 @@ export const mockDb = {
   // ==================== TEAMS ====================
 
   getTeam: (): any | null => get<any>("mock_team", null),
+  getAllTeams: (): any[] => get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS),
 
   createTeam: (data: Record<string, unknown>) => {
     const team = {
@@ -106,16 +182,30 @@ export const mockDb = {
       updated_at: now(),
     };
     set("mock_team", team);
+    const teams = mockDb.getAllTeams().filter((item) => item.id !== team.id);
+    set("mock_registered_teams", [team, ...teams]);
     return team;
   },
 
   updateTeam: (_id: string, updates: Record<string, unknown>) => {
     const team = { ...mockDb.getTeam(), ...updates, updated_at: now() };
     set("mock_team", team);
+    const teams = mockDb.getAllTeams();
+    set(
+      "mock_registered_teams",
+      teams.map((item) => (item.id === team.id ? team : item)),
+    );
     return team;
   },
 
   deleteTeam: () => {
+    const team = mockDb.getTeam();
+    if (team?.id) {
+      set(
+        "mock_registered_teams",
+        mockDb.getAllTeams().filter((item) => item.id !== team.id),
+      );
+    }
     localStorage.removeItem("mock_team");
     localStorage.removeItem("mock_players");
   },
@@ -479,17 +569,27 @@ export const mockDb = {
 };
 
 function seedMockData() {
-  const hasTeam = !!localStorage.getItem("mock_team");
+  const existingTeam = get<any | null>("mock_team", null);
+  const hasTeam = !!existingTeam;
+  const registeredTeams = get<any[]>("mock_registered_teams", []);
   const rawPlayers = localStorage.getItem("mock_players");
   const hasPlayers = !!rawPlayers;
   const parsedPlayers = rawPlayers ? get<any[]>("mock_players", []) : [];
   const hasNonEmptyPlayers = Array.isArray(parsedPlayers) && parsedPlayers.length > 0;
+  const shouldRefreshSeedTeam =
+    !existingTeam ||
+    existingTeam.id === DEFAULT_TEAM_SEED.id ||
+    existingTeam.name === "Jagador FC";
 
-  if (!hasTeam) {
+  if (!hasTeam || shouldRefreshSeedTeam) {
     set("mock_team", DEFAULT_TEAM_SEED);
   }
 
-  if (!hasPlayers || !hasNonEmptyPlayers) {
+  if (!Array.isArray(registeredTeams) || registeredTeams.length === 0 || shouldRefreshSeedTeam) {
+    set("mock_registered_teams", DEFAULT_REGISTERED_TEAMS);
+  }
+
+  if (!hasPlayers || !hasNonEmptyPlayers || shouldRefreshSeedTeam) {
     set("mock_players", DEFAULT_PLAYERS_SEED);
   }
 }

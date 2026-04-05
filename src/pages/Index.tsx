@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown, Settings } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PlayerSummons from "@/components/PlayerSummons";
@@ -64,12 +64,19 @@ const Index = () => {
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
 
-  const quickActions = [
-    { icon: "🔍", label: "Buscar adversário", sub: "Match por região", path: "/match" },
-    { icon: "👥", label: "Escalar time", sub: `${players.length} jogadores`, path: "/agenda" },
-    { icon: "💰", label: "Pagamentos", sub: nextMatch ? "Ver vaquinha" : "Em breve", path: nextMatch ? `/payments/${nextMatch.id}` : "#" },
-    { icon: "👑", label: "Painel Admin", sub: isOwner ? "Gestão do time" : "Ver painel", path: "/admin" },
-  ];
+  const scheduledMatches = matches
+    .filter((m) => {
+      const homeTeam = m.home_team as any;
+      const awayTeam = m.away_team as any;
+      return (
+        myTeam &&
+        new Date(m.match_date) >= now &&
+        (m.status === "open" || m.status === "confirmed") &&
+        (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)
+      );
+    })
+    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+    .slice(0, 6);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -204,25 +211,55 @@ const Index = () => {
         );
       })()}
 
-      {/* Quick Actions */}
-      <div className="px-5 mt-4 space-y-2">
-        {quickActions.map((action, i) => (
-          <motion.button
-            key={action.label}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 + i * 0.04 }}
-            onClick={() => action.path !== "#" && navigate(action.path)}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
-          >
-            <span className="text-xl">{action.icon}</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{action.label}</p>
-              <p className="text-[10px] text-muted-foreground">{action.sub}</p>
+      {/* Scheduled Matches */}
+      <div className="px-5 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-display text-foreground">JOGOS AGENDADOS</h2>
+          <button onClick={() => navigate("/agenda")} className="text-[10px] text-primary font-semibold">
+            Ver agenda →
+          </button>
+        </div>
+        <div className="space-y-2">
+          {scheduledMatches.length > 0 ? (
+            scheduledMatches.map((match, i) => {
+              const homeTeam = match.home_team as any;
+              const awayTeam = match.away_team as any;
+              const matchDate = new Date(match.match_date);
+              const dateLabel = matchDate.toLocaleDateString("pt-BR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+              });
+              const timeLabel = matchDate.toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              return (
+                <motion.button
+                  key={match.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 + i * 0.04 }}
+                  onClick={() => navigate("/agenda")}
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-primary/30 transition-colors"
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {(homeTeam?.name || "Time mandante")} X {(awayTeam?.name || "Adversário")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground capitalize">
+                    {dateLabel} {timeLabel}
+                  </p>
+                </motion.button>
+              );
+            })
+          ) : (
+            <div className="rounded-xl border border-border bg-card px-4 py-5 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum jogo agendado no momento.</p>
             </div>
-            <ChevronRight size={16} className="text-muted-foreground" />
-          </motion.button>
-        ))}
+          )}
+        </div>
       </div>
 
       {/* Presence / Summons */}

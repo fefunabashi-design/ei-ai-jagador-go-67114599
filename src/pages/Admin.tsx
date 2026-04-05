@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile } from "@/hooks/useSupabaseData";
-import { useQuery } from "@tanstack/react-query";
 import type { Database } from "@/integrations/supabase/types";
 import { mockDb } from "@/lib/mockDb";
 
@@ -26,13 +30,21 @@ type Debito = {
 type Mensalidade = Database["public"]["Tables"]["mensalidades"]["Row"];
 type MensalidadeConfig = Database["public"]["Tables"]["mensalidade_config"]["Row"];
 
+const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
+const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+
 const AdminPage = () => {
   const navigate = useNavigate();
-  const { data: profile } = useProfile();
+  useProfile();
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
   const acceptMatch = useAcceptMatch();
+  const [showOpponentSearch, setShowOpponentSearch] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [timeFrom, setTimeFrom] = useState("");
+  const [timeTo, setTimeTo] = useState("");
 
   const typedPlayers = players as Player[];
   const typedMatches = matches as Match[];
@@ -50,13 +62,11 @@ const AdminPage = () => {
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
 
-  // Pending match requests (open matches from other teams)
   const pendingRequests = typedMatches.filter((m) => {
     const homeTeam = m.home_team;
     return m.status === "open" && myTeam && homeTeam?.id !== myTeam.id && !m.away_team_id;
   }).slice(0, 3);
 
-  // CÃ¡lculo do saldo financeiro real para o dashboard
   const currentYear = new Date().getFullYear();
   const { data: debitos = [] } = useQuery<Debito[]>({
     queryKey: ["debitos", myTeam?.id],
@@ -78,24 +88,19 @@ const AdminPage = () => {
     queryFn: () => mockDb.getMensalidadeConfig(currentYear),
   });
 
+  const { data: registeredTeams = [] } = useQuery<any[]>({
+    queryKey: ["registered_teams"],
+    queryFn: () => mockDb.getAllTeams(),
+  });
+
   const saldoAtual = (() => {
     const valorMensal = mensalidadeConfig?.valor_mensal ? Number(mensalidadeConfig.valor_mensal) : 0;
-    const creditosMensalidades = mensalidades
-      .filter((m) => m.pago && m.data_pagamento)
-      .length * valorMensal;
-    
-    const manualCredits = debitos
-      .filter((d) => d.tipo === "credito")
-      .reduce((sum, debito) => sum + Number(debito.valor), 0);
-
-    const totalDebitos = debitos
-      .filter((d) => d.tipo === "debito")
-      .reduce((sum, debito) => sum + Number(debito.valor), 0);
-
+    const creditosMensalidades = mensalidades.filter((m) => m.pago && m.data_pagamento).length * valorMensal;
+    const manualCredits = debitos.filter((d) => d.tipo === "credito").reduce((sum, debito) => sum + Number(debito.valor), 0);
+    const totalDebitos = debitos.filter((d) => d.tipo === "debito").reduce((sum, debito) => sum + Number(debito.valor), 0);
     return (creditosMensalidades + manualCredits) - totalDebitos;
   })();
 
-  // Top scorers
   const topScorers = [...players]
     .filter((p) => (p.goals || 0) > 0)
     .sort((a, b) => (b.goals || 0) - (a.goals || 0))
@@ -106,38 +111,72 @@ const AdminPage = () => {
     acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
   };
 
+  const toggleFilter = (
+    value: string,
+    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
+    setSelected((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
+  };
+
+  const toMinutes = (value?: string | null) => {
+    if (!value || !value.includes(":")) return null;
+    const [hours, minutes] = value.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const availableOpponentTeams = registeredTeams.filter((team) => team.id !== myTeam?.id);
+  const fromMinutes = toMinutes(timeFrom);
+  const toMinutesFilter = toMinutes(timeTo);
+
+  const filteredOpponentTeams = availableOpponentTeams.filter((team) => {
+    const matchesCategory =
+      selectedCategories.length === 0 || selectedCategories.includes(team.categoria || "");
+    const matchesRegion =
+      selectedRegions.length === 0 || selectedRegions.includes(team.region || "");
+    const teamStart = toMinutes(team.play_time_start);
+    const teamEnd = toMinutes(team.play_time_end);
+    const matchesTime =
+      (!fromMinutes || (teamEnd !== null && teamEnd >= fromMinutes)) &&
+      (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
+
+    return matchesCategory && matchesRegion && matchesTime;
+  });
+
   const quickActions = [
-    { icon: Pencil, label: "EscalaÃ§Ã£o", path: "/escalacao" },
+    { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
-    { icon: Search, label: "Buscar adversÃ¡rio", path: "/match" },
+    { icon: Search, label: "Buscar adversário", path: "#" },
     { icon: Camera, label: "Postar fotos", path: "#" },
   ];
-
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-8 pb-4">
-        <h1 className="text-3xl text-foreground font-display">PAINEL ADMIN ðŸ‘‘</h1>
+        <h1 className="text-3xl text-foreground font-display">PAINEL ADMIN</h1>
       </div>
 
       <div className="px-5 space-y-5">
-        {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos Â· ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team" },
-            { 
-              icon: DollarSign, 
-              value: saldoAtual.toLocaleString("pt-BR", { 
-                style: "currency", 
+            { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team" },
+            {
+              icon: DollarSign,
+              value: saldoAtual.toLocaleString("pt-BR", {
+                style: "currency",
                 currency: "BRL",
-                maximumFractionDigits: 0 
-              }), 
-              label: "Caixa atual", 
-              trend: "Ver movimentaÃ§Ãµes", 
-              color: "text-warning", 
-              path: "/caixa" 
+                maximumFractionDigits: 0,
+              }),
+              label: "Caixa atual",
+              trend: "Ver movimentações",
+              color: "text-warning",
+              path: "/caixa",
             },
           ].map((kpi, i) => (
             <motion.div
@@ -158,7 +197,6 @@ const AdminPage = () => {
           ))}
         </div>
 
-        {/* Quick Actions Grid */}
         <div className="grid grid-cols-3 gap-2">
           {quickActions.map((action, i) => (
             <motion.button
@@ -167,6 +205,10 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
+                if (action.label === "Buscar adversário") {
+                  setShowOpponentSearch((value) => !value);
+                  return;
+                }
                 if (action.path !== "#") {
                   navigate(action.path);
                 }
@@ -179,8 +221,113 @@ const AdminPage = () => {
           ))}
         </div>
 
+        {showOpponentSearch && (
+          <div className="bg-card rounded-xl border border-border p-4 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-display text-foreground">BUSCAR ADVERSÁRIO</h2>
+                <p className="text-[10px] text-muted-foreground">Selecione uma ou mais opções por filtro</p>
+              </div>
+              <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
+            </div>
 
-        {/* Pending match requests */}
+            <div className="space-y-3">
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Categoria</p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIAS.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => toggleFilter(category, setSelectedCategories)}
+                      className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                        selectedCategories.includes(category)
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Região</p>
+                <div className="flex flex-wrap gap-2">
+                  {REGIOES.map((region) => (
+                    <button
+                      key={region}
+                      type="button"
+                      onClick={() => toggleFilter(region, setSelectedRegions)}
+                      className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                        selectedRegions.includes(region)
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="time"
+                    value={timeFrom}
+                    onChange={(e) => setTimeFrom(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                  <Input
+                    type="time"
+                    value={timeTo}
+                    onChange={(e) => setTimeTo(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {filteredOpponentTeams.length > 0 ? (
+                filteredOpponentTeams.map((team) => {
+                  const teamTime =
+                    team.play_time_start && team.play_time_end
+                      ? `${team.play_time_start} até ${team.play_time_end}`
+                      : team.play_time_start || team.play_time_end || "Horário não informado";
+                  const teamDays = Array.isArray(team.play_days) && team.play_days.length > 0
+                    ? team.play_days.join(", ")
+                    : "Dias não informados";
+
+                  return (
+                    <div key={team.id} className="rounded-xl border border-border bg-background p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{team.name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
+                          </p>
+                        </div>
+                        <Shield size={16} className="text-primary" />
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {teamDays} · {teamTime}
+                      </p>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl border border-border bg-background p-4 text-center text-sm text-muted-foreground">
+                  Nenhum time encontrado com esses filtros.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {pendingRequests.length > 0 && (
           <div>
             <h2 className="text-sm font-display text-foreground mb-2">PEDIDOS DE MATCH RECEBIDOS</h2>
@@ -197,20 +344,22 @@ const AdminPage = () => {
                       <div>
                         <p className="text-xs font-semibold text-foreground">{homeTeam?.name}</p>
                         <p className="text-[9px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} Â· {m.location}
+                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => handleAccept(m.id)}
                         disabled={acceptMatch.isPending}
                         className="h-6 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
                       >
                         Aceitar
                       </Button>
-                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">Recusar</Button>
+                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">
+                        Recusar
+                      </Button>
                     </div>
                   </div>
                 );
@@ -219,22 +368,23 @@ const AdminPage = () => {
           </div>
         )}
 
-        {/* Top Scorers */}
         {topScorers.length > 0 && (
           <div>
-            <h2 className="text-sm font-display text-foreground mb-2">ARTILHARIA â€” {myTeam?.name?.toUpperCase()}</h2>
+            <h2 className="text-sm font-display text-foreground mb-2">ARTILHARIA · {myTeam?.name?.toUpperCase()}</h2>
             <div className="space-y-1.5">
               {topScorers.map((p, i) => (
                 <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl border border-border p-3">
-                  <span className={`text-lg font-display w-6 text-center ${i === 0 ? "text-warning" : "text-muted-foreground"}`}>{i + 1}</span>
+                  <span className={`text-lg font-display w-6 text-center ${i === 0 ? "text-warning" : "text-muted-foreground"}`}>
+                    {i + 1}
+                  </span>
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
                     {p.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-foreground">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.position || "â€”"}</p>
+                    <p className="text-[10px] text-muted-foreground">{p.position || "—"}</p>
                   </div>
-                  <span className="text-sm font-display text-foreground">{p.goals} âš½</span>
+                  <span className="text-sm font-display text-foreground">{p.goals} gols</span>
                 </div>
               ))}
             </div>
