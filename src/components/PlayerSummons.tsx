@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMySummons, useRespondSummon } from "@/hooks/useSupabaseData";
+import { useMatchSummons } from "@/hooks/useSupabaseData";
 
 const statusStyles: Record<string, string> = {
   confirmed: "text-success",
@@ -22,8 +22,8 @@ const getInitials = (name: string): string => {
 };
 
 const PlayerSummons = () => {
-  const { data: summons = [], isLoading } = useMySummons();
-  const respond = useRespondSummon();
+  const { data: summons = [], isLoading } = useMatchSummons(undefined);
+  const respond = { mutate: (_: any) => {}, isPending: false };
 
   if (isLoading) return null;
   if (summons.length === 0) return null;
