@@ -152,8 +152,13 @@ const AdminPage = () => {
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
+<<<<<<< HEAD
     { icon: Search, label: "Buscar adversário", path: "#" },
     { icon: Camera, label: "Postar fotos", path: "#" },
+=======
+    { icon: Search, label: "Buscar adversÃ¡rio", path: "/match" },
+    { icon: Camera, label: "Postar fotos", path: "/fotos" },
+>>>>>>> 6187092886d205ee36b3ddb6d5ea32543b00527b
   ];
 
   return (
