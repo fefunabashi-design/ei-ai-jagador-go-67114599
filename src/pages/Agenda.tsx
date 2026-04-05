@@ -386,12 +386,6 @@ const AgendaPage = () => {
           </div>
         )}
 
-        {!myTeam && (
-          <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 text-sm text-warning">
-            ⚠️ Crie um time para gerenciar a agenda de partidas.
-          </div>
-        )}
-
         {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

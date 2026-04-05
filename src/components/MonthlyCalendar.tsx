@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 
 interface CalendarMatch {
@@ -20,24 +27,24 @@ interface MonthlyCalendarProps {
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
-const BRAZILIAN_HOLIDAYS_2026 = [
-  new Date(2026, 0, 1), // Ano Novo
-  new Date(2026, 1, 13), // Sexta-feira Santa (aproximado)
-  new Date(2026, 1, 17), // Carnaval (aproximado)
-  new Date(2026, 3, 21), // Tiradentes
-  new Date(2026, 4, 1), // Dia do Trabalho
-  new Date(2026, 8, 7), // Independência
-  new Date(2026, 9, 12), // Nossa Senhora Aparecida
-  new Date(2026, 10, 2), // Finados
-  new Date(2026, 10, 15), // Proclamação da República
-  new Date(2026, 10, 20), // Dia da Consciência Negra
-  new Date(2026, 11, 25), // Natal
-];
+const BRAZILIAN_HOLIDAYS = {
+  "2026-01-01": "Ano Novo",
+  "2026-02-13": "Sexta-feira Santa",
+  "2026-02-17": "Carnaval",
+  "2026-04-21": "Tiradentes",
+  "2026-05-01": "Dia do Trabalho",
+  "2026-09-07": "Independência",
+  "2026-10-12": "Nossa Senhora Aparecida",
+  "2026-11-02": "Finados",
+  "2026-11-15": "Proclamação da República",
+  "2026-11-20": "Dia da Consciência Negra",
+  "2026-12-25": "Natal",
+};
 
 export const MonthlyCalendar = ({
   matches = [],
   availableDays = [2, 4, 6], // Segunda, Quarta, Sexta
-  holidays = BRAZILIAN_HOLIDAYS_2026,
+  holidays = [],
   onDateClick,
   onDateHover,
 }: MonthlyCalendarProps) => {
@@ -65,13 +72,13 @@ export const MonthlyCalendar = ({
   const emptyDays = Array.from({ length: startingDayOfWeek }, () => null);
   const calendarDays = [...emptyDays, ...monthDays];
 
+  const getHolidayName = (date: Date): string | null => {
+    const dateStr = date.toISOString().split("T")[0];
+    return (BRAZILIAN_HOLIDAYS as Record<string, string>)[dateStr] || null;
+  };
+
   const isHoliday = (date: Date) => {
-    return holidays.some(
-      (h) =>
-        h.getDate() === date.getDate() &&
-        h.getMonth() === date.getMonth() &&
-        h.getFullYear() === date.getFullYear()
-    );
+    return getHolidayName(date) !== null;
   };
 
   const isDayAvailable = (date: Date) => {
@@ -147,8 +154,8 @@ export const MonthlyCalendar = ({
     <div className="w-full max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="space-y-4">
-        {/* Month Navigation */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Month/Year Navigation */}
+        <div className="flex items-center justify-between gap-2 mb-6">
           <Button
             variant="outline"
             size="sm"
@@ -158,10 +165,51 @@ export const MonthlyCalendar = ({
             <ChevronLeft size={16} />
           </Button>
 
-          <div className="text-center flex-1">
-            <h2 className="text-2xl font-display font-bold text-foreground capitalize">
-              {monthLabel}
-            </h2>
+          <div className="flex-1 flex gap-2">
+            <Select
+              value={String(currentDate.getMonth())}
+              onValueChange={(month) => {
+                setCurrentDate(
+                  new Date(currentDate.getFullYear(), parseInt(month), 1)
+                );
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs bg-card border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <SelectItem key={i} value={String(i)}>
+                    {new Date(2026, i, 1).toLocaleDateString("pt-BR", {
+                      month: "long",
+                    })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={String(currentDate.getFullYear())}
+              onValueChange={(year) => {
+                setCurrentDate(
+                  new Date(parseInt(year), currentDate.getMonth(), 1)
+                );
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs bg-card border-border w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const year = 2024 + i;
+                  return (
+                    <SelectItem key={year} value={String(year)}>
+                      {year}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button
@@ -215,6 +263,7 @@ export const MonthlyCalendar = ({
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const isToday =
               new Date().toDateString() === date.toDateString();
+            const holidayName = getHolidayName(date);
 
             return (
               <motion.button
@@ -224,12 +273,13 @@ export const MonthlyCalendar = ({
                 onClick={() => onDateClick?.(date, dateMatches)}
                 onHoverStart={() => onDateHover?.(date)}
                 className={`
-                  aspect-square border border-border/30 p-2 flex flex-col items-center justify-center
+                  aspect-square border border-border/30 p-1.5 flex flex-col items-center justify-center
                   relative transition-all rounded-lg
                   ${colors.bg}
                   ${isToday ? "ring-2 ring-primary" : ""}
-                  hover:border-border cursor-pointer
+                  hover:border-border cursor-pointer text-center
                 `}
+                title={holidayName || undefined}
               >
                 {/* Dot indicator for holiday/available */}
                 {!dateMatches.length && (
@@ -238,19 +288,23 @@ export const MonthlyCalendar = ({
 
                 {/* Day number */}
                 <span
-                  className={`text-sm font-semibold ${colors.label} ${
+                  className={`text-xs font-semibold ${colors.label} ${
                     isToday ? "text-primary font-bold" : ""
                   }`}
                 >
                   {day}
                 </span>
 
-                {/* Match indicator */}
-                {dateMatches.length > 0 && (
-                  <span className="text-[10px] font-bold text-green-600 dark:text-green-400 mt-0.5">
+                {/* Match indicator or Holiday name */}
+                {dateMatches.length > 0 ? (
+                  <span className="text-[9px] font-bold text-green-600 dark:text-green-400 mt-0.5">
                     {dateMatches.length} jogo{dateMatches.length > 1 ? "s" : ""}
                   </span>
-                )}
+                ) : holidayName ? (
+                  <span className="text-[8px] font-semibold text-red-600 dark:text-red-400 mt-0.5 leading-tight line-clamp-2">
+                    {holidayName}
+                  </span>
+                ) : null}
               </motion.button>
             );
           })}
