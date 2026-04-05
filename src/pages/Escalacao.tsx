@@ -179,7 +179,7 @@ export default function EscalacaoPage() {
             </button>
           </div>
 
-          <div className="overflow-auto rounded-2xl" style={{maxHeight:"calc(100dvh - 280px)"}}>
+          <div className="overflow-auto rounded-2xl" style={{maxHeight:"calc(100dvh - 320px)"}}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox={`0 0 ${VBWW} ${VBHH}`}
@@ -258,9 +258,9 @@ export default function EscalacaoPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="w-[72px] shrink-0 pt-10">
-          <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider mb-1 text-center">Confirmados</p>
-          <div className="overflow-y-auto space-y-1" style={{maxHeight:340}}>
+        <div className="w-[68px] shrink-0 pt-8">
+          <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-wider mb-1 text-center">Confirmados</p>
+          <div className="overflow-y-auto space-y-0.5" style={{maxHeight:280}}>
             {available.length===0 && <p className="text-[9px] text-muted-foreground text-center py-2 leading-tight">Todos escalados</p>}
             {available.map(p=>{
               const isSel=sel?.id===p.id&&sel.from==="list";
@@ -282,34 +282,34 @@ export default function EscalacaoPage() {
 
       {/* Ações campo selecionado */}
       {sel?.from==="field" && sel.slotKey && (
-        <div className="mx-4 mt-2 flex gap-1.5">
-          <Button size="sm" variant="outline" className="flex-1 text-[10px] h-7"
-            onClick={()=>toRes({id:sel.id,name:sel.name},sel.slotKey)}>→ Reservas</Button>
-          <Button size="sm" variant="outline" className="flex-1 text-[10px] h-7 text-orange-500 border-orange-400/40"
-            onClick={()=>toSub({id:sel.id,name:sel.name},sel.slotKey)}>→ Substituído</Button>
-          <Button size="sm" variant="ghost" className="px-2 h-7" onClick={()=>setSel(null)}><X size={12}/></Button>
+        <div className="mx-4 mt-1.5 flex gap-1">
+          <Button size="sm" variant="outline" className="flex-1 text-[9px] h-6"
+            onClick={()=>toRes({id:sel.id,name:sel.name},sel.slotKey)}>Reservas</Button>
+          <Button size="sm" variant="outline" className="flex-1 text-[9px] h-6 text-orange-500 border-orange-400/40"
+            onClick={()=>toSub({id:sel.id,name:sel.name},sel.slotKey)}>Sub</Button>
+          <Button size="sm" variant="ghost" className="px-1 h-6" onClick={()=>setSel(null)}><X size={11}/></Button>
         </div>
       )}
 
       {/* Reservas */}
-      <div className="px-4 mt-3">
+      <div className="px-4 mt-2">
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/50">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Reservas</span>
-            <span className="text-[10px] text-muted-foreground">{reservas.length}</span>
+          <div className="flex items-center justify-between px-3 py-1 bg-secondary/50">
+            <span className="text-[9px] font-bold uppercase tracking-wider">Reservas</span>
+            <span className="text-[9px] text-muted-foreground">{reservas.length}</span>
           </div>
-          <div className="p-2 min-h-[36px] flex flex-wrap gap-1.5">
+          <div className="p-1.5 min-h-[32px] flex flex-wrap gap-1">
             {reservas.length===0
-              ? <p className="text-[9px] text-muted-foreground w-full text-center py-1">Nenhum reserva</p>
+              ? <p className="text-[8px] text-muted-foreground w-full text-center py-0.5">Nenhum</p>
               : reservas.map(p=>{
                 const isSel=sel?.id===p.id&&sel.from==="res";
                 return (
                   <button key={p.id}
                     onClick={()=>isSel?setSel(null):doSelect({id:p.id,name:p.name,from:"res"})}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold ${
+                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[8px] font-semibold ${
                       isSel?"bg-yellow-400/20 border border-yellow-400/60 text-yellow-700":"bg-secondary border border-border text-foreground"}`}>
                     {p.name}
-                    <span onClick={e=>{e.stopPropagation();fromRes(p);}} className="text-muted-foreground hover:text-destructive ml-0.5"><X size={9}/></span>
+                    <span onClick={e=>{e.stopPropagation();fromRes(p);}} className="text-muted-foreground hover:text-destructive ml-0.5"><X size={8}/></span>
                   </button>
                 );
               })
@@ -319,19 +319,19 @@ export default function EscalacaoPage() {
       </div>
 
       {/* Substituídos */}
-      <div className="px-4 mt-2">
+      <div className="px-4 mt-1.5">
         <div className="bg-card rounded-xl border border-orange-500/25 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1.5 bg-orange-500/5">
-            <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">Substituídos</span>
-            <span className="text-[10px] text-muted-foreground">{subs.length}</span>
+          <div className="flex items-center justify-between px-3 py-1 bg-orange-500/5">
+            <span className="text-[9px] font-bold text-orange-500 uppercase tracking-wider">Substituídos</span>
+            <span className="text-[9px] text-muted-foreground">{subs.length}</span>
           </div>
-          <div className="p-2 min-h-[36px] flex flex-wrap gap-1.5">
+          <div className="p-1.5 min-h-[32px] flex flex-wrap gap-1">
             {subs.length===0
-              ? <p className="text-[9px] text-muted-foreground w-full text-center py-1">Nenhum substituído</p>
+              ? <p className="text-[8px] text-muted-foreground w-full text-center py-0.5">Nenhum</p>
               : subs.map(p=>(
-                <span key={p.id} className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-600">
+                <span key={p.id} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[8px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-600">
                   {p.name}
-                  <button onClick={()=>fromSub(p)} className="hover:text-destructive ml-0.5"><X size={9}/></button>
+                  <button onClick={()=>fromSub(p)} className="hover:text-destructive ml-0.5"><X size={8}/></button>
                 </span>
               ))
             }
@@ -340,12 +340,12 @@ export default function EscalacaoPage() {
       </div>
 
       {/* Botões */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 flex gap-2 pb-1 pt-2 bg-background/90 backdrop-blur">
-        <Button variant="outline" size="sm" onClick={reset} className="text-xs h-9">
-          <RotateCcw size={12} className="mr-1"/> Resetar
+      <div className="fixed bottom-16 left-0 right-0 px-4 flex gap-2 pb-0.5 pt-1.5 bg-background/90 backdrop-blur">
+        <Button variant="outline" size="sm" onClick={reset} className="text-[9px] h-8">
+          <RotateCcw size={11} className="mr-1"/> Resetar
         </Button>
-        <Button onClick={save} className="flex-1 bg-gradient-primary text-primary-foreground border-0 text-xs h-9">
-          <Save size={12} className="mr-1"/> Salvar Escalação
+        <Button onClick={save} className="flex-1 bg-gradient-primary text-primary-foreground border-0 text-[9px] h-8">
+          <Save size={11} className="mr-1"/> Salvar
         </Button>
       </div>
 
