@@ -32,6 +32,7 @@ const BRAZILIAN_HOLIDAYS = {
   "2026-02-23": "Segunda de Carnaval",
   "2026-02-24": "Carnaval",
   "2026-04-03": "Sexta-feira Santa",
+  "2026-04-05": "Páscoa",
   "2026-04-21": "Tiradentes",
   "2026-05-01": "Dia do Trabalho",
   "2026-09-07": "Independência",
