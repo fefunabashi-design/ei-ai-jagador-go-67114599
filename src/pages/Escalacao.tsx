@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, RotateCcw, Save, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, RotateCcw, Save, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMyTeam, usePlayers, useMatches, useMatchSummons } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +24,21 @@ const SLOTS = [
 
 type Player = { id: string; name: string };
 type SlotMap = Record<string, Player>;
-type Sel = { id: string; name: string; from: "list"|"field"|"res"|"sub"; slotKey?: string };
+type Sel = { id: string; name: string; from: "list"|"field"; slotKey?: string };
+
+const FALLBACK_SQUAD: Player[] = [
+  { id: "fb-01", name: "Carlao" },
+  { id: "fb-02", name: "Rafa" },
+  { id: "fb-03", name: "Marcao" },
+  { id: "fb-04", name: "Bruno" },
+  { id: "fb-05", name: "Leo" },
+  { id: "fb-06", name: "Didi" },
+  { id: "fb-07", name: "Nando" },
+  { id: "fb-08", name: "Paulinho" },
+  { id: "fb-09", name: "Rick" },
+  { id: "fb-10", name: "Gabi" },
+  { id: "fb-11", name: "Thi" },
+];
 
 function truncate(s: string, n = 7) { return s.length > n ? s.slice(0, n-1)+"." : s; }
 
@@ -91,98 +105,145 @@ export default function EscalacaoPage() {
   const { data: matches=[] }   = useMatches();
 
   const [slots, setSlots]   = useState<SlotMap>({});
-  const [reservas, setRes]  = useState<Player[]>([]);
-  const [subs, setSubs]     = useState<Player[]>([]);
   const [sel, setSel]       = useState<Sel|null>(null);
-  const [zoom, setZoom]     = useState(1);
+  const [draggingPlayer, setDraggingPlayer] = useState<Player | null>(null);
+  const [zoom, setZoom]     = useState(() => (typeof window !== "undefined" && window.innerWidth < 768 ? 0.9 : 1));
 
   const myMatches = useMemo(()=>
     matches.filter(m=>(m.home_team as any)?.id===myTeam?.id),[matches,myTeam]);
   const matchId = myMatches[0]?.id||"";
   const { data: summons=[] } = useMatchSummons(matchId||undefined);
 
+  const fallbackPlayers = useMemo<Player[]>(() => {
+    if (allPlayers.length > 0 || typeof window === "undefined") {
+      return [];
+    }
+
+    try {
+      const raw = localStorage.getItem("mock_players");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.map((p: any) => ({
+        id: p.id,
+        name: p.display_name || p.nickname || p.name || "?",
+      }));
+    } catch {
+      return [];
+    }
+  }, [allPlayers]);
+
   const confirmed = useMemo<Player[]>(()=>{
     const list = summons
       .filter((s:any)=>s.status==="confirmed")
       .map((s:any)=>({ id:s.player_id, name:s.player?.display_name||s.player?.nickname||s.player?.name||"?" }));
     if(list.length) return list;
-    return allPlayers.map(p=>({ id:p.id, name:p.display_name||p.nickname||p.name }));
-  },[summons,allPlayers]);
+    const teamPlayers = allPlayers.map(p=>({ id:p.id, name:p.display_name||p.nickname||p.name }));
+    if (teamPlayers.length) return teamPlayers;
+    if (fallbackPlayers.length) return fallbackPlayers;
+    return FALLBACK_SQUAD;
+  },[summons,allPlayers,fallbackPlayers]);
 
   const placedIds = useMemo(()=>new Set([
     ...Object.values(slots).map(p=>p.id),
-    ...reservas.map(p=>p.id),
-    ...subs.map(p=>p.id),
-  ]),[slots,reservas,subs]);
+  ]),[slots]);
 
   const available = confirmed.filter(p=>!placedIds.has(p.id));
 
   const doSelect = (info:Sel) => setSel(prev=>prev?.id===info.id&&prev.from===info.from?null:info);
 
+  const placePlayerInSlot = (player: Player, key: string, fromSlotKey?: string) => {
+    if (slots[key] && fromSlotKey !== key) {
+      toast({ title: "Posição ocupada", description: "Remova o jogador atual antes de posicionar outro." });
+      return false;
+    }
+
+    setSlots((prev) => {
+      const next = { ...prev };
+      if (fromSlotKey) {
+        delete next[fromSlotKey];
+      }
+      next[key] = player;
+      return next;
+    });
+
+    return true;
+  };
+
   const placeOnSlot = (key:string) => {
     if(!sel){ const occ=slots[key]; if(occ) doSelect({id:occ.id,name:occ.name,from:"field",slotKey:key}); return; }
     if(sel.from==="field"&&sel.slotKey===key){ setSel(null); return; }
-    const occ = slots[key];
-    setSlots(prev=>{
-      const n={...prev};
-      if(sel.from==="field"&&sel.slotKey){ delete n[sel.slotKey]; if(occ) n[sel.slotKey]=occ; }
-      else if(sel.from==="res"){ setRes(r=>occ?[...r.filter(p=>p.id!==sel.id),occ]:r.filter(p=>p.id!==sel.id)); }
-      else if(sel.from==="sub"){ setSubs(s=>occ?[...s.filter(p=>p.id!==sel.id),occ]:s.filter(p=>p.id!==sel.id)); }
-      else { if(occ) setRes(r=>[...r,occ]); }
-      n[key]={id:sel.id,name:sel.name};
-      return n;
-    });
-    setSel(null);
+
+    const moved = placePlayerInSlot(
+      { id: sel.id, name: sel.name },
+      key,
+      sel.from === "field" ? sel.slotKey : undefined
+    );
+
+    if (moved) {
+      setSel(null);
+    }
   };
 
-  const toRes=(p:Player,k?:string)=>{ if(k) setSlots(prev=>{const n={...prev};delete n[k];return n;}); setRes(r=>[...r,p]); setSel(null); };
-  const toSub=(p:Player,k?:string)=>{ if(k) setSlots(prev=>{const n={...prev};delete n[k];return n;}); setSubs(s=>[...s,p]); setSel(null); };
-  const fromRes=(p:Player)=>{ setRes(r=>r.filter(x=>x.id!==p.id)); setSel(null); };
-  const fromSub=(p:Player)=>{ setSubs(s=>s.filter(x=>x.id!==p.id)); setSel(null); };
-  const reset=()=>{ setSlots({}); setRes([]); setSubs([]); setSel(null); toast({title:"Escalação resetada"}); };
+  const removeFromSlot = (key: string) => {
+    setSlots((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (sel?.from === "field" && sel.slotKey === key) {
+      setSel(null);
+    }
+  };
+
+  const reset=()=>{ setSlots({}); setSel(null); toast({title:"Escalação resetada"}); };
   const save =()=> toast({title:`Escalação salva! ✅ (${Object.keys(slots).length}/11)`});
 
   // campo SVG viewBox 400x600
   const VBWW=400, VBHH=600;
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-x-hidden" style={{userSelect:"none"}}>
+    <div className="relative min-h-screen bg-background pb-24 md:pb-8 overflow-x-hidden" style={{userSelect:"none"}}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(16,185,129,0.1),transparent_35%)]" />
 
       {/* Header */}
-      <div className="px-4 pt-5 pb-2 flex items-center gap-2">
-        <button onClick={()=>navigate(-1)}><ArrowLeft size={20} className="text-muted-foreground"/></button>
-        <h1 className="text-xl font-display text-foreground flex-1">ESCALAÇÃO</h1>
-        <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-1 rounded-lg">4-4-2</span>
+      <div className="px-3 md:px-6 pt-4 pb-2 max-w-6xl mx-auto">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-card via-card/95 to-card/80 px-3 py-2.5 flex items-center gap-2 shadow-[0_10px_30px_-20px_hsl(var(--primary))] backdrop-blur">
+          <button onClick={()=>navigate(-1)}><ArrowLeft size={20} className="text-muted-foreground"/></button>
+          <h1 className="text-lg md:text-xl font-display text-foreground flex-1">ESCALAÇÃO</h1>
+          <span className="text-[10px] font-semibold bg-primary/15 text-primary px-2 py-1 rounded-lg border border-primary/30">4-4-2</span>
+        </div>
       </div>
 
       {/* Hint */}
       {sel && (
-        <div className="mx-4 mb-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl px-3 py-1.5 text-[11px] text-yellow-700 font-semibold">
-          ⚽ {sel.name} selecionado — toque uma posição no campo
+        <div className="mx-3 md:mx-6 mb-2 bg-yellow-500/15 border border-yellow-500/35 rounded-xl px-3 py-2 text-[11px] text-yellow-700 font-semibold max-w-6xl shadow-[0_8px_25px_-20px_#facc15]">
+          ⚽ {sel.name} selecionado — toque/clique uma posição no campo
         </div>
       )}
 
       {/* Campo + Sidebar */}
-      <div className="flex gap-2 px-2">
+      <div className="relative grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto">
 
         {/* Campo SVG */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur">
           {/* Zoom controls */}
-          <div className="flex gap-1 justify-end mb-1">
+          <div className="flex gap-1 justify-end mb-2">
             <button onClick={()=>setZoom(z=>Math.min(z+0.2,2.4))}
-              className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
+              className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-background/70 border border-border/80 hover:border-primary/40 hover:bg-primary/5 transition-colors flex items-center justify-center">
               <ZoomIn size={14} className="text-muted-foreground"/>
             </button>
             <button onClick={()=>setZoom(z=>Math.max(z-0.2,0.5))}
-              className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
+              className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-background/70 border border-border/80 hover:border-primary/40 hover:bg-primary/5 transition-colors flex items-center justify-center">
               <ZoomOut size={14} className="text-muted-foreground"/>
             </button>
           </div>
 
-          <div className="overflow-auto rounded-2xl" style={{maxHeight:"calc(100dvh - 320px)"}}>
+          <div className="overflow-auto rounded-xl" style={{maxHeight:"min(68dvh, 640px)"}}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox={`0 0 ${VBWW} ${VBHH}`}
+              onDragOver={(e) => e.preventDefault()}
               style={{
                 width: `${zoom * 100}%`,
                 height: "auto",
@@ -241,38 +302,119 @@ export default function EscalacaoPage() {
                 const occ = slots[slot.key];
                 const isSel = sel?.from==="field" && sel?.slotKey===slot.key;
                 return (
-                  <g key={slot.key} onClick={()=>placeOnSlot(slot.key)} style={{cursor:"pointer"}}>
-                    {occ
-                      ? <ShirtFilled cx={slot.x} cy={slot.y} name={occ.name} selected={isSel}/>
-                      : <ShirtEmpty  cx={slot.x} cy={slot.y} label={slot.label} highlight={!!sel}/>
-                    }
+                  <g
+                    key={slot.key}
+                    onClick={()=>placeOnSlot(slot.key)}
+                    onDragOver={(e) => {
+                      if (!occ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (!draggingPlayer) return;
+                      const moved = placePlayerInSlot(draggingPlayer, slot.key);
+                      if (moved) {
+                        setDraggingPlayer(null);
+                      }
+                    }}
+                    style={{cursor:"pointer"}}
+                  >
+                    {occ ? (
+                      <>
+                        <ShirtFilled cx={slot.x} cy={slot.y} name={occ.name} selected={isSel}/>
+                        <g
+                          onClick={(e: any) => {
+                            e.stopPropagation();
+                            removeFromSlot(slot.key);
+                          }}
+                        >
+                          <circle cx={slot.x + 27} cy={slot.y - 24} r="9" fill="rgba(20,20,20,0.85)" stroke="rgba(255,255,255,0.85)" strokeWidth="1" />
+                          <text
+                            x={slot.x + 27}
+                            y={slot.y - 20}
+                            textAnchor="middle"
+                            fontSize="11"
+                            fontWeight="700"
+                            fill="white"
+                            fontFamily="system-ui,sans-serif"
+                          >
+                            x
+                          </text>
+                        </g>
+                      </>
+                    ) : (
+                      <ShirtEmpty  cx={slot.x} cy={slot.y} label={slot.label} highlight={!!sel || !!draggingPlayer}/>
+                    )}
                   </g>
                 );
               })}
             </svg>
           </div>
 
-          <p className="text-center text-[10px] text-muted-foreground mt-1 font-semibold">
+          <p className="text-center text-[10px] md:text-xs text-muted-foreground mt-1 font-semibold">
             4-4-2 · {Object.keys(slots).length}/11 escalados
           </p>
         </div>
 
         {/* Sidebar */}
-        <div className="w-[68px] shrink-0 pt-8">
-          <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-wider mb-1 text-center">Confirmados</p>
-          <div className="overflow-y-auto space-y-0.5" style={{maxHeight:280}}>
-            {available.length===0 && <p className="text-[9px] text-muted-foreground text-center py-2 leading-tight">Todos escalados</p>}
+        <div className="bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur md:flex md:flex-col min-h-0">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Confirmados</p>
+            <span className="text-[10px] text-muted-foreground font-semibold">{available.length}</span>
+          </div>
+
+          {/* Mobile: lista horizontal */}
+          <div className="md:hidden overflow-x-auto">
+            <div className="flex gap-2 pb-1">
+              {available.length===0 && <p className="text-[10px] text-muted-foreground py-2">Todos escalados</p>}
+              {available.map(p=>{
+                const isSel=sel?.id===p.id&&sel.from==="list";
+                return (
+                  <button
+                    key={p.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      setDraggingPlayer({ id: p.id, name: p.name });
+                    }}
+                    onDragEnd={() => setDraggingPlayer(null)}
+                    onClick={()=>doSelect({id:p.id,name:p.name,from:"list"})}
+                    className={`min-w-[110px] rounded-xl px-2 py-2 flex items-center gap-2 transition-all ${
+                      isSel?"bg-yellow-400/25 border border-yellow-400 shadow-[0_8px_20px_-16px_#facc15]":"bg-background/60 border border-border/80 hover:border-primary/30"}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      isSel?"bg-yellow-400 text-black":"bg-primary/15 text-primary"}`}>
+                      {p.name.slice(0,1).toUpperCase()}
+                    </div>
+                    <span className="text-[10px] font-semibold text-foreground truncate">{p.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: lista vertical */}
+          <div className="hidden md:block overflow-y-auto space-y-1 flex-1 min-h-0 pr-1">
+            {available.length===0 && <p className="text-[10px] text-muted-foreground text-center py-2 leading-tight">Todos escalados</p>}
             {available.map(p=>{
               const isSel=sel?.id===p.id&&sel.from==="list";
               return (
-                <button key={p.id} onClick={()=>doSelect({id:p.id,name:p.name,from:"list"})}
-                  className={`w-full rounded-lg px-1.5 py-1.5 flex items-center gap-1 transition-all ${
-                    isSel?"bg-yellow-400/25 border border-yellow-400":"bg-card border border-border"}`}>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${
+                <button
+                  key={p.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    setDraggingPlayer({ id: p.id, name: p.name });
+                  }}
+                  onDragEnd={() => setDraggingPlayer(null)}
+                  onClick={()=>doSelect({id:p.id,name:p.name,from:"list"})}
+                  className={`w-full rounded-lg px-2 py-1.5 flex items-center gap-2 transition-all ${
+                    isSel?"bg-yellow-400/25 border border-yellow-400 shadow-[0_8px_20px_-16px_#facc15]":"bg-background/60 border border-border/80 hover:border-primary/30"}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
                     isSel?"bg-yellow-400 text-black":"bg-primary/15 text-primary"}`}>
                     {p.name.slice(0,1).toUpperCase()}
                   </div>
-                  <span className="text-[9px] font-semibold text-foreground leading-tight truncate">{p.name}</span>
+                  <span className="text-xs font-semibold text-foreground leading-tight truncate">{p.name}</span>
                 </button>
               );
             })}
@@ -280,73 +422,16 @@ export default function EscalacaoPage() {
         </div>
       </div>
 
-      {/* Ações campo selecionado */}
-      {sel?.from==="field" && sel.slotKey && (
-        <div className="mx-4 mt-1.5 flex gap-1">
-          <Button size="sm" variant="outline" className="flex-1 text-[9px] h-6"
-            onClick={()=>toRes({id:sel.id,name:sel.name},sel.slotKey)}>Reservas</Button>
-          <Button size="sm" variant="outline" className="flex-1 text-[9px] h-6 text-orange-500 border-orange-400/40"
-            onClick={()=>toSub({id:sel.id,name:sel.name},sel.slotKey)}>Sub</Button>
-          <Button size="sm" variant="ghost" className="px-1 h-6" onClick={()=>setSel(null)}><X size={11}/></Button>
-        </div>
-      )}
-
-      {/* Reservas */}
-      <div className="px-4 mt-2">
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1 bg-secondary/50">
-            <span className="text-[9px] font-bold uppercase tracking-wider">Reservas</span>
-            <span className="text-[9px] text-muted-foreground">{reservas.length}</span>
-          </div>
-          <div className="p-1.5 min-h-[32px] flex flex-wrap gap-1">
-            {reservas.length===0
-              ? <p className="text-[8px] text-muted-foreground w-full text-center py-0.5">Nenhum</p>
-              : reservas.map(p=>{
-                const isSel=sel?.id===p.id&&sel.from==="res";
-                return (
-                  <button key={p.id}
-                    onClick={()=>isSel?setSel(null):doSelect({id:p.id,name:p.name,from:"res"})}
-                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[8px] font-semibold ${
-                      isSel?"bg-yellow-400/20 border border-yellow-400/60 text-yellow-700":"bg-secondary border border-border text-foreground"}`}>
-                    {p.name}
-                    <span onClick={e=>{e.stopPropagation();fromRes(p);}} className="text-muted-foreground hover:text-destructive ml-0.5"><X size={8}/></span>
-                  </button>
-                );
-              })
-            }
-          </div>
-        </div>
-      </div>
-
-      {/* Substituídos */}
-      <div className="px-4 mt-1.5">
-        <div className="bg-card rounded-xl border border-orange-500/25 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1 bg-orange-500/5">
-            <span className="text-[9px] font-bold text-orange-500 uppercase tracking-wider">Substituídos</span>
-            <span className="text-[9px] text-muted-foreground">{subs.length}</span>
-          </div>
-          <div className="p-1.5 min-h-[32px] flex flex-wrap gap-1">
-            {subs.length===0
-              ? <p className="text-[8px] text-muted-foreground w-full text-center py-0.5">Nenhum</p>
-              : subs.map(p=>(
-                <span key={p.id} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[8px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-600">
-                  {p.name}
-                  <button onClick={()=>fromSub(p)} className="hover:text-destructive ml-0.5"><X size={8}/></button>
-                </span>
-              ))
-            }
-          </div>
-        </div>
-      </div>
-
       {/* Botões */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 flex gap-2 pb-0.5 pt-1.5 bg-background/90 backdrop-blur">
-        <Button variant="outline" size="sm" onClick={reset} className="text-[9px] h-8">
-          <RotateCcw size={11} className="mr-1"/> Resetar
-        </Button>
-        <Button onClick={save} className="flex-1 bg-gradient-primary text-primary-foreground border-0 text-[9px] h-8">
-          <Save size={11} className="mr-1"/> Salvar
-        </Button>
+      <div className="fixed md:static bottom-16 left-0 right-0 px-3 md:px-6 max-w-6xl mx-auto pb-1 pt-1.5 md:pt-3 bg-background/90 md:bg-transparent backdrop-blur md:backdrop-blur-none">
+        <div className="flex gap-2 rounded-2xl border border-white/10 bg-card/80 backdrop-blur p-1 shadow-[0_16px_35px_-28px_hsl(var(--primary))]">
+          <Button variant="outline" size="sm" onClick={reset} className="text-[10px] md:text-xs h-8 md:h-9 border-border/80 bg-background/70 hover:bg-background">
+            <RotateCcw size={11} className="mr-1"/> Resetar
+          </Button>
+          <Button onClick={save} className="flex-1 bg-gradient-primary text-primary-foreground border-0 text-[10px] md:text-xs h-8 md:h-9 shadow-[0_10px_20px_-12px_hsl(var(--primary))]">
+            <Save size={11} className="mr-1"/> Salvar
+          </Button>
+        </div>
       </div>
 
       <BottomNav/>

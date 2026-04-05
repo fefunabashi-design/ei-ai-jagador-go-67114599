@@ -46,16 +46,11 @@ const BRAZILIAN_HOLIDAYS = {
 export const MonthlyCalendar = ({
   matches = [],
   availableDays = [2, 4, 6], // Segunda, Quarta, Sexta
-  holidays = [],
   onDateClick,
   onDateHover,
 }: MonthlyCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  const monthLabel = currentDate.toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const firstDayOfMonth = new Date(
     currentDate.getFullYear(),
@@ -148,16 +143,12 @@ export const MonthlyCalendar = ({
     );
   };
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
-
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
+    <div className="w-full max-w-2xl mx-auto space-y-2">
       {/* Header */}
-      <div className="space-y-4">
+      <div className="space-y-1">
         {/* Month/Year Navigation */}
-        <div className="flex items-center justify-between gap-2 mb-6">
+        <div className="flex items-center justify-between gap-2 mb-2">
           <Button
             variant="outline"
             size="sm"
@@ -223,15 +214,6 @@ export const MonthlyCalendar = ({
             <ChevronRight size={16} />
           </Button>
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={goToToday}
-          className="w-full text-xs"
-        >
-          Hoje
-        </Button>
       </div>
 
       {/* Calendar Grid */}
@@ -265,6 +247,7 @@ export const MonthlyCalendar = ({
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const isToday =
               new Date().toDateString() === date.toDateString();
+            const isSelected = selectedDate?.toDateString() === date.toDateString();
             const holidayName = getHolidayName(date);
 
             return (
@@ -272,13 +255,17 @@ export const MonthlyCalendar = ({
                 key={day}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onDateClick?.(date, dateMatches)}
+                onClick={() => {
+                  setSelectedDate(date);
+                  onDateClick?.(date, dateMatches);
+                }}
                 onHoverStart={() => onDateHover?.(date)}
                 className={`
                   aspect-square border border-border/30 p-1.5 flex flex-col items-center justify-center
                   relative transition-all rounded-lg
                   ${colors.bg}
-                  ${isToday ? "ring-2 ring-primary" : ""}
+                  ${isSelected ? "ring-2 ring-blue-500 border-blue-500" : ""}
+                  ${isToday && !isSelected ? "ring-1 ring-border" : ""}
                   hover:border-border cursor-pointer text-center
                 `}
                 title={holidayName || undefined}
@@ -291,7 +278,7 @@ export const MonthlyCalendar = ({
                 {/* Day number */}
                 <span
                   className={`text-xs font-semibold ${colors.label} ${
-                    isToday ? "text-primary font-bold" : ""
+                    isSelected ? "text-blue-700 dark:text-blue-300 font-bold" : ""
                   }`}
                 >
                   {day}

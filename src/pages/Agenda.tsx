@@ -331,7 +331,7 @@ const AgendaPage = () => {
         </div>
       </div>
 
-      <div className="px-5 space-y-4">
+      <div className={`px-5 ${view === "calendar" ? "space-y-2" : "space-y-4"}`}>
         {/* View Toggle and Filters */}
         <div className="flex items-center gap-2 justify-between">
           <div className="flex gap-2">

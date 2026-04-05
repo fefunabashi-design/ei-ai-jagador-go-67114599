@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
   { icon: Search, label: "Match", path: "/match" },
-  { icon: null, label: "+", path: "/escalacao", isCenter: true },
+  { icon: null, label: "Escalação", path: "/escalacao", isCenter: true },
   { icon: CalendarDays, label: "Agenda", path: "/agenda" },
   { icon: Crown, label: "Admin", path: "/admin" },
 ];
@@ -18,14 +18,14 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border">
       <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.path === "/admin" && location.pathname === "/agenda");
+          const isActive = location.pathname === item.path;
 
           if (item.isCenter) {
             return (
               <button
                 key="center"
                 onClick={() => navigate(item.path)}
+                aria-label={item.label}
                 className="relative -mt-5 w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow text-primary-foreground"
               >
                 <Plus size={24} />
