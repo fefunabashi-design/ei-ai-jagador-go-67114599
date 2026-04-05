@@ -41,6 +41,45 @@ const DEFAULT_PROFILE = {
   updated_at: now(),
 };
 
+const DEFAULT_TEAM_SEED = {
+  id: "mock-team-seed-001",
+  owner_id: "mock-user-id",
+  name: "Jagador FC",
+  abbreviation: "JFC",
+  region: "Z/S",
+  categoria: "40+",
+  phone: "(11) 3333-2222",
+  mobile: "(11) 98888-7777",
+  email: "contato@jagadorfc.com",
+  instagram: "@jagadorfc",
+  rating: 0,
+  created_at: now(),
+  updated_at: now(),
+};
+
+const DEFAULT_PLAYERS_SEED = [
+  { id: "p-seed-01", name: "Carlos", last_name: "Silva", nickname: "Carlão", position: "Gol", jersey_number: 1, is_active: true },
+  { id: "p-seed-02", name: "Rafael", last_name: "Souza", nickname: "Rafa", position: "Lat Dir", jersey_number: 2, is_active: true },
+  { id: "p-seed-03", name: "Marcos", last_name: "Oliveira", nickname: "Marcão", position: "Zaga", jersey_number: 3, is_active: true },
+  { id: "p-seed-04", name: "Bruno", last_name: "Costa", nickname: "Bruninho", position: "Zaga", jersey_number: 4, is_active: true },
+  { id: "p-seed-05", name: "Leandro", last_name: "Pereira", nickname: "Léo", position: "Lat Esq", jersey_number: 6, is_active: true },
+  { id: "p-seed-06", name: "Diego", last_name: "Almeida", nickname: "Didi", position: "Volante", jersey_number: 5, is_active: true },
+  { id: "p-seed-07", name: "Fernando", last_name: "Lima", nickname: "Nando", position: "Meia", jersey_number: 8, is_active: true },
+  { id: "p-seed-08", name: "Paulo", last_name: "Rocha", nickname: "Paulinho", position: "Meia", jersey_number: 10, is_active: true },
+  { id: "p-seed-09", name: "Ricardo", last_name: "Mendes", nickname: "Rick", position: "Atacante", jersey_number: 7, is_active: true },
+  { id: "p-seed-10", name: "Gabriel", last_name: "Nunes", nickname: "Gabi", position: "Atacante", jersey_number: 9, is_active: true },
+  { id: "p-seed-11", name: "Tiago", last_name: "Santos", nickname: "Thi", position: "Atacante", jersey_number: 11, is_active: true },
+  { id: "p-seed-12", name: "André", last_name: "Ribeiro", nickname: "Dedé", position: "Meia", jersey_number: 12, is_active: true },
+].map((player) => ({
+  ...player,
+  team_id: DEFAULT_TEAM_SEED.id,
+  goals: 0,
+  matches: 0,
+  rating: 0,
+  created_at: now(),
+  updated_at: now(),
+}));
+
 export const mockDb = {
   getProfile: () => get("mock_profile", DEFAULT_PROFILE),
 
@@ -435,3 +474,21 @@ export const mockDb = {
     return newConfig;
   },
 };
+
+function seedMockData() {
+  const hasTeam = !!localStorage.getItem("mock_team");
+  const rawPlayers = localStorage.getItem("mock_players");
+  const hasPlayers = !!rawPlayers;
+  const parsedPlayers = rawPlayers ? get<any[]>("mock_players", []) : [];
+  const hasNonEmptyPlayers = Array.isArray(parsedPlayers) && parsedPlayers.length > 0;
+
+  if (!hasTeam) {
+    set("mock_team", DEFAULT_TEAM_SEED);
+  }
+
+  if (!hasPlayers || !hasNonEmptyPlayers) {
+    set("mock_players", DEFAULT_PLAYERS_SEED);
+  }
+}
+
+seedMockData();
