@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard,
+  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
+import MonthlyCalendar from "@/components/MonthlyCalendar";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
@@ -72,6 +73,7 @@ const allPositions = [
 
 const AgendaPage = () => {
   const navigate = useNavigate();
+  const [view, setView] = useState<"list" | "calendar">("list");
   const [filter, setFilter] = useState<FilterType>("upcoming");
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
@@ -326,31 +328,63 @@ const AgendaPage = () => {
             <h1 className="text-4xl text-foreground font-display">AGENDA</h1>
             <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
           </div>
-          {myTeam && (
-            <Button onClick={() => setCreateOpen(true)} className="bg-gradient-primary text-primary-foreground border-0">
-              <Plus size={16} className="mr-1" /> Nova Partida
-            </Button>
-          )}
         </div>
       </div>
 
       <div className="px-5 space-y-4">
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {filterOptions.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                filter === f.value
-                  ? "bg-gradient-primary text-primary-foreground"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
+        {/* View Toggle and Filters */}
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setView("list")}
+              variant={view === "list" ? "default" : "outline"}
+              size="sm"
+              className={`text-xs rounded-lg ${
+                view === "list"
+                  ? "bg-gradient-primary text-primary-foreground border-0"
+                  : ""
               }`}
             >
-              {f.label}
-            </button>
-          ))}
+              <List size={14} className="mr-1" /> Lista
+            </Button>
+            <Button
+              onClick={() => setView("calendar")}
+              variant={view === "calendar" ? "default" : "outline"}
+              size="sm"
+              className={`text-xs rounded-lg ${
+                view === "calendar"
+                  ? "bg-gradient-primary text-primary-foreground border-0"
+                  : ""
+              }`}
+            >
+              <Calendar size={14} className="mr-1" /> Calendário
+            </Button>
+          </div>
+          {myTeam && (
+            <Button onClick={() => setCreateOpen(true)} className="bg-gradient-primary text-primary-foreground border-0 h-8 text-xs">
+              <Plus size={14} className="mr-1" /> Nova Partida
+            </Button>
+          )}
         </div>
+
+        {/* Filters (only show in list view) */}
+        {view === "list" && (
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {filterOptions.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  filter === f.value
+                    ? "bg-gradient-primary text-primary-foreground"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {!myTeam && (
           <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 text-sm text-warning">
@@ -362,6 +396,34 @@ const AgendaPage = () => {
           <div className="flex justify-center py-8">
             <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
+        ) : view === "calendar" ? (
+          <MonthlyCalendar
+            matches={myMatches.map((m) => ({
+              id: m.id,
+              date: new Date(m.match_date),
+              title: (m.away_team as any)?.name || "Partida",
+              status: m.status,
+            }))}
+            availableDays={[2, 4, 6]} // Segunda, Quarta, Sexta (customize based on team settings)
+            onDateClick={(date, dateMatches) => {
+              if (dateMatches.length > 0) {
+                const match = myMatches.find((m) => {
+                  const mDate = new Date(m.match_date);
+                  return (
+                    mDate.getDate() === date.getDate() &&
+                    mDate.getMonth() === date.getMonth() &&
+                    mDate.getFullYear() === date.getFullYear()
+                  );
+                });
+                if (match) {
+                  openDetails(match, "details");
+                }
+              } else {
+                setNewDate(date.toISOString().slice(0, 16));
+                setCreateOpen(true);
+              }
+            }}
+          />
         ) : (
           <div className="space-y-3">
             {filtered.map((match, i) => {
