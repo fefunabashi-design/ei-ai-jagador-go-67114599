@@ -3,8 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers } from "@/hooks/useSupabaseData";
-import { useProfile } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile } from "@/hooks/useSupabaseData";
+import { useQuery } from "@tanstack/react-query";
+import type { Database } from "@/integrations/supabase/types";
+import { mockDb } from "@/lib/mockDb";
+
+type Team = Database["public"]["Tables"]["teams"]["Row"];
+type Player = Database["public"]["Tables"]["players"]["Row"] & { is_active?: boolean };
+type Match = Database["public"]["Tables"]["matches"]["Row"] & {
+  home_team?: Team | null;
+};
+type Debito = {
+  id: string;
+  team_id: string;
+  descricao: string;
+  data: string;
+  valor: number | string;
+  tipo: string;
+  observacao?: string;
+  created_at?: string;
+};
+type Mensalidade = Database["public"]["Tables"]["mensalidades"]["Row"];
+type MensalidadeConfig = Database["public"]["Tables"]["mensalidade_config"]["Row"];
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -12,12 +32,16 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
+  const acceptMatch = useAcceptMatch();
 
-  const activePlayers = players.filter((p) => p.is_active !== false);
-  const inactivePlayers = players.filter((p) => p.is_active === false);
+  const typedPlayers = players as Player[];
+  const typedMatches = matches as Match[];
 
-  const myMatches = matches.filter((m) => {
-    const homeTeam = m.home_team as any;
+  const activePlayers = typedPlayers.filter((p) => p.is_active !== false);
+  const inactivePlayers = typedPlayers.filter((p) => p.is_active === false);
+
+  const myMatches = typedMatches.filter((m) => {
+    const homeTeam = m.home_team;
     return myTeam && homeTeam?.id === myTeam.id;
   });
 
@@ -27,10 +51,49 @@ const AdminPage = () => {
   const losses = completedMatches.length - wins - draws;
 
   // Pending match requests (open matches from other teams)
-  const pendingRequests = matches.filter((m) => {
-    const homeTeam = m.home_team as any;
+  const pendingRequests = typedMatches.filter((m) => {
+    const homeTeam = m.home_team;
     return m.status === "open" && myTeam && homeTeam?.id !== myTeam.id && !m.away_team_id;
   }).slice(0, 3);
+
+  // Cálculo do saldo financeiro real para o dashboard
+  const currentYear = new Date().getFullYear();
+  const { data: debitos = [] } = useQuery<Debito[]>({
+    queryKey: ["debitos", myTeam?.id],
+    queryFn: () => (myTeam?.id ? mockDb.getDebitos(myTeam.id) : []),
+    enabled: !!myTeam?.id,
+  });
+
+  const { data: mensalidades = [] } = useQuery<Mensalidade[]>({
+    queryKey: ["mensalidades_caixa", myTeam?.id, currentYear],
+    queryFn: () => {
+      if (!myTeam?.id || typedPlayers.length === 0) return [];
+      return mockDb.getMensalidades(typedPlayers.map((p) => p.id), currentYear);
+    },
+    enabled: !!myTeam?.id && typedPlayers.length > 0,
+  });
+
+  const { data: mensalidadeConfig } = useQuery<MensalidadeConfig | null>({
+    queryKey: ["mensalidade_config", currentYear],
+    queryFn: () => mockDb.getMensalidadeConfig(currentYear),
+  });
+
+  const saldoAtual = (() => {
+    const valorMensal = mensalidadeConfig?.valor_mensal ? Number(mensalidadeConfig.valor_mensal) : 0;
+    const creditosMensalidades = mensalidades
+      .filter((m) => m.pago && m.data_pagamento)
+      .length * valorMensal;
+    
+    const manualCredits = debitos
+      .filter((d) => d.tipo === "credito")
+      .reduce((sum, debito) => sum + Number(debito.valor), 0);
+
+    const totalDebitos = debitos
+      .filter((d) => d.tipo === "debito")
+      .reduce((sum, debito) => sum + Number(debito.valor), 0);
+
+    return (creditosMensalidades + manualCredits) - totalDebitos;
+  })();
 
   // Top scorers
   const topScorers = [...players]
@@ -38,8 +101,12 @@ const AdminPage = () => {
     .sort((a, b) => (b.goals || 0) - (a.goals || 0))
     .slice(0, 3);
 
+  const handleAccept = (matchId: string) => {
+    if (!myTeam) return;
+    acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
+  };
+
   const quickActions = [
-    
     { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
@@ -60,7 +127,18 @@ const AdminPage = () => {
         <div className="grid grid-cols-2 gap-2">
           {[
             { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team" },
-            { icon: DollarSign, value: "R$0", label: "Caixa atual", trend: "Ver movimentações", color: "text-warning", path: "/caixa" },
+            { 
+              icon: DollarSign, 
+              value: saldoAtual.toLocaleString("pt-BR", { 
+                style: "currency", 
+                currency: "BRL",
+                maximumFractionDigits: 0 
+              }), 
+              label: "Caixa atual", 
+              trend: "Ver movimentações", 
+              color: "text-warning", 
+              path: "/caixa" 
+            },
           ].map((kpi, i) => (
             <motion.div
               key={kpi.label}
@@ -108,7 +186,7 @@ const AdminPage = () => {
             <h2 className="text-sm font-display text-foreground mb-2">PEDIDOS DE MATCH RECEBIDOS</h2>
             <div className="space-y-2">
               {pendingRequests.map((m) => {
-                const homeTeam = m.home_team as any;
+                const homeTeam = m.home_team;
                 const date = new Date(m.match_date);
                 return (
                   <div key={m.id} className="flex items-center justify-between bg-card rounded-xl border border-border p-3">
@@ -124,7 +202,14 @@ const AdminPage = () => {
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="sm" className="h-6 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0">Aceitar</Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleAccept(m.id)}
+                        disabled={acceptMatch.isPending}
+                        className="h-6 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
+                      >
+                        Aceitar
+                      </Button>
                       <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">Recusar</Button>
                     </div>
                   </div>
