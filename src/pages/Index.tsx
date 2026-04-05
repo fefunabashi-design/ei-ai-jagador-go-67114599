@@ -2,10 +2,12 @@ import { motion } from "framer-motion";
 import { Search, Users, CreditCard, Trophy, Shield, MapPin, ChevronRight, Bell, MessageCircle, Crown, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts } from "@/hooks/useSupabaseData";
 import logo from "@/assets/logo.png";
+import { useState } from "react";
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/);
@@ -20,6 +22,8 @@ const Index = () => {
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
+  const { data: photoPosts = [] } = usePhotoPosts(myTeam?.id);
+  const [selectedFeedPhoto, setSelectedFeedPhoto] = useState<any | null>(null);
 
   const now = new Date();
   const hours = now.getHours();
@@ -242,12 +246,36 @@ const Index = () => {
       <div className="px-5 mt-5">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-display text-foreground">FEED DO CAMPO</h2>
-          <button className="text-[10px] text-primary font-semibold">Ver tudo →</button>
+          <button onClick={() => navigate("/fotos")} className="text-[10px] text-primary font-semibold">Ver tudo →</button>
         </div>
-        <div className="bg-card rounded-xl border border-border p-4 text-center">
-          <p className="text-sm text-muted-foreground">Em breve! 📸</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Poste fotos e atualizações do time</p>
-        </div>
+        {photoPosts.length === 0 ? (
+          <div className="bg-card rounded-xl border border-border p-4 text-center">
+            <p className="text-sm text-muted-foreground">Sem fotos publicadas ainda 📸</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Use o painel Admin para postar as fotos dos eventos</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {photoPosts.slice(0, 3).map((post: any) => (
+              <div key={post.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                <button
+                  onClick={() => setSelectedFeedPhoto(post)}
+                  className="w-full bg-black/5"
+                  aria-label={`Abrir foto do evento ${post.event_title}`}
+                >
+                  <img src={post.photo_url} alt={post.event_title} className="w-full max-h-[420px] object-contain" />
+                </button>
+                <div className="p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-primary font-semibold">{post.event_type}</p>
+                  <p className="text-sm font-semibold text-foreground">{post.event_title}</p>
+                  {post.comment && <p className="text-xs text-muted-foreground mt-1">{post.comment}</p>}
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {new Date(post.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* No team CTA */}
@@ -261,6 +289,18 @@ const Index = () => {
           </motion.div>
         </div>
       )}
+
+      <Dialog open={!!selectedFeedPhoto} onOpenChange={(open) => !open && setSelectedFeedPhoto(null)}>
+        <DialogContent className="max-w-3xl p-2 sm:p-3">
+          {selectedFeedPhoto && (
+            <img
+              src={selectedFeedPhoto.photo_url}
+              alt={selectedFeedPhoto.event_title}
+              className="w-full max-h-[80vh] object-contain rounded-md"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>

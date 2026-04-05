@@ -112,7 +112,7 @@ const AdminPage = () => {
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
     { icon: Search, label: "Buscar adversário", path: "/match" },
-    { icon: Camera, label: "Postar fotos", path: "#" },
+    { icon: Camera, label: "Postar fotos", path: "/fotos" },
   ];
 
 

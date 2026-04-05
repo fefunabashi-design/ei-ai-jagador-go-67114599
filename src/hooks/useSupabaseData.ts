@@ -62,6 +62,74 @@ export const useMatches = () => {
   return { data };
 };
 
+export const usePhotoEvents = (teamId?: string) => {
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setData([]);
+      return;
+    }
+    setData(mockDb.getPhotoEvents(teamId));
+  }, [teamId]);
+
+  return { data };
+};
+
+export const usePhotoPosts = (teamId?: string) => {
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setData([]);
+      return;
+    }
+    setData(mockDb.getPhotoPosts(teamId));
+  }, [teamId]);
+
+  return { data };
+};
+
+export const useCreatePhotoPost = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = async (payload: {
+    team_id: string;
+    event_id: string;
+    event_type: "partida" | "vaquinha";
+    event_title: string;
+    match_id?: string;
+    photo_url: string;
+    comment?: string;
+  }) => {
+    setIsPending(true);
+    try {
+      const result = mockDb.createPhotoPost(payload);
+      toast({ title: "Foto publicada com sucesso! 📸" });
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao publicar foto",
+        description: error?.message || "Tente novamente.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return {
+    mutate: (payload: Parameters<typeof mutateAsync>[0]) => {
+      void mutateAsync(payload);
+    },
+    mutateAsync,
+    isPending,
+    isLoading: isPending,
+  };
+};
+
 export const useMatchSummons = (matchId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
