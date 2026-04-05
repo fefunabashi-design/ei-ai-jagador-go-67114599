@@ -29,8 +29,9 @@ const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 const BRAZILIAN_HOLIDAYS = {
   "2026-01-01": "Ano Novo",
-  "2026-02-13": "Sexta-feira Santa",
-  "2026-02-17": "Carnaval",
+  "2026-02-23": "Segunda de Carnaval",
+  "2026-02-24": "Carnaval",
+  "2026-04-03": "Sexta-feira Santa",
   "2026-04-21": "Tiradentes",
   "2026-05-01": "Dia do Trabalho",
   "2026-09-07": "Independência",
