@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useProfile, useMyTeam, useMatches, usePlayers, useMySummons, useMatchSummons } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useMatchSummons } from "@/hooks/useSupabaseData";
 import logo from "@/assets/logo.png";
 
 const getInitials = (name: string) => {
@@ -15,11 +15,11 @@ const getInitials = (name: string) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { data: profile } = useProfile();
+  const profile: any = null;
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
-  const { data: summons = [] } = useMySummons();
+  const { data: summons = [] } = useMatchSummons(undefined);
 
   const now = new Date();
   const hours = now.getHours();
