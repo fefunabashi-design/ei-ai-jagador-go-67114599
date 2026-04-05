@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
   { icon: Search, label: "Match", path: "/match" },
-  { icon: null, label: "+", path: "/agenda", isCenter: true },
+  { icon: null, label: "+", path: "/escalacao", isCenter: true },
   { icon: CalendarDays, label: "Agenda", path: "/agenda" },
   { icon: Crown, label: "Admin", path: "/admin" },
 ];

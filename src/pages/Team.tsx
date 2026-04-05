@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Lock, Crown, Camera, Search, UserPlus, User } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -29,10 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import PlayerCard from "@/components/PlayerCard";
+import { Checkbox } from "@/components/ui/checkbox";
 import BottomNav from "@/components/BottomNav";
 import {
-  useProfile,
   useMyTeam,
   useCreateTeam,
   useUpdateTeam,
@@ -45,14 +45,63 @@ import {
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
-const positions = [
-  "Goleiro", "Zagueiro", "Lateral Direito", "Lateral Esquerdo",
-  "Volante", "Meia", "Ponta Direita", "Ponta Esquerda", "Atacante",
-];
+const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
+
+const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
+
+const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+
+const EMPTY_TEAM_FORM = {
+  name: "",
+  region: "",
+  categoria: "",
+  addr_cep: "",
+  addr_rua: "",
+  addr_numero: "",
+  addr_bairro: "",
+  addr_cidade: "",
+  addr_uf: "",
+  phone: "",
+  mobile: "",
+  email: "",
+  instagram: "",
+  foundation_date: "",
+  founder_name: "",
+  president_name: "",
+  president_phone: "",
+  coach_name: "",
+  coach_phone: "",
+  admin_name: "",
+  admin_phone: "",
+  sub1_name: "",
+  sub1_phone: "",
+  sub2_name: "",
+  sub2_phone: "",
+  observacoes: "",
+};
+
+const EMPTY_PLAYER_FORM = {
+  name: "",
+  last_name: "",
+  nickname: "",
+  birth_date: "",
+  hire_date: "",
+  jersey_number: "",
+  phone: "",
+  email: "",
+  is_active: "true",
+  observacoes: "",
+};
+
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
 
 const TeamPage = () => {
   const { toast } = useToast();
-  const { data: profile } = useProfile();
   const { data: team, isLoading: teamLoading } = useMyTeam();
   const { data: players = [], isLoading: playersLoading } = usePlayers(team?.id);
   const createTeam = useCreateTeam();
@@ -64,97 +113,73 @@ const TeamPage = () => {
   const deletePlayer = useDeletePlayer();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const isPro = profile?.is_pro === true;
-
-  // Team form state
+  // Team form
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
-  const [form, setForm] = useState({
-    name: "", field_name: "", field_address: "", phone: "", email: "",
-    instagram: "", foundation_date: "", founder_name: "", war_cry: "",
-    coach_name: "", admin_name: "", admin_email: "", admin_phone: "",
-    substitute_name: "", president_name: "", president_email: "", format: "8x8", region: "",
-  });
+  const [teamForm, setTeamForm] = useState({ ...EMPTY_TEAM_FORM });
 
-  // Player form state
+  // Player form
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
-  const [playerName, setPlayerName] = useState("");
-  const [playerNickname, setPlayerNickname] = useState("");
-  const [playerPhone, setPlayerPhone] = useState("");
-  const [playerBirthDate, setPlayerBirthDate] = useState("");
-  const [playerRegion, setPlayerRegion] = useState("");
-  const [playerPosition, setPlayerPosition] = useState("");
-  const [playerNumber, setPlayerNumber] = useState(0);
+  const [playerForm, setPlayerForm] = useState({ ...EMPTY_PLAYER_FORM });
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
 
-  // Search state
-  const [searchEmail, setSearchEmail] = useState("");
-  const [searchResult, setSearchResult] = useState<any>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchDone, setSearchDone] = useState(false);
+  // Filter
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
-  const setField = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+  const setTF = (key: string, value: string) => setTeamForm((p) => ({ ...p, [key]: value }));
+  const setPF = (key: string, value: string) => setPlayerForm((p) => ({ ...p, [key]: value }));
 
-  // On /team with no team yet, open create dialog directly (all users for dev)
   useEffect(() => {
-    if (!team) {
+    if (!team && !teamLoading) {
       setIsEditingTeam(false);
-      setForm({
-        name: "", field_name: "", field_address: "", phone: "", email: "",
-        instagram: "", foundation_date: "", founder_name: "", war_cry: "",
-        coach_name: "", admin_name: "", admin_email: "", admin_phone: "",
-        substitute_name: "", president_name: "", president_email: "", format: "8x8", region: "",
-      });
+      setTeamForm({ ...EMPTY_TEAM_FORM });
       setTeamDialogOpen(true);
     }
-  }, [team]);
-
-  const openCreateTeam = () => {
-    if (!isPro) return;
-    setIsEditingTeam(false);
-    setForm({
-      name: "", field_name: "", field_address: "", phone: "", email: "",
-      instagram: "", foundation_date: "", founder_name: "", war_cry: "",
-      coach_name: "", admin_name: "", admin_email: "", admin_phone: "",
-      substitute_name: "", president_name: "", president_email: "", format: "8x8", region: "",
-    });
-    setTeamDialogOpen(true);
-  };
+  }, [team, teamLoading]);
 
   const openEditTeam = () => {
     if (!team) return;
     setIsEditingTeam(true);
-    setForm({
+    setTeamForm({
       name: team.name || "",
-      field_name: (team as any).field_name || "",
-      field_address: (team as any).field_address || "",
+      region: (team as any).region || "",
+      categoria: (team as any).categoria || "",
+      addr_cep: (team as any).addr_cep || "",
+      addr_rua: (team as any).addr_rua || "",
+      addr_numero: (team as any).addr_numero || "",
+      addr_bairro: (team as any).addr_bairro || "",
+      addr_cidade: (team as any).addr_cidade || "",
+      addr_uf: (team as any).addr_uf || "",
       phone: (team as any).phone || "",
+      mobile: (team as any).mobile || "",
       email: (team as any).email || "",
       instagram: (team as any).instagram || "",
       foundation_date: (team as any).foundation_date || "",
       founder_name: (team as any).founder_name || "",
-      war_cry: (team as any).war_cry || "",
-      coach_name: (team as any).coach_name || "",
-      admin_name: (team as any).admin_name || "",
-      admin_email: (team as any).admin_email || "",
-      admin_phone: (team as any).admin_phone || "",
-      substitute_name: (team as any).substitute_name || "",
       president_name: (team as any).president_name || "",
-      president_email: (team as any).president_email || "",
-      format: team.format || "8x8",
-      region: team.region || "",
+      president_phone: (team as any).president_phone || "",
+      coach_name: (team as any).coach_name || "",
+      coach_phone: (team as any).coach_phone || "",
+      admin_name: (team as any).admin_name || "",
+      admin_phone: (team as any).admin_phone || "",
+      sub1_name: (team as any).sub1_name || "",
+      sub1_phone: (team as any).sub1_phone || "",
+      sub2_name: (team as any).sub2_name || "",
+      sub2_phone: (team as any).sub2_phone || "",
+      observacoes: (team as any).observacoes || "",
     });
     setTeamDialogOpen(true);
   };
 
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) {
+    if (!teamForm.name.trim()) {
       toast({ title: "Nome do time é obrigatório", variant: "destructive" });
       return;
     }
-    const abbr = form.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
-    const payload = { ...form, abbreviation: abbr };
+    const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
+    const payload = { ...teamForm, abbreviation: abbr };
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
     } else {
@@ -178,81 +203,65 @@ const TeamPage = () => {
     uploadLogo.mutate({ teamId: team.id, file });
   };
 
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 11);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  };
-
-  // Player handlers
   const openNewPlayer = () => {
     setEditingPlayer(null);
-    setPlayerName("");
-    setPlayerNickname("");
-    setPlayerPhone("");
-    setPlayerBirthDate("");
-    setPlayerRegion("");
-    setPlayerPosition("");
-    setPlayerNumber(0);
-    setSearchEmail("");
-    setSearchResult(null);
-    setSearchDone(false);
+    setPlayerForm({ ...EMPTY_PLAYER_FORM });
+    setSelectedPositions([]);
     setPlayerDialogOpen(true);
   };
 
   const openEditPlayer = (player: any) => {
     setEditingPlayer(player);
-    setPlayerName(player.name);
-    setPlayerPosition(player.position || "");
-    setPlayerNumber(player.jersey_number || 0);
-    setPlayerNickname(player.nickname || "");
-    setPlayerPhone(player.phone || "");
-    setPlayerBirthDate(player.birth_date || "");
-    setPlayerRegion(player.region || "");
-    setSearchEmail("");
-    setSearchResult(null);
-    setSearchDone(false);
+    setPlayerForm({
+      name: player.name || "",
+      last_name: player.last_name || "",
+      nickname: player.nickname || "",
+      birth_date: player.birth_date || "",
+      hire_date: player.hire_date || "",
+      jersey_number: player.jersey_number?.toString() || "",
+      phone: player.phone || "",
+      email: player.email || "",
+      is_active: player.is_active === false ? "false" : "true",
+      observacoes: player.observacoes || "",
+    });
+    setSelectedPositions(
+      Array.isArray(player.positions) ? player.positions : player.position ? [player.position] : []
+    );
     setPlayerDialogOpen(true);
   };
 
-  const handleSearchPlayer = async () => {
-    if (!searchEmail.trim()) return;
-    setSearchLoading(true);
-    setSearchResult(null);
-    setSearchDone(false);
-    // Em modo dev, busca não encontra usuários externos
-    setTimeout(() => {
-      setSearchResult(null);
-      setSearchDone(true);
-      setSearchLoading(false);
-    }, 500);
+  const togglePosition = (pos: string) => {
+    setSelectedPositions((prev) =>
+      prev.includes(pos) ? prev.filter((p) => p !== pos) : [...prev, pos]
+    );
   };
 
   const handleSavePlayer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!team) return;
-    if (!playerName.trim()) {
+    if (!playerForm.name.trim()) {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
-    const playerData = {
-      name: playerName,
-      nickname: playerNickname || null,
-      phone: playerPhone || null,
-      birth_date: playerBirthDate || null,
-      region: playerRegion || null,
-      position: playerPosition,
-      jersey_number: playerNumber,
+    const data = {
+      name: playerForm.name,
+      last_name: playerForm.last_name || null,
+      nickname: playerForm.nickname || null,
+      display_name: playerForm.nickname?.trim() || playerForm.name,
+      birth_date: playerForm.birth_date || null,
+      hire_date: playerForm.hire_date || null,
+      jersey_number: parseInt(playerForm.jersey_number) || 0,
+      phone: playerForm.phone || null,
+      email: playerForm.email || null,
+      is_active: playerForm.is_active !== "false",
+      positions: selectedPositions,
+      position: selectedPositions[0] || null,
+      observacoes: playerForm.observacoes || null,
     };
     if (editingPlayer) {
-      updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, ...playerData } as any);
+      updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, ...data } as any);
     } else {
-      createPlayer.mutate({
-        team_id: team.id,
-        ...playerData,
-        ...(searchResult ? { user_id: searchResult.user_id } : {}),
-      } as any);
+      createPlayer.mutate({ team_id: team.id, ...data } as any);
     }
     setPlayerDialogOpen(false);
   };
@@ -262,6 +271,12 @@ const TeamPage = () => {
     deletePlayer.mutate({ id, teamId: team.id });
   };
 
+  const filteredPlayers = players.filter((p) => {
+    if (statusFilter === "active") return p.is_active !== false;
+    if (statusFilter === "inactive") return p.is_active === false;
+    return true;
+  });
+
   if (teamLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -270,43 +285,12 @@ const TeamPage = () => {
     );
   }
 
-  // PRO gate temporarily disabled for local development
-  // if (!isPro && !team) {
-  //   return (
-  //     <div className="min-h-screen bg-background pb-20">
-  //       <div className="px-5 pt-12 pb-4">
-  //         <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
-  //       </div>
-  //       <div className="px-5">
-  //         <motion.div
-  //           initial={{ opacity: 0, y: 10 }}
-  //           animate={{ opacity: 1, y: 0 }}
-  //           className="bg-card rounded-xl border border-border p-8 text-center space-y-4"
-  //         >
-  //           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-  //             <Lock size={28} className="text-primary" />
-  //           </div>
-  //           <h2 className="text-lg font-display text-foreground">RECURSO PRO</h2>
-  //           <p className="text-sm text-muted-foreground">
-  //             O cadastro de time é exclusivo para usuários PRO. Faça upgrade do seu plano para criar e gerenciar seu time.
-  //           </p>
-  //           <Button className="bg-gradient-primary text-primary-foreground border-0">
-  //             <Crown size={16} className="mr-2" /> Fazer Upgrade para PRO
-  //           </Button>
-  //         </motion.div>
-  //       </div>
-  //       <BottomNav />
-  //     </div>
-  //   );
-  // }
-
-  // No team yet (PRO user)
   if (!team) {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="px-5 pt-12 pb-4">
           <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
-          <p className="text-sm text-muted-foreground mt-1">Você ainda não tem um time</p>
+          <p className="text-sm text-muted-foreground mt-1">Cadastre seu time para começar</p>
         </div>
         <div className="px-5">
           <motion.div
@@ -314,26 +298,26 @@ const TeamPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl border border-border border-dashed p-8 text-center"
           >
-            <p className="text-muted-foreground text-sm mb-4">Abrindo automaticamente o formulário de cadastro do time...</p>
+            <p className="text-muted-foreground text-sm">Abrindo formulário de cadastro...</p>
           </motion.div>
         </div>
-
         <TeamFormDialog
           open={teamDialogOpen}
           onOpenChange={setTeamDialogOpen}
           isEditing={false}
-          form={form}
-          setField={setField}
+          form={teamForm}
+          setField={setTF}
           onSubmit={handleSaveTeam}
           isPending={createTeam.isPending}
         />
-
         <BottomNav />
       </div>
     );
   }
 
-  // Has team
+  const activePlayers = players.filter((p) => p.is_active !== false);
+  const inactivePlayers = players.filter((p) => p.is_active === false);
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-12 pb-4">
@@ -344,14 +328,16 @@ const TeamPage = () => {
         <Tabs defaultValue="info" className="w-full">
           <TabsList className="w-full bg-secondary">
             <TabsTrigger value="info" className="flex-1 text-xs">Dados do Time</TabsTrigger>
-            <TabsTrigger value="players" className="flex-1 text-xs">Jogadores</TabsTrigger>
+            <TabsTrigger value="players" className="flex-1 text-xs">
+              Jogadores ({players.length})
+            </TabsTrigger>
           </TabsList>
 
-          {/* Team Info Tab */}
+          {/* ─── Team Info Tab ─── */}
           <TabsContent value="info" className="space-y-3 mt-4">
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-              {/* Team banner */}
               <div className="bg-card rounded-xl border border-border p-4">
+                {/* Header com escudo */}
                 <div className="flex items-center gap-4 mb-4">
                   <div className="relative">
                     {(team as any).logo_url ? (
@@ -372,7 +358,10 @@ const TeamPage = () => {
                   <div>
                     <p className="font-display text-xl text-foreground">{team.name.toUpperCase()}</p>
                     <p className="text-xs text-muted-foreground">
-                      {team.format} · {team.region || "Sem região"}
+                      {(team as any).categoria || "Sem categoria"} · {(team as any).region || "Sem região"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {activePlayers.length} ativos · {inactivePlayers.length} inativos
                     </p>
                   </div>
                 </div>
@@ -386,27 +375,38 @@ const TeamPage = () => {
 
                 <div className="space-y-2 text-sm">
                   {[
-                    { label: "Nome do Campo", value: (team as any).field_name },
-                    { label: "Endereço", value: (team as any).field_address },
+                    { label: "Categoria", value: (team as any).categoria },
+                    { label: "Região", value: (team as any).region },
+                    { label: "CEP", value: (team as any).addr_cep },
+                    { label: "Rua", value: (team as any).addr_rua ? `${(team as any).addr_rua}${(team as any).addr_numero ? ", " + (team as any).addr_numero : ""}` : undefined },
+                    { label: "Bairro", value: (team as any).addr_bairro },
+                    { label: "Cidade/UF", value: (team as any).addr_cidade ? `${(team as any).addr_cidade}${(team as any).addr_uf ? " - " + (team as any).addr_uf : ""}` : undefined },
                     { label: "Telefone", value: (team as any).phone },
+                    { label: "Celular", value: (team as any).mobile },
                     { label: "E-mail", value: (team as any).email },
                     { label: "Instagram", value: (team as any).instagram },
                     { label: "Fundação", value: (team as any).foundation_date },
                     { label: "Fundador", value: (team as any).founder_name },
-                    { label: "Grito de Guerra", value: (team as any).war_cry },
-                    { label: "Técnico", value: (team as any).coach_name },
-                    { label: "Administrador", value: (team as any).admin_name },
                     { label: "Presidente", value: (team as any).president_name },
-                  ].map((item) => (
+                    { label: "Cel. Presidente", value: (team as any).president_phone },
+                    { label: "Técnico", value: (team as any).coach_name },
+                    { label: "Cel. Técnico", value: (team as any).coach_phone },
+                    { label: "Admin App", value: (team as any).admin_name },
+                    { label: "Cel. Admin", value: (team as any).admin_phone },
+                    { label: "Substituto 1", value: (team as any).sub1_name },
+                    { label: "Cel. Sub 1", value: (team as any).sub1_phone },
+                    { label: "Substituto 2", value: (team as any).sub2_name },
+                    { label: "Cel. Sub 2", value: (team as any).sub2_phone },
+                    { label: "Observações", value: (team as any).observacoes },
+                  ].filter((item) => item.value).map((item) => (
                     <div key={item.label} className="flex justify-between">
                       <span className="text-muted-foreground">{item.label}</span>
-                      <span className="text-foreground text-right max-w-[55%] truncate">{item.value || "—"}</span>
+                      <span className="text-foreground text-right max-w-[55%] text-xs">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Delete team */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-destructive">
@@ -431,32 +431,104 @@ const TeamPage = () => {
             </motion.div>
           </TabsContent>
 
-          {/* Players Tab */}
+          {/* ─── Players Tab ─── */}
           <TabsContent value="players" className="space-y-3 mt-4">
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
               <Button onClick={openNewPlayer} className="w-full bg-gradient-primary text-primary-foreground border-0">
                 <Plus size={16} className="mr-1" /> Novo Jogador
               </Button>
 
+              {/* Filtro de status */}
+              <div className="flex gap-2">
+                {(["all", "active", "inactive"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setStatusFilter(f)}
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                      statusFilter === f
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f === "all" ? `Todos (${players.length})` : f === "active" ? `Ativos (${activePlayers.length})` : `Inativos (${inactivePlayers.length})`}
+                  </button>
+                ))}
+              </div>
+
               {playersLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
-              ) : players.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">Nenhum jogador no elenco ainda</p>
+              ) : filteredPlayers.length === 0 ? (
+                <p className="text-center text-muted-foreground text-sm py-8">Nenhum jogador encontrado</p>
               ) : (
-                players.map((player, i) => (
-                  <motion.div key={player.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
-                    <PlayerCard
-                      name={player.name}
-                      position={player.position || "Sem posição"}
-                      number={player.jersey_number || 0}
-                      goals={player.goals || 0}
-                      matches={player.matches || 0}
-                      rating={Number(player.rating || 0)}
-                      onEdit={() => openEditPlayer(player)}
-                      onRemove={() => handleRemovePlayer(player.id)}
-                    />
+                filteredPlayers.map((player, i) => (
+                  <motion.div
+                    key={player.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="bg-card rounded-xl border border-border p-3 flex items-center gap-3"
+                  >
+                    {/* Número */}
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-display text-primary">{player.jersey_number || "—"}</span>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {player.display_name || player.nickname || player.name}
+                        </p>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                          player.is_active !== false
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          {player.is_active !== false ? "Ativo" : "Inativo"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        {Array.isArray(player.positions) && player.positions.length > 0
+                          ? player.positions.join(" · ")
+                          : player.position || "Sem posição"}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        onClick={() => openEditPlayer(player)}
+                        className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                      >
+                        <Pencil size={13} className="text-muted-foreground" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="p-1.5 rounded-lg bg-secondary hover:bg-destructive/20 transition-colors">
+                            <Trash2 size={13} className="text-muted-foreground" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-card border-border">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remover {player.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              O jogador será removido do elenco.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleRemovePlayer(player.id)}
+                              className="bg-destructive text-destructive-foreground"
+                            >
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </motion.div>
                 ))
               )}
@@ -470,116 +542,156 @@ const TeamPage = () => {
         open={teamDialogOpen}
         onOpenChange={setTeamDialogOpen}
         isEditing={isEditingTeam}
-        form={form}
-        setField={setField}
+        form={teamForm}
+        setField={setTF}
         onSubmit={handleSaveTeam}
         isPending={createTeam.isPending || updateTeam.isPending}
       />
 
-      {/* Player Dialog - styled like Profile page */}
+      {/* Player Dialog */}
       <Dialog open={playerDialogOpen} onOpenChange={setPlayerDialogOpen}>
-        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">
               {editingPlayer ? "EDITAR JOGADOR" : "NOVO JOGADOR"}
             </DialogTitle>
           </DialogHeader>
 
-          {/* Search section - only for new players */}
-          {!editingPlayer && (
-            <div className="space-y-3 pb-4 border-b border-border">
-              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Buscar jogador cadastrado</p>
-              <div className="flex gap-2">
-                <Input
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                  placeholder="Digite o e-mail do jogador"
-                  className="bg-secondary border-border flex-1"
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchPlayer())}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSearchPlayer}
-                  disabled={searchLoading || !searchEmail.trim()}
-                  className="shrink-0"
-                >
-                  <Search size={16} />
-                </Button>
-              </div>
-              {searchLoading && (
-                <div className="flex justify-center py-2">
-                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                </div>
-              )}
-              {searchDone && searchResult && (
-                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="bg-secondary/50 rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-sm shrink-0">
-                    {searchResult.avatar_url ? (
-                      <img src={searchResult.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      (searchResult.display_name || "?").slice(0, 2).toUpperCase()
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{searchResult.display_name || "Sem nome"}</p>
-                    <p className="text-xs text-muted-foreground">{searchResult.nickname || searchResult.region || "Jogador encontrado"}</p>
-                  </div>
-                  <User size={16} className="text-primary shrink-0" />
-                </motion.div>
-              )}
-              {searchDone && !searchResult && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-secondary/50 rounded-xl p-3 text-center">
-                  <p className="text-sm text-muted-foreground">Nenhum jogador encontrado</p>
-                  <p className="text-xs text-muted-foreground mt-1">Preencha os dados abaixo para cadastrar um novo</p>
-                </motion.div>
-              )}
-            </div>
-          )}
-
-          {/* Player form - same layout as Profile */}
           <form onSubmit={handleSavePlayer} className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Nome completo" className="bg-secondary border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome *</Label>
+                <Input
+                  value={playerForm.name}
+                  onChange={(e) => setPF("name", e.target.value)}
+                  placeholder="Primeiro nome"
+                  className="bg-secondary border-border"
+                  required
+                />
+              </div>
+              <div>
+                <Label>Sobrenome</Label>
+                <Input
+                  value={playerForm.last_name}
+                  onChange={(e) => setPF("last_name", e.target.value)}
+                  placeholder="Sobrenome"
+                  className="bg-secondary border-border"
+                />
+              </div>
             </div>
+
             <div>
               <Label>Apelido</Label>
-              <Input value={playerNickname} onChange={(e) => setPlayerNickname(e.target.value)} placeholder="Como é conhecido" className="bg-secondary border-border" />
-            </div>
-            <div>
-              <Label>Celular</Label>
-              <Input value={playerPhone} onChange={(e) => setPlayerPhone(formatPhone(e.target.value))} placeholder="(11) 99999-9999" className="bg-secondary border-border" />
-            </div>
-            <div>
-              <Label>Data de Nascimento</Label>
-              <Input type="date" value={playerBirthDate} onChange={(e) => setPlayerBirthDate(e.target.value)} className="bg-secondary border-border" />
-            </div>
-            <div>
-              <Label>Região</Label>
-              <Input value={playerRegion} onChange={(e) => setPlayerRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
+              <Input
+                value={playerForm.nickname}
+                onChange={(e) => setPF("nickname", e.target.value)}
+                placeholder="Como aparece nas telas (opcional)"
+                className="bg-secondary border-border"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Se preenchido, será usado em todas as telas</p>
             </div>
 
-            <div className="border-t border-border pt-4">
-              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">Dados no Time</p>
-              <div className="space-y-3">
-                <div>
-                  <Label>Posição</Label>
-                  <Select value={playerPosition} onValueChange={setPlayerPosition}>
-                    <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Selecione a posição" /></SelectTrigger>
-                    <SelectContent>
-                      {positions.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Número da Camisa</Label>
-                  <Input type="number" value={playerNumber} onChange={(e) => setPlayerNumber(parseInt(e.target.value) || 0)} min={0} max={99} className="bg-secondary border-border" />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Data de Nascimento</Label>
+                <Input
+                  type="date"
+                  value={playerForm.birth_date}
+                  onChange={(e) => setPF("birth_date", e.target.value)}
+                  className="bg-secondary border-border"
+                />
+              </div>
+              <div>
+                <Label>Data de Contratação</Label>
+                <Input
+                  type="date"
+                  value={playerForm.hire_date}
+                  onChange={(e) => setPF("hire_date", e.target.value)}
+                  className="bg-secondary border-border"
+                />
               </div>
             </div>
 
-            <Button type="submit" disabled={createPlayer.isPending || updatePlayer.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
+            <div className="w-1/2 pr-1.5">
+              <Label>Nº da Camisa</Label>
+              <Input
+                type="number"
+                value={playerForm.jersey_number}
+                onChange={(e) => setPF("jersey_number", e.target.value)}
+                min={0}
+                max={99}
+                placeholder="10"
+                className="bg-secondary border-border"
+              />
+            </div>
+
+            {/* Posições — multi-select */}
+            <div>
+              <Label className="mb-2 block">Posição(ões)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {POSITIONS.map((pos) => (
+                  <label key={pos} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={selectedPositions.includes(pos)}
+                      onCheckedChange={() => togglePosition(pos)}
+                    />
+                    <span className="text-sm text-foreground">{pos}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Celular</Label>
+                <Input
+                  value={playerForm.phone}
+                  onChange={(e) => setPF("phone", formatPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className="bg-secondary border-border"
+                />
+              </div>
+              <div>
+                <Label>E-mail</Label>
+                <Input
+                  type="email"
+                  value={playerForm.email}
+                  onChange={(e) => setPF("email", e.target.value)}
+                  placeholder="email@email.com"
+                  className="bg-secondary border-border"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Status</Label>
+              <Select value={playerForm.is_active} onValueChange={(v) => setPF("is_active", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Ativo</SelectItem>
+                  <SelectItem value="false">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                value={playerForm.observacoes}
+                onChange={(e) => setPF("observacoes", e.target.value)}
+                placeholder="Informações adicionais..."
+                className="bg-secondary border-border resize-none"
+                rows={3}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={createPlayer.isPending || updatePlayer.isPending}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
               <UserPlus size={16} className="mr-2" />
               {editingPlayer ? "Salvar Alterações" : "Adicionar Jogador"}
             </Button>
@@ -592,7 +704,7 @@ const TeamPage = () => {
   );
 };
 
-// Team form dialog component
+// ─── Team Form Dialog ───────────────────────────────────────────────────────
 const TeamFormDialog = ({
   open, onOpenChange, isEditing, form, setField, onSubmit, isPending,
 }: {
@@ -604,118 +716,362 @@ const TeamFormDialog = ({
   onSubmit: (e: React.FormEvent) => void;
   isPending: boolean;
 }) => {
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 11);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const handleCepChange = async (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    setField("addr_cep", formatted);
+
+    if (digits.length === 8) {
+      setCepLoading(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setField("addr_rua", data.logradouro || "");
+          setField("addr_bairro", data.bairro || "");
+          setField("addr_cidade", data.localidade || "");
+          setField("addr_uf", data.uf || "");
+        }
+      } catch (_) {
+        // silently ignore
+      } finally {
+        setCepLoading(false);
+      }
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className="bg-card border-border max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">{isEditing ? "EDITAR TIME" : "CRIAR TIME"}</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            {isEditing ? "EDITAR TIME" : "CADASTRAR TIME"}
+          </DialogTitle>
         </DialogHeader>
+
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Dados principais */}
           <div>
             <Label>Nome do Time *</Label>
-            <Input value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Ex: Os Crias FC" className="bg-secondary border-border" required />
+            <Input
+              value={form.name}
+              onChange={(e) => setField("name", e.target.value)}
+              placeholder="Ex: Os Crias FC"
+              className="bg-secondary border-border"
+              required
+            />
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Formato</Label>
-              <Select value={form.format} onValueChange={(v) => setField("format", v)}>
-                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5x5">5x5</SelectItem>
-                  <SelectItem value="8x8">8x8</SelectItem>
-                  <SelectItem value="11x11">11x11</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Fundador</Label>
+              <Input
+                value={form.founder_name}
+                onChange={(e) => setField("founder_name", e.target.value)}
+                placeholder="Nome do fundador"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Data de Fundação</Label>
+              <Input
+                type="date"
+                value={form.foundation_date}
+                onChange={(e) => setField("foundation_date", e.target.value)}
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Presidente</Label>
+              <Input
+                value={form.president_name}
+                onChange={(e) => setField("president_name", e.target.value)}
+                placeholder="Nome"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Cel. Presidente</Label>
+              <Input
+                value={form.president_phone}
+                onChange={(e) => setField("president_phone", formatPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Categoria</Label>
+            <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIAS.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Endereço */}
+          <div>
+            <Label>CEP</Label>
+            <div className="relative">
+              <Input
+                value={form.addr_cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                placeholder="00000-000"
+                maxLength={9}
+                className="bg-secondary border-border pr-8"
+              />
+              {cepLoading && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Label>Rua</Label>
+              <Input
+                value={form.addr_rua}
+                onChange={(e) => setField("addr_rua", e.target.value)}
+                placeholder="Nome da rua"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Nº</Label>
+              <Input
+                value={form.addr_numero}
+                onChange={(e) => setField("addr_numero", e.target.value)}
+                placeholder="123"
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Bairro</Label>
+              <Input
+                value={form.addr_bairro}
+                onChange={(e) => setField("addr_bairro", e.target.value)}
+                placeholder="Bairro"
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <Label>Região</Label>
-              <Input value={form.region} onChange={(e) => setField("region", e.target.value)} placeholder="Zona Sul" className="bg-secondary border-border" />
+              <Select value={form.region} onValueChange={(v) => setField("region", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REGIOES.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div>
-            <Label>Nome do Campo</Label>
-            <Input value={form.field_name} onChange={(e) => setField("field_name", e.target.value)} placeholder="Campo do Parque" className="bg-secondary border-border" />
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <Label>Cidade</Label>
+              <Input
+                value={form.addr_cidade}
+                onChange={(e) => setField("addr_cidade", e.target.value)}
+                placeholder="Cidade"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>UF</Label>
+              <Input
+                value={form.addr_uf}
+                onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
+                placeholder="SP"
+                maxLength={2}
+                className="bg-secondary border-border"
+              />
+            </div>
           </div>
-          <div>
-            <Label>Endereço do Campo</Label>
-            <Input value={form.field_address} onChange={(e) => setField("field_address", e.target.value)} placeholder="Rua..." className="bg-secondary border-border" />
-          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Telefone</Label>
-              <Input value={form.phone} onChange={(e) => setField("phone", formatPhone(e.target.value))} placeholder="(11) 99999-9999" className="bg-secondary border-border" />
+              <Input
+                value={form.phone}
+                onChange={(e) => setField("phone", formatPhone(e.target.value))}
+                placeholder="(11) 3333-3333"
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
-              <Label>E-mail</Label>
-              <Input type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} placeholder="time@email.com" className="bg-secondary border-border" />
+              <Label>Celular</Label>
+              <Input
+                value={form.mobile}
+                onChange={(e) => setField("mobile", formatPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                className="bg-secondary border-border"
+              />
             </div>
           </div>
-          <div>
-            <Label>Instagram</Label>
-            <Input value={form.instagram} onChange={(e) => setField("instagram", e.target.value)} placeholder="@seutime" className="bg-secondary border-border" />
-          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Data de Fundação</Label>
-              <Input type="date" value={form.foundation_date} onChange={(e) => setField("foundation_date", e.target.value)} className="bg-secondary border-border" />
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setField("email", e.target.value)}
+                placeholder="time@email.com"
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
-              <Label>Fundador</Label>
-              <Input value={form.founder_name} onChange={(e) => setField("founder_name", e.target.value)} className="bg-secondary border-border" />
-            </div>
-          </div>
-          <div>
-            <Label>Grito de Guerra</Label>
-            <Input value={form.war_cry} onChange={(e) => setField("war_cry", e.target.value)} placeholder="É gol!" className="bg-secondary border-border" />
-          </div>
-          <div>
-            <Label>Técnico</Label>
-            <Input value={form.coach_name} onChange={(e) => setField("coach_name", e.target.value)} className="bg-secondary border-border" />
-          </div>
-
-          <div className="border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">Administração</p>
-            <div className="space-y-3">
-              <div>
-                <Label>Nome do Administrador</Label>
-                <Input value={form.admin_name} onChange={(e) => setField("admin_name", e.target.value)} className="bg-secondary border-border" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>E-mail Admin</Label>
-                  <Input type="email" value={form.admin_email} onChange={(e) => setField("admin_email", e.target.value)} className="bg-secondary border-border" />
-                </div>
-                <div>
-                  <Label>Telefone Admin</Label>
-                  <Input value={form.admin_phone} onChange={(e) => setField("admin_phone", formatPhone(e.target.value))} className="bg-secondary border-border" />
-                </div>
-              </div>
-              <div>
-                <Label>Substituto</Label>
-                <Input value={form.substitute_name} onChange={(e) => setField("substitute_name", e.target.value)} className="bg-secondary border-border" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Presidente</Label>
-                  <Input value={form.president_name} onChange={(e) => setField("president_name", e.target.value)} className="bg-secondary border-border" />
-                </div>
-                <div>
-                  <Label>E-mail Presidente</Label>
-                  <Input type="email" value={form.president_email} onChange={(e) => setField("president_email", e.target.value)} className="bg-secondary border-border" />
-                </div>
-              </div>
+              <Label>Instagram</Label>
+              <Input
+                value={form.instagram}
+                onChange={(e) => setField("instagram", e.target.value)}
+                placeholder="@seutime"
+                className="bg-secondary border-border"
+              />
             </div>
           </div>
 
-          <Button type="submit" disabled={isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
-            {isEditing ? "Salvar Alterações" : "Criar Time"}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Técnico</Label>
+              <Input
+                value={form.coach_name}
+                onChange={(e) => setField("coach_name", e.target.value)}
+                placeholder="Nome"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Cel. Técnico</Label>
+              <Input
+                value={form.coach_phone}
+                onChange={(e) => setField("coach_phone", formatPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
+          {/* Administração — colapsável */}
+          <div className="border border-border rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdmin((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 text-sm font-semibold text-foreground"
+            >
+              <span>Administração do App</span>
+              {showAdmin ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {showAdmin && (
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Admin App</Label>
+                    <Input
+                      value={form.admin_name}
+                      onChange={(e) => setField("admin_name", e.target.value)}
+                      placeholder="Nome"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label>Cel. Admin</Label>
+                    <Input
+                      value={form.admin_phone}
+                      onChange={(e) => setField("admin_phone", formatPhone(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Substitutos</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Substituto 1</Label>
+                    <Input
+                      value={form.sub1_name}
+                      onChange={(e) => setField("sub1_name", e.target.value)}
+                      placeholder="Nome"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label>Cel. Sub 1</Label>
+                    <Input
+                      value={form.sub1_phone}
+                      onChange={(e) => setField("sub1_phone", formatPhone(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Substituto 2</Label>
+                    <Input
+                      value={form.sub2_name}
+                      onChange={(e) => setField("sub2_name", e.target.value)}
+                      placeholder="Nome"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label>Cel. Sub 2</Label>
+                    <Input
+                      value={form.sub2_phone}
+                      onChange={(e) => setField("sub2_phone", formatPhone(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <Label>Observações</Label>
+            <Textarea
+              value={form.observacoes}
+              onChange={(e) => setField("observacoes", e.target.value)}
+              placeholder="Informações adicionais sobre o time..."
+              className="bg-secondary border-border resize-none"
+              rows={3}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+          >
+            {isEditing ? "Salvar Alterações" : "Cadastrar Time"}
           </Button>
         </form>
       </DialogContent>

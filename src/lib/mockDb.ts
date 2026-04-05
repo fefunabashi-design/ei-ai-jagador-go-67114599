@@ -93,6 +93,7 @@ export const mockDb = {
       goals: 0,
       matches: 0,
       rating: 0,
+      is_active: true,
       ...data,
       id: genId(),
       created_at: now(),
@@ -347,6 +348,34 @@ export const mockDb = {
     };
     set(`mock_chat_${matchId}`, [...messages, msg]);
     return msg;
+  },
+
+  // ==================== DÉBITOS (CAIXA) ====================
+
+  getDebitos: (teamId: string): any[] => {
+    const all = get<any[]>("mock_debitos", []);
+    return all
+      .filter((d) => d.team_id === teamId)
+      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  },
+
+  createDebito: (data: { team_id: string; descricao: string; data: string; valor: number; tipo?: string; observacao?: string }) => {
+    const all = get<any[]>("mock_debitos", []);
+    const item = { tipo: "debito", ...data, id: genId(), created_at: now() };
+    set("mock_debitos", [...all, item]);
+    return item;
+  },
+
+  updateDebito: (id: string, updates: Record<string, unknown>) => {
+    const all = get<any[]>("mock_debitos", []);
+    const updated = all.map((d) => d.id === id ? { ...d, ...updates } : d);
+    set("mock_debitos", updated);
+    return updated.find((d) => d.id === id);
+  },
+
+  deleteDebito: (id: string) => {
+    const all = get<any[]>("mock_debitos", []);
+    set("mock_debitos", all.filter((d) => d.id !== id));
   },
 
   // ==================== MENSALIDADES ====================

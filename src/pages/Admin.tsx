@@ -13,6 +13,9 @@ const AdminPage = () => {
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
 
+  const activePlayers = players.filter((p) => p.is_active !== false);
+  const inactivePlayers = players.filter((p) => p.is_active === false);
+
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
     return myTeam && homeTeam?.id === myTeam.id;
@@ -37,7 +40,7 @@ const AdminPage = () => {
 
   const quickActions = [
     
-    { icon: Pencil, label: "Editar escalação", path: "/agenda" },
+    { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
@@ -56,15 +59,16 @@ const AdminPage = () => {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: Users, value: players.length, label: "Jogadores ativos", trend: `▲ +${players.length} no elenco`, color: "text-primary" },
-            { icon: DollarSign, value: "R$0", label: "Caixa atual", trend: "Em breve", color: "text-warning" },
+            { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team" },
+            { icon: DollarSign, value: "R$0", label: "Caixa atual", trend: "Ver movimentações", color: "text-warning", path: "/caixa" },
           ].map((kpi, i) => (
             <motion.div
               key={kpi.label}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card rounded-xl border border-border p-3"
+              onClick={() => kpi.path && navigate(kpi.path)}
+              className={`bg-card rounded-xl border border-border p-3 ${kpi.path ? "cursor-pointer hover:border-primary/40 transition-colors" : ""}`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <kpi.icon size={16} className={kpi.color} />
