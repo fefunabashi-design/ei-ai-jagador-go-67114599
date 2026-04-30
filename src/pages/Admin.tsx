@@ -97,10 +97,18 @@ const AdminPage = () => {
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
 
+  // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
+  // OU matches abertos sem adversário definido criados por outro time
   const pendingRequests = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
     const homeTeam = m.home_team;
-    return m.status === "open" && myTeam && homeTeam?.id !== myTeam.id && !m.away_team_id;
-  }).slice(0, 3);
+    if (homeTeam?.id === myTeam.id) return false;
+    // Desafio direcionado ao meu time
+    if (m.away_team_id === myTeam.id) return true;
+    // Convite aberto (sem adversário)
+    if (!m.away_team_id) return true;
+    return false;
+  }).slice(0, 5);
 
   const currentYear = new Date().getFullYear();
   const { data: debitos = [] } = useQuery<Debito[]>({
