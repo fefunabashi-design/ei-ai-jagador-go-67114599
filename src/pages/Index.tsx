@@ -221,6 +221,23 @@ const Index = () => {
 
         return (
           <div className="px-5 mt-4">
+            {/* Presence buttons ABOVE next match card */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                onClick={() => setConfirmOpen(true)}
+                className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+              >
+                <UserCheck size={14} className="mr-1" /> CONFIRMAR
+              </Button>
+              <Button
+                onClick={() => setListOpen(true)}
+                variant="outline"
+                className="border-primary/40 text-primary font-semibold h-10"
+              >
+                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedSummons.length})
+              </Button>
+            </div>
+
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1.5">
               Próximo • {dayLabel} {timeLabel}
             </p>
