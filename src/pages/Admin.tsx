@@ -505,15 +505,19 @@ const AdminPage = () => {
                 const homeTeam = m.home_team;
                 const date = new Date(m.match_date);
                 return (
-                  <div key={m.id} className="flex items-center justify-between bg-card rounded-xl border border-border p-3">
+                  <div key={m.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Shield size={14} className="text-primary" />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {homeTeam?.logo_url ? (
+                          <img src={homeTeam.logo_url} alt={homeTeam.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Shield size={14} className="text-primary" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{homeTeam?.name}</p>
-                        <p className="text-[9px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name} desafiou</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
                         </p>
                       </div>
                     </div>
@@ -522,12 +526,25 @@ const AdminPage = () => {
                         size="sm"
                         onClick={() => handleAccept(m.id)}
                         disabled={acceptMatch.isPending}
-                        className="h-6 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
+                        className="flex-1 h-7 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
                       >
-                        Aceitar
+                        Confirmar
                       </Button>
-                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">
-                        Recusar
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-7 text-[10px] px-2"
+                        onClick={() => openReschedule(m)}
+                      >
+                        Reagendar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-7 text-[10px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                        onClick={() => handleDecline(m.id)}
+                      >
+                        Cancelar
                       </Button>
                     </div>
                   </div>
