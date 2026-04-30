@@ -73,8 +73,12 @@ const allPositions = [
 
 const AgendaPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusMatchId = searchParams.get("matchId");
   const [view, setView] = useState<"list" | "calendar">("list");
-  const [filter, setFilter] = useState<FilterType>("upcoming");
+  const [filter, setFilter] = useState<FilterType>(focusMatchId ? "upcoming" : "upcoming");
+  const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
+  const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
   const [editOpen, setEditOpen] = useState(false);
