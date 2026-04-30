@@ -606,7 +606,32 @@ const AdminPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Trocar time administrado */}
+      {/* Reagendar partida */}
+      <Dialog open={!!rescheduleMatch} onOpenChange={(open) => !open && setRescheduleMatch(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reagendar partida</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="rs-date">Data</Label>
+              <Input id="rs-date" type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="rs-time">Horário</Label>
+              <Input id="rs-time" type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="rs-loc">Local</Label>
+              <Input id="rs-loc" value={rescheduleLocation} onChange={(e) => setRescheduleLocation(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleMatch(null)}>Cancelar</Button>
+            <Button className="bg-gradient-primary text-primary-foreground border-0" onClick={confirmReschedule}>Propor</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={switchTeamOpen} onOpenChange={setSwitchTeamOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
