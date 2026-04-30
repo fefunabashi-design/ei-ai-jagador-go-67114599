@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
