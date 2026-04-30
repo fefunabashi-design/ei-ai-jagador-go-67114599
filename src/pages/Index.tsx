@@ -342,56 +342,7 @@ const Index = () => {
         );
       })()}
 
-      {/* Scheduled Matches */}
-      <div className="px-5 mt-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-display text-foreground">JOGOS AGENDADOS</h2>
-          <button onClick={() => navigate("/agenda")} className="text-[10px] text-primary font-semibold">
-            Ver agenda →
-          </button>
-        </div>
-        <div className="space-y-2">
-          {scheduledMatches.length > 0 ? (
-            scheduledMatches.map((match, i) => {
-              const homeTeam = match.home_team as any;
-              const awayTeam = match.away_team as any;
-              const matchDate = new Date(match.match_date);
-              const dateLabel = matchDate.toLocaleDateString("pt-BR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "2-digit",
-                year: "2-digit",
-              });
-              const timeLabel = matchDate.toLocaleTimeString("pt-BR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              return (
-                <motion.button
-                  key={match.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + i * 0.04 }}
-                  onClick={() => navigate("/agenda")}
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-primary/30 transition-colors"
-                >
-                  <p className="text-sm font-semibold text-foreground">
-                    {(homeTeam?.name || "Time mandante")} X {(awayTeam?.name || "Adversário")}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground capitalize">
-                    {dateLabel} {timeLabel}
-                  </p>
-                </motion.button>
-              );
-            })
-          ) : (
-            <div className="rounded-xl border border-border bg-card px-4 py-5 text-center">
-              <p className="text-sm text-muted-foreground">Nenhum jogo agendado no momento.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Scheduled matches list moved to /agenda */}
 
       {/* Presence / Summons */}
       {myTeam && summons.length > 0 && (
