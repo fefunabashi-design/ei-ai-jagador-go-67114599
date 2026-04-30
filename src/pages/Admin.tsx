@@ -308,6 +308,7 @@ const AdminPage = () => {
               <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
             </motion.button>
           ))}
+          </div>
         </div>
 
         {showOpponentSearch && (
