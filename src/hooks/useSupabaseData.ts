@@ -102,9 +102,12 @@ export const usePlayers = (teamId?: string) => {
 export const useMatches = () => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
-    setData(mockDb.getMatches());
+    const sync = () => setData(mockDb.getMatches());
+    sync();
+    window.addEventListener("mock-db-change", sync);
+    return () => window.removeEventListener("mock-db-change", sync);
   }, []);
-  return { data };
+  return { data, isLoading: false };
 };
 
 export const usePhotoEvents = (teamId?: string) => {
