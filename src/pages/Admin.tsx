@@ -422,7 +422,12 @@ const AdminPage = () => {
                     : "Dias não informados";
 
                   return (
-                    <div key={team.id} className="rounded-xl border border-border bg-background p-3">
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => setChallengeTeam(team)}
+                      className="w-full text-left rounded-xl border border-border bg-background p-3 hover:border-primary/50 transition-colors"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-foreground">{team.name}</p>
@@ -435,7 +440,8 @@ const AdminPage = () => {
                       <p className="mt-2 text-[11px] text-muted-foreground">
                         {teamDays} · {teamTime}
                       </p>
-                    </div>
+                      <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
+                    </button>
                   );
                 })
               ) : (
