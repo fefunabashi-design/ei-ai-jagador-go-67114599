@@ -315,23 +315,37 @@ export const mockDb = {
   getMatch: (id: string): any | null => {
     const matches = get<any[]>("mock_matches", []);
     const team = mockDb.getTeam();
+    const allTeams = mockDb.getAllTeams();
+    const resolveTeam = (tid?: string | null, fallbackName?: string | null) => {
+      if (!tid) return fallbackName ? { id: null, name: fallbackName } : null;
+      if (team?.id === tid) return team;
+      const found = allTeams.find((t) => t.id === tid);
+      return found || (fallbackName ? { id: tid, name: fallbackName } : null);
+    };
     const m = matches.find((m) => m.id === id);
     if (!m) return null;
     return {
       ...m,
-      home_team: m.home_team_id === team?.id ? team : null,
-      away_team: m.away_team_id === team?.id ? team : null,
+      home_team: resolveTeam(m.home_team_id, m.home_team_name),
+      away_team: resolveTeam(m.away_team_id, m.away_team_name),
     };
   },
 
   getMatches: (): any[] => {
     const matches = get<any[]>("mock_matches", []);
     const team = mockDb.getTeam();
+    const allTeams = mockDb.getAllTeams();
+    const resolveTeam = (tid?: string | null, fallbackName?: string | null) => {
+      if (!tid) return fallbackName ? { id: null, name: fallbackName } : null;
+      if (team?.id === tid) return team;
+      const found = allTeams.find((t) => t.id === tid);
+      return found || (fallbackName ? { id: tid, name: fallbackName } : null);
+    };
     return matches
       .map((m) => ({
         ...m,
-        home_team: m.home_team_id === team?.id ? team : null,
-        away_team: m.away_team_id === team?.id ? team : null,
+        home_team: resolveTeam(m.home_team_id, m.home_team_name),
+        away_team: resolveTeam(m.away_team_id, m.away_team_name),
       }))
       .sort(
         (a, b) =>
