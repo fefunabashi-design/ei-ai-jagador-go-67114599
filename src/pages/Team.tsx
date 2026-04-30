@@ -148,9 +148,22 @@ const MyTeamsPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="px-5 pt-12 pb-4">
-        <h1 className="text-4xl text-foreground font-display">MEUS TIMES</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Voltar"
+          className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center"
+        >
+          <ArrowLeft size={16} className="text-foreground" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Configurações</p>
+          <h1 className="text-xl font-display text-foreground truncate">MEUS TIMES</h1>
+        </div>
+      </div>
+
+      <div className="px-5 pt-2 pb-4">
+        <p className="text-sm text-muted-foreground">
           Times em que você joga. Toque para ver os detalhes.
         </p>
       </div>
