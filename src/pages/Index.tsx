@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye, Check, X, UserCheck, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
+import { mockDb } from "@/lib/mockDb";
+import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
@@ -26,6 +28,9 @@ const Index = () => {
   const { data: photoPosts = [] } = usePhotoPosts(myTeam?.id);
   const [selectedFeedPhoto, setSelectedFeedPhoto] = useState<any | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const { toast } = useToast();
 
   const now = new Date();
   const hours = now.getHours();
@@ -60,6 +65,24 @@ const Index = () => {
 
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
+
+  // Summons for the next match (player presence)
+  const nextMatchSummons: any[] = nextMatch ? mockDb.getSummons(nextMatch.id) : [];
+  const myNextSummon = nextMatchSummons.find((s: any) => s.player?.user_id === profile?.user_id);
+  const confirmedSummons = nextMatchSummons.filter((s: any) => s.status === "confirmed");
+  const declinedSummons = nextMatchSummons.filter((s: any) => s.status === "declined");
+  const pendingSummonsList = nextMatchSummons.filter((s: any) => s.status === "pending");
+
+  const handlePresence = (status: "confirmed" | "declined") => {
+    if (!myNextSummon) {
+      toast({ title: "Você não foi convocado para esta partida", variant: "destructive" });
+      return;
+    }
+    mockDb.respondSummon(myNextSummon.id, status);
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
+    setConfirmOpen(false);
+  };
 
   // Team season stats
   const myMatches = matches.filter((m) => {
@@ -198,6 +221,23 @@ const Index = () => {
 
         return (
           <div className="px-5 mt-4">
+            {/* Presence buttons ABOVE next match card */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                onClick={() => setConfirmOpen(true)}
+                className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+              >
+                <UserCheck size={14} className="mr-1" /> CONFIRMAR
+              </Button>
+              <Button
+                onClick={() => setListOpen(true)}
+                variant="outline"
+                className="border-primary/40 text-primary font-semibold h-10"
+              >
+                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedSummons.length})
+              </Button>
+            </div>
+
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1.5">
               Próximo • {dayLabel} {timeLabel}
             </p>
@@ -397,6 +437,96 @@ const Index = () => {
               className="w-full max-h-[80vh] object-contain rounded-md"
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm presence dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">CONFIRMAR PRESENÇA</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            {nextMatch
+              ? `Você estará presente na partida do dia ${new Date(nextMatch.match_date).toLocaleDateString("pt-BR")}?`
+              : "Sem partida agendada."}
+          </p>
+          {myNextSummon?.status && myNextSummon.status !== "pending" && (
+            <p className="text-[11px] text-primary font-semibold">
+              Status atual: {myNextSummon.status === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <Button
+              onClick={() => handlePresence("confirmed")}
+              className="bg-success text-success-foreground hover:bg-success/90 font-semibold h-11"
+            >
+              <Check size={16} className="mr-1" /> CONFIRMADO
+            </Button>
+            <Button
+              onClick={() => handlePresence("declined")}
+              variant="outline"
+              className="border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold h-11"
+            >
+              <X size={16} className="mr-1" /> AUSENTE
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmations list dialog */}
+      <Dialog open={listOpen} onOpenChange={setListOpen}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
+          </DialogHeader>
+
+          <div>
+            <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
+              ✓ Confirmados ({confirmedSummons.length})
+            </p>
+            {confirmedSummons.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {confirmedSummons.map((s: any) => (
+                  <li key={s.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
+              ✗ Ausentes ({declinedSummons.length})
+            </p>
+            {declinedSummons.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {declinedSummons.map((s: any) => (
+                  <li key={s.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
+              • Aguardando ({pendingSummonsList.length})
+            </p>
+            {pendingSummonsList.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Todos responderam.</p>
+            ) : (
+              <ul className="space-y-1">
+                {pendingSummonsList.map((s: any) => (
+                  <li key={s.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
