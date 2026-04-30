@@ -7,6 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
@@ -46,6 +49,34 @@ const AdminPage = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
+  const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
+  const [challengeDate, setChallengeDate] = useState("");
+  const [challengeTime, setChallengeTime] = useState("");
+  const [challengeLocation, setChallengeLocation] = useState("");
+  const { toast } = useToast();
+
+  const handleConfirmChallenge = () => {
+    if (!myTeam || !challengeTeam || !challengeDate || !challengeTime || !challengeLocation) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
+    mockDb.createMatch({
+      home_team_id: myTeam.id,
+      away_team_id: challengeTeam.id,
+      match_date,
+      location: challengeLocation,
+      status: "open",
+      format: myTeam.format || "8x8",
+    });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
+    setChallengeTeam(null);
+    setChallengeDate("");
+    setChallengeTime("");
+    setChallengeLocation("");
+    navigate("/agenda");
+  };
 
   const typedPlayers = players as Player[];
   const typedMatches = matches as Match[];
@@ -391,7 +422,12 @@ const AdminPage = () => {
                     : "Dias não informados";
 
                   return (
-                    <div key={team.id} className="rounded-xl border border-border bg-background p-3">
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => setChallengeTeam(team)}
+                      className="w-full text-left rounded-xl border border-border bg-background p-3 hover:border-primary/50 transition-colors"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-foreground">{team.name}</p>
@@ -404,7 +440,8 @@ const AdminPage = () => {
                       <p className="mt-2 text-[11px] text-muted-foreground">
                         {teamDays} · {teamTime}
                       </p>
-                    </div>
+                      <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
+                    </button>
                   );
                 })
               ) : (
@@ -479,6 +516,34 @@ const AdminPage = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={!!challengeTeam} onOpenChange={(open) => !open && setChallengeTeam(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Desafiar {challengeTeam?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="ch-date">Data</Label>
+              <Input id="ch-date" type="date" value={challengeDate} onChange={(e) => setChallengeDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="ch-time">Horário</Label>
+              <Input id="ch-time" type="time" value={challengeTime} onChange={(e) => setChallengeTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="ch-loc">Local</Label>
+              <Input id="ch-loc" placeholder="Ex: Arena Pacaembu" value={challengeLocation} onChange={(e) => setChallengeLocation(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
+            <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
+              Enviar desafio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
