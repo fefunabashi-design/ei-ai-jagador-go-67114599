@@ -517,6 +517,34 @@ const AdminPage = () => {
         )}
       </div>
 
+      <Dialog open={!!challengeTeam} onOpenChange={(open) => !open && setChallengeTeam(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Desafiar {challengeTeam?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="ch-date">Data</Label>
+              <Input id="ch-date" type="date" value={challengeDate} onChange={(e) => setChallengeDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="ch-time">Horário</Label>
+              <Input id="ch-time" type="time" value={challengeTime} onChange={(e) => setChallengeTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="ch-loc">Local</Label>
+              <Input id="ch-loc" placeholder="Ex: Arena Pacaembu" value={challengeLocation} onChange={(e) => setChallengeLocation(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
+            <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
+              Enviar desafio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
