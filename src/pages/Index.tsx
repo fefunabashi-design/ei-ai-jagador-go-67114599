@@ -440,6 +440,96 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Confirm presence dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">CONFIRMAR PRESENÇA</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            {nextMatch
+              ? `Você estará presente na partida do dia ${new Date(nextMatch.match_date).toLocaleDateString("pt-BR")}?`
+              : "Sem partida agendada."}
+          </p>
+          {myNextSummon?.status && myNextSummon.status !== "pending" && (
+            <p className="text-[11px] text-primary font-semibold">
+              Status atual: {myNextSummon.status === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <Button
+              onClick={() => handlePresence("confirmed")}
+              className="bg-success text-success-foreground hover:bg-success/90 font-semibold h-11"
+            >
+              <Check size={16} className="mr-1" /> CONFIRMADO
+            </Button>
+            <Button
+              onClick={() => handlePresence("declined")}
+              variant="outline"
+              className="border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold h-11"
+            >
+              <X size={16} className="mr-1" /> AUSENTE
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmations list dialog */}
+      <Dialog open={listOpen} onOpenChange={setListOpen}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
+          </DialogHeader>
+
+          <div>
+            <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
+              ✓ Confirmados ({confirmedSummons.length})
+            </p>
+            {confirmedSummons.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {confirmedSummons.map((s: any) => (
+                  <li key={s.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
+              ✗ Ausentes ({declinedSummons.length})
+            </p>
+            {declinedSummons.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {declinedSummons.map((s: any) => (
+                  <li key={s.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
+              • Aguardando ({pendingSummonsList.length})
+            </p>
+            {pendingSummonsList.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Todos responderam.</p>
+            ) : (
+              <ul className="space-y-1">
+                {pendingSummonsList.map((s: any) => (
+                  <li key={s.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
+                    {s.player?.nickname || s.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
