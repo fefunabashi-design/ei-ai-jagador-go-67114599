@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ type Team = Database["public"]["Tables"]["teams"]["Row"];
 type Player = Database["public"]["Tables"]["players"]["Row"] & { is_active?: boolean };
 type Match = Database["public"]["Tables"]["matches"]["Row"] & {
   home_team?: Team | null;
+  away_team?: Team | null;
 };
 type Debito = {
   id: string;
@@ -105,6 +106,13 @@ const AdminPage = () => {
     .filter((p) => (p.goals || 0) > 0)
     .sort((a, b) => (b.goals || 0) - (a.goals || 0))
     .slice(0, 3);
+
+  const nextMatch = myMatches
+    .filter((m) => m.status === "confirmed" && new Date(m.match_date).getTime() >= Date.now() - 1000 * 60 * 60 * 3)
+    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0]
+    || myMatches
+      .filter((m) => m.status === "confirmed")
+      .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
   const handleAccept = (matchId: string) => {
     if (!myTeam) return;
@@ -205,8 +213,81 @@ const AdminPage = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {quickActions.map((action, i) => (
+        {nextMatch && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl border border-primary/30 p-4 space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={14} className="text-primary" />
+                <h2 className="text-xs font-display text-primary tracking-wider">PRÓXIMA PARTIDA CONFIRMADA</h2>
+              </div>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/20 text-destructive uppercase tracking-wider">
+                Live Track
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-center flex-1">
+                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1">
+                  <Shield size={20} className="text-foreground" />
+                </div>
+                <p className="text-xs text-foreground font-semibold">{nextMatch.home_team?.name || "Meu Time"}</p>
+              </div>
+              <div className="text-center px-2">
+                <p className="text-primary font-display text-sm">VS</p>
+                <p className="text-foreground font-display text-base mt-0.5">
+                  {new Date(nextMatch.match_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(nextMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              <div className="text-center flex-1">
+                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1">
+                  <Shield size={20} className="text-foreground" />
+                </div>
+                <p className="text-xs text-foreground font-semibold">{nextMatch.away_team?.name || "Adversário"}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background border border-border text-xs text-foreground">
+              <MapPin size={12} className="text-primary" />
+              <span>{nextMatch.location}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={() => navigate("/escalacao")}
+                className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+              >
+                <Pencil size={14} className="mr-1" /> ESCALAR TIME
+              </Button>
+              <Button
+                onClick={() => navigate(`/event/${nextMatch.id}`)}
+                variant="outline"
+                className="border-primary/40 text-primary font-semibold h-10"
+              >
+                <Eye size={14} className="mr-1" /> DETALHAR TIME
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border text-[11px] font-semibold">
+              <button className="flex items-center gap-1 text-primary">
+                <UserPlus size={12} /> JOGADORES ADVERSÁRIOS
+              </button>
+              <button className="text-muted-foreground hover:text-foreground">REAGENDAR</button>
+              <button className="text-destructive">CANCELAR</button>
+            </div>
+          </motion.div>
+        )}
+
+        <div>
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Atalhos administrativos</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {quickActions.map((action, i) => (
             <motion.button
               key={action.label}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -227,6 +308,7 @@ const AdminPage = () => {
               <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
             </motion.button>
           ))}
+          </div>
         </div>
 
         {showOpponentSearch && (
