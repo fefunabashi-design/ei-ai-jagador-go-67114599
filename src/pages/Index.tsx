@@ -28,6 +28,9 @@ const Index = () => {
   const { data: photoPosts = [] } = usePhotoPosts(myTeam?.id);
   const [selectedFeedPhoto, setSelectedFeedPhoto] = useState<any | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const { toast } = useToast();
 
   const now = new Date();
   const hours = now.getHours();
