@@ -182,12 +182,12 @@ const TeamPage = () => {
   const setPF = (key: string, value: string) => setPlayerForm((p) => ({ ...p, [key]: value }));
 
   useEffect(() => {
-    if (!team && !teamLoading) {
+    if (!isOwnerOfAny && !teamLoading) {
       setIsEditingTeam(false);
       setTeamForm({ ...EMPTY_TEAM_FORM });
       setTeamDialogOpen(true);
     }
-  }, [team, teamLoading]);
+  }, [isOwnerOfAny, teamLoading]);
 
   const openEditTeam = () => {
     if (!team) return;
