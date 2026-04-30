@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -111,8 +111,23 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Top bar com voltar */}
+      <div className="px-5 pt-4 pb-2 flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Voltar"
+          className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center"
+        >
+          <ArrowLeft size={16} className="text-foreground" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Configurações</p>
+          <h1 className="text-xl font-display text-foreground truncate">MEUS DADOS DE JOGADOR</h1>
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="relative px-5 pt-12 pb-4">
+      <div className="relative px-5 pt-4 pb-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
