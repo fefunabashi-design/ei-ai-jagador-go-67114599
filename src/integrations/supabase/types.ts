@@ -426,9 +426,6 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string
-          play_days: string[] | null
-          play_time_end: string | null
-          play_time_start: string | null
           phone: string | null
           president_email: string | null
           president_name: string | null
@@ -456,9 +453,6 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id: string
-          play_days?: string[] | null
-          play_time_end?: string | null
-          play_time_start?: string | null
           phone?: string | null
           president_email?: string | null
           president_name?: string | null
@@ -486,9 +480,6 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string
-          play_days?: string[] | null
-          play_time_end?: string | null
-          play_time_start?: string | null
           phone?: string | null
           president_email?: string | null
           president_name?: string | null
