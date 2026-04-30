@@ -107,12 +107,10 @@ const AdminPage = () => {
     .sort((a, b) => (b.goals || 0) - (a.goals || 0))
     .slice(0, 3);
 
-  const nextMatch = myMatches
-    .filter((m) => m.status === "confirmed" && new Date(m.match_date).getTime() >= Date.now() - 1000 * 60 * 60 * 3)
-    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0]
-    || myMatches
-      .filter((m) => m.status === "confirmed")
-      .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
+  const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
+    .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
+    .filter((m) => m.status !== "completed" && m.status !== "cancelled")
+    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
   const handleAccept = (matchId: string) => {
     if (!myTeam) return;
