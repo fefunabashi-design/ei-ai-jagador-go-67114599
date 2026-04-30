@@ -49,6 +49,34 @@ const AdminPage = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
+  const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
+  const [challengeDate, setChallengeDate] = useState("");
+  const [challengeTime, setChallengeTime] = useState("");
+  const [challengeLocation, setChallengeLocation] = useState("");
+  const { toast } = useToast();
+
+  const handleConfirmChallenge = () => {
+    if (!myTeam || !challengeTeam || !challengeDate || !challengeTime || !challengeLocation) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
+    mockDb.createMatch({
+      home_team_id: myTeam.id,
+      away_team_id: challengeTeam.id,
+      match_date,
+      location: challengeLocation,
+      status: "open",
+      format: myTeam.format || "8x8",
+    });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
+    setChallengeTeam(null);
+    setChallengeDate("");
+    setChallengeTime("");
+    setChallengeLocation("");
+    navigate("/agenda");
+  };
 
   const typedPlayers = players as Player[];
   const typedMatches = matches as Match[];
