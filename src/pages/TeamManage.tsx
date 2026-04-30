@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Camera, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, UserPlus, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -146,6 +147,7 @@ const formatPhone = (value: string) => {
 };
 
 const TeamPage = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: team, isLoading: teamLoading } = useMyTeam();
   const { data: players = [], isLoading: playersLoading } = usePlayers(team?.id);
