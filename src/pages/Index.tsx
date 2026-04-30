@@ -477,9 +477,9 @@ const Index = () => {
               ? `Você estará presente na partida do dia ${new Date(nextMatch.match_date).toLocaleDateString("pt-BR")}?`
               : "Sem partida agendada."}
           </p>
-          {myNextSummon?.status && myNextSummon.status !== "pending" && (
+          {myCurrentStatus && (
             <p className="text-[11px] text-primary font-semibold">
-              Status atual: {myNextSummon.status === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
+              Status atual: {myCurrentStatus === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
             </p>
           )}
           <div className="grid grid-cols-2 gap-2 mt-2">
