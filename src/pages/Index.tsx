@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Crown, Bell as BellIcon, LogOut } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -117,8 +117,7 @@ const Index = () => {
           <div className="mt-6 space-y-2">
             {[
               { icon: User, label: "Meus dados de jogador", desc: "Cadastrar, editar e excluir", path: "/profile" },
-              { icon: Users, label: "Meus Times", desc: "Trocar entre seus times", path: "/team" },
-              { icon: Crown, label: "Painel Admin", desc: "Gerenciar time e jogadores", path: "/admin" },
+              { icon: Users, label: "Meus Times", desc: "Times em que você joga", path: "/team" },
               { icon: BellIcon, label: "Notificações", desc: "Convocações e avisos", path: "/agenda" },
             ].map((item) => (
               <button

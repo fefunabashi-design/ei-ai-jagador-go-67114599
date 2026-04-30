@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Shield, Check, ChevronRight, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeams, useMyTeam, useSetActiveTeam } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
@@ -24,22 +23,19 @@ const MyTeamsPage = () => {
       <div className="px-5 pt-12 pb-4">
         <h1 className="text-4xl text-foreground font-display">MEUS TIMES</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Toque em um time para usá-lo no app
+          Times em que você joga. Toque para ativar no app.
         </p>
       </div>
 
       <div className="px-5 space-y-2">
         {myTeams.length === 0 ? (
           <div className="bg-card rounded-xl border border-border border-dashed p-8 text-center">
-            <p className="text-sm text-muted-foreground mb-3">
-              Você ainda não tem times cadastrados.
+            <p className="text-sm text-muted-foreground">
+              Você ainda não está incluído em nenhum time.
             </p>
-            <Button
-              onClick={() => navigate("/team-manage")}
-              className="bg-gradient-primary text-primary-foreground border-0"
-            >
-              <Plus size={16} className="mr-1" /> Cadastrar time
-            </Button>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              O cadastro de times e jogadores é feito pelo Admin do time.
+            </p>
           </div>
         ) : (
           myTeams.map((team: any, i: number) => {
@@ -88,19 +84,6 @@ const MyTeamsPage = () => {
           })
         )}
 
-        <div className="pt-4">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/team-manage")}
-            className="w-full"
-          >
-            <Shield size={14} className="mr-2" />
-            Gerenciar / cadastrar time
-          </Button>
-          <p className="text-[10px] text-muted-foreground text-center mt-2">
-            O cadastro, edição e exclusão de times e jogadores acontece dentro do Admin.
-          </p>
-        </div>
       </div>
 
       <BottomNav />
