@@ -68,6 +68,26 @@ export const useMyTeams = () => {
   return { data, isLoading: false };
 };
 
+// Times em que o usuário logado é o ADMINISTRADOR (owner_id === user_id)
+export const useMyAdminTeams = () => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    const sync = () => {
+      const profile = mockDb.getProfile();
+      const all = mockDb.getMyTeams();
+      setData(all.filter((t: any) => t.owner_id === profile?.user_id));
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
+  }, []);
+  return { data, isLoading: false };
+};
+
 export const useSetActiveTeam = () => {
   return (teamId: string) => {
     mockDb.setActiveTeam(teamId);
