@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Crown, Bell as BellIcon, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts } from "@/hooks/useSupabaseData";
@@ -24,6 +25,7 @@ const Index = () => {
   const { data: summons = [] } = useMatchSummons(undefined);
   const { data: photoPosts = [] } = usePhotoPosts(myTeam?.id);
   const [selectedFeedPhoto, setSelectedFeedPhoto] = useState<any | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const now = new Date();
   const hours = now.getHours();
@@ -97,13 +99,53 @@ const Index = () => {
             </div>
           )}
           <button
-            onClick={() => navigate(isOwner ? "/team" : "/profile")}
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Configurações"
             className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:border-primary/40 transition-colors"
           >
             <Settings size={16} className="text-muted-foreground" />
           </button>
         </div>
       </div>
+
+      {/* Settings quick menu */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="right" className="w-[85vw] sm:max-w-sm bg-background border-border">
+          <SheetHeader>
+            <SheetTitle className="font-display text-2xl">CONFIGURAÇÕES</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6 space-y-2">
+            {[
+              { icon: User, label: "Meus dados de jogador", desc: "Cadastrar, editar e excluir", path: "/profile" },
+              { icon: Users, label: "Meus Times", desc: "Trocar entre seus times", path: "/team" },
+              { icon: Crown, label: "Painel Admin", desc: "Gerenciar time e jogadores", path: "/admin" },
+              { icon: BellIcon, label: "Notificações", desc: "Convocações e avisos", path: "/agenda" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => { setSettingsOpen(false); navigate(item.path); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <item.icon size={16} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                </div>
+                <ChevronRight size={14} className="text-muted-foreground" />
+              </button>
+            ))}
+            <button
+              onClick={() => { setSettingsOpen(false); navigate("/"); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors mt-4"
+            >
+              <LogOut size={16} />
+              <span className="text-sm font-semibold">Sair da conta</span>
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Greeting + Avatar */}
       <div className="px-5 pt-3 pb-2">
