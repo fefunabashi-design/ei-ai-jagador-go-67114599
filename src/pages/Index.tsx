@@ -66,23 +66,49 @@ const Index = () => {
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
-  // Summons for the next match (player presence)
+  // Presence: every active team player is implicitly summoned. We just track responses.
+  const teamPlayers = players;
   const nextMatchSummons: any[] = nextMatch ? mockDb.getSummons(nextMatch.id) : [];
-  const myNextSummon = nextMatchSummons.find((s: any) => s.player?.user_id === profile?.user_id);
-  const confirmedSummons = nextMatchSummons.filter((s: any) => s.status === "confirmed");
-  const declinedSummons = nextMatchSummons.filter((s: any) => s.status === "declined");
-  const pendingSummonsList = nextMatchSummons.filter((s: any) => s.status === "pending");
+  const summonByPlayerId = new Map(nextMatchSummons.map((s: any) => [s.player_id, s]));
+
+  // Build a unified roster with status (confirmed | declined | pending) for each active player
+  const roster = teamPlayers.map((p: any) => {
+    const s = summonByPlayerId.get(p.id);
+    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
+  });
+  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
+  const declinedRoster = roster.filter((r) => r.status === "declined");
+  const pendingRoster = roster.filter((r) => r.status === "pending");
+
+  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
+  const myCurrentStatus = myPlayerForPresence
+    ? (summonByPlayerId.get(myPlayerForPresence.id)?.status as "confirmed" | "declined" | undefined)
+    : undefined;
 
   const handlePresence = (status: "confirmed" | "declined") => {
-    if (!myNextSummon) {
-      toast({ title: "Você não foi convocado para esta partida", variant: "destructive" });
+    if (!nextMatch) {
+      toast({ title: "Sem partida agendada", variant: "destructive" });
       return;
     }
-    mockDb.respondSummon(myNextSummon.id, status);
+    if (!myPlayerForPresence) {
+      toast({ title: "Você ainda não está vinculado a este time", variant: "destructive" });
+      return;
+    }
+    const existing = summonByPlayerId.get(myPlayerForPresence.id);
+    if (existing) {
+      mockDb.respondSummon(existing.id, status);
+    } else {
+      // Create summon on the fly and immediately respond
+      const created = mockDb.createSummons([
+        { match_id: nextMatch.id, player_id: myPlayerForPresence.id, status: "pending" },
+      ])[0];
+      if (created) mockDb.respondSummon(created.id, status);
+    }
     window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
     setConfirmOpen(false);
   };
+
 
   // Team season stats
   const myMatches = matches.filter((m) => {
