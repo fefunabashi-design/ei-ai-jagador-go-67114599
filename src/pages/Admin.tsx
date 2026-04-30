@@ -97,10 +97,18 @@ const AdminPage = () => {
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
 
+  // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
+  // OU matches abertos sem adversário definido criados por outro time
   const pendingRequests = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
     const homeTeam = m.home_team;
-    return m.status === "open" && myTeam && homeTeam?.id !== myTeam.id && !m.away_team_id;
-  }).slice(0, 3);
+    if (homeTeam?.id === myTeam.id) return false;
+    // Desafio direcionado ao meu time
+    if (m.away_team_id === myTeam.id) return true;
+    // Convite aberto (sem adversário)
+    if (!m.away_team_id) return true;
+    return false;
+  }).slice(0, 5);
 
   const currentYear = new Date().getFullYear();
   const { data: debitos = [] } = useQuery<Debito[]>({
@@ -149,6 +157,39 @@ const AdminPage = () => {
   const handleAccept = (matchId: string) => {
     if (!myTeam) return;
     acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
+  };
+
+  const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleLocation, setRescheduleLocation] = useState("");
+
+  const openReschedule = (m: any) => {
+    const d = new Date(m.match_date);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    setRescheduleDate(`${yyyy}-${mm}-${dd}`);
+    setRescheduleTime(`${hh}:${mi}`);
+    setRescheduleLocation(m.location || "");
+    setRescheduleMatch(m);
+  };
+
+  const confirmReschedule = () => {
+    if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
+    const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
+    mockDb.updateMatch(rescheduleMatch.id, { match_date, location: rescheduleLocation });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
+    setRescheduleMatch(null);
+  };
+
+  const handleDecline = (matchId: string) => {
+    mockDb.deleteMatch(matchId);
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Pedido recusado." });
   };
 
   const toggleFilter = (
@@ -464,15 +505,19 @@ const AdminPage = () => {
                 const homeTeam = m.home_team;
                 const date = new Date(m.match_date);
                 return (
-                  <div key={m.id} className="flex items-center justify-between bg-card rounded-xl border border-border p-3">
+                  <div key={m.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Shield size={14} className="text-primary" />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {homeTeam?.logo_url ? (
+                          <img src={homeTeam.logo_url} alt={homeTeam.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Shield size={14} className="text-primary" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{homeTeam?.name}</p>
-                        <p className="text-[9px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name} desafiou</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
                         </p>
                       </div>
                     </div>
@@ -481,12 +526,25 @@ const AdminPage = () => {
                         size="sm"
                         onClick={() => handleAccept(m.id)}
                         disabled={acceptMatch.isPending}
-                        className="h-6 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
+                        className="flex-1 h-7 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
                       >
-                        Aceitar
+                        Confirmar
                       </Button>
-                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2">
-                        Recusar
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-7 text-[10px] px-2"
+                        onClick={() => openReschedule(m)}
+                      >
+                        Reagendar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-7 text-[10px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                        onClick={() => handleDecline(m.id)}
+                      >
+                        Cancelar
                       </Button>
                     </div>
                   </div>
@@ -548,7 +606,32 @@ const AdminPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Trocar time administrado */}
+      {/* Reagendar partida */}
+      <Dialog open={!!rescheduleMatch} onOpenChange={(open) => !open && setRescheduleMatch(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reagendar partida</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="rs-date">Data</Label>
+              <Input id="rs-date" type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="rs-time">Horário</Label>
+              <Input id="rs-time" type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="rs-loc">Local</Label>
+              <Input id="rs-loc" value={rescheduleLocation} onChange={(e) => setRescheduleLocation(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleMatch(null)}>Cancelar</Button>
+            <Button className="bg-gradient-primary text-primary-foreground border-0" onClick={confirmReschedule}>Propor</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={switchTeamOpen} onOpenChange={setSwitchTeamOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
