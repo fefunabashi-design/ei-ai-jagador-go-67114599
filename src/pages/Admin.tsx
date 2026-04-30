@@ -143,7 +143,7 @@ const AdminPage = () => {
 
   const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
     .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
-    .filter((m) => m.status !== "completed" && m.status !== "cancelled")
+    .filter((m) => m.status === "confirmed" && !!m.away_team_id)
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
   const handleAccept = (matchId: string) => {
