@@ -66,23 +66,49 @@ const Index = () => {
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
-  // Summons for the next match (player presence)
+  // Presence: every active team player is implicitly summoned. We just track responses.
+  const teamPlayers = players;
   const nextMatchSummons: any[] = nextMatch ? mockDb.getSummons(nextMatch.id) : [];
-  const myNextSummon = nextMatchSummons.find((s: any) => s.player?.user_id === profile?.user_id);
-  const confirmedSummons = nextMatchSummons.filter((s: any) => s.status === "confirmed");
-  const declinedSummons = nextMatchSummons.filter((s: any) => s.status === "declined");
-  const pendingSummonsList = nextMatchSummons.filter((s: any) => s.status === "pending");
+  const summonByPlayerId = new Map(nextMatchSummons.map((s: any) => [s.player_id, s]));
+
+  // Build a unified roster with status (confirmed | declined | pending) for each active player
+  const roster = teamPlayers.map((p: any) => {
+    const s = summonByPlayerId.get(p.id);
+    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
+  });
+  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
+  const declinedRoster = roster.filter((r) => r.status === "declined");
+  const pendingRoster = roster.filter((r) => r.status === "pending");
+
+  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
+  const myCurrentStatus = myPlayerForPresence
+    ? (summonByPlayerId.get(myPlayerForPresence.id)?.status as "confirmed" | "declined" | undefined)
+    : undefined;
 
   const handlePresence = (status: "confirmed" | "declined") => {
-    if (!myNextSummon) {
-      toast({ title: "Você não foi convocado para esta partida", variant: "destructive" });
+    if (!nextMatch) {
+      toast({ title: "Sem partida agendada", variant: "destructive" });
       return;
     }
-    mockDb.respondSummon(myNextSummon.id, status);
+    if (!myPlayerForPresence) {
+      toast({ title: "Você ainda não está vinculado a este time", variant: "destructive" });
+      return;
+    }
+    const existing = summonByPlayerId.get(myPlayerForPresence.id);
+    if (existing) {
+      mockDb.respondSummon(existing.id, status);
+    } else {
+      // Create summon on the fly and immediately respond
+      const created = mockDb.createSummons([
+        { match_id: nextMatch.id, player_id: myPlayerForPresence.id, status: "pending" },
+      ])[0];
+      if (created) mockDb.respondSummon(created.id, status);
+    }
     window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
     setConfirmOpen(false);
   };
+
 
   // Team season stats
   const myMatches = matches.filter((m) => {
@@ -234,7 +260,7 @@ const Index = () => {
                 variant="outline"
                 className="border-primary/40 text-primary font-semibold h-10"
               >
-                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedSummons.length})
+                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedRoster.length})
               </Button>
             </div>
 
@@ -451,9 +477,9 @@ const Index = () => {
               ? `Você estará presente na partida do dia ${new Date(nextMatch.match_date).toLocaleDateString("pt-BR")}?`
               : "Sem partida agendada."}
           </p>
-          {myNextSummon?.status && myNextSummon.status !== "pending" && (
+          {myCurrentStatus && (
             <p className="text-[11px] text-primary font-semibold">
-              Status atual: {myNextSummon.status === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
+              Status atual: {myCurrentStatus === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
             </p>
           )}
           <div className="grid grid-cols-2 gap-2 mt-2">
@@ -483,45 +509,45 @@ const Index = () => {
 
           <div>
             <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
-              ✓ Confirmados ({confirmedSummons.length})
+              ✓ Confirmados ({confirmedRoster.length})
             </p>
-            {confirmedSummons.length === 0 ? (
+            {confirmedRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
             ) : (
               <ul className="space-y-1 mb-3">
-                {confirmedSummons.map((s: any) => (
-                  <li key={s.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {confirmedRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
             )}
 
             <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
-              ✗ Ausentes ({declinedSummons.length})
+              ✗ Ausentes ({declinedRoster.length})
             </p>
-            {declinedSummons.length === 0 ? (
+            {declinedRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
             ) : (
               <ul className="space-y-1 mb-3">
-                {declinedSummons.map((s: any) => (
-                  <li key={s.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {declinedRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
             )}
 
             <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
-              • Aguardando ({pendingSummonsList.length})
+              • Aguardando ({pendingRoster.length})
             </p>
-            {pendingSummonsList.length === 0 ? (
+            {pendingRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground">Todos responderam.</p>
             ) : (
               <ul className="space-y-1">
-                {pendingSummonsList.map((s: any) => (
-                  <li key={s.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {pendingRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
