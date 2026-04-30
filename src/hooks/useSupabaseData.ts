@@ -182,7 +182,7 @@ export const useMatchSummons = (matchId?: string) => {
       setData(mockDb.getSummons(matchId));
     }
   }, [matchId]);
-  return { data };
+  return { data, isLoading: false };
 };
 
 // ── Stubs para hooks não implementados no mockDb ─────────────────────────────
@@ -190,13 +190,18 @@ const emitMockDbChange = () => {
   window.dispatchEvent(new CustomEvent("mock-db-change"));
 };
 
-const noop = () => {};
-const pendingMutation = { mutate: noop, mutateAsync: async () => {}, isPending: false, isLoading: false };
+const noop = (..._args: any[]) => {};
+const pendingMutation = {
+  mutate: noop as (...args: any[]) => void,
+  mutateAsync: (async (..._args: any[]) => {}) as (...args: any[]) => Promise<unknown>,
+  isPending: false,
+  isLoading: false,
+};
 
-export const useProfile        = ()           => ({ data: null });
+export const useProfile        = ()           => ({ data: mockDb.getProfile(), isLoading: false });
 export const useUpdateProfile  = ()           => pendingMutation;
 export const useUploadAvatar   = ()           => pendingMutation;
-export const useAuth           = ()           => ({ user: null, session: null });
+export const useAuth           = ()           => ({ data: null, user: null, session: null });
 
 export const useCreateMatch    = ()           => pendingMutation;
 export const useUpdateMatch    = ()           => pendingMutation;
