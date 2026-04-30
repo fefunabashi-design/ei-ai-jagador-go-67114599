@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import BottomNav from "@/components/BottomNav";
 import {
   useMyTeam,
+  useMyTeams,
   useCreateTeam,
   useUpdateTeam,
   useDeleteTeam,
