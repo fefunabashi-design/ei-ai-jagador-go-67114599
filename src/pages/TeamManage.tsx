@@ -249,6 +249,12 @@ const TeamPage = () => {
     deleteTeam.mutate(team.id);
   };
 
+  const openNewTeam = () => {
+    setIsEditingTeam(false);
+    setTeamForm({ ...EMPTY_TEAM_FORM });
+    setTeamDialogOpen(true);
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !team) return;
