@@ -665,17 +665,14 @@ function seedMockData() {
   const hasPlayers = !!rawPlayers;
   const parsedPlayers = rawPlayers ? get<any[]>("mock_players", []) : [];
   const hasNonEmptyPlayers = Array.isArray(parsedPlayers) && parsedPlayers.length > 0;
-<<<<<<< HEAD
   const shouldRefreshSeedTeam =
     !existingTeam ||
     existingTeam.id === DEFAULT_TEAM_SEED.id ||
     existingTeam.name === "Jagador FC";
-=======
   const rawMatches = localStorage.getItem("mock_matches");
   const hasMatches = !!rawMatches;
   const parsedMatches = rawMatches ? get<any[]>("mock_matches", []) : [];
   const hasNonEmptyMatches = Array.isArray(parsedMatches) && parsedMatches.length > 0;
->>>>>>> 6187092886d205ee36b3ddb6d5ea32543b00527b
 
   if (!hasTeam || shouldRefreshSeedTeam) {
     set("mock_team", DEFAULT_TEAM_SEED);
