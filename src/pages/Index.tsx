@@ -66,6 +66,24 @@ const Index = () => {
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
+  // Summons for the next match (player presence)
+  const nextMatchSummons: any[] = nextMatch ? mockDb.getSummons(nextMatch.id) : [];
+  const myNextSummon = nextMatchSummons.find((s: any) => s.player?.user_id === profile?.user_id);
+  const confirmedSummons = nextMatchSummons.filter((s: any) => s.status === "confirmed");
+  const declinedSummons = nextMatchSummons.filter((s: any) => s.status === "declined");
+  const pendingSummonsList = nextMatchSummons.filter((s: any) => s.status === "pending");
+
+  const handlePresence = (status: "confirmed" | "declined") => {
+    if (!myNextSummon) {
+      toast({ title: "Você não foi convocado para esta partida", variant: "destructive" });
+      return;
+    }
+    mockDb.respondSummon(myNextSummon.id, status);
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
+    setConfirmOpen(false);
+  };
+
   // Team season stats
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
