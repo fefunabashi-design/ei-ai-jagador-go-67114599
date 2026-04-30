@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import BottomNav from "@/components/BottomNav";
 import {
   useMyTeam,
+  useMyTeams,
   useCreateTeam,
   useUpdateTeam,
   useDeleteTeam,
@@ -149,7 +150,11 @@ const formatPhone = (value: string) => {
 const TeamPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: team, isLoading: teamLoading } = useMyTeam();
+  const { data: activeTeam, isLoading: teamLoading } = useMyTeam();
+  const { data: myTeams = [] } = useMyTeams();
+  const ownedTeam = myTeams.find((t: any) => t.owner_id === "mock-user-id") || null;
+  const isOwnerOfAny = !!ownedTeam;
+  const team = ownedTeam || (activeTeam?.owner_id === "mock-user-id" ? activeTeam : null);
   const { data: players = [], isLoading: playersLoading } = usePlayers(team?.id);
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
@@ -179,12 +184,12 @@ const TeamPage = () => {
   const setPF = (key: string, value: string) => setPlayerForm((p) => ({ ...p, [key]: value }));
 
   useEffect(() => {
-    if (!team && !teamLoading) {
+    if (!isOwnerOfAny && !teamLoading) {
       setIsEditingTeam(false);
       setTeamForm({ ...EMPTY_TEAM_FORM });
       setTeamDialogOpen(true);
     }
-  }, [team, teamLoading]);
+  }, [isOwnerOfAny, teamLoading]);
 
   const openEditTeam = () => {
     if (!team) return;
@@ -242,6 +247,12 @@ const TeamPage = () => {
   const handleDeleteTeam = () => {
     if (!team) return;
     deleteTeam.mutate(team.id);
+  };
+
+  const openNewTeam = () => {
+    setIsEditingTeam(false);
+    setTeamForm({ ...EMPTY_TEAM_FORM });
+    setTeamDialogOpen(true);
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -496,6 +507,14 @@ const TeamPage = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+
+              <Button
+                onClick={openNewTeam}
+                variant="outline"
+                className="w-full text-xs border-dashed"
+              >
+                <Plus size={14} className="mr-1" /> Cadastrar Novo Time
+              </Button>
             </motion.div>
           </TabsContent>
 
