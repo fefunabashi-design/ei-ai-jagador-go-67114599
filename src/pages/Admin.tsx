@@ -205,7 +205,7 @@ const AdminPage = () => {
           <p className="text-xs text-muted-foreground mt-1">
             Time ativo: <span className="text-foreground font-semibold">{myTeam.name}</span>
             {" · "}
-            <button onClick={() => navigate("/team")} className="text-primary underline">trocar</button>
+            <button onClick={() => setSwitchTeamOpen(true)} className="text-primary underline">trocar</button>
           </p>
         )}
       </div>
