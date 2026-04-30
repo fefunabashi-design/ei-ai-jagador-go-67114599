@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
@@ -73,8 +73,12 @@ const allPositions = [
 
 const AgendaPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusMatchId = searchParams.get("matchId");
   const [view, setView] = useState<"list" | "calendar">("list");
-  const [filter, setFilter] = useState<FilterType>("upcoming");
+  const [filter, setFilter] = useState<FilterType>(focusMatchId ? "upcoming" : "upcoming");
+  const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
+  const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -167,6 +171,24 @@ const AgendaPage = () => {
       default: return true;
     }
   });
+
+  useEffect(() => {
+    if (!focusMatchId) return;
+    setView("list");
+    setFilter("upcoming");
+    const t = setTimeout(() => {
+      const el = matchRefs.current[focusMatchId];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const t2 = setTimeout(() => {
+        setHighlightedMatchId(null);
+        searchParams.delete("matchId");
+        setSearchParams(searchParams, { replace: true });
+      }, 2500);
+      return () => clearTimeout(t2);
+    }, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusMatchId, filtered.length]);
 
   const openEdit = (match: any) => {
     setSelectedMatch(match);
@@ -445,10 +467,15 @@ const AgendaPage = () => {
               return (
                 <motion.div
                   key={match.id}
+                  ref={(el) => { matchRefs.current[match.id] = el; }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 transition-all"
+                  className={`bg-card rounded-2xl border overflow-hidden transition-all ${
+                    highlightedMatchId === match.id
+                      ? "border-primary ring-2 ring-primary/50 shadow-[0_0_30px_-10px_hsl(var(--primary))]"
+                      : "border-border hover:border-primary/30"
+                  }`}
                 >
                   {/* Header bar */}
                   <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between">
