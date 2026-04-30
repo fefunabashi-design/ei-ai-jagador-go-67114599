@@ -159,6 +159,39 @@ const AdminPage = () => {
     acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
   };
 
+  const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleLocation, setRescheduleLocation] = useState("");
+
+  const openReschedule = (m: any) => {
+    const d = new Date(m.match_date);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    setRescheduleDate(`${yyyy}-${mm}-${dd}`);
+    setRescheduleTime(`${hh}:${mi}`);
+    setRescheduleLocation(m.location || "");
+    setRescheduleMatch(m);
+  };
+
+  const confirmReschedule = () => {
+    if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
+    const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
+    mockDb.updateMatch(rescheduleMatch.id, { match_date, location: rescheduleLocation });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
+    setRescheduleMatch(null);
+  };
+
+  const handleDecline = (matchId: string) => {
+    mockDb.deleteMatch(matchId);
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Pedido recusado." });
+  };
+
   const toggleFilter = (
     value: string,
     setSelected: React.Dispatch<React.SetStateAction<string[]>>,
