@@ -120,19 +120,7 @@ const Index = () => {
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
 
-  const scheduledMatches = matches
-    .filter((m) => {
-      const homeTeam = m.home_team as any;
-      const awayTeam = m.away_team as any;
-      return (
-        myTeam &&
-        new Date(m.match_date) >= now &&
-        (m.status === "open" || m.status === "confirmed") &&
-        (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)
-      );
-    })
-    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
-    .slice(0, 6);
+
 
   return (
     <div className="min-h-screen bg-background pb-20">
