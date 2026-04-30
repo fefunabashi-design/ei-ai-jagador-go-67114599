@@ -507,6 +507,14 @@ const TeamPage = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+
+              <Button
+                onClick={openNewTeam}
+                variant="outline"
+                className="w-full text-xs border-dashed"
+              >
+                <Plus size={14} className="mr-1" /> Cadastrar Novo Time
+              </Button>
             </motion.div>
           </TabsContent>
 
