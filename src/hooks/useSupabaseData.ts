@@ -53,6 +53,28 @@ export const useMyTeam = () => {
   return { data, isLoading: false };
 };
 
+export const useMyTeams = () => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    const sync = () => setData(mockDb.getMyTeams());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
+  }, []);
+  return { data, isLoading: false };
+};
+
+export const useSetActiveTeam = () => {
+  return (teamId: string) => {
+    mockDb.setActiveTeam(teamId);
+    emitMockDbChange();
+  };
+};
+
 export const usePlayers = (teamId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
@@ -80,9 +102,12 @@ export const usePlayers = (teamId?: string) => {
 export const useMatches = () => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
-    setData(mockDb.getMatches());
+    const sync = () => setData(mockDb.getMatches());
+    sync();
+    window.addEventListener("mock-db-change", sync);
+    return () => window.removeEventListener("mock-db-change", sync);
   }, []);
-  return { data };
+  return { data, isLoading: false };
 };
 
 export const usePhotoEvents = (teamId?: string) => {
@@ -160,7 +185,7 @@ export const useMatchSummons = (matchId?: string) => {
       setData(mockDb.getSummons(matchId));
     }
   }, [matchId]);
-  return { data };
+  return { data, isLoading: false };
 };
 
 // ── Stubs para hooks não implementados no mockDb ─────────────────────────────
@@ -168,13 +193,18 @@ const emitMockDbChange = () => {
   window.dispatchEvent(new CustomEvent("mock-db-change"));
 };
 
-const noop = () => {};
-const pendingMutation = { mutate: noop, mutateAsync: async () => {}, isPending: false, isLoading: false };
+const noop = (..._args: any[]) => {};
+const pendingMutation = {
+  mutate: noop as (...args: any[]) => void,
+  mutateAsync: (async (..._args: any[]) => {}) as (...args: any[]) => Promise<unknown>,
+  isPending: false,
+  isLoading: false,
+};
 
-export const useProfile        = ()           => ({ data: null });
+export const useProfile        = ()           => ({ data: mockDb.getProfile(), isLoading: false });
 export const useUpdateProfile  = ()           => pendingMutation;
 export const useUploadAvatar   = ()           => pendingMutation;
-export const useAuth           = ()           => ({ user: null, session: null });
+export const useAuth           = ()           => ({ data: null, user: null, session: null });
 
 export const useCreateMatch    = ()           => pendingMutation;
 export const useUpdateMatch    = ()           => pendingMutation;

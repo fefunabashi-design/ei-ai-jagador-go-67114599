@@ -148,7 +148,8 @@ const AdminPage = () => {
   });
 
   const quickActions = [
-    { icon: Pencil, label: "EscalaÁ„o", path: "/escalacao" },
+    { icon: Users, label: "Gerenciar Time", path: "/team-manage" },
+    { icon: Pencil, label: "Escala√ß√£o", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
@@ -160,12 +161,19 @@ const AdminPage = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-8 pb-4">
         <h1 className="text-3xl text-foreground font-display">PAINEL ADMIN</h1>
+        {myTeam && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Time ativo: <span className="text-foreground font-semibold">{myTeam.name}</span>
+            {" ¬∑ "}
+            <button onClick={() => navigate("/team")} className="text-primary underline">trocar</button>
+          </p>
+        )}
       </div>
 
       <div className="px-5 space-y-5">
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos ∑ ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team" },
+            { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos ¬∑ ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team-manage" },
             {
               icon: DollarSign,
               value: saldoAtual.toLocaleString("pt-BR", {
@@ -174,7 +182,7 @@ const AdminPage = () => {
                 maximumFractionDigits: 0,
               }),
               label: "Caixa atual",
-              trend: "Ver movimentaÁıes",
+              trend: "Ver movimenta√ß√µes",
               color: "text-warning",
               path: "/caixa",
             },
@@ -205,7 +213,7 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
-                if (action.label === "Buscar advers·rio") {
+                if (action.label === "Buscar advers√°rio") {
                   setShowOpponentSearch((value) => !value);
                   return;
                 }
@@ -225,8 +233,8 @@ const AdminPage = () => {
           <div className="bg-card rounded-xl border border-border p-4 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-display text-foreground">BUSCAR ADVERS¡RIO</h2>
-                <p className="text-[10px] text-muted-foreground">Selecione uma ou mais opÁıes por filtro</p>
+                <h2 className="text-sm font-display text-foreground">BUSCAR ADVERS√ÅRIO</h2>
+                <p className="text-[10px] text-muted-foreground">Selecione uma ou mais op√ß√µes por filtro</p>
               </div>
               <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
             </div>
@@ -253,7 +261,7 @@ const AdminPage = () => {
               </div>
 
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Regi„o</p>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Regi√£o</p>
                 <div className="flex flex-wrap gap-2">
                   {REGIOES.map((region) => (
                     <button
@@ -273,7 +281,7 @@ const AdminPage = () => {
               </div>
 
               <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Hor·rio</p>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Hor√°rio</p>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
                     type="time"
@@ -296,11 +304,11 @@ const AdminPage = () => {
                 filteredOpponentTeams.map((team) => {
                   const teamTime =
                     team.play_time_start && team.play_time_end
-                      ? `${team.play_time_start} atÈ ${team.play_time_end}`
-                      : team.play_time_start || team.play_time_end || "Hor·rio n„o informado";
+                      ? `${team.play_time_start} at√© ${team.play_time_end}`
+                      : team.play_time_start || team.play_time_end || "Hor√°rio n√£o informado";
                   const teamDays = Array.isArray(team.play_days) && team.play_days.length > 0
                     ? team.play_days.join(", ")
-                    : "Dias n„o informados";
+                    : "Dias n√£o informados";
 
                   return (
                     <div key={team.id} className="rounded-xl border border-border bg-background p-3">
@@ -308,13 +316,13 @@ const AdminPage = () => {
                         <div>
                           <p className="text-sm font-semibold text-foreground">{team.name}</p>
                           <p className="text-[10px] text-muted-foreground">
-                            {team.categoria || "Sem categoria"} ∑ {team.region || "Sem regi„o"}
+                            {team.categoria || "Sem categoria"} ¬∑ {team.region || "Sem regi√£o"}
                           </p>
                         </div>
                         <Shield size={16} className="text-primary" />
                       </div>
                       <p className="mt-2 text-[11px] text-muted-foreground">
-                        {teamDays} ∑ {teamTime}
+                        {teamDays} ¬∑ {teamTime}
                       </p>
                     </div>
                   );
@@ -344,7 +352,7 @@ const AdminPage = () => {
                       <div>
                         <p className="text-xs font-semibold text-foreground">{homeTeam?.name}</p>
                         <p className="text-[9px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ∑ {m.location}
+                          {date.toLocaleDateString("pt-BR", { weekday: "short" })} {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ¬∑ {m.location}
                         </p>
                       </div>
                     </div>
@@ -370,7 +378,7 @@ const AdminPage = () => {
 
         {topScorers.length > 0 && (
           <div>
-            <h2 className="text-sm font-display text-foreground mb-2">ARTILHARIA ∑ {myTeam?.name?.toUpperCase()}</h2>
+            <h2 className="text-sm font-display text-foreground mb-2">ARTILHARIA ¬∑ {myTeam?.name?.toUpperCase()}</h2>
             <div className="space-y-1.5">
               {topScorers.map((p, i) => (
                 <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl border border-border p-3">
@@ -382,7 +390,7 @@ const AdminPage = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-foreground">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.position || "ó"}</p>
+                    <p className="text-[10px] text-muted-foreground">{p.position || "‚Äî"}</p>
                   </div>
                   <span className="text-sm font-display text-foreground">{p.goals} gols</span>
                 </div>

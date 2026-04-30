@@ -102,7 +102,7 @@ const CaixaPage = () => {
 
   // ── mutations ──
   const createDebito = useMutation({
-    mutationFn: (d: any) => mockDb.createDebito({ ...d, team_id: team!.id }),
+    mutationFn: async (d: any) => mockDb.createDebito({ ...d, team_id: team!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
       toast({ title: "Débito registrado! ✅" });
@@ -111,7 +111,7 @@ const CaixaPage = () => {
   });
 
   const updateDebito = useMutation({
-    mutationFn: ({ id, ...d }: any) => mockDb.updateDebito(id, d),
+    mutationFn: async ({ id, ...d }: any) => mockDb.updateDebito(id, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
       toast({ title: "Débito atualizado! ✅" });
@@ -120,7 +120,7 @@ const CaixaPage = () => {
   });
 
   const deleteDebito = useMutation({
-    mutationFn: (id: string) => mockDb.deleteDebito(id),
+    mutationFn: async (id: string) => mockDb.deleteDebito(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
       toast({ title: "Débito excluído" });
