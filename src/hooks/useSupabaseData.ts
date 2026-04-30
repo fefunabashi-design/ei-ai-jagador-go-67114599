@@ -249,7 +249,27 @@ export const useAuth           = ()           => ({ data: null, user: null, sess
 export const useCreateMatch    = ()           => pendingMutation;
 export const useUpdateMatch    = ()           => pendingMutation;
 export const useDeleteMatch    = ()           => pendingMutation;
-export const useAcceptMatch    = ()           => pendingMutation;
+
+export const useAcceptMatch = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  const mutate = (params: { matchId: string; awayTeamId: string }) => {
+    setIsPending(true);
+    try {
+      mockDb.updateMatch(params.matchId, {
+        away_team_id: params.awayTeamId,
+        status: "confirmed",
+      });
+      emitMockDbChange();
+      toast({ title: "Match confirmado!", description: "Partida agendada na sua agenda." });
+    } catch (error: any) {
+      toast({ title: "Erro ao aceitar match", description: error?.message, variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+  return { mutate, mutateAsync: async (p: any) => mutate(p), isPending, isLoading: isPending };
+};
 
 export const useCreateTeam = () => {
   const { toast } = useToast();
