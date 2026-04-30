@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import Match from "./pages/Match.tsx";
 import Agenda from "./pages/Agenda.tsx";
 import Team from "./pages/Team.tsx";
+import TeamManage from "./pages/TeamManage.tsx";
 import Ranking from "./pages/Ranking.tsx";
 import Profile from "./pages/Profile.tsx";
 import Chat from "./pages/Chat.tsx";
@@ -41,6 +42,7 @@ const App = () => {
             <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+            <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
             <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
