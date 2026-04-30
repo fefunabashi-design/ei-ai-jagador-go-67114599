@@ -201,19 +201,7 @@ const pendingMutation = {
   isLoading: false,
 };
 
-export const useProfile = () => {
-  const [data, setData] = useState<any>(mockDb.getProfile());
-  useEffect(() => {
-    const sync = () => setData(mockDb.getProfile());
-    window.addEventListener("storage", sync);
-    window.addEventListener("mock-db-change", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("mock-db-change", sync);
-    };
-  }, []);
-  return { data, isLoading: false };
-};
+export const useProfile = () => ({ data: mockDb.getProfile(), isLoading: false });
 
 export const useUpdateProfile = () => {
   const { toast } = useToast();
