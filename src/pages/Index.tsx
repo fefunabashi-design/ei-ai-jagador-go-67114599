@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
