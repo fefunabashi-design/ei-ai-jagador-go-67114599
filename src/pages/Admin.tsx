@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ type Team = Database["public"]["Tables"]["teams"]["Row"];
 type Player = Database["public"]["Tables"]["players"]["Row"] & { is_active?: boolean };
 type Match = Database["public"]["Tables"]["matches"]["Row"] & {
   home_team?: Team | null;
+  away_team?: Team | null;
 };
 type Debito = {
   id: string;
