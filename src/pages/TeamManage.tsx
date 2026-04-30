@@ -340,7 +340,10 @@ const TeamPage = () => {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="px-5 pt-12 pb-4">
-          <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
+          <button onClick={() => navigate("/admin")} className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+            <ArrowLeft size={14} /> Voltar ao Admin
+          </button>
+          <h1 className="text-4xl text-foreground font-display">GERENCIAR TIME</h1>
           <p className="text-sm text-muted-foreground mt-1">Cadastre seu time para começar</p>
         </div>
         <div className="px-5">
@@ -381,7 +384,10 @@ const TeamPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-12 pb-4">
-        <h1 className="text-4xl text-foreground font-display">MEU TIME</h1>
+        <button onClick={() => navigate("/admin")} className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+          <ArrowLeft size={14} /> Voltar ao Admin
+        </button>
+        <h1 className="text-4xl text-foreground font-display">GERENCIAR TIME</h1>
       </div>
 
       <div className="px-5">
