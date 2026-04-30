@@ -253,6 +253,25 @@ const Index = () => {
                 <ChevronRight size={14} className="text-primary" />
               </button>
             </motion.div>
+
+            {/* Action buttons - escalar / detalhar */}
+            {isOwner && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Button
+                  onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
+                  className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+                >
+                  <Pencil size={14} className="mr-1" /> ESCALAR TIME
+                </Button>
+                <Button
+                  onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
+                  variant="outline"
+                  className="border-primary/40 text-primary font-semibold h-10"
+                >
+                  <Eye size={14} className="mr-1" /> DETALHAR TIME
+                </Button>
+              </div>
+            )}
           </div>
         );
       })()}
