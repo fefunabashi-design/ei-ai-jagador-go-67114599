@@ -172,6 +172,24 @@ const AgendaPage = () => {
     }
   });
 
+  useEffect(() => {
+    if (!focusMatchId) return;
+    setView("list");
+    setFilter("upcoming");
+    const t = setTimeout(() => {
+      const el = matchRefs.current[focusMatchId];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const t2 = setTimeout(() => {
+        setHighlightedMatchId(null);
+        searchParams.delete("matchId");
+        setSearchParams(searchParams, { replace: true });
+      }, 2500);
+      return () => clearTimeout(t2);
+    }, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusMatchId, filtered.length]);
+
   const openEdit = (match: any) => {
     setSelectedMatch(match);
     setEditLocation(match.location);
