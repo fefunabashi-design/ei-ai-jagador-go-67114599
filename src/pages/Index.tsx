@@ -509,45 +509,45 @@ const Index = () => {
 
           <div>
             <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
-              ✓ Confirmados ({confirmedSummons.length})
+              ✓ Confirmados ({confirmedRoster.length})
             </p>
-            {confirmedSummons.length === 0 ? (
+            {confirmedRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
             ) : (
               <ul className="space-y-1 mb-3">
-                {confirmedSummons.map((s: any) => (
-                  <li key={s.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {confirmedRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
             )}
 
             <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
-              ✗ Ausentes ({declinedSummons.length})
+              ✗ Ausentes ({declinedRoster.length})
             </p>
-            {declinedSummons.length === 0 ? (
+            {declinedRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
             ) : (
               <ul className="space-y-1 mb-3">
-                {declinedSummons.map((s: any) => (
-                  <li key={s.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {declinedRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
             )}
 
             <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
-              • Aguardando ({pendingSummonsList.length})
+              • Aguardando ({pendingRoster.length})
             </p>
-            {pendingSummonsList.length === 0 ? (
+            {pendingRoster.length === 0 ? (
               <p className="text-xs text-muted-foreground">Todos responderam.</p>
             ) : (
               <ul className="space-y-1">
-                {pendingSummonsList.map((s: any) => (
-                  <li key={s.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
-                    {s.player?.nickname || s.player?.name || "Jogador"}
+                {pendingRoster.map((r) => (
+                  <li key={r.player.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
                   </li>
                 ))}
               </ul>
