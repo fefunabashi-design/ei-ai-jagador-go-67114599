@@ -53,6 +53,28 @@ export const useMyTeam = () => {
   return { data, isLoading: false };
 };
 
+export const useMyTeams = () => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    const sync = () => setData(mockDb.getMyTeams());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
+  }, []);
+  return { data, isLoading: false };
+};
+
+export const useSetActiveTeam = () => {
+  return (teamId: string) => {
+    mockDb.setActiveTeam(teamId);
+    emitMockDbChange();
+  };
+};
+
 export const usePlayers = (teamId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
