@@ -1,9 +1,130 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Check, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeams, useMyTeam, useSetActiveTeam } from "@/hooks/useSupabaseData";
+import { useMyTeams, useMyTeam, useSetActiveTeam, usePlayers } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+
+const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
+  <div className="flex items-start gap-2.5 py-1.5">
+    <Icon size={14} className="text-primary mt-0.5 shrink-0" />
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-sm text-foreground truncate">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
+  const { data: players = [] } = usePlayers(team.id);
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-3">
+        <button
+          onClick={onBack}
+          aria-label="Voltar"
+          className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center"
+        >
+          <ArrowLeft size={16} className="text-foreground" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Detalhes do time</p>
+          <h1 className="text-xl font-display text-foreground truncate">{team.name}</h1>
+        </div>
+      </div>
+
+      {/* Identidade */}
+      <div className="px-5 mt-3">
+        <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+          {team.logo_url ? (
+            <img src={team.logo_url} alt={team.name} className="w-16 h-16 rounded-xl object-cover border border-border" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl">
+              {team.abbreviation || team.name?.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-lg text-foreground truncate">{team.name}</p>
+            <p className="text-[11px] text-muted-foreground">{team.abbreviation || "—"} · {team.categoria || "Sem categoria"}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{team.format || "—"} · ★ {team.rating || 0}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Dados do time */}
+      <div className="px-5 mt-4">
+        <h2 className="text-xs font-display text-foreground mb-2 uppercase tracking-wider">Dados do time</h2>
+        <div className="bg-card rounded-2xl border border-border p-4 space-y-1">
+          <InfoRow icon={MapPin} label="Região" value={team.region} />
+          <InfoRow icon={MapPin} label="Campo / endereço" value={team.field_name || team.field_address} />
+          <InfoRow icon={Calendar} label="Dias de jogo" value={(team.play_days || []).join(", ")} />
+          <InfoRow
+            icon={Clock}
+            label="Horário"
+            value={team.play_time_start ? `${team.play_time_start} - ${team.play_time_end || ""}` : null}
+          />
+          <InfoRow icon={Calendar} label="Fundação" value={team.foundation_date} />
+          <InfoRow icon={Shield} label="Grito de guerra" value={team.war_cry} />
+        </div>
+      </div>
+
+      {/* Contato */}
+      <div className="px-5 mt-4">
+        <h2 className="text-xs font-display text-foreground mb-2 uppercase tracking-wider">Contato</h2>
+        <div className="bg-card rounded-2xl border border-border p-4 space-y-1">
+          <InfoRow icon={Phone} label="Telefone" value={team.phone || team.mobile} />
+          <InfoRow icon={Mail} label="E-mail" value={team.email} />
+          <InfoRow icon={Instagram} label="Instagram" value={team.instagram} />
+          <InfoRow icon={Users} label="Presidente" value={team.president_name} />
+          <InfoRow icon={Users} label="Administrador" value={team.admin_name} />
+          <InfoRow icon={Users} label="Técnico" value={team.coach_name} />
+        </div>
+      </div>
+
+      {/* Jogadores */}
+      <div className="px-5 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-display text-foreground uppercase tracking-wider">Jogadores cadastrados</h2>
+          <span className="text-[10px] text-muted-foreground">{players.length}</span>
+        </div>
+        <div className="bg-card rounded-2xl border border-border divide-y divide-border overflow-hidden">
+          {players.length === 0 ? (
+            <div className="p-5 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
+            </div>
+          ) : (
+            players.map((p: any) => (
+              <div key={p.id} className="flex items-center gap-3 p-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-display">
+                  {p.jersey_number || "-"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {p.nickname || p.name} {p.last_name || ""}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {p.position || "Sem posição"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted-foreground">Gols</p>
+                  <p className="text-sm font-semibold text-foreground">{p.goals || 0}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          Visualização somente leitura. Cadastros e alterações são feitos pelo Admin.
+        </p>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+};
 
 const MyTeamsPage = () => {
   const navigate = useNavigate();
@@ -11,11 +132,18 @@ const MyTeamsPage = () => {
   const { data: myTeams = [] } = useMyTeams();
   const { data: activeTeam } = useMyTeam();
   const setActiveTeam = useSetActiveTeam();
+  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
 
-  const handleSelect = (teamId: string, teamName: string) => {
-    if (activeTeam?.id === teamId) return;
-    setActiveTeam(teamId);
-    toast({ title: `Time ativo: ${teamName}`, description: "As telas do app foram atualizadas." });
+  if (selectedTeam) {
+    return <TeamDetail team={selectedTeam} onBack={() => setSelectedTeam(null)} />;
+  }
+
+  const handleSelect = (team: any) => {
+    if (activeTeam?.id !== team.id) {
+      setActiveTeam(team.id);
+      toast({ title: `Time ativo: ${team.name}`, description: "As telas do app foram atualizadas." });
+    }
+    setSelectedTeam(team);
   };
 
   return (
@@ -23,7 +151,7 @@ const MyTeamsPage = () => {
       <div className="px-5 pt-12 pb-4">
         <h1 className="text-4xl text-foreground font-display">MEUS TIMES</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Times em que você joga. Toque para ativar no app.
+          Times em que você joga. Toque para ver os detalhes.
         </p>
       </div>
 
@@ -46,7 +174,7 @@ const MyTeamsPage = () => {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                onClick={() => handleSelect(team.id, team.name)}
+                onClick={() => handleSelect(team)}
                 className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-colors text-left ${
                   isActive
                     ? "bg-primary/10 border-primary/40"
@@ -83,7 +211,6 @@ const MyTeamsPage = () => {
             );
           })
         )}
-
       </div>
 
       <BottomNav />
