@@ -260,7 +260,7 @@ const Index = () => {
                 variant="outline"
                 className="border-primary/40 text-primary font-semibold h-10"
               >
-                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedSummons.length})
+                <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedRoster.length})
               </Button>
             </div>
 
