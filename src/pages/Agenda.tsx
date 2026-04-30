@@ -467,10 +467,15 @@ const AgendaPage = () => {
               return (
                 <motion.div
                   key={match.id}
+                  ref={(el) => { matchRefs.current[match.id] = el; }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/30 transition-all"
+                  className={`bg-card rounded-2xl border overflow-hidden transition-all ${
+                    highlightedMatchId === match.id
+                      ? "border-primary ring-2 ring-primary/50 shadow-[0_0_30px_-10px_hsl(var(--primary))]"
+                      : "border-border hover:border-primary/30"
+                  }`}
                 >
                   {/* Header bar */}
                   <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between">
