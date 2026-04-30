@@ -201,9 +201,61 @@ const pendingMutation = {
   isLoading: false,
 };
 
-export const useProfile        = ()           => ({ data: mockDb.getProfile(), isLoading: false });
-export const useUpdateProfile  = ()           => pendingMutation;
-export const useUploadAvatar   = ()           => pendingMutation;
+export const useProfile = () => {
+  const [data, setData] = useState<any>(mockDb.getProfile());
+  useEffect(() => {
+    const sync = () => setData(mockDb.getProfile());
+    window.addEventListener("storage", sync);
+    window.addEventListener("mock-db-change", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("mock-db-change", sync);
+    };
+  }, []);
+  return { data, isLoading: false };
+};
+
+export const useUpdateProfile = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  const mutate = (updates: Record<string, unknown>) => {
+    setIsPending(true);
+    try {
+      mockDb.updateProfile(updates);
+      emitMockDbChange();
+      toast({ title: "Perfil atualizado!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar perfil", description: error?.message, variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+  return { mutate, isPending, isLoading: isPending };
+};
+
+export const useUploadAvatar = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  const mutate = async (file: File) => {
+    setIsPending(true);
+    try {
+      const avatar_url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      mockDb.updateProfile({ avatar_url });
+      emitMockDbChange();
+      toast({ title: "Foto atualizada!" });
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar foto", description: error?.message, variant: "destructive" });
+    } finally {
+      setIsPending(false);
+    }
+  };
+  return { mutate, isPending, isLoading: isPending };
+};
 export const useAuth           = ()           => ({ data: null, user: null, session: null });
 
 export const useCreateMatch    = ()           => pendingMutation;

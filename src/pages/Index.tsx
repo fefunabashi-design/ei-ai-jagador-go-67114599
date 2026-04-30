@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
@@ -18,7 +18,7 @@ const getInitials = (name: string) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const profile: any = null;
+  const { data: profile } = useProfile();
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
@@ -31,7 +31,8 @@ const Index = () => {
   const hours = now.getHours();
   const greeting = hours < 12 ? "Bom dia" : hours < 18 ? "Boa tarde" : "Boa noite";
   const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  const firstName = profile?.display_name?.split(" ")[0] || "Craque";
+  const playerName = profile?.nickname?.trim() || profile?.display_name?.split(" ")[0] || "Craque";
+  const firstName = playerName;
 
   // Next upcoming match
   const nextMatch = matches
