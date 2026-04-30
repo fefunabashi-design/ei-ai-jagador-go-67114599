@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye, Check, X, UserCheck, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
+import { mockDb } from "@/lib/mockDb";
+import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
 
