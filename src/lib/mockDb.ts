@@ -188,8 +188,31 @@ export const mockDb = {
   },
 
   // ==================== TEAMS ====================
+  // O usuário pode ter MAIS DE UM time. "mock_team" guarda o time ATIVO no app.
+  // "mock_my_teams" lista todos os times do usuário (proprietário ou jogador).
 
-  getTeam: (): any | null => get<any>("mock_team", null),
+  getTeam: (): any | null => {
+    const active = get<any>("mock_team", null);
+    if (active) return active;
+    const myTeams = mockDb.getMyTeams();
+    return myTeams[0] || null;
+  },
+
+  getMyTeams: (): any[] => {
+    const all = get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS);
+    const myIds = get<string[]>("mock_my_team_ids", [DEFAULT_TEAM_SEED.id]);
+    return all.filter((t) => myIds.includes(t.id));
+  },
+
+  setActiveTeam: (teamId: string) => {
+    const all = get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS);
+    const team = all.find((t) => t.id === teamId);
+    if (team) {
+      set("mock_team", team);
+    }
+    return team || null;
+  },
+
   getAllTeams: (): any[] => get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS),
 
   createTeam: (data: Record<string, unknown>) => {
@@ -204,30 +227,48 @@ export const mockDb = {
     set("mock_team", team);
     const teams = mockDb.getAllTeams().filter((item) => item.id !== team.id);
     set("mock_registered_teams", [team, ...teams]);
+    const myIds = get<string[]>("mock_my_team_ids", [DEFAULT_TEAM_SEED.id]);
+    if (!myIds.includes(team.id)) {
+      set("mock_my_team_ids", [team.id, ...myIds]);
+    }
     return team;
   },
 
-  updateTeam: (_id: string, updates: Record<string, unknown>) => {
-    const team = { ...mockDb.getTeam(), ...updates, updated_at: now() };
-    set("mock_team", team);
+  updateTeam: (id: string, updates: Record<string, unknown>) => {
     const teams = mockDb.getAllTeams();
+    const target = teams.find((t) => t.id === id) || mockDb.getTeam();
+    const team = { ...target, ...updates, id, updated_at: now() };
+    const active = mockDb.getTeam();
+    if (active?.id === id) {
+      set("mock_team", team);
+    }
     set(
       "mock_registered_teams",
-      teams.map((item) => (item.id === team.id ? team : item)),
+      teams.map((item) => (item.id === id ? team : item)),
     );
     return team;
   },
 
-  deleteTeam: () => {
-    const team = mockDb.getTeam();
-    if (team?.id) {
-      set(
-        "mock_registered_teams",
-        mockDb.getAllTeams().filter((item) => item.id !== team.id),
-      );
+  deleteTeam: (id?: string) => {
+    const active = mockDb.getTeam();
+    const targetId = id || active?.id;
+    if (!targetId) return;
+    set(
+      "mock_registered_teams",
+      mockDb.getAllTeams().filter((item) => item.id !== targetId),
+    );
+    const myIds = get<string[]>("mock_my_team_ids", []);
+    const nextIds = myIds.filter((tid) => tid !== targetId);
+    set("mock_my_team_ids", nextIds);
+    // Remove jogadores deste time
+    const players = get<any[]>("mock_players", []);
+    set("mock_players", players.filter((p) => p.team_id !== targetId));
+    // Reescolhe time ativo
+    if (active?.id === targetId) {
+      const remaining = mockDb.getAllTeams().filter((t) => nextIds.includes(t.id));
+      if (remaining[0]) set("mock_team", remaining[0]);
+      else localStorage.removeItem("mock_team");
     }
-    localStorage.removeItem("mock_team");
-    localStorage.removeItem("mock_players");
   },
 
   // ==================== PLAYERS ====================
