@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile, useMyAdminTeams, useSetActiveTeam } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
 import { mockDb } from "@/lib/mockDb";
 
@@ -44,6 +44,9 @@ const AdminPage = () => {
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
   const acceptMatch = useAcceptMatch();
+  const { data: adminTeams = [] } = useMyAdminTeams();
+  const setActiveTeam = useSetActiveTeam();
+  const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
   const [showOpponentSearch, setShowOpponentSearch] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -202,7 +205,7 @@ const AdminPage = () => {
           <p className="text-xs text-muted-foreground mt-1">
             Time ativo: <span className="text-foreground font-semibold">{myTeam.name}</span>
             {" · "}
-            <button onClick={() => navigate("/team")} className="text-primary underline">trocar</button>
+            <button onClick={() => setSwitchTeamOpen(true)} className="text-primary underline">trocar</button>
           </p>
         )}
       </div>
@@ -542,6 +545,52 @@ const AdminPage = () => {
               Enviar desafio
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Trocar time administrado */}
+      <Dialog open={switchTeamOpen} onOpenChange={setSwitchTeamOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Trocar time administrado</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {adminTeams.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Você não administra nenhum time.
+              </p>
+            ) : (
+              adminTeams.map((t: any) => {
+                const isActive = myTeam?.id === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      setActiveTeam(t.id);
+                      setSwitchTeamOpen(false);
+                      toast({ title: `Time ativo: ${t.name}` });
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${
+                      isActive ? "bg-primary/10 border-primary/40" : "bg-card border-border hover:border-primary/30"
+                    }`}
+                  >
+                    {t.logo_url ? (
+                      <img src={t.logo_url} alt={t.name} className="w-10 h-10 rounded-lg object-cover border border-border" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-sm">
+                        {t.abbreviation || t.name?.slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{t.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{t.categoria || "—"} · {t.region || "—"}</p>
+                    </div>
+                    {isActive && <span className="text-[10px] font-semibold text-primary">ATIVO</span>}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
