@@ -503,6 +503,13 @@ const AdminPage = () => {
               <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
             </div>
 
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              + Nova Partida (sem filtros)
+            </Button>
+
             <div className="space-y-3">
               {/* Cidade (autocomplete restrito ao UF do meu time) */}
               <div className="relative">
