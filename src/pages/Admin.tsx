@@ -95,29 +95,24 @@ const AdminPage = () => {
 
   const handleConfirmChallenge = () => {
     if (!myTeam || !challengeTeam) return;
-    if (!opponentReady(challengeTeam)) {
-      toast({
-        title: "Cadastro do adversário incompleto",
-        description: "Não é possível enviar o desafio.",
-        variant: "destructive",
-      });
+    if (!challengeDate) {
+      toast({ title: "Informe a data", variant: "destructive" });
       return;
     }
-    if (!challengeDate || !isDateAllowed(challengeDate, challengeTeam.play_days)) {
-      toast({
-        title: "Data inválida",
-        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
-        variant: "destructive",
-      });
+    if (!challengeTime) {
+      toast({ title: "Informe o horário", variant: "destructive" });
       return;
     }
-    if (challengeTime !== challengeTeam.play_time_start) {
-      toast({
-        title: "Horário inválido",
-        description: `Horário fixo do adversário: ${challengeTeam.play_time_start}`,
-        variant: "destructive",
-      });
-      return;
+    // Se o adversário tem dias configurados, validar; senão liberar
+    if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
+      if (!isDateAllowed(challengeDate, challengeTeam.play_days)) {
+        toast({
+          title: "Data inválida",
+          description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const location = locationChoice === "own"
