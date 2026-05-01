@@ -280,14 +280,34 @@ export const mockDb = {
       .sort((a, b) => (a.jersey_number || 0) - (b.jersey_number || 0));
   },
 
+  // Tenta encontrar uma conta de usuário cadastrada com o e-mail informado.
+  // No mock, comparamos com o profile principal. Em produção, isso chamará
+  // a edge function `search-player-by-email`.
+  _resolveUserByEmail: (email?: string | null): { user_id: string | null } => {
+    if (!email || typeof email !== "string") return { user_id: null };
+    const target = email.trim().toLowerCase();
+    if (!target) return { user_id: null };
+    const profile = get<any>("mock_profile", DEFAULT_PROFILE);
+    const profileEmail = (profile?.email || "").toString().toLowerCase();
+    if (profileEmail && profileEmail === target) {
+      return { user_id: profile.user_id };
+    }
+    return { user_id: null };
+  },
+
   createPlayer: (data: Record<string, unknown>) => {
     const players = get<any[]>("mock_players", []);
+    const email = (data as any).email as string | undefined;
+    const { user_id } = mockDb._resolveUserByEmail(email);
     const player = {
       goals: 0,
       matches: 0,
       rating: 0,
       is_active: true,
       ...data,
+      user_id: user_id || null,
+      invite_email: email || null,
+      link_status: user_id ? "linked" : email ? "invited" : "none",
       id: genId(),
       created_at: now(),
       updated_at: now(),
@@ -298,9 +318,18 @@ export const mockDb = {
 
   updatePlayer: (id: string, updates: Record<string, unknown>) => {
     const players = get<any[]>("mock_players", []);
-    const updated = players.map((p) =>
-      p.id === id ? { ...p, ...updates, updated_at: now() } : p
-    );
+    const updated = players.map((p) => {
+      if (p.id !== id) return p;
+      const next = { ...p, ...updates, updated_at: now() };
+      // Re-tenta o vínculo se o e-mail mudou e ainda não está linkado
+      if ("email" in updates) {
+        const { user_id } = mockDb._resolveUserByEmail(next.email);
+        next.user_id = user_id || next.user_id || null;
+        next.invite_email = next.email || null;
+        next.link_status = next.user_id ? "linked" : next.email ? "invited" : "none";
+      }
+      return next;
+    });
     set("mock_players", updated);
     return updated.find((p) => p.id === id);
   },
