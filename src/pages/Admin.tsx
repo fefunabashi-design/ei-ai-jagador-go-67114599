@@ -729,7 +729,7 @@ const AdminPage = () => {
             setChallengeTime("");
             setLocationChoice("away");
           } else if (challengeTeam) {
-            // Pré-popular horário fixo do adversário ao abrir
+            // Pré-popular horário fixo do adversário ao abrir, se houver
             setChallengeTime(challengeTeam.play_time_start || "");
           }
         }}
