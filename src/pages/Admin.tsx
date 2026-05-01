@@ -145,9 +145,10 @@ const AdminPage = () => {
       }
     }
 
-    const location = locationChoice === "own"
+    const fallbackLocation = locationChoice === "own"
       ? (myTeam.field_address || myTeam.field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
+    const location = challengeLocation.trim() || fallbackLocation;
 
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     mockDb.createMatch({
