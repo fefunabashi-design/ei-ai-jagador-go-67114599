@@ -167,6 +167,7 @@ const AdminPage = () => {
     setChallengeDate("");
     setChallengeTime("");
     setLocationChoice("away");
+    setChallengeLocation("");
     navigate("/agenda");
   };
 
