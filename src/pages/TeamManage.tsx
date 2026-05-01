@@ -183,13 +183,20 @@ const TeamPage = () => {
     setTeamForm((p) => ({ ...p, [key]: value }));
   const setPF = (key: string, value: string) => setPlayerForm((p) => ({ ...p, [key]: value }));
 
+  const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (!isOwnerOfAny && !teamLoading) {
+    if (teamLoading || autoOpened) return;
+    if (!isOwnerOfAny) {
       setIsEditingTeam(false);
       setTeamForm({ ...EMPTY_TEAM_FORM });
       setTeamDialogOpen(true);
+      setAutoOpened(true);
+    } else if (team) {
+      openEditTeam();
+      setAutoOpened(true);
     }
-  }, [isOwnerOfAny, teamLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnerOfAny, teamLoading, team, autoOpened]);
 
   const openEditTeam = () => {
     if (!team) return;
