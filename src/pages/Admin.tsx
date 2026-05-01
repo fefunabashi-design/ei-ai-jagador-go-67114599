@@ -742,20 +742,7 @@ const AdminPage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {challengeTeam && !opponentReady(challengeTeam) ? (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                <div>
-                  Cadastro do time adversário está incompleto. Não é possível enviar o desafio.
-                </div>
-              </div>
-              <Button variant="outline" className="w-full" onClick={() => setChallengeTeam(null)}>
-                Fechar
-              </Button>
-            </div>
-          ) : (
-            challengeTeam && (
+          {challengeTeam && (
               <div className="space-y-4">
                 <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg p-3 space-y-1">
                   <p><strong>Cidade:</strong> {challengeTeam.addr_cidade}/{challengeTeam.addr_uf}</p>
