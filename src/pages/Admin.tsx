@@ -54,10 +54,14 @@ const AdminPage = () => {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
+  const [nameQuery, setNameQuery] = useState("");
+  const [showCitySuggest, setShowCitySuggest] = useState(false);
+  const [showNameSuggest, setShowNameSuggest] = useState(false);
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [challengeLocation, setChallengeLocation] = useState("");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
   const { toast } = useToast();
 
   const handleConfirmChallenge = () => {
