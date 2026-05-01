@@ -301,7 +301,6 @@ const AdminPage = () => {
 
     return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
   });
-  });
 
   const quickActions = [
     { icon: Users, label: "Gerenciar Time", path: "/team-manage" },
