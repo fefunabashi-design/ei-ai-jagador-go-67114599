@@ -564,7 +564,7 @@ const TeamPage = () => {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-foreground truncate">
                           {player.display_name || player.nickname || player.name}
                         </p>
@@ -575,6 +575,15 @@ const TeamPage = () => {
                         }`}>
                           {player.is_active !== false ? "Ativo" : "Inativo"}
                         </span>
+                        {player.user_id ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 bg-primary/20 text-primary">
+                            ✓ Vinculado
+                          </span>
+                        ) : player.invite_email ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 bg-amber-500/20 text-amber-500">
+                            ✉ Convite
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-[10px] text-muted-foreground">
                         {Array.isArray(player.positions) && player.positions.length > 0
