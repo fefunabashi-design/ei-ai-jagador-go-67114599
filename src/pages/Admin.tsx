@@ -62,7 +62,36 @@ const AdminPage = () => {
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
   const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [newMatchOpen, setNewMatchOpen] = useState(false);
+  const [newMatchOpponent, setNewMatchOpponent] = useState("");
+  const [newMatchDate, setNewMatchDate] = useState("");
+  const [newMatchTime, setNewMatchTime] = useState("");
+  const [newMatchLocation, setNewMatchLocation] = useState("");
   const { toast } = useToast();
+
+  const handleCreateNewMatch = () => {
+    if (!myTeam) return;
+    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
+    mockDb.createMatch({
+      home_team_id: myTeam.id,
+      home_team_name: myTeam.name,
+      away_team_id: null,
+      away_team_name: newMatchOpponent.trim(),
+      match_date,
+      location: newMatchLocation.trim(),
+      status: "open",
+      format: (myTeam as any).format || "8x8",
+    });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Partida criada!", description: `vs ${newMatchOpponent.trim()}` });
+    setNewMatchOpen(false);
+    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
+    navigate("/agenda");
+  };
 
   // Pré-popular filtros de busca com o cadastro do meu time ao abrir o painel
   useEffect(() => {
@@ -95,29 +124,24 @@ const AdminPage = () => {
 
   const handleConfirmChallenge = () => {
     if (!myTeam || !challengeTeam) return;
-    if (!opponentReady(challengeTeam)) {
-      toast({
-        title: "Cadastro do adversário incompleto",
-        description: "Não é possível enviar o desafio.",
-        variant: "destructive",
-      });
+    if (!challengeDate) {
+      toast({ title: "Informe a data", variant: "destructive" });
       return;
     }
-    if (!challengeDate || !isDateAllowed(challengeDate, challengeTeam.play_days)) {
-      toast({
-        title: "Data inválida",
-        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
-        variant: "destructive",
-      });
+    if (!challengeTime) {
+      toast({ title: "Informe o horário", variant: "destructive" });
       return;
     }
-    if (challengeTime !== challengeTeam.play_time_start) {
-      toast({
-        title: "Horário inválido",
-        description: `Horário fixo do adversário: ${challengeTeam.play_time_start}`,
-        variant: "destructive",
-      });
-      return;
+    // Se o adversário tem dias configurados, validar; senão liberar
+    if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
+      if (!isDateAllowed(challengeDate, challengeTeam.play_days)) {
+        toast({
+          title: "Data inválida",
+          description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const location = locationChoice === "own"
@@ -479,6 +503,13 @@ const AdminPage = () => {
               <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
             </div>
 
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              + Nova Partida (sem filtros)
+            </Button>
+
             <div className="space-y-3">
               {/* Cidade (autocomplete restrito ao UF do meu time) */}
               <div className="relative">
@@ -734,7 +765,7 @@ const AdminPage = () => {
             setChallengeTime("");
             setLocationChoice("away");
           } else if (challengeTeam) {
-            // Pré-popular horário fixo do adversário ao abrir
+            // Pré-popular horário fixo do adversário ao abrir, se houver
             setChallengeTime(challengeTeam.play_time_start || "");
           }
         }}
@@ -747,108 +778,138 @@ const AdminPage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {challengeTeam && !opponentReady(challengeTeam) ? (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
-                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                <div>
-                  Cadastro do time adversário está incompleto. Não é possível enviar o desafio.
+          {challengeTeam && (
+            <div className="space-y-4">
+              {!opponentReady(challengeTeam) && (
+                <div className="flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                  <div>Cadastro do adversário incompleto — preencha os dados manualmente.</div>
                 </div>
+              )}
+
+              <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg p-3 space-y-1">
+                <p><strong>Cidade:</strong> {challengeTeam.addr_cidade || "—"}{challengeTeam.addr_uf ? `/${challengeTeam.addr_uf}` : ""}</p>
+                <p>
+                  <strong>Joga em:</strong>{" "}
+                  {Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0
+                    ? challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")
+                    : "Não informado"}
+                </p>
+                <p><strong>Horário:</strong> {challengeTeam.play_time_start ? `${challengeTeam.play_time_start} (fixo)` : "Livre"}</p>
               </div>
-              <Button variant="outline" className="w-full" onClick={() => setChallengeTeam(null)}>
-                Fechar
-              </Button>
+
+              <div>
+                <Label htmlFor="ch-date" className="flex items-center gap-1">
+                  <CalIcon size={14} /> Data do jogo
+                </Label>
+                <Input
+                  id="ch-date"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={challengeDate}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v && Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0 && !isDateAllowed(v, challengeTeam.play_days)) {
+                      toast({
+                        title: "Dia não permitido",
+                        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setChallengeDate(v);
+                  }}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ch-time" className="flex items-center gap-1">
+                  <Clock size={14} /> Horário {challengeTeam.play_time_start ? "(fixo)" : ""}
+                </Label>
+                <Input
+                  id="ch-time"
+                  type="time"
+                  value={challengeTime}
+                  readOnly={!!challengeTeam.play_time_start}
+                  onChange={(e) => setChallengeTime(e.target.value)}
+                  className={challengeTeam.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+                />
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Local</Label>
+                <RadioGroup
+                  value={locationChoice}
+                  onValueChange={(v) => setLocationChoice(v as "own" | "away")}
+                  className="space-y-2"
+                >
+                  <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                    <RadioGroupItem id="loc-own" value="own" className="mt-1" />
+                    <div className="text-sm">
+                      <div className="font-semibold flex items-center gap-1">
+                        <Building2 size={14} /> Meu campo
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                      </div>
+                    </div>
+                  </label>
+                  <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                    <RadioGroupItem id="loc-away" value="away" className="mt-1" />
+                    <div className="text-sm">
+                      <div className="font-semibold flex items-center gap-1">
+                        <Building2 size={14} /> Campo do adversário
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {challengeTeam.field_address || challengeTeam.field_name || "—"}
+                      </div>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
+                <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
+                  Enviar desafio
+                </Button>
+              </DialogFooter>
             </div>
-          ) : (
-            challengeTeam && (
-              <div className="space-y-4">
-                <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg p-3 space-y-1">
-                  <p><strong>Cidade:</strong> {challengeTeam.addr_cidade}/{challengeTeam.addr_uf}</p>
-                  <p>
-                    <strong>Joga em:</strong>{" "}
-                    {(challengeTeam.play_days || []).map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}
-                  </p>
-                  <p><strong>Horário:</strong> {challengeTeam.play_time_start} (fixo)</p>
-                </div>
-
-                <div>
-                  <Label htmlFor="ch-date" className="flex items-center gap-1">
-                    <CalIcon size={14} /> Data do jogo
-                  </Label>
-                  <Input
-                    id="ch-date"
-                    type="date"
-                    min={new Date().toISOString().slice(0, 10)}
-                    value={challengeDate}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v && !isDateAllowed(v, challengeTeam.play_days)) {
-                        toast({
-                          title: "Dia não permitido",
-                          description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      setChallengeDate(v);
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="ch-time" className="flex items-center gap-1">
-                    <Clock size={14} /> Horário (fixo)
-                  </Label>
-                  <Input
-                    id="ch-time"
-                    type="time"
-                    value={challengeTime}
-                    readOnly
-                    className="opacity-80 cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Local</Label>
-                  <RadioGroup
-                    value={locationChoice}
-                    onValueChange={(v) => setLocationChoice(v as "own" | "away")}
-                    className="space-y-2"
-                  >
-                    <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                      <RadioGroupItem id="loc-own" value="own" className="mt-1" />
-                      <div className="text-sm">
-                        <div className="font-semibold flex items-center gap-1">
-                          <Building2 size={14} /> Meu campo
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
-                        </div>
-                      </div>
-                    </label>
-                    <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                      <RadioGroupItem id="loc-away" value="away" className="mt-1" />
-                      <div className="text-sm">
-                        <div className="font-semibold flex items-center gap-1">
-                          <Building2 size={14} /> Campo do adversário
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {challengeTeam.field_address || challengeTeam.field_name || "—"}
-                        </div>
-                      </div>
-                    </label>
-                  </RadioGroup>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
-                  <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
-                    Enviar desafio
-                  </Button>
-                </DialogFooter>
-              </div>
-            )
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Nova Partida (sem filtros) */}
+      <Dialog open={newMatchOpen} onOpenChange={setNewMatchOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">NOVA PARTIDA</DialogTitle>
+            <DialogDescription>Crie uma partida informando os dados manualmente.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="nm-opp">Nome do Time Adversário</Label>
+              <Input id="nm-opp" value={newMatchOpponent} onChange={(e) => setNewMatchOpponent(e.target.value)} placeholder="Ex: Águias FC" />
+            </div>
+            <div>
+              <Label htmlFor="nm-date">Data</Label>
+              <Input id="nm-date" type="date" min={new Date().toISOString().slice(0, 10)} value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="nm-time">Horário</Label>
+              <Input id="nm-time" type="time" value={newMatchTime} onChange={(e) => setNewMatchTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="nm-loc">Local</Label>
+              <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewMatchOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateNewMatch} className="bg-gradient-primary text-primary-foreground border-0">
+              Criar partida
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
