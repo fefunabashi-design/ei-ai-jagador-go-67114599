@@ -743,93 +743,102 @@ const AdminPage = () => {
           </DialogHeader>
 
           {challengeTeam && (
-              <div className="space-y-4">
-                <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg p-3 space-y-1">
-                  <p><strong>Cidade:</strong> {challengeTeam.addr_cidade}/{challengeTeam.addr_uf}</p>
-                  <p>
-                    <strong>Joga em:</strong>{" "}
-                    {(challengeTeam.play_days || []).map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}
-                  </p>
-                  <p><strong>Horário:</strong> {challengeTeam.play_time_start} (fixo)</p>
+            <div className="space-y-4">
+              {!opponentReady(challengeTeam) && (
+                <div className="flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                  <div>Cadastro do adversário incompleto — preencha os dados manualmente.</div>
                 </div>
+              )}
 
-                <div>
-                  <Label htmlFor="ch-date" className="flex items-center gap-1">
-                    <CalIcon size={14} /> Data do jogo
-                  </Label>
-                  <Input
-                    id="ch-date"
-                    type="date"
-                    min={new Date().toISOString().slice(0, 10)}
-                    value={challengeDate}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v && !isDateAllowed(v, challengeTeam.play_days)) {
-                        toast({
-                          title: "Dia não permitido",
-                          description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      setChallengeDate(v);
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="ch-time" className="flex items-center gap-1">
-                    <Clock size={14} /> Horário (fixo)
-                  </Label>
-                  <Input
-                    id="ch-time"
-                    type="time"
-                    value={challengeTime}
-                    readOnly
-                    className="opacity-80 cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Local</Label>
-                  <RadioGroup
-                    value={locationChoice}
-                    onValueChange={(v) => setLocationChoice(v as "own" | "away")}
-                    className="space-y-2"
-                  >
-                    <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                      <RadioGroupItem id="loc-own" value="own" className="mt-1" />
-                      <div className="text-sm">
-                        <div className="font-semibold flex items-center gap-1">
-                          <Building2 size={14} /> Meu campo
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
-                        </div>
-                      </div>
-                    </label>
-                    <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                      <RadioGroupItem id="loc-away" value="away" className="mt-1" />
-                      <div className="text-sm">
-                        <div className="font-semibold flex items-center gap-1">
-                          <Building2 size={14} /> Campo do adversário
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {challengeTeam.field_address || challengeTeam.field_name || "—"}
-                        </div>
-                      </div>
-                    </label>
-                  </RadioGroup>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
-                  <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
-                    Enviar desafio
-                  </Button>
-                </DialogFooter>
+              <div className="text-xs text-muted-foreground bg-secondary/40 rounded-lg p-3 space-y-1">
+                <p><strong>Cidade:</strong> {challengeTeam.addr_cidade || "—"}{challengeTeam.addr_uf ? `/${challengeTeam.addr_uf}` : ""}</p>
+                <p>
+                  <strong>Joga em:</strong>{" "}
+                  {Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0
+                    ? challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")
+                    : "Não informado"}
+                </p>
+                <p><strong>Horário:</strong> {challengeTeam.play_time_start ? `${challengeTeam.play_time_start} (fixo)` : "Livre"}</p>
               </div>
-            )
+
+              <div>
+                <Label htmlFor="ch-date" className="flex items-center gap-1">
+                  <CalIcon size={14} /> Data do jogo
+                </Label>
+                <Input
+                  id="ch-date"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={challengeDate}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v && Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0 && !isDateAllowed(v, challengeTeam.play_days)) {
+                      toast({
+                        title: "Dia não permitido",
+                        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setChallengeDate(v);
+                  }}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ch-time" className="flex items-center gap-1">
+                  <Clock size={14} /> Horário {challengeTeam.play_time_start ? "(fixo)" : ""}
+                </Label>
+                <Input
+                  id="ch-time"
+                  type="time"
+                  value={challengeTime}
+                  readOnly={!!challengeTeam.play_time_start}
+                  onChange={(e) => setChallengeTime(e.target.value)}
+                  className={challengeTeam.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+                />
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Local</Label>
+                <RadioGroup
+                  value={locationChoice}
+                  onValueChange={(v) => setLocationChoice(v as "own" | "away")}
+                  className="space-y-2"
+                >
+                  <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                    <RadioGroupItem id="loc-own" value="own" className="mt-1" />
+                    <div className="text-sm">
+                      <div className="font-semibold flex items-center gap-1">
+                        <Building2 size={14} /> Meu campo
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                      </div>
+                    </div>
+                  </label>
+                  <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                    <RadioGroupItem id="loc-away" value="away" className="mt-1" />
+                    <div className="text-sm">
+                      <div className="font-semibold flex items-center gap-1">
+                        <Building2 size={14} /> Campo do adversário
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {challengeTeam.field_address || challengeTeam.field_name || "—"}
+                      </div>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
+                <Button onClick={handleConfirmChallenge} className="bg-gradient-primary text-primary-foreground border-0">
+                  Enviar desafio
+                </Button>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>
