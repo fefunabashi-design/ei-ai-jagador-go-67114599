@@ -1,0 +1,51 @@
+// Lista resumida de cidades por UF (mais comuns). Pode ser expandida conforme necessidade.
+export const CITIES_BY_UF: Record<string, string[]> = {
+  AC: ["Rio Branco", "Cruzeiro do Sul"],
+  AL: ["Maceió", "Arapiraca"],
+  AM: ["Manaus", "Parintins"],
+  AP: ["Macapá", "Santana"],
+  BA: ["Salvador", "Feira de Santana", "Vitória da Conquista", "Camaçari", "Itabuna"],
+  CE: ["Fortaleza", "Caucaia", "Juazeiro do Norte", "Sobral"],
+  DF: ["Brasília", "Taguatinga", "Ceilândia"],
+  ES: ["Vitória", "Vila Velha", "Serra", "Cariacica"],
+  GO: ["Goiânia", "Aparecida de Goiânia", "Anápolis"],
+  MA: ["São Luís", "Imperatriz"],
+  MG: ["Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim", "Montes Claros"],
+  MS: ["Campo Grande", "Dourados"],
+  MT: ["Cuiabá", "Várzea Grande", "Rondonópolis"],
+  PA: ["Belém", "Ananindeua", "Santarém"],
+  PB: ["João Pessoa", "Campina Grande"],
+  PE: ["Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru"],
+  PI: ["Teresina", "Parnaíba"],
+  PR: ["Curitiba", "Londrina", "Maringá", "Ponta Grossa", "Cascavel"],
+  RJ: ["Rio de Janeiro", "São Gonçalo", "Duque de Caxias", "Nova Iguaçu", "Niterói", "Campos dos Goytacazes"],
+  RN: ["Natal", "Mossoró"],
+  RO: ["Porto Velho", "Ji-Paraná"],
+  RR: ["Boa Vista"],
+  RS: ["Porto Alegre", "Caxias do Sul", "Pelotas", "Canoas", "Santa Maria"],
+  SC: ["Florianópolis", "Joinville", "Blumenau", "Chapecó"],
+  SE: ["Aracaju", "Nossa Senhora do Socorro"],
+  SP: [
+    "São Paulo",
+    "Guarulhos",
+    "Campinas",
+    "São Bernardo do Campo",
+    "Santo André",
+    "Osasco",
+    "Santos",
+    "Ribeirão Preto",
+    "Sorocaba",
+    "São José dos Campos",
+    "Diadema",
+    "Mauá",
+    "Mogi das Cruzes",
+    "Jundiaí",
+    "Piracicaba",
+  ],
+  TO: ["Palmas", "Araguaína"],
+};
+
+export function getCitiesForUf(uf?: string | null): string[] {
+  if (!uf) return [];
+  return CITIES_BY_UF[uf.toUpperCase()] || [];
+}
