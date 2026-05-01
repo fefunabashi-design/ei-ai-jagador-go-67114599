@@ -186,18 +186,16 @@ const TeamPage = () => {
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
     if (teamLoading || autoOpened) return;
-    // Aguarda hidratação dos dados de times do mockDb antes de decidir
+    // Aguarda hidratação dos dados de times antes de decidir
     const timer = setTimeout(() => {
       if (autoOpened) return;
-      if (team) {
-        openEditTeam();
-        setAutoOpened(true);
-      } else if (!isOwnerOfAny) {
+      // Só abre o diálogo automaticamente se NÃO houver time cadastrado
+      if (!team && !isOwnerOfAny) {
         setIsEditingTeam(false);
         setTeamForm({ ...EMPTY_TEAM_FORM });
         setTeamDialogOpen(true);
-        setAutoOpened(true);
       }
+      setAutoOpened(true);
     }, 50);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
