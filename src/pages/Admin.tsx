@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock } from "lucide-react";
@@ -63,6 +63,17 @@ const AdminPage = () => {
   const [challengeTime, setChallengeTime] = useState("");
   const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
   const { toast } = useToast();
+
+  // Pré-popular filtros de busca com o cadastro do meu time ao abrir o painel
+  useEffect(() => {
+    if (!showOpponentSearch || !myTeam) return;
+    const t = myTeam as any;
+    if (t.addr_cidade) setCityQuery(t.addr_cidade);
+    if (t.categoria) setSelectedCategories([t.categoria]);
+    if (t.region) setSelectedRegions([t.region]);
+    if (t.play_time_start) setTimeFrom(t.play_time_start);
+    if (t.play_time_end) setTimeTo(t.play_time_end);
+  }, [showOpponentSearch, myTeam]);
 
   const WEEK_DAY_LABEL: Record<string, string> = {
     domingo: "Domingo", segunda: "Segunda", terca: "Terça", quarta: "Quarta",
