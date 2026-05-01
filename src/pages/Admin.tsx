@@ -50,6 +50,7 @@ const AdminPage = () => {
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
   const [showOpponentSearch, setShowOpponentSearch] = useState(false);
+  const [showChallenges, setShowChallenges] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
