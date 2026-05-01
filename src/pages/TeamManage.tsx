@@ -756,6 +756,9 @@ const TeamPage = () => {
                   placeholder="email@email.com"
                   className="bg-secondary border-border"
                 />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Usado para vincular a conta do jogador no app.
+                </p>
               </div>
             </div>
 
