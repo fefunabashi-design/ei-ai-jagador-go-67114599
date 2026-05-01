@@ -214,6 +214,7 @@ const TeamPage = () => {
       name: team.name || "",
       region: (team as any).region || "",
       categoria: (team as any).categoria || "",
+      estilo: (team as any).estilo || "",
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
