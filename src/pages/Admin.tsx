@@ -62,6 +62,7 @@ const AdminPage = () => {
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
   const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [challengeLocation, setChallengeLocation] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
   const [newMatchDate, setNewMatchDate] = useState("");
