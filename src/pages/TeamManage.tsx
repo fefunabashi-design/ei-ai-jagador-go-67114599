@@ -954,6 +954,20 @@ const TeamFormDialog = ({
             </Select>
           </div>
 
+          <div>
+            <Label>Estilo</Label>
+            <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione o estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Campo">Campo</SelectItem>
+                <SelectItem value="Mini Campo">Mini Campo</SelectItem>
+                <SelectItem value="Futsal">Futsal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Endereço */}
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
