@@ -384,7 +384,7 @@ const AdminPage = () => {
       </div>
 
       <div className="px-5 space-y-5">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team-manage" },
             {
@@ -399,14 +399,25 @@ const AdminPage = () => {
               color: "text-warning",
               path: "/caixa",
             },
-          ].map((kpi, i) => (
+            {
+              icon: Swords,
+              value: totalChallenges,
+              label: "Desafios",
+              trend: `${receivedChallenges.length} recebidos · ${sentChallenges.length} enviados`,
+              color: "text-primary",
+              onClick: () => setShowChallenges((v) => !v),
+            },
+          ].map((kpi: any, i) => (
             <motion.div
               key={kpi.label}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => kpi.path && navigate(kpi.path)}
-              className={`bg-card rounded-xl border border-border p-3 ${kpi.path ? "cursor-pointer hover:border-primary/40 transition-colors" : ""}`}
+              onClick={() => {
+                if (kpi.onClick) kpi.onClick();
+                else if (kpi.path) navigate(kpi.path);
+              }}
+              className={`bg-card rounded-xl border border-border p-3 ${kpi.path || kpi.onClick ? "cursor-pointer hover:border-primary/40 transition-colors" : ""}`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <kpi.icon size={16} className={kpi.color} />
