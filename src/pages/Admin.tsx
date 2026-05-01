@@ -469,6 +469,68 @@ const AdminPage = () => {
             </div>
 
             <div className="space-y-3">
+              {/* Cidade (autocomplete restrito ao UF do meu time) */}
+              <div className="relative">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Cidade <span className="text-primary">({myUf})</span>
+                </p>
+                <div className="relative">
+                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={cityQuery}
+                    onChange={(e) => { setCityQuery(e.target.value); setShowCitySuggest(true); }}
+                    onFocus={() => setShowCitySuggest(true)}
+                    onBlur={() => setTimeout(() => setShowCitySuggest(false), 150)}
+                    placeholder={`Cidades de ${myUf}...`}
+                    className="pl-8 bg-background border-border h-9 text-sm"
+                  />
+                </div>
+                {showCitySuggest && filteredCitySuggest.length > 0 && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-52 overflow-auto">
+                    {filteredCitySuggest.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onMouseDown={() => { setCityQuery(c); setShowCitySuggest(false); }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Nome do time (autocomplete) */}
+              <div className="relative">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nome do Time</p>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={nameQuery}
+                    onChange={(e) => { setNameQuery(e.target.value); setShowNameSuggest(true); }}
+                    onFocus={() => setShowNameSuggest(true)}
+                    onBlur={() => setTimeout(() => setShowNameSuggest(false), 150)}
+                    placeholder="Buscar adversário pelo nome..."
+                    className="pl-8 bg-background border-border h-9 text-sm"
+                  />
+                </div>
+                {showNameSuggest && filteredNameSuggest.length > 0 && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-52 overflow-auto">
+                    {filteredNameSuggest.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onMouseDown={() => { setNameQuery(t.name); setShowNameSuggest(false); }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-accent hover:text-accent-foreground flex items-center justify-between"
+                      >
+                        <span>{t.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{(t as any).addr_cidade}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Categoria</p>
                 <div className="flex flex-wrap gap-2">
