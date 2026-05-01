@@ -152,9 +152,13 @@ const TeamPage = () => {
   const { toast } = useToast();
   const { data: activeTeam, isLoading: teamLoading } = useMyTeam();
   const { data: myTeams = [] } = useMyTeams();
-  const ownedTeam = myTeams.find((t: any) => t.owner_id === "mock-user-id") || null;
-  const isOwnerOfAny = !!ownedTeam;
-  const team = ownedTeam || (activeTeam?.owner_id === "mock-user-id" ? activeTeam : null);
+  const ownedTeams = myTeams.filter((t: any) => t.owner_id === "mock-user-id");
+  const isOwnerOfAny = ownedTeams.length > 0;
+  // Prioriza o time ATIVO (logado) se for do usuário; senão cai no primeiro próprio
+  const team =
+    (activeTeam && ownedTeams.find((t: any) => t.id === activeTeam.id)) ||
+    ownedTeams[0] ||
+    null;
   const { data: players = [], isLoading: playersLoading } = usePlayers(team?.id);
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
