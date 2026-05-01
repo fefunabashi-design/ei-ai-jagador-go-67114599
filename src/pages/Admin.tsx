@@ -64,26 +64,72 @@ const AdminPage = () => {
   const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
   const { toast } = useToast();
 
+  const WEEK_DAY_LABEL: Record<string, string> = {
+    domingo: "Domingo", segunda: "Segunda", terca: "Terça", quarta: "Quarta",
+    quinta: "Quinta", sexta: "Sexta", sabado: "Sábado",
+  };
+  const DAY_INDEX: Record<string, number> = {
+    domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
+  };
+
+  const opponentReady = (t: any) =>
+    !!t && !!t.name && !!t.addr_cidade && !!t.addr_uf && !!t.field_address &&
+    Array.isArray(t.play_days) && t.play_days.length > 0 && !!t.play_time_start;
+
+  const isDateAllowed = (dateStr: string, allowedDays: string[]) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr + "T12:00:00");
+    return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
+  };
+
   const handleConfirmChallenge = () => {
-    if (!myTeam || !challengeTeam || !challengeDate || !challengeTime || !challengeLocation) {
-      toast({ title: "Preencha todos os campos", variant: "destructive" });
+    if (!myTeam || !challengeTeam) return;
+    if (!opponentReady(challengeTeam)) {
+      toast({
+        title: "Cadastro do adversário incompleto",
+        description: "Não é possível enviar o desafio.",
+        variant: "destructive",
+      });
       return;
     }
+    if (!challengeDate || !isDateAllowed(challengeDate, challengeTeam.play_days)) {
+      toast({
+        title: "Data inválida",
+        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (challengeTime !== challengeTeam.play_time_start) {
+      toast({
+        title: "Horário inválido",
+        description: `Horário fixo do adversário: ${challengeTeam.play_time_start}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const location = locationChoice === "own"
+      ? (myTeam.field_address || myTeam.field_name || "Campo do mandante")
+      : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
+
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     mockDb.createMatch({
-      home_team_id: myTeam.id,
-      away_team_id: challengeTeam.id,
+      home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
+      home_team_name: locationChoice === "own" ? myTeam.name : challengeTeam.name,
+      away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
+      away_team_name: locationChoice === "own" ? challengeTeam.name : myTeam.name,
       match_date,
-      location: challengeLocation,
+      location,
       status: "open",
-      format: myTeam.format || "8x8",
+      format: challengeTeam.format || myTeam.format || "8x8",
     });
     window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
     setChallengeDate("");
     setChallengeTime("");
-    setChallengeLocation("");
+    setLocationChoice("away");
     navigate("/agenda");
   };
 
