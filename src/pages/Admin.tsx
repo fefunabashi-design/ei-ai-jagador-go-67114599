@@ -62,7 +62,36 @@ const AdminPage = () => {
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
   const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [newMatchOpen, setNewMatchOpen] = useState(false);
+  const [newMatchOpponent, setNewMatchOpponent] = useState("");
+  const [newMatchDate, setNewMatchDate] = useState("");
+  const [newMatchTime, setNewMatchTime] = useState("");
+  const [newMatchLocation, setNewMatchLocation] = useState("");
   const { toast } = useToast();
+
+  const handleCreateNewMatch = () => {
+    if (!myTeam) return;
+    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
+    mockDb.createMatch({
+      home_team_id: myTeam.id,
+      home_team_name: myTeam.name,
+      away_team_id: null,
+      away_team_name: newMatchOpponent.trim(),
+      match_date,
+      location: newMatchLocation.trim(),
+      status: "open",
+      format: (myTeam as any).format || "8x8",
+    });
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    toast({ title: "Partida criada!", description: `vs ${newMatchOpponent.trim()}` });
+    setNewMatchOpen(false);
+    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
+    navigate("/agenda");
+  };
 
   // Pré-popular filtros de busca com o cadastro do meu time ao abrir o painel
   useEffect(() => {
