@@ -880,7 +880,18 @@ const AdminPage = () => {
       </Dialog>
 
       {/* Nova Partida (sem filtros) */}
-      <Dialog open={newMatchOpen} onOpenChange={setNewMatchOpen}>
+      <Dialog
+        open={newMatchOpen}
+        onOpenChange={(open) => {
+          setNewMatchOpen(open);
+          if (open && myTeam) {
+            const t = myTeam as any;
+            if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
+            if (!newMatchLocation && (t.field_address || t.field_name)) {
+              setNewMatchLocation(t.field_address || t.field_name);
+            }
+          }
+        }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">NOVA PARTIDA</DialogTitle>
