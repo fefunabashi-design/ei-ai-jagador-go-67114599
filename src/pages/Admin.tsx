@@ -848,7 +848,14 @@ const AdminPage = () => {
                 <Label className="mb-2 block">Local</Label>
                 <RadioGroup
                   value={locationChoice}
-                  onValueChange={(v) => setLocationChoice(v as "own" | "away")}
+                  onValueChange={(v) => {
+                    const choice = v as "own" | "away";
+                    setLocationChoice(choice);
+                    const addr = choice === "own"
+                      ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
+                      : (challengeTeam.field_address || challengeTeam.field_name || "");
+                    setChallengeLocation(addr);
+                  }}
                   className="space-y-2"
                 >
                   <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
@@ -874,6 +881,12 @@ const AdminPage = () => {
                     </div>
                   </label>
                 </RadioGroup>
+                <Input
+                  className="mt-2"
+                  value={challengeLocation}
+                  onChange={(e) => setChallengeLocation(e.target.value)}
+                  placeholder="Endereço do local da partida"
+                />
               </div>
 
               <DialogFooter>
