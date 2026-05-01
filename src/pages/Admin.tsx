@@ -767,9 +767,14 @@ const AdminPage = () => {
             setChallengeDate("");
             setChallengeTime("");
             setLocationChoice("away");
+            setChallengeLocation("");
           } else if (challengeTeam) {
             // Pré-popular horário fixo do adversário ao abrir, se houver
             setChallengeTime(challengeTeam.play_time_start || "");
+            // Pré-popular Local com o endereço do adversário (escolha padrão "away")
+            setChallengeLocation(
+              challengeTeam.field_address || challengeTeam.field_name || ""
+            );
           }
         }}
       >
