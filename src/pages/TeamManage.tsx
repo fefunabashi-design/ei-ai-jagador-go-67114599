@@ -470,6 +470,7 @@ const TeamPage = () => {
                 <div className="space-y-2 text-sm">
                   {[
                     { label: "Categoria", value: (team as any).categoria },
+                    { label: "Estilo", value: (team as any).estilo },
                     { label: "Região", value: (team as any).region },
                     { label: "Dias de jogo", value: formattedPlayDays },
                     { label: "Horário", value: formattedPlayTime },
