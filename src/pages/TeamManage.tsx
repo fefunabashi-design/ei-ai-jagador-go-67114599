@@ -67,6 +67,7 @@ type TeamForm = {
   name: string;
   region: string;
   categoria: string;
+  estilo: string;
   play_days: string[];
   play_time_start: string;
   play_time_end: string;
