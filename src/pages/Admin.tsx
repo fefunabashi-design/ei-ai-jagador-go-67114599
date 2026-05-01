@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, Inbox, Send } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ const AdminPage = () => {
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
   const [showOpponentSearch, setShowOpponentSearch] = useState(false);
+  const [showChallenges, setShowChallenges] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
@@ -199,6 +200,25 @@ const AdminPage = () => {
     if (!m.away_team_id) return true;
     return false;
   }).slice(0, 5);
+
+  // Desafios RECEBIDOS (lista completa para o card Desafios)
+  const receivedChallenges = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
+    const homeTeam = m.home_team;
+    if (homeTeam?.id === myTeam.id) return false;
+    if (m.away_team_id === myTeam.id) return true;
+    if (!m.away_team_id) return true;
+    return false;
+  });
+
+  // Desafios ENVIADOS pelo meu time (ainda abertos, aguardando resposta)
+  const sentChallenges = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
+    const homeTeam = m.home_team;
+    return homeTeam?.id === myTeam.id;
+  });
+
+  const totalChallenges = receivedChallenges.length + sentChallenges.length;
 
   const currentYear = new Date().getFullYear();
   const { data: debitos = [] } = useQuery<Debito[]>({
@@ -364,7 +384,7 @@ const AdminPage = () => {
       </div>
 
       <div className="px-5 space-y-5">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team-manage" },
             {
@@ -379,14 +399,25 @@ const AdminPage = () => {
               color: "text-warning",
               path: "/caixa",
             },
-          ].map((kpi, i) => (
+            {
+              icon: Swords,
+              value: totalChallenges,
+              label: "Desafios",
+              trend: `${receivedChallenges.length} recebidos · ${sentChallenges.length} enviados`,
+              color: "text-primary",
+              onClick: () => setShowChallenges((v) => !v),
+            },
+          ].map((kpi: any, i) => (
             <motion.div
               key={kpi.label}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              onClick={() => kpi.path && navigate(kpi.path)}
-              className={`bg-card rounded-xl border border-border p-3 ${kpi.path ? "cursor-pointer hover:border-primary/40 transition-colors" : ""}`}
+              onClick={() => {
+                if (kpi.onClick) kpi.onClick();
+                else if (kpi.path) navigate(kpi.path);
+              }}
+              className={`bg-card rounded-xl border border-border p-3 ${kpi.path || kpi.onClick ? "cursor-pointer hover:border-primary/40 transition-colors" : ""}`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <kpi.icon size={16} className={kpi.color} />
@@ -672,6 +703,152 @@ const AdminPage = () => {
               ) : (
                 <div className="rounded-xl border border-border bg-background p-4 text-center text-sm text-muted-foreground">
                   Nenhum time encontrado com esses filtros.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {showChallenges && (
+          <div className="bg-card rounded-xl border border-border p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-display text-foreground flex items-center gap-2">
+                  <Swords size={14} className="text-primary" /> DESAFIOS
+                </h2>
+                <p className="text-[10px] text-muted-foreground">Gerencie desafios recebidos e enviados</p>
+              </div>
+              <button
+                onClick={() => setShowChallenges(false)}
+                className="text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                fechar
+              </button>
+            </div>
+
+            {/* RECEBIDOS */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Inbox size={12} className="text-primary" />
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Recebidos ({receivedChallenges.length})
+                </h3>
+              </div>
+              {receivedChallenges.length === 0 ? (
+                <p className="text-xs text-muted-foreground bg-background/40 border border-border rounded-lg p-3 text-center">
+                  Nenhum desafio recebido.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {receivedChallenges.map((m) => {
+                    const homeTeam = m.home_team;
+                    const date = new Date(m.match_date);
+                    return (
+                      <div key={m.id} className="bg-background rounded-xl border border-border p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                            {homeTeam?.logo_url ? (
+                              <img src={homeTeam.logo_url} alt={homeTeam.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Shield size={14} className="text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name || (m as any).home_team_name} desafiou</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleAccept(m.id)}
+                            disabled={acceptMatch.isPending}
+                            className="flex-1 h-7 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
+                          >
+                            Aceitar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-7 text-[10px] px-2"
+                            onClick={() => openReschedule(m)}
+                          >
+                            Reagendar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-7 text-[10px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                            onClick={() => handleDecline(m.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ENVIADOS */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Send size={12} className="text-primary" />
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Enviados ({sentChallenges.length})
+                </h3>
+              </div>
+              {sentChallenges.length === 0 ? (
+                <p className="text-xs text-muted-foreground bg-background/40 border border-border rounded-lg p-3 text-center">
+                  Você ainda não enviou desafios.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {sentChallenges.map((m) => {
+                    const awayName = m.away_team?.name || (m as any).away_team_name || "Aguardando adversário";
+                    const date = new Date(m.match_date);
+                    return (
+                      <div key={m.id} className="bg-background rounded-xl border border-border p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                            {m.away_team?.logo_url ? (
+                              <img src={m.away_team.logo_url} alt={awayName} className="w-full h-full object-cover" />
+                            ) : (
+                              <Shield size={14} className="text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-foreground truncate">vs {awayName}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                            </p>
+                            <p className="text-[9px] text-warning mt-0.5">Aguardando resposta</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-7 text-[10px] px-2"
+                            onClick={() => openReschedule(m)}
+                          >
+                            Reagendar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-7 text-[10px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+                            onClick={() => handleDecline(m.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
