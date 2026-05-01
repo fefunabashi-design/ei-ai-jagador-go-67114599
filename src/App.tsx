@@ -21,6 +21,7 @@ import Escalacao from "./pages/Escalacao.tsx";
 import Admin from "./pages/Admin.tsx";
 import Fotos from "./pages/Fotos.tsx";
 import Notifications from "./pages/Notifications.tsx";
+import OpponentDetails from "./pages/OpponentDetails.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 
@@ -57,6 +58,7 @@ const App = () => {
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -318,7 +318,7 @@ const Index = () => {
                   <Pencil size={14} className="mr-1" /> ESCALAR TIME
                 </Button>
                 <Button
-                  onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
+                  onClick={() => navigate(`/opponent-details?matchId=${nextMatch.id}`)}
                   variant="outline"
                   className="border-primary/40 text-primary font-semibold h-10"
                 >
