@@ -879,6 +879,40 @@ const AdminPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Nova Partida (sem filtros) */}
+      <Dialog open={newMatchOpen} onOpenChange={setNewMatchOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">NOVA PARTIDA</DialogTitle>
+            <DialogDescription>Crie uma partida informando os dados manualmente.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="nm-opp">Nome do Time Adversário</Label>
+              <Input id="nm-opp" value={newMatchOpponent} onChange={(e) => setNewMatchOpponent(e.target.value)} placeholder="Ex: Águias FC" />
+            </div>
+            <div>
+              <Label htmlFor="nm-date">Data</Label>
+              <Input id="nm-date" type="date" min={new Date().toISOString().slice(0, 10)} value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="nm-time">Horário</Label>
+              <Input id="nm-time" type="time" value={newMatchTime} onChange={(e) => setNewMatchTime(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="nm-loc">Local</Label>
+              <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewMatchOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateNewMatch} className="bg-gradient-primary text-primary-foreground border-0">
+              Criar partida
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reagendar partida */}
       <Dialog open={!!rescheduleMatch} onOpenChange={(open) => !open && setRescheduleMatch(null)}>
         <DialogContent className="max-w-sm">
