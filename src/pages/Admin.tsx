@@ -754,7 +754,7 @@ const AdminPage = () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name || m.home_team_name} desafiou</p>
+                            <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name || (m as any).home_team_name} desafiou</p>
                             <p className="text-[10px] text-muted-foreground">
                               {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
                             </p>
@@ -808,7 +808,7 @@ const AdminPage = () => {
               ) : (
                 <div className="space-y-2">
                   {sentChallenges.map((m) => {
-                    const awayName = m.away_team?.name || m.away_team_name || "Aguardando adversário";
+                    const awayName = m.away_team?.name || (m as any).away_team_name || "Aguardando adversário";
                     const date = new Date(m.match_date);
                     return (
                       <div key={m.id} className="bg-background rounded-xl border border-border p-3 space-y-2">
