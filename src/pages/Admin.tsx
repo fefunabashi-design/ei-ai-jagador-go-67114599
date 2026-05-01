@@ -201,6 +201,25 @@ const AdminPage = () => {
     return false;
   }).slice(0, 5);
 
+  // Desafios RECEBIDOS (lista completa para o card Desafios)
+  const receivedChallenges = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
+    const homeTeam = m.home_team;
+    if (homeTeam?.id === myTeam.id) return false;
+    if (m.away_team_id === myTeam.id) return true;
+    if (!m.away_team_id) return true;
+    return false;
+  });
+
+  // Desafios ENVIADOS pelo meu time (ainda abertos, aguardando resposta)
+  const sentChallenges = typedMatches.filter((m) => {
+    if (!myTeam || m.status !== "open") return false;
+    const homeTeam = m.home_team;
+    return homeTeam?.id === myTeam.id;
+  });
+
+  const totalChallenges = receivedChallenges.length + sentChallenges.length;
+
   const currentYear = new Date().getFullYear();
   const { data: debitos = [] } = useQuery<Debito[]>({
     queryKey: ["debitos", myTeam?.id],
