@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile, useMyAdminTeams, useSetActiveTeam } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
 import { mockDb } from "@/lib/mockDb";
+import { getCitiesForUf } from "@/lib/brCities";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
 type Player = Database["public"]["Tables"]["players"]["Row"] & { is_active?: boolean };
