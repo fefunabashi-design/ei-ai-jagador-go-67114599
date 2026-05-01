@@ -57,6 +57,10 @@ const DEFAULT_TEAM_SEED = {
   play_days: ["domingo"],
   play_time_start: "10:30",
   play_time_end: "12:30",
+  addr_uf: "SP",
+  addr_cidade: "São Paulo",
+  field_name: "Campo do Corinthias",
+  field_address: "Rua Tatuapé, 100 - São Paulo/SP",
   phone: "(11) 3333-1910",
   mobile: "(11) 99100-1910",
   email: "contato@corinthias.com",
@@ -78,6 +82,10 @@ const DEFAULT_REGISTERED_TEAMS = [
     play_days: ["domingo"],
     play_time_start: "08:30",
     play_time_end: "10:30",
+    addr_uf: "SP",
+    addr_cidade: "Santos",
+    field_name: "Campo do Santos",
+    field_address: "Av. Beira Mar, 200 - Santos/SP",
     phone: "(11) 3333-1911",
     mobile: "(11) 99100-1911",
     email: "contato@santos.com",
@@ -96,6 +104,10 @@ const DEFAULT_REGISTERED_TEAMS = [
     play_days: ["sabado"],
     play_time_start: "15:00",
     play_time_end: "17:00",
+    addr_uf: "SP",
+    addr_cidade: "São Paulo",
+    field_name: "Campo do Palmeiras",
+    field_address: "Rua Palestra, 300 - São Paulo/SP",
     phone: "(11) 3333-1912",
     mobile: "(11) 99100-1912",
     email: "contato@palmeiras.com",
@@ -114,6 +126,10 @@ const DEFAULT_REGISTERED_TEAMS = [
     play_days: ["domingo"],
     play_time_start: "10:30",
     play_time_end: "12:30",
+    addr_uf: "SP",
+    addr_cidade: "Campinas",
+    field_name: "Campo do São Paulo",
+    field_address: "Av. Morumbi, 400 - Campinas/SP",
     phone: "(11) 3333-1913",
     mobile: "(11) 99100-1913",
     email: "contato@saopaulo.com",
@@ -132,6 +148,10 @@ const DEFAULT_REGISTERED_TEAMS = [
     play_days: ["sabado"],
     play_time_start: "09:00",
     play_time_end: "11:00",
+    addr_uf: "SP",
+    addr_cidade: "Guarulhos",
+    field_name: "Campo da Portuguesa",
+    field_address: "Rua Canindé, 500 - Guarulhos/SP",
     phone: "(11) 3333-1914",
     mobile: "(11) 99100-1914",
     email: "contato@portuguesa.com",
@@ -213,7 +233,22 @@ export const mockDb = {
     return team || null;
   },
 
-  getAllTeams: (): any[] => get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS),
+  getAllTeams: (): any[] => {
+    const stored = get<any[]>("mock_registered_teams", DEFAULT_REGISTERED_TEAMS);
+    // Migração leve: garante novos campos (endereço/campo) a partir dos seeds
+    const seedById = new Map(DEFAULT_REGISTERED_TEAMS.map((t) => [t.id, t]));
+    return stored.map((t) => {
+      const seed = seedById.get(t.id);
+      if (!seed) return t;
+      return {
+        ...t,
+        addr_uf: t.addr_uf || (seed as any).addr_uf,
+        addr_cidade: t.addr_cidade || (seed as any).addr_cidade,
+        field_name: t.field_name || (seed as any).field_name,
+        field_address: t.field_address || (seed as any).field_address,
+      };
+    });
+  },
 
   createTeam: (data: Record<string, unknown>) => {
     const team = {
