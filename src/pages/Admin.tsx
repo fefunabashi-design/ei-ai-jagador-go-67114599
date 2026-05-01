@@ -262,9 +262,27 @@ const AdminPage = () => {
     return hours * 60 + minutes;
   };
 
-  const availableOpponentTeams = registeredTeams.filter((team) => team.id !== myTeam?.id);
+  const myUf = ((myTeam as any)?.addr_uf || "SP").toUpperCase();
+  const cityOptions = getCitiesForUf(myUf);
+
+  // Apenas adversários no MESMO estado do meu time
+  const availableOpponentTeams = registeredTeams.filter(
+    (team) => team.id !== myTeam?.id && ((team as any).addr_uf || "SP").toUpperCase() === myUf
+  );
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
+
+  const filteredCitySuggest = (() => {
+    const q = cityQuery.trim().toLowerCase();
+    if (!q) return cityOptions.slice(0, 8);
+    return cityOptions.filter((c) => c.toLowerCase().includes(q)).slice(0, 8);
+  })();
+
+  const filteredNameSuggest = (() => {
+    const q = nameQuery.trim().toLowerCase();
+    if (!q) return [] as any[];
+    return availableOpponentTeams.filter((t) => t.name?.toLowerCase().includes(q)).slice(0, 8);
+  })();
 
   const filteredOpponentTeams = availableOpponentTeams.filter((team) => {
     const matchesCategory =
@@ -276,8 +294,13 @@ const AdminPage = () => {
     const matchesTime =
       (!fromMinutes || (teamEnd !== null && teamEnd >= fromMinutes)) &&
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
+    const matchesCity = !cityQuery.trim() ||
+      ((team as any).addr_cidade || "").toLowerCase().includes(cityQuery.trim().toLowerCase());
+    const matchesName = !nameQuery.trim() ||
+      (team.name || "").toLowerCase().includes(nameQuery.trim().toLowerCase());
 
-    return matchesCategory && matchesRegion && matchesTime;
+    return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
+  });
   });
 
   const quickActions = [
