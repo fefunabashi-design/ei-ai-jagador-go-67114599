@@ -67,6 +67,7 @@ type TeamForm = {
   name: string;
   region: string;
   categoria: string;
+  estilo: string;
   play_days: string[];
   play_time_start: string;
   play_time_end: string;
@@ -99,6 +100,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   name: "",
   region: "",
   categoria: "",
+  estilo: "",
   play_days: [],
   play_time_start: "",
   play_time_end: "",
@@ -212,6 +214,7 @@ const TeamPage = () => {
       name: team.name || "",
       region: (team as any).region || "",
       categoria: (team as any).categoria || "",
+      estilo: (team as any).estilo || "",
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
@@ -467,6 +470,7 @@ const TeamPage = () => {
                 <div className="space-y-2 text-sm">
                   {[
                     { label: "Categoria", value: (team as any).categoria },
+                    { label: "Estilo", value: (team as any).estilo },
                     { label: "Região", value: (team as any).region },
                     { label: "Dias de jogo", value: formattedPlayDays },
                     { label: "Horário", value: formattedPlayTime },
@@ -947,6 +951,20 @@ const TeamFormDialog = ({
                 {CATEGORIAS.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Estilo</Label>
+            <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione o estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Campo">Campo</SelectItem>
+                <SelectItem value="Mini Campo">Mini Campo</SelectItem>
+                <SelectItem value="Futsal">Futsal</SelectItem>
               </SelectContent>
             </Select>
           </div>
