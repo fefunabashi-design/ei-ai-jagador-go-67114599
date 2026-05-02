@@ -34,7 +34,10 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Detalhes do time</p>
-          <h1 className="text-xl font-display text-foreground truncate">{team.name}</h1>
+          <h1 className="text-xl font-display text-foreground truncate flex items-center gap-2">
+            {team.name}
+            <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+          </h1>
         </div>
       </div>
 
