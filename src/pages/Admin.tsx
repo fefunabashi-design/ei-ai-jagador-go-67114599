@@ -362,7 +362,6 @@ const AdminPage = () => {
 
   const quickActions: Array<{ icon: any; label: string; path: string; badge?: number }> = [
     { icon: Users, label: "Gerenciar Time", path: "/team-manage" },
-    { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
@@ -385,7 +384,7 @@ const AdminPage = () => {
       </div>
 
       <div className="px-5 space-y-5">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {[
             { icon: Users, value: players.length, label: "Meu Time", trend: `${activePlayers.length} ativos · ${inactivePlayers.length} inativos`, color: "text-primary", path: "/team-manage" },
             {
@@ -399,14 +398,6 @@ const AdminPage = () => {
               trend: "Ver movimentações",
               color: "text-warning",
               path: "/caixa",
-            },
-            {
-              icon: Swords,
-              value: totalChallenges,
-              label: "Desafios",
-              trend: `${receivedChallenges.length} recebidos · ${sentChallenges.length} enviados`,
-              color: "text-primary",
-              path: "/desafios",
             },
           ].map((kpi: any, i) => (
             <motion.div
