@@ -124,8 +124,9 @@ const DesafiosPage = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
-                          {homeTeam?.name || (m as any).home_team_name} desafiou
+                        <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1.5">
+                          <span className="truncate">{homeTeam?.name || (m as any).home_team_name} desafiou</span>
+                          {homeTeam?.id && (() => { const s = getTeamStats(homeTeam.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} ·{" "}
