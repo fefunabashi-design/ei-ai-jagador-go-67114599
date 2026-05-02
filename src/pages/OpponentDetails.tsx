@@ -131,14 +131,18 @@ const OpponentDetails = () => {
                   <p className="text-xs text-muted-foreground">Nenhum jogador adversário confirmou presença ainda.</p>
                 ) : (
                   <ul className="space-y-1.5">
-                    {confirmedOpponents.map((p: any) => (
+                    {confirmedOpponents.map((p: any) => {
+                      const ps = opponent?.id ? getPlayerStats(p.id, opponent.id) : { nota: 0, played: 0 };
+                      return (
                       <li
                         key={p.id}
-                        className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-2"
+                        className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
                       >
-                        {p.nickname?.trim() || p.name || "Jogador"}
+                        <span className="truncate">{p.nickname?.trim() || p.name || "Jogador"}</span>
+                        <NotaBadge nota={ps.nota} played={ps.played} />
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </div>
