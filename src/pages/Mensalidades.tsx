@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { mockDb } from "@/lib/mockDb";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
@@ -37,6 +41,7 @@ const MensalidadesPage = () => {
   const [filter, setFilter] = useState<"all" | "ok" | "late">("all");
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [valorInput, setValorInput] = useState("");
+  const [confirmAction, setConfirmAction] = useState<{ playerId: string; mes: number; isPaid: boolean; playerName: string } | null>(null);
 
   // Fetch mensalidades for selected year
   const { data: mensalidades = [], isLoading: mensalidadesLoading } = useQuery({
@@ -58,7 +63,7 @@ const MensalidadesPage = () => {
 
   // Sync valorInput when config data changes or year changes
   useEffect(() => {
-    setValorInput(config?.valor_mensal ? String(config.valor_mensal) : "");
+    setValorInput(config?.valor_mensal ? Number(config.valor_mensal).toFixed(2).replace(".", ",") : "");
   }, [config, selectedYear]);
 
   const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
@@ -142,6 +147,7 @@ const MensalidadesPage = () => {
       toast({ title: "Valor inválido", variant: "destructive" });
       return;
     }
+    setValorInput(val.toFixed(2).replace(".", ","));
     upsertConfig.mutate(val);
   };
 
@@ -317,10 +323,11 @@ const MensalidadesPage = () => {
                           <button
                             key={mes}
                             onClick={() =>
-                              upsertMensalidade.mutate({
+                              setConfirmAction({
                                 playerId: player.id,
                                 mes,
-                                pago: !isPaid,
+                                isPaid,
+                                playerName: player.name,
                               })
                             }
                             disabled={upsertMensalidade.isPending}
@@ -349,6 +356,43 @@ const MensalidadesPage = () => {
           </>
         )}
       </div>
+
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.isPaid ? "Cancelar pagamento?" : "Confirmar pagamento?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction && (
+                <>
+                  {confirmAction.isPaid
+                    ? `Deseja cancelar o pagamento de ${MONTH_LABELS[confirmAction.mes - 1]}/${selectedYear} de ${confirmAction.playerName}?`
+                    : `Confirmar o pagamento de ${MONTH_LABELS[confirmAction.mes - 1]}/${selectedYear} de ${confirmAction.playerName}?`}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAction) {
+                  upsertMensalidade.mutate({
+                    playerId: confirmAction.playerId,
+                    mes: confirmAction.mes,
+                    pago: !confirmAction.isPaid,
+                  });
+                  setConfirmAction(null);
+                }
+              }}
+              className={confirmAction?.isPaid ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {confirmAction?.isPaid ? "Cancelar pagamento" : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav />
     </div>

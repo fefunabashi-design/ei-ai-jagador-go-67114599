@@ -392,7 +392,8 @@ const AdminPage = () => {
               value: saldoAtual.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
-                maximumFractionDigits: 0,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
               }),
               label: "Caixa atual",
               trend: "Ver movimentações",
