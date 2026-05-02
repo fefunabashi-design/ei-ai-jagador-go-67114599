@@ -1,10 +1,14 @@
 // ============================================================
-// Sistema de pontuação e notas (0–10)
+// Sistema de pontuação e notas (0–10) — integrado ao Supabase
 // Vitória = 3 pts | Empate = 1 pt | Derrota = 0 pts
-// Apenas jogadores CONFIRMADOS na escalação da partida finalizada
-// ("status === 'completed'") recebem pontos.
+// Apenas jogadores presentes na escalação (match_lineups) de partidas
+// finalizadas (status === 'completed') recebem pontos.
 // Nota = (pontos obtidos / pontos possíveis) * 10
 // ============================================================
+
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type Match = {
   id: string;
@@ -15,14 +19,14 @@ type Match = {
   status: string;
 };
 
-function get<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
+type Lineup = {
+  match_id: string;
+  player_id: string;
+};
+
+// Cache em memória, populado pelo hook useStatsData (montado no App).
+let matchesCache: Match[] = [];
+let lineupsCache: Lineup[] = [];
 
 function pointsForTeam(match: Match, teamId: string): number {
   const home = match.home_score ?? 0;
@@ -37,8 +41,7 @@ function pointsForTeam(match: Match, teamId: string): number {
 }
 
 function getCompletedMatchesForTeam(teamId: string): Match[] {
-  const matches = get<Match[]>("mock_matches", []);
-  return matches.filter(
+  return matchesCache.filter(
     (m) =>
       m.status === "completed" &&
       (m.home_team_id === teamId || m.away_team_id === teamId)
@@ -49,7 +52,7 @@ export type TeamStats = {
   played: number;
   points: number;
   maxPoints: number;
-  nota: number; // 0..10
+  nota: number;
 };
 
 export function getTeamStats(teamId: string): TeamStats {
@@ -65,10 +68,8 @@ export type PlayerStats = TeamStats;
 
 export function getPlayerStats(playerId: string, teamId: string): PlayerStats {
   const completed = getCompletedMatchesForTeam(teamId);
-  const lineups = get<any[]>("mock_lineups", []);
-  // Apenas partidas onde o jogador estava confirmado na escalação
   const playerMatches = completed.filter((m) =>
-    lineups.some((l) => l.match_id === m.id && l.player_id === playerId)
+    lineupsCache.some((l) => l.match_id === m.id && l.player_id === playerId)
   );
   const played = playerMatches.length;
   const points = playerMatches.reduce(
@@ -82,4 +83,40 @@ export function getPlayerStats(playerId: string, teamId: string): PlayerStats {
 
 export function formatNota(nota: number): string {
   return nota.toFixed(1);
+}
+
+// Hook que carrega matches + lineups do Supabase para o cache global.
+// Deve ser montado uma vez (no App).
+export function useStatsData() {
+  const matchesQuery = useQuery({
+    queryKey: ["stats-matches"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id, home_team_id, away_team_id, home_score, away_score, status");
+      if (error) throw error;
+      return (data || []) as Match[];
+    },
+    staleTime: 60_000,
+  });
+
+  const lineupsQuery = useQuery({
+    queryKey: ["stats-lineups"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_lineups")
+        .select("match_id, player_id");
+      if (error) throw error;
+      return (data || []) as Lineup[];
+    },
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (matchesQuery.data) matchesCache = matchesQuery.data;
+  }, [matchesQuery.data]);
+
+  useEffect(() => {
+    if (lineupsQuery.data) lineupsCache = lineupsQuery.data;
+  }, [lineupsQuery.data]);
 }
