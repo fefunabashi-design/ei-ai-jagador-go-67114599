@@ -52,9 +52,14 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-display text-lg text-foreground truncate">{team.name}</p>
+            <p className="font-display text-lg text-foreground truncate flex items-center gap-2">
+              {team.name}
+              <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+            </p>
             <p className="text-[11px] text-muted-foreground">{team.abbreviation || "—"} · {team.categoria || "Sem categoria"}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{team.format || "—"} · ★ {team.rating || 0}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {team.format || "—"} · {teamStats.points} pts em {teamStats.played} jogo(s)
+            </p>
           </div>
         </div>
       </div>
