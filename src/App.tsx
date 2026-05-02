@@ -20,6 +20,7 @@ import Caixa from "./pages/Caixa.tsx";
 import Escalacao from "./pages/Escalacao.tsx";
 import Admin from "./pages/Admin.tsx";
 import Desafios from "./pages/Desafios.tsx";
+import BuscarAdversario from "./pages/BuscarAdversario.tsx";
 import Fotos from "./pages/Fotos.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import OpponentDetails from "./pages/OpponentDetails.tsx";
@@ -58,6 +59,7 @@ const App = () => {
             <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
+            <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
             <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
