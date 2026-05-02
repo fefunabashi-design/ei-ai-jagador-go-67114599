@@ -405,7 +405,7 @@ const AdminPage = () => {
               label: "Desafios",
               trend: `${receivedChallenges.length} recebidos · ${sentChallenges.length} enviados`,
               color: "text-primary",
-              onClick: () => setShowChallenges((v) => !v),
+              path: "/desafios",
             },
           ].map((kpi: any, i) => (
             <motion.div
