@@ -476,7 +476,7 @@ const TeamPage = () => {
                 <div className="space-y-2 text-sm">
                   {[
                     { label: "Categoria", value: (team as any).categoria },
-                    { label: "Estilo", value: (team as any).estilo },
+                    { label: "Modalidade", value: (team as any).estilo },
                     { label: "Região", value: (team as any).region },
                     { label: "Dias de jogo", value: formattedPlayDays },
                     { label: "Horário", value: formattedPlayTime },
@@ -962,10 +962,10 @@ const TeamFormDialog = ({
           </div>
 
           <div>
-            <Label>Estilo</Label>
+            <Label>Modalidade</Label>
             <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
               <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Selecione o estilo" />
+                <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Campo">Campo</SelectItem>
