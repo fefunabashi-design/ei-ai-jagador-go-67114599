@@ -106,14 +106,17 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
               <p className="text-sm text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
             </div>
           ) : (
-            players.map((p: any) => (
+            players.map((p: any) => {
+              const ps = getPlayerStats(p.id, team.id);
+              return (
               <div key={p.id} className="flex items-center gap-3 p-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-display">
                   {p.jersey_number || "-"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {p.nickname || p.name} {p.last_name || ""}
+                  <p className="text-sm font-semibold text-foreground truncate flex items-center gap-2">
+                    <span className="truncate">{p.nickname || p.name} {p.last_name || ""}</span>
+                    <NotaBadge nota={ps.nota} played={ps.played} />
                   </p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {p.position || "Sem posição"}
@@ -124,7 +127,8 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
                   <p className="text-sm font-semibold text-foreground">{p.goals || 0}</p>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
         <p className="text-[10px] text-muted-foreground mt-2 text-center">
