@@ -348,7 +348,13 @@ const BuscarAdversarioPage = () => {
                           {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
                         </p>
                       </div>
-                      <Shield size={16} className="text-primary" />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {(() => {
+                          const s = getTeamStats(team.id);
+                          return <NotaBadge nota={s.nota} played={s.played} />;
+                        })()}
+                        <Shield size={16} className="text-primary" />
+                      </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
                     <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
