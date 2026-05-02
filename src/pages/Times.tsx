@@ -12,7 +12,7 @@ import { getCitiesForUf } from "@/lib/brCities";
 
 const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
-const FORMATOS = ["Campo", "Futsal", "Mini Campo", "Society", "Futebol 7"];
+const FORMATOS = ["Campo", "Futsal", "Mini Campo"];
 
 const TimesPage = () => {
   const navigate = useNavigate();
