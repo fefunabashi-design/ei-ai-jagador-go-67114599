@@ -8,6 +8,8 @@ import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
+import { getTeamStats } from "@/lib/stats";
+import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
