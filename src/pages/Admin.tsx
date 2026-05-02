@@ -366,7 +366,7 @@ const AdminPage = () => {
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
-    { icon: Search, label: "Buscar adversário", path: "/match" },
+    { icon: Search, label: "Buscar adversário", path: "/buscar-adversario" },
     { icon: Camera, label: "Postar fotos", path: "/fotos" },
   ];
 
@@ -503,10 +503,6 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
-                if (action.label === "Buscar adversário") {
-                  setShowOpponentSearch((value) => !value);
-                  return;
-                }
                 if (action.path !== "#") {
                   navigate(action.path);
                 }
