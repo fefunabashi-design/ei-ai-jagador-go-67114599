@@ -89,8 +89,8 @@ const EventDetailsPage = () => {
             <div className="space-y-1">
               <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Meta Arrecadação</p>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-on-background tracking-tighter">R$ {event.raised}</span>
-                <span className="text-sm font-medium text-on-surface-variant">/ R$ {event.target}</span>
+                <span className="text-3xl font-black text-on-background tracking-tighter">R$ {Number(event.raised).toFixed(2)}</span>
+                <span className="text-sm font-medium text-on-surface-variant">/ R$ {Number(event.target).toFixed(2)}</span>
               </div>
             </div>
 

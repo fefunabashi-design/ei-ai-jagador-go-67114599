@@ -183,7 +183,7 @@ const FundsPage = () => {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm font-bold text-on-surface-variant">
                         <span>Progresso</span>
-                        <span className="text-primary">R$ {event.raised} / R$ {event.target}</span>
+                        <span className="text-primary">R$ {Number(event.raised).toFixed(2)} / R$ {Number(event.target).toFixed(2)}</span>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
                         <div className="h-full rounded-full bg-gradient-to-r from-primary to-tertiary-fixed" style={{ width: `${event.progress}%` }} />
