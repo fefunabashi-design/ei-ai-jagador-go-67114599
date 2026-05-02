@@ -200,7 +200,12 @@ const Index = () => {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
-            {myTeam && <p className="text-[10px] text-muted-foreground">{myTeam.name} · {myTeam.format}</p>}
+            {myTeam && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-2">
+                <span>{myTeam.name} · {myTeam.format}</span>
+                <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+              </p>
+            )}
           </div>
         </div>
       </div>
