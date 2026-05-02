@@ -6,9 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 import { getCitiesForUf } from "@/lib/brCities";
+import { getTeamStats } from "@/lib/stats";
 
 const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
