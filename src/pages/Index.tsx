@@ -217,7 +217,7 @@ const Index = () => {
             { value: playerStats.matches, label: "Partidas" },
             { value: playerStats.goals, label: "Gols" },
             { value: myMatches.length, label: "Jogos temporada", sub: `${wins}V ${draws}E ${losses}D` },
-            { value: `★${myTeam?.rating || "0"}`, label: "Avaliação" },
+            { value: teamStats.played > 0 ? teamStats.nota.toFixed(1) : "—", label: "Nota Time" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
