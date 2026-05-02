@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
+import { getTeamStats } from "@/lib/stats";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 import { getCitiesForUf } from "@/lib/brCities";
