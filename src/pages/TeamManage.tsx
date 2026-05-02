@@ -49,7 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -87,6 +87,8 @@ type TeamForm = {
   president_phone: string;
   coach_name: string;
   coach_phone: string;
+  assistant_coach_name: string;
+  assistant_coach_phone: string;
   admin_name: string;
   admin_phone: string;
   sub1_name: string;
@@ -120,6 +122,8 @@ const EMPTY_TEAM_FORM: TeamForm = {
   president_phone: "",
   coach_name: "",
   coach_phone: "",
+  assistant_coach_name: "",
+  assistant_coach_phone: "",
   admin_name: "",
   admin_phone: "",
   sub1_name: "",
@@ -234,6 +238,8 @@ const TeamPage = () => {
       president_phone: (team as any).president_phone || "",
       coach_name: (team as any).coach_name || "",
       coach_phone: (team as any).coach_phone || "",
+      assistant_coach_name: (team as any).assistant_coach_name || "",
+      assistant_coach_phone: (team as any).assistant_coach_phone || "",
       admin_name: (team as any).admin_name || "",
       admin_phone: (team as any).admin_phone || "",
       sub1_name: (team as any).sub1_name || "",
@@ -1159,6 +1165,27 @@ const TeamFormDialog = ({
               <Input
                 value={form.coach_phone}
                 onChange={(e) => setField("coach_phone", formatPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Aux. Técnico</Label>
+              <Input
+                value={form.assistant_coach_name}
+                onChange={(e) => setField("assistant_coach_name", e.target.value)}
+                placeholder="Nome"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <Label>Aux. Técnico Celular</Label>
+              <Input
+                value={form.assistant_coach_phone}
+                onChange={(e) => setField("assistant_coach_phone", formatPhone(e.target.value))}
                 placeholder="(11) 99999-9999"
                 className="bg-secondary border-border"
               />
