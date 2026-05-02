@@ -85,7 +85,10 @@ const OpponentDetails = () => {
                     </div>
                   )}
                   <div>
-                    <p className="font-display text-lg text-foreground">{(opponent.name || "Adversário").toUpperCase()}</p>
+                    <p className="font-display text-lg text-foreground flex items-center gap-2">
+                      <span>{(opponent.name || "Adversário").toUpperCase()}</span>
+                      {opponent.id && (() => { const s = getTeamStats(opponent.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                    </p>
                     {opponent.categoria && (
                       <p className="text-[11px] text-muted-foreground">{opponent.categoria}{opponent.region ? ` · ${opponent.region}` : ""}</p>
                     )}
