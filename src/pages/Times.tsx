@@ -6,9 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 import { getCitiesForUf } from "@/lib/brCities";
+import { getTeamStats } from "@/lib/stats";
 
 const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
@@ -262,7 +264,10 @@ const TimesPage = () => {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{team.name}</p>
+                        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <span className="truncate">{team.name}</span>
+                          {(() => { const s = getTeamStats(team.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">
                           {(team as any).format || "Sem modalidade"} · {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
                         </p>

@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ArrowLeft, Check, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
 import { useMyTeams, useMyTeam, useSetActiveTeam, usePlayers } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+import { getTeamStats, getPlayerStats } from "@/lib/stats";
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <div className="flex items-start gap-2.5 py-1.5">
@@ -18,6 +20,7 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value
 
 const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
   const { data: players = [] } = usePlayers(team.id);
+  const teamStats = getTeamStats(team.id);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -31,7 +34,10 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Detalhes do time</p>
-          <h1 className="text-xl font-display text-foreground truncate">{team.name}</h1>
+          <h1 className="text-xl font-display text-foreground truncate flex items-center gap-2">
+            {team.name}
+            <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+          </h1>
         </div>
       </div>
 
@@ -46,9 +52,14 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-display text-lg text-foreground truncate">{team.name}</p>
+            <p className="font-display text-lg text-foreground truncate flex items-center gap-2">
+              {team.name}
+              <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+            </p>
             <p className="text-[11px] text-muted-foreground">{team.abbreviation || "—"} · {team.categoria || "Sem categoria"}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{team.format || "—"} · ★ {team.rating || 0}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {team.format || "—"} · {teamStats.points} pts em {teamStats.played} jogo(s)
+            </p>
           </div>
         </div>
       </div>
@@ -95,14 +106,17 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
               <p className="text-sm text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
             </div>
           ) : (
-            players.map((p: any) => (
+            players.map((p: any) => {
+              const ps = getPlayerStats(p.id, team.id);
+              return (
               <div key={p.id} className="flex items-center gap-3 p-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-display">
                   {p.jersey_number || "-"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {p.nickname || p.name} {p.last_name || ""}
+                  <p className="text-sm font-semibold text-foreground truncate flex items-center gap-2">
+                    <span className="truncate">{p.nickname || p.name} {p.last_name || ""}</span>
+                    <NotaBadge nota={ps.nota} played={ps.played} />
                   </p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {p.position || "Sem posição"}
@@ -113,7 +127,8 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
                   <p className="text-sm font-semibold text-foreground">{p.goals || 0}</p>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
         <p className="text-[10px] text-muted-foreground mt-2 text-center">

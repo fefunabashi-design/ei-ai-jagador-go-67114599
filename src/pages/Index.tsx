@@ -8,6 +8,8 @@ import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
+import { getTeamStats } from "@/lib/stats";
+import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { useState } from "react";
@@ -119,6 +121,7 @@ const Index = () => {
   const wins = completedMatches.filter((m) => (m.home_score || 0) > (m.away_score || 0)).length;
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
+  const teamStats = myTeam ? getTeamStats(myTeam.id) : { played: 0, points: 0, maxPoints: 0, nota: 0 };
 
 
 
@@ -197,7 +200,12 @@ const Index = () => {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
-            {myTeam && <p className="text-[10px] text-muted-foreground">{myTeam.name} · {myTeam.format}</p>}
+            {myTeam && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-2">
+                <span>{myTeam.name} · {myTeam.format}</span>
+                <NotaBadge nota={teamStats.nota} played={teamStats.played} />
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -209,7 +217,7 @@ const Index = () => {
             { value: playerStats.matches, label: "Partidas" },
             { value: playerStats.goals, label: "Gols" },
             { value: myMatches.length, label: "Jogos temporada", sub: `${wins}V ${draws}E ${losses}D` },
-            { value: `★${myTeam?.rating || "0"}`, label: "Avaliação" },
+            { value: teamStats.played > 0 ? teamStats.nota.toFixed(1) : "—", label: "Nota Time" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
