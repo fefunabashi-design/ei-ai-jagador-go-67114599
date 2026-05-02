@@ -27,11 +27,17 @@ import Notifications from "./pages/Notifications.tsx";
 import OpponentDetails from "./pages/OpponentDetails.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import { useStatsData } from "@/lib/stats";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
+};
+
+const StatsLoader = () => {
+  useStatsData();
+  return null;
 };
 
 const App = () => {
@@ -40,6 +46,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <StatsLoader />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
