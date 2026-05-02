@@ -4,6 +4,8 @@ import { ArrowLeft, Shield, MapPin, Phone, Users } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
+import { getTeamStats, getPlayerStats } from "@/lib/stats";
 import { mockDb } from "@/lib/mockDb";
 
 const OpponentDetails = () => {
@@ -83,7 +85,10 @@ const OpponentDetails = () => {
                     </div>
                   )}
                   <div>
-                    <p className="font-display text-lg text-foreground">{(opponent.name || "Adversário").toUpperCase()}</p>
+                    <p className="font-display text-lg text-foreground flex items-center gap-2">
+                      <span>{(opponent.name || "Adversário").toUpperCase()}</span>
+                      {opponent.id && (() => { const s = getTeamStats(opponent.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                    </p>
                     {opponent.categoria && (
                       <p className="text-[11px] text-muted-foreground">{opponent.categoria}{opponent.region ? ` · ${opponent.region}` : ""}</p>
                     )}
@@ -126,14 +131,18 @@ const OpponentDetails = () => {
                   <p className="text-xs text-muted-foreground">Nenhum jogador adversário confirmou presença ainda.</p>
                 ) : (
                   <ul className="space-y-1.5">
-                    {confirmedOpponents.map((p: any) => (
+                    {confirmedOpponents.map((p: any) => {
+                      const ps = opponent?.id ? getPlayerStats(p.id, opponent.id) : { nota: 0, played: 0 };
+                      return (
                       <li
                         key={p.id}
-                        className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-2"
+                        className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-2 flex items-center justify-between gap-2"
                       >
-                        {p.nickname?.trim() || p.name || "Jogador"}
+                        <span className="truncate">{p.nickname?.trim() || p.name || "Jogador"}</span>
+                        <NotaBadge nota={ps.nota} played={ps.played} />
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </div>

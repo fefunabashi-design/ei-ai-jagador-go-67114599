@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotaBadge from "@/components/NotaBadge";
+import { getPlayerStats } from "@/lib/stats";
 import { useMatchSummons } from "@/hooks/useSupabaseData";
 
 const statusStyles: Record<string, string> = {
@@ -48,7 +50,13 @@ const PlayerSummons = () => {
                 {initials}
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground leading-tight">{playerName}</p>
+                <p className="text-sm font-semibold text-foreground leading-tight flex items-center gap-1.5">
+                  <span>{playerName}</span>
+                  {s.player?.id && s.player?.team_id && (() => {
+                    const ps = getPlayerStats(s.player.id, s.player.team_id);
+                    return <NotaBadge nota={ps.nota} played={ps.played} />;
+                  })()}
+                </p>
                 <p className="text-[11px] text-muted-foreground">{position}</p>
               </div>
             </div>

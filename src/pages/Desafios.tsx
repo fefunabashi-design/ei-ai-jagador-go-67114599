@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
+import { getTeamStats } from "@/lib/stats";
 import { useMyTeam, useMatches, useAcceptMatch } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
 import { mockDb } from "@/lib/mockDb";
@@ -122,8 +124,9 @@ const DesafiosPage = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
-                          {homeTeam?.name || (m as any).home_team_name} desafiou
+                        <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1.5">
+                          <span className="truncate">{homeTeam?.name || (m as any).home_team_name} desafiou</span>
+                          {homeTeam?.id && (() => { const s = getTeamStats(homeTeam.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} ·{" "}
@@ -187,7 +190,10 @@ const DesafiosPage = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">vs {awayName}</p>
+                        <p className="text-xs font-semibold text-foreground truncate flex items-center gap-1.5">
+                          <span className="truncate">vs {awayName}</span>
+                          {m.away_team?.id && (() => { const s = getTeamStats(m.away_team.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">
                           {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} ·{" "}
                           {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}

@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
+import { getTeamStats } from "@/lib/stats";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 import { getCitiesForUf } from "@/lib/brCities";
@@ -346,7 +348,13 @@ const BuscarAdversarioPage = () => {
                           {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
                         </p>
                       </div>
-                      <Shield size={16} className="text-primary" />
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {(() => {
+                          const s = getTeamStats(team.id);
+                          return <NotaBadge nota={s.nota} played={s.played} />;
+                        })()}
+                        <Shield size={16} className="text-primary" />
+                      </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
                     <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
