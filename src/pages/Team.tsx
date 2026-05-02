@@ -20,6 +20,7 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value
 
 const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
   const { data: players = [] } = usePlayers(team.id);
+  const teamStats = getTeamStats(team.id);
 
   return (
     <div className="min-h-screen bg-background pb-20">
