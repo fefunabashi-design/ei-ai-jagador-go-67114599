@@ -360,11 +360,11 @@ const AdminPage = () => {
     return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
   });
 
-  const quickActions = [
+  const quickActions: Array<{ icon: any; label: string; path: string; badge?: number }> = [
     { icon: Users, label: "Gerenciar Time", path: "/team-manage" },
     { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
-    { icon: Swords, label: "Desafios", path: "/desafios" },
+    { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
     { icon: Search, label: "Buscar adversário", path: "/match" },
@@ -519,9 +519,16 @@ const AdminPage = () => {
                   navigate(action.path);
                 }
               }}
-              className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
+              className="relative flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
             >
-              <action.icon size={18} className="text-primary" />
+              <div className="relative">
+                <action.icon size={18} className="text-primary" />
+                {action.badge !== undefined && action.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
+                    {action.badge}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
             </motion.button>
           ))}
