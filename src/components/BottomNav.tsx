@@ -1,9 +1,10 @@
-import { Home, Crown, Plus, CalendarDays } from "lucide-react";
+import { Home, Shield, Crown, Plus, CalendarDays } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
+  { icon: Shield, label: "Times", path: "/times" },
   { icon: null, label: "Escalação", path: "/escalacao", isCenter: true },
   { icon: CalendarDays, label: "Agenda", path: "/agenda" },
   { icon: Crown, label: "Admin", path: "/admin" },
