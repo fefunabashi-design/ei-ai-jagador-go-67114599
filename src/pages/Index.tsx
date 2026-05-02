@@ -280,14 +280,20 @@ const Index = () => {
                     </div>
                     <div>
                       <p className="font-display text-foreground text-sm">{homeTeam?.name?.toUpperCase()}</p>
-                      <p className="text-[9px] text-muted-foreground">Seu time</p>
+                      {(() => {
+                        const s = homeTeam?.id ? getTeamStats(homeTeam.id) : { nota: 0, played: 0 };
+                        return <NotaBadge nota={s.nota} played={s.played} />;
+                      })()}
                     </div>
                   </div>
                   <span className="text-xs font-bold text-muted-foreground px-3">VS</span>
                   <div className="flex items-center gap-2 flex-1 justify-end text-right">
-                    <div>
+                    <div className="flex flex-col items-end">
                       <p className="font-display text-foreground text-sm">{awayTeam?.name?.toUpperCase() || "???"}</p>
-                      <p className="text-[9px] text-muted-foreground">Adversário</p>
+                      {(() => {
+                        const s = awayTeam?.id ? getTeamStats(awayTeam.id) : { nota: 0, played: 0 };
+                        return <NotaBadge nota={s.nota} played={s.played} />;
+                      })()}
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
                       <Shield size={18} className="text-muted-foreground" />
