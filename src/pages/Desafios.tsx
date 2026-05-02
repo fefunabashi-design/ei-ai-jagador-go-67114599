@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
+import { getTeamStats } from "@/lib/stats";
 import { useMyTeam, useMatches, useAcceptMatch } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
 import { mockDb } from "@/lib/mockDb";
