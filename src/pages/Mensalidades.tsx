@@ -357,6 +357,43 @@ const MensalidadesPage = () => {
         )}
       </div>
 
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.isPaid ? "Cancelar pagamento?" : "Confirmar pagamento?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction && (
+                <>
+                  {confirmAction.isPaid
+                    ? `Deseja cancelar o pagamento de ${MONTH_LABELS[confirmAction.mes - 1]}/${selectedYear} de ${confirmAction.playerName}?`
+                    : `Confirmar o pagamento de ${MONTH_LABELS[confirmAction.mes - 1]}/${selectedYear} de ${confirmAction.playerName}?`}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAction) {
+                  upsertMensalidade.mutate({
+                    playerId: confirmAction.playerId,
+                    mes: confirmAction.mes,
+                    pago: !confirmAction.isPaid,
+                  });
+                  setConfirmAction(null);
+                }
+              }}
+              className={confirmAction?.isPaid ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {confirmAction?.isPaid ? "Cancelar pagamento" : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <BottomNav />
     </div>
   );
