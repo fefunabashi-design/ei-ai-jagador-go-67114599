@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotaBadge from "@/components/NotaBadge";
+import { getPlayerStats } from "@/lib/stats";
 import { useMatchSummons } from "@/hooks/useSupabaseData";
 
 const statusStyles: Record<string, string> = {
