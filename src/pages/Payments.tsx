@@ -160,7 +160,7 @@ const PaymentsPage = () => {
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground font-semibold">Vaquinha do jogo</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-display text-foreground">R$ {totalAmount.toFixed(2)}</p>
                   <button onClick={() => setDeleteVaquinhaOpen(true)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
                     <Trash2 size={16} className="text-destructive" />
                   </button>
@@ -173,7 +173,7 @@ const PaymentsPage = () => {
               {/* Progress bar */}
               <div>
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-                  <span>R$ {paidAmount.toFixed(0)} arrecadados</span>
+                  <span>R$ {paidAmount.toFixed(2)} arrecadados</span>
                   <span>{progress}%</span>
                 </div>
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -185,8 +185,8 @@ const PaymentsPage = () => {
                   />
                 </div>
                 <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
-                  <span className="text-success">R$ {paidAmount.toFixed(0)} recebidos</span>
-                  <span>Meta: R$ {totalAmount.toFixed(0)}</span>
+                  <span className="text-success">R$ {paidAmount.toFixed(2)} recebidos</span>
+                  <span>Meta: R$ {totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </motion.div>
@@ -221,7 +221,7 @@ const PaymentsPage = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <p className="text-xs font-semibold text-foreground">R${Number(p.amount).toFixed(0)}</p>
+                          <p className="text-xs font-semibold text-foreground">R$ {Number(p.amount).toFixed(2)}</p>
                           <p className={`text-[10px] font-semibold ${statusStyles[p.status] || "text-muted-foreground"}`}>
                             {statusLabels[p.status] || p.status}
                           </p>
@@ -263,7 +263,7 @@ const PaymentsPage = () => {
             </div>
             <p className="text-xs text-muted-foreground">
               {summons.filter((s: any) => s.status === "confirmed").length} jogadores confirmados · 
-              Total: R$ {(Number(amountPerPlayer) * summons.filter((s: any) => s.status === "confirmed").length).toFixed(0)}
+              Total: R$ {(Number(amountPerPlayer) * summons.filter((s: any) => s.status === "confirmed").length).toFixed(2)}
             </p>
             <Button
               onClick={() => createPayments.mutate(Number(amountPerPlayer))}
