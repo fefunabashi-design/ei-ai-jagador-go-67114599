@@ -264,7 +264,10 @@ const TimesPage = () => {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{team.name}</p>
+                        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <span className="truncate">{team.name}</span>
+                          {(() => { const s = getTeamStats(team.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">
                           {(team as any).format || "Sem modalidade"} · {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
                         </p>
