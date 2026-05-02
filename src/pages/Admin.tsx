@@ -364,6 +364,7 @@ const AdminPage = () => {
     { icon: Users, label: "Gerenciar Time", path: "/team-manage" },
     { icon: Pencil, label: "Escalação", path: "/escalacao" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
+    { icon: Swords, label: "Desafios", path: "/desafios" },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
     { icon: Search, label: "Buscar adversário", path: "/match" },
