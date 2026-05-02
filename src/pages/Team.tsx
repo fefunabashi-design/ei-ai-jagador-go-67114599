@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ArrowLeft, Check, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import NotaBadge from "@/components/NotaBadge";
 import { useMyTeams, useMyTeam, useSetActiveTeam, usePlayers } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+import { getTeamStats, getPlayerStats } from "@/lib/stats";
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <div className="flex items-start gap-2.5 py-1.5">
