@@ -121,6 +121,7 @@ const Index = () => {
   const wins = completedMatches.filter((m) => (m.home_score || 0) > (m.away_score || 0)).length;
   const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
   const losses = completedMatches.length - wins - draws;
+  const teamStats = myTeam ? getTeamStats(myTeam.id) : { played: 0, points: 0, maxPoints: 0, nota: 0 };
 
 
 
