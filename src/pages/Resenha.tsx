@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams } from "@/hooks/useSupabaseData";
+import { useProfile, useResenhaPosts, useAppSharedImages, useMatches } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
@@ -57,11 +57,8 @@ const Resenha = () => {
   const { data: posts } = useResenhaPosts();
   const { data: gallery } = useAppSharedImages();
   const { data: matches } = useMatches();
-  const { data: myTeams } = useMyTeams();
-
   const role = (profile?.role || "player").toLowerCase();
-  const isOwner = (myTeams || []).some((t: any) => t.owner_id === profile?.user_id);
-  const canPublish = STAFF_ROLES.includes(role) || isOwner;
+  const canPublish = STAFF_ROLES.includes(role);
 
   const [matchPickerOpen, setMatchPickerOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null);

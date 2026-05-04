@@ -41,6 +41,7 @@ const ProfilePage = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editRegion, setEditRegion] = useState("");
+  const [editEmail, setEditEmail] = useState("");
 
   const handleLogout = async () => {
     navigate("/");
@@ -52,6 +53,7 @@ const ProfilePage = () => {
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
     setEditRegion(profile?.region || "");
+    setEditEmail((profile as any)?.email || user?.email || "");
     setEditOpen(true);
   };
 
@@ -68,12 +70,17 @@ const ProfilePage = () => {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
+    if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
+      return;
+    }
     updateProfile.mutate({
       display_name: editName.trim(),
       nickname: editNickname.trim() || undefined,
       phone: editPhone || undefined,
       birth_date: editBirthDate || undefined,
       region: editRegion.trim() || undefined,
+      email: editEmail.trim(),
     });
     setEditOpen(false);
   };
@@ -163,7 +170,7 @@ const ProfilePage = () => {
           <h1 className="text-3xl text-foreground font-display">
             {(profile?.nickname || profile?.display_name || "SEM NOME").toUpperCase()}
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">{user?.email || ""}</p>
+          <p className="text-xs text-muted-foreground mt-1">{(profile as any)?.email || user?.email || ""}</p>
           {profile?.is_pro && (
             <span className="mt-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">PRO</span>
           )}
@@ -187,7 +194,7 @@ const ProfilePage = () => {
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
                 { label: "Região", value: profile?.region },
-                { label: "E-mail", value: user?.email },
+                { label: "E-mail", value: (profile as any)?.email || user?.email },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="text-muted-foreground">{item.label}</span>
@@ -283,6 +290,17 @@ const ProfilePage = () => {
             <div>
               <Label>Região</Label>
               <Input value={editRegion} onChange={(e) => setEditRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
+            </div>
+            <div>
+              <Label>E-mail *</Label>
+              <Input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                className="bg-secondary border-border"
+              />
             </div>
             <Button type="submit" disabled={updateProfile.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar

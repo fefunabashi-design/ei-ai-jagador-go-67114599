@@ -44,6 +44,7 @@ import {
   useCreatePlayer,
   useUpdatePlayer,
   useDeletePlayer,
+  useProfile,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
@@ -173,6 +174,7 @@ const TeamPage = () => {
   const createPlayer = useCreatePlayer();
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
+  const { data: myProfile } = useProfile();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Team form
@@ -290,7 +292,14 @@ const TeamPage = () => {
 
   const openNewPlayer = () => {
     setEditingPlayer(null);
-    setPlayerForm({ ...EMPTY_PLAYER_FORM });
+    setPlayerForm({
+      ...EMPTY_PLAYER_FORM,
+      name: (myProfile as any)?.display_name || "",
+      nickname: (myProfile as any)?.nickname || "",
+      phone: (myProfile as any)?.phone || "",
+      birth_date: (myProfile as any)?.birth_date || "",
+      email: (myProfile as any)?.email || "",
+    });
     setSelectedPositions([]);
     setPlayerDialogOpen(true);
   };
@@ -326,6 +335,10 @@ const TeamPage = () => {
     if (!team) return;
     if (!playerForm.name.trim()) {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!playerForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerForm.email.trim())) {
+      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido para vincular a conta.", variant: "destructive" });
       return;
     }
     const data = {
@@ -772,12 +785,13 @@ const TeamPage = () => {
                 />
               </div>
               <div>
-                <Label>E-mail</Label>
+                <Label>E-mail *</Label>
                 <Input
                   type="email"
                   value={playerForm.email}
                   onChange={(e) => setPF("email", e.target.value)}
                   placeholder="email@email.com"
+                  required
                   className="bg-secondary border-border"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
