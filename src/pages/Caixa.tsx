@@ -396,8 +396,8 @@ const CaixaPage = () => {
                   onClick={() => {
                     setFilterTipo("all");
                     setFilterStatus("all");
-                    setFilterDtInicio("");
-                    setFilterDtFim("");
+                    setFilterDtInicio(_firstDay);
+                    setFilterDtFim(_lastDay);
                   }}
                   className="text-[10px] text-primary underline"
                 >
