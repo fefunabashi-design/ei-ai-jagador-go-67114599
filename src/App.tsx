@@ -25,6 +25,7 @@ import Times from "./pages/Times.tsx";
 import Fotos from "./pages/Fotos.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import OpponentDetails from "./pages/OpponentDetails.tsx";
+import Resenha from "./pages/Resenha.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import { useStatsData } from "@/lib/stats";
