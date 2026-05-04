@@ -260,9 +260,6 @@ const Index = () => {
               </Button>
             </div>
 
-            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1.5">
-              Próximo • {dayLabel} {timeLabel}
-            </p>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -302,7 +299,6 @@ const Index = () => {
                 </div>
                 <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
                   <span className="flex items-center gap-1"><MapPin size={10} /> {nextMatch.location}</span>
-                  <span className="flex items-center gap-1"><Users size={10} /> {nextMatch.format}</span>
                   <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
                     nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
                   }`}>
