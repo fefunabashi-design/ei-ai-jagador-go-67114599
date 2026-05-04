@@ -196,20 +196,31 @@ const CaixaPage = () => {
     return list.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [debitos, mensalidades, mensalidadeConfig, players, currentMonth, currentYear]);
 
-  // ── totalizadores ──
-  const creditosRealizados = lancamentos
+  // ── filtro ──
+  const filtered = useMemo(() => {
+    return lancamentos.filter((l) => {
+      if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
+      if (filterStatus !== "all" && l.status !== filterStatus) return false;
+      if (filterDtInicio && l.data < filterDtInicio) return false;
+      if (filterDtFim && l.data > filterDtFim + "T23:59:59") return false;
+      return true;
+    });
+  }, [lancamentos, filterTipo, filterStatus, filterDtInicio, filterDtFim]);
+
+  // ── totalizadores (respeitam filtro) ──
+  const creditosRealizados = filtered
     .filter((l) => l.tipo === "credito" && l.status === "realizado")
     .reduce((s, l) => s + l.valor, 0);
 
-  const debitosRealizados = lancamentos
+  const debitosRealizados = filtered
     .filter((l) => l.tipo === "debito" && l.status === "realizado")
     .reduce((s, l) => s + l.valor, 0);
 
-  const creditosPrevistos = lancamentos
+  const creditosPrevistos = filtered
     .filter((l) => l.tipo === "credito" && l.status === "previsto")
     .reduce((s, l) => s + l.valor, 0);
 
-  const debitosPrevistos = lancamentos
+  const debitosPrevistos = filtered
     .filter((l) => l.tipo === "debito" && l.status === "previsto")
     .reduce((s, l) => s + l.valor, 0);
 
