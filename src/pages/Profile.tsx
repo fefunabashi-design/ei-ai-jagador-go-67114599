@@ -291,6 +291,17 @@ const ProfilePage = () => {
               <Label>Região</Label>
               <Input value={editRegion} onChange={(e) => setEditRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
             </div>
+            <div>
+              <Label>E-mail *</Label>
+              <Input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="seu@email.com"
+                required
+                className="bg-secondary border-border"
+              />
+            </div>
             <Button type="submit" disabled={updateProfile.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar
             </Button>
