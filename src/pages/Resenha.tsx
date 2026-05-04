@@ -16,10 +16,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages, useMatches } from "@/hooks/useSupabaseData";
+import { useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
+const STAFF_TEAM_FIELDS = [
+  "admin_email",
+  "coach_email",
+  "assistant_coach_email",
+  "sub1_email",
+  "sub2_email",
+  "admin_name",
+  "coach_name",
+  "assistant_coach_name",
+  "sub1_name",
+  "sub2_name",
+];
+
+const norm = (v: any) => (v || "").toString().trim().toLowerCase();
 
 const formatRelative = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -57,8 +71,18 @@ const Resenha = () => {
   const { data: posts } = useResenhaPosts();
   const { data: gallery } = useAppSharedImages();
   const { data: matches } = useMatches();
+  const { data: myTeams } = useMyTeams();
   const role = (profile?.role || "player").toLowerCase();
-  const canPublish = STAFF_ROLES.includes(role);
+  const myEmail = norm((profile as any)?.email);
+  const myName = norm((profile as any)?.display_name);
+  const isTeamStaff = (myTeams || []).some((t: any) =>
+    STAFF_TEAM_FIELDS.some((f) => {
+      const v = norm(t?.[f]);
+      if (!v) return false;
+      return v === myEmail || v === myName;
+    })
+  );
+  const canPublish = STAFF_ROLES.includes(role) || isTeamStaff;
 
   const [matchPickerOpen, setMatchPickerOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null);

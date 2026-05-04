@@ -88,14 +88,19 @@ type TeamForm = {
   president_phone: string;
   coach_name: string;
   coach_phone: string;
+  coach_email: string;
   assistant_coach_name: string;
   assistant_coach_phone: string;
+  assistant_coach_email: string;
   admin_name: string;
   admin_phone: string;
+  admin_email: string;
   sub1_name: string;
   sub1_phone: string;
+  sub1_email: string;
   sub2_name: string;
   sub2_phone: string;
+  sub2_email: string;
   observacoes: string;
 };
 
@@ -123,14 +128,19 @@ const EMPTY_TEAM_FORM: TeamForm = {
   president_phone: "",
   coach_name: "",
   coach_phone: "",
+  coach_email: "",
   assistant_coach_name: "",
   assistant_coach_phone: "",
+  assistant_coach_email: "",
   admin_name: "",
   admin_phone: "",
+  admin_email: "",
   sub1_name: "",
   sub1_phone: "",
+  sub1_email: "",
   sub2_name: "",
   sub2_phone: "",
+  sub2_email: "",
   observacoes: "",
 };
 
@@ -240,14 +250,19 @@ const TeamPage = () => {
       president_phone: (team as any).president_phone || "",
       coach_name: (team as any).coach_name || "",
       coach_phone: (team as any).coach_phone || "",
+      coach_email: (team as any).coach_email || "",
       assistant_coach_name: (team as any).assistant_coach_name || "",
       assistant_coach_phone: (team as any).assistant_coach_phone || "",
+      assistant_coach_email: (team as any).assistant_coach_email || "",
       admin_name: (team as any).admin_name || "",
       admin_phone: (team as any).admin_phone || "",
+      admin_email: (team as any).admin_email || "",
       sub1_name: (team as any).sub1_name || "",
       sub1_phone: (team as any).sub1_phone || "",
+      sub1_email: (team as any).sub1_email || "",
       sub2_name: (team as any).sub2_name || "",
       sub2_phone: (team as any).sub2_phone || "",
+      sub2_email: (team as any).sub2_email || "",
       observacoes: (team as any).observacoes || "",
     });
     setTeamDialogOpen(true);
@@ -1185,6 +1200,17 @@ const TeamFormDialog = ({
             </div>
           </div>
 
+          <div>
+            <Label>E-mail Técnico</Label>
+            <Input
+              type="email"
+              value={form.coach_email}
+              onChange={(e) => setField("coach_email", e.target.value)}
+              placeholder="tecnico@email.com"
+              className="bg-secondary border-border"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Aux. Técnico</Label>
@@ -1204,6 +1230,17 @@ const TeamFormDialog = ({
                 className="bg-secondary border-border"
               />
             </div>
+          </div>
+
+          <div>
+            <Label>E-mail Aux. Técnico</Label>
+            <Input
+              type="email"
+              value={form.assistant_coach_email}
+              onChange={(e) => setField("assistant_coach_email", e.target.value)}
+              placeholder="auxiliar@email.com"
+              className="bg-secondary border-border"
+            />
           </div>
 
           {/* Administração — colapsável */}
@@ -1240,6 +1277,17 @@ const TeamFormDialog = ({
                   </div>
                 </div>
 
+                <div>
+                  <Label>E-mail Admin</Label>
+                  <Input
+                    type="email"
+                    value={form.admin_email}
+                    onChange={(e) => setField("admin_email", e.target.value)}
+                    placeholder="admin@email.com"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Substitutos</p>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1263,6 +1311,17 @@ const TeamFormDialog = ({
                   </div>
                 </div>
 
+                <div>
+                  <Label>E-mail Sub 1</Label>
+                  <Input
+                    type="email"
+                    value={form.sub1_email}
+                    onChange={(e) => setField("sub1_email", e.target.value)}
+                    placeholder="sub1@email.com"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Substituto 2</Label>
@@ -1282,6 +1341,17 @@ const TeamFormDialog = ({
                       className="bg-secondary border-border"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label>E-mail Sub 2</Label>
+                  <Input
+                    type="email"
+                    value={form.sub2_email}
+                    onChange={(e) => setField("sub2_email", e.target.value)}
+                    placeholder="sub2@email.com"
+                    className="bg-secondary border-border"
+                  />
                 </div>
               </div>
             )}
