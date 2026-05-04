@@ -27,8 +27,6 @@ const Index = () => {
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
-  const { data: photoPosts = [] } = usePhotoPosts(myTeam?.id);
-  const [selectedFeedPhoto, setSelectedFeedPhoto] = useState<any | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
