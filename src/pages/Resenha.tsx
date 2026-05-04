@@ -250,6 +250,61 @@ const Resenha = () => {
         })}
       </div>
 
+      {/* Match picker dialog */}
+      <Dialog open={matchPickerOpen} onOpenChange={setMatchPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Publicar resenha</DialogTitle>
+            <DialogDescription>
+              Escolha a partida sobre a qual você quer publicar. Apenas partidas confirmadas e
+              finalizadas aparecem aqui.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {eligibleMatches.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Nenhuma partida confirmada ou finalizada disponível.
+              </p>
+            )}
+            {eligibleMatches.map((m: any) => {
+              const date = new Date(m.match_date);
+              const isFinished = m.status === "completed";
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleSelectMatch(m)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {m.home_team?.name || "Time"} vs {m.away_team?.name || "Adversário"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {date.toLocaleDateString("pt-BR")} ·{" "}
+                      {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                      isFinished
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-success/15 text-success"
+                    }`}
+                  >
+                    {isFinished ? "Finalizada" : "Confirmada"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMatchPickerOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-md">
