@@ -71,8 +71,18 @@ const Resenha = () => {
   const { data: posts } = useResenhaPosts();
   const { data: gallery } = useAppSharedImages();
   const { data: matches } = useMatches();
+  const { data: myTeams } = useMyTeams();
   const role = (profile?.role || "player").toLowerCase();
-  const canPublish = STAFF_ROLES.includes(role);
+  const myEmail = norm((profile as any)?.email);
+  const myName = norm((profile as any)?.display_name);
+  const isTeamStaff = (myTeams || []).some((t: any) =>
+    STAFF_TEAM_FIELDS.some((f) => {
+      const v = norm(t?.[f]);
+      if (!v) return false;
+      return v === myEmail || v === myName;
+    })
+  );
+  const canPublish = STAFF_ROLES.includes(role) || isTeamStaff;
 
   const [matchPickerOpen, setMatchPickerOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
