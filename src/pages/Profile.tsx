@@ -170,7 +170,7 @@ const ProfilePage = () => {
           <h1 className="text-3xl text-foreground font-display">
             {(profile?.nickname || profile?.display_name || "SEM NOME").toUpperCase()}
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">{user?.email || ""}</p>
+          <p className="text-xs text-muted-foreground mt-1">{(profile as any)?.email || user?.email || ""}</p>
           {profile?.is_pro && (
             <span className="mt-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">PRO</span>
           )}
