@@ -174,6 +174,7 @@ const TeamPage = () => {
   const createPlayer = useCreatePlayer();
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
+  const { data: myProfile } = useProfile();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Team form
