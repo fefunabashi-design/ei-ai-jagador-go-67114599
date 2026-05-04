@@ -73,15 +73,46 @@ const Resenha = () => {
 
   const orderedPosts = useMemo(() => posts, [posts]);
 
+  const eligibleMatches = useMemo(() => {
+    return (matches || [])
+      .filter((m: any) => m.status === "confirmed" || m.status === "completed")
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+      );
+  }, [matches]);
+
+  const openPublishFlow = () => {
+    setSelectedMatch(null);
+    setPickedImage("");
+    setCaption("");
+    setMatchPickerOpen(true);
+  };
+
+  const handleSelectMatch = (m: any) => {
+    setSelectedMatch(m);
+    setMatchPickerOpen(false);
+    setCreateOpen(true);
+  };
+
   const handlePublish = () => {
     if (!pickedImage) {
       toast({ title: "Escolha uma imagem", description: "Selecione uma imagem da galeria do App." });
       return;
     }
-    mockDb.createResenhaPost({ photo_url: pickedImage, caption: caption.trim() });
+    const matchLabel = selectedMatch
+      ? `${selectedMatch.home_team?.name || "Time"} vs ${selectedMatch.away_team?.name || "Adversário"}`
+      : null;
+    mockDb.createResenhaPost({
+      photo_url: pickedImage,
+      caption: caption.trim(),
+      match_id: selectedMatch?.id || null,
+      match_label: matchLabel,
+    });
     toast({ title: "Resenha publicada! 🎉" });
     setCaption("");
     setPickedImage("");
+    setSelectedMatch(null);
     setCreateOpen(false);
   };
 
