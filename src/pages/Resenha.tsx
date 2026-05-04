@@ -56,10 +56,13 @@ const Resenha = () => {
   const { data: profile } = useProfile();
   const { data: posts } = useResenhaPosts();
   const { data: gallery } = useAppSharedImages();
+  const { data: matches } = useMatches();
 
   const role = (profile?.role || "player").toLowerCase();
   const canPublish = STAFF_ROLES.includes(role);
 
+  const [matchPickerOpen, setMatchPickerOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [pickedImage, setPickedImage] = useState<string>("");
   const [caption, setCaption] = useState("");
