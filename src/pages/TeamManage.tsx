@@ -1232,6 +1232,17 @@ const TeamFormDialog = ({
             </div>
           </div>
 
+          <div>
+            <Label>E-mail Aux. Técnico</Label>
+            <Input
+              type="email"
+              value={form.assistant_coach_email}
+              onChange={(e) => setField("assistant_coach_email", e.target.value)}
+              placeholder="auxiliar@email.com"
+              className="bg-secondary border-border"
+            />
+          </div>
+
           {/* Administração — colapsável */}
           <div className="border border-border rounded-xl overflow-hidden">
             <button
