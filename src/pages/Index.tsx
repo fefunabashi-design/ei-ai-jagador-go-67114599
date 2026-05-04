@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons, usePhotoPosts, useProfile } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
