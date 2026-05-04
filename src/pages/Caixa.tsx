@@ -306,19 +306,19 @@ const CaixaPage = () => {
             delay={0.05}
           />
           <SummaryCard
-            label="Saldo Atual"
-            value={fmtCurrency(saldoAtual)}
-            color={saldoAtual >= 0 ? "text-primary" : "text-destructive"}
-            bg="bg-primary/10"
-            icon={<Wallet size={14} />}
-            delay={0.1}
-          />
-          <SummaryCard
             label="Créditos Previstos"
             value={fmtCurrency(creditosPrevistos)}
             color="text-amber-500"
             bg="bg-amber-500/10"
             icon={<TrendingUp size={14} />}
+            delay={0.1}
+          />
+          <SummaryCard
+            label="Débitos Previstos"
+            value={fmtCurrency(debitosPrevistos)}
+            color="text-orange-500"
+            bg="bg-orange-500/10"
+            icon={<TrendingDown size={14} />}
             delay={0.15}
           />
         </div>
