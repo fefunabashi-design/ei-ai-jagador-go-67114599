@@ -357,6 +357,61 @@ const ChatPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Finalize match dialog */}
+      <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">FINALIZAR PARTIDA</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Informe o placar final da partida.</p>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div>
+              <Label className="text-[11px]">{homeTeam?.name || "Mandante"}</Label>
+              <Input
+                type="number"
+                min="0"
+                value={homeScore}
+                onChange={(e) => setHomeScore(e.target.value)}
+                className="bg-secondary border-border text-center text-lg font-bold"
+              />
+            </div>
+            <div>
+              <Label className="text-[11px]">{awayTeam?.name || "Visitante"}</Label>
+              <Input
+                type="number"
+                min="0"
+                value={awayScore}
+                onChange={(e) => setAwayScore(e.target.value)}
+                className="bg-secondary border-border text-center text-lg font-bold"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!matchId) return;
+                const hs = parseInt(homeScore);
+                const as = parseInt(awayScore);
+                if (isNaN(hs) || isNaN(as)) {
+                  toast({ title: "Informe o placar", variant: "destructive" });
+                  return;
+                }
+                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as });
+                window.dispatchEvent(new CustomEvent("mock-db-change"));
+                queryClient.invalidateQueries({ queryKey: ["match-detail", matchId] });
+                queryClient.invalidateQueries({ queryKey: ["matches"] });
+                toast({ title: "Partida finalizada! 🏁" });
+                setFinalizeOpen(false);
+              }}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              <Flag size={14} className="mr-1" /> Finalizar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
