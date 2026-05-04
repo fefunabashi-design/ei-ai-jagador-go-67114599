@@ -1,13 +1,11 @@
-import { Home, Shield, Crown, Plus, CalendarDays, MessageSquareText, Users } from "lucide-react";
+import { Home, Shield, Crown, MessageSquareText, CalendarDays } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 const navItems = [
   { icon: Home, label: "Início", path: "/dashboard" },
   { icon: Shield, label: "Times", path: "/times" },
-  { icon: null, label: "Criar", path: "", isCenter: true },
+  { icon: MessageSquareText, label: "Várzea", path: "/resenha", isCenter: true },
   { icon: CalendarDays, label: "Agenda", path: "/agenda" },
   { icon: Crown, label: "Admin", path: "/admin" },
 ];
@@ -15,12 +13,6 @@ const navItems = [
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-
-  const go = (path: string) => {
-    setOpen(false);
-    navigate(path);
-  };
 
   return (
     <>
