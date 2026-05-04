@@ -44,6 +44,7 @@ import {
   useCreatePlayer,
   useUpdatePlayer,
   useDeletePlayer,
+  useProfile,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
