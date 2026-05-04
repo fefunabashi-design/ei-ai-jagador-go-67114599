@@ -337,6 +337,10 @@ const TeamPage = () => {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
+    if (!playerForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerForm.email.trim())) {
+      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido para vincular a conta.", variant: "destructive" });
+      return;
+    }
     const data = {
       name: playerForm.name,
       last_name: playerForm.last_name || null,
