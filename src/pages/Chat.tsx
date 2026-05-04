@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X, Flag } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +26,9 @@ const ChatPage = () => {
   const [sending, setSending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
+  const [homeScore, setHomeScore] = useState("");
+  const [awayScore, setAwayScore] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -153,12 +157,26 @@ const ChatPage = () => {
       {/* Action buttons */}
       <div className="px-4 py-3 border-b border-border bg-background space-y-2">
         {canScheduleLineup && (
-          <Button
-            onClick={() => navigate(`/escalacao?matchId=${matchId}`)}
-            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
-          >
-            <Pencil size={14} className="mr-1" /> ESCALAR TIME
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => navigate(`/escalacao?matchId=${matchId}`)}
+              className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+            >
+              <Pencil size={14} className="mr-1" /> ESCALAR TIME
+            </Button>
+            <Button
+              onClick={() => {
+                setHomeScore(String(match?.home_score ?? ""));
+                setAwayScore(String(match?.away_score ?? ""));
+                setFinalizeOpen(true);
+              }}
+              variant="outline"
+              className="border-success/40 text-success hover:bg-success/10 font-semibold h-10"
+              disabled={match?.status === "completed"}
+            >
+              <Flag size={14} className="mr-1" /> {match?.status === "completed" ? "FINALIZADA" : "FINALIZAR"}
+            </Button>
+          </div>
         )}
         <div className="grid grid-cols-2 gap-2">
           <Button
@@ -336,6 +354,61 @@ const ChatPage = () => {
                 ))}
               </ul>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Finalize match dialog */}
+      <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">FINALIZAR PARTIDA</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">Informe o placar final da partida.</p>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div>
+              <Label className="text-[11px]">{homeTeam?.name || "Mandante"}</Label>
+              <Input
+                type="number"
+                min="0"
+                value={homeScore}
+                onChange={(e) => setHomeScore(e.target.value)}
+                className="bg-secondary border-border text-center text-lg font-bold"
+              />
+            </div>
+            <div>
+              <Label className="text-[11px]">{awayTeam?.name || "Visitante"}</Label>
+              <Input
+                type="number"
+                min="0"
+                value={awayScore}
+                onChange={(e) => setAwayScore(e.target.value)}
+                className="bg-secondary border-border text-center text-lg font-bold"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!matchId) return;
+                const hs = parseInt(homeScore);
+                const as = parseInt(awayScore);
+                if (isNaN(hs) || isNaN(as)) {
+                  toast({ title: "Informe o placar", variant: "destructive" });
+                  return;
+                }
+                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as });
+                window.dispatchEvent(new CustomEvent("mock-db-change"));
+                queryClient.invalidateQueries({ queryKey: ["match-detail", matchId] });
+                queryClient.invalidateQueries({ queryKey: ["matches"] });
+                toast({ title: "Partida finalizada! 🏁" });
+                setFinalizeOpen(false);
+              }}
+              className="bg-success text-success-foreground hover:bg-success/90"
+            >
+              <Flag size={14} className="mr-1" /> Finalizar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

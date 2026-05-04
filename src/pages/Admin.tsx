@@ -85,11 +85,11 @@ const AdminPage = () => {
       away_team_name: newMatchOpponent.trim(),
       match_date,
       location: newMatchLocation.trim(),
-      status: "open",
+      status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
     window.dispatchEvent(new CustomEvent("mock-db-change"));
-    toast({ title: "Partida criada!", description: `vs ${newMatchOpponent.trim()}` });
+    toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
     navigate("/agenda");
