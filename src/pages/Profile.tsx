@@ -70,12 +70,17 @@ const ProfilePage = () => {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
+    if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
+      return;
+    }
     updateProfile.mutate({
       display_name: editName.trim(),
       nickname: editNickname.trim() || undefined,
       phone: editPhone || undefined,
       birth_date: editBirthDate || undefined,
       region: editRegion.trim() || undefined,
+      email: editEmail.trim(),
     });
     setEditOpen(false);
   };
