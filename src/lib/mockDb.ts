@@ -678,13 +678,20 @@ export const mockDb = {
     );
   },
 
-  createResenhaPost: (data: { photo_url: string; caption?: string }) => {
+  createResenhaPost: (data: {
+    photo_url: string;
+    caption?: string;
+    match_id?: string | null;
+    match_label?: string | null;
+  }) => {
     const profile = mockDb.getProfile();
     const team = mockDb.getTeam();
     const post = {
       id: genId(),
       photo_url: data.photo_url,
       caption: data.caption || "",
+      match_id: data.match_id || null,
+      match_label: data.match_label || null,
       author_id: profile.user_id,
       author_name: profile.display_name || profile.nickname || "Usuário",
       author_avatar: profile.avatar_url || "",
