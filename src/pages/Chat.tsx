@@ -37,6 +37,9 @@ const ChatPage = () => {
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
+  const [events, setEvents] = useState<MatchEvent[]>([]);
+  const [newEventType, setNewEventType] = useState<MatchEvent["type"]>("goal");
+  const [newEventPlayer, setNewEventPlayer] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
