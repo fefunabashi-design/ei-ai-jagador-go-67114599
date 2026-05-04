@@ -16,10 +16,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages, useMatches } from "@/hooks/useSupabaseData";
+import { useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
+const STAFF_TEAM_FIELDS = [
+  "admin_email",
+  "coach_email",
+  "assistant_coach_email",
+  "sub1_email",
+  "sub2_email",
+  "admin_name",
+  "coach_name",
+  "assistant_coach_name",
+  "sub1_name",
+  "sub2_name",
+];
+
+const norm = (v: any) => (v || "").toString().trim().toLowerCase();
 
 const formatRelative = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
