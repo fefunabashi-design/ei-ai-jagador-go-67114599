@@ -292,7 +292,14 @@ const TeamPage = () => {
 
   const openNewPlayer = () => {
     setEditingPlayer(null);
-    setPlayerForm({ ...EMPTY_PLAYER_FORM });
+    setPlayerForm({
+      ...EMPTY_PLAYER_FORM,
+      name: (myProfile as any)?.display_name || "",
+      nickname: (myProfile as any)?.nickname || "",
+      phone: (myProfile as any)?.phone || "",
+      birth_date: (myProfile as any)?.birth_date || "",
+      email: (myProfile as any)?.email || "",
+    });
     setSelectedPositions([]);
     setPlayerDialogOpen(true);
   };
