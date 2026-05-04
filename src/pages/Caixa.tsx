@@ -61,11 +61,14 @@ const CaixaPage = () => {
   const { data: team } = useMyTeam();
   const { data: players = [] } = usePlayers(team?.id);
 
-  // ── filters ──
+  // ── filters (default = mês atual) ──
+  const _today = new Date();
+  const _firstDay = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().slice(0, 10);
+  const _lastDay = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).toISOString().slice(0, 10);
   const [filterTipo, setFilterTipo] = useState<"all" | "credito" | "debito">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "realizado" | "previsto">("all");
-  const [filterDtInicio, setFilterDtInicio] = useState("");
-  const [filterDtFim, setFilterDtFim] = useState("");
+  const [filterDtInicio, setFilterDtInicio] = useState(_firstDay);
+  const [filterDtFim, setFilterDtFim] = useState(_lastDay);
   const [showFilters, setShowFilters] = useState(false);
 
   // ── lançamento dialog ──
@@ -193,26 +196,6 @@ const CaixaPage = () => {
     return list.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [debitos, mensalidades, mensalidadeConfig, players, currentMonth, currentYear]);
 
-  // ── totalizadores ──
-  const creditosRealizados = lancamentos
-    .filter((l) => l.tipo === "credito" && l.status === "realizado")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const debitosRealizados = lancamentos
-    .filter((l) => l.tipo === "debito" && l.status === "realizado")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const creditosPrevistos = lancamentos
-    .filter((l) => l.tipo === "credito" && l.status === "previsto")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const debitosPrevistos = lancamentos
-    .filter((l) => l.tipo === "debito" && l.status === "previsto")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const saldoAtual = creditosRealizados - debitosRealizados;
-  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
-
   // ── filtro ──
   const filtered = useMemo(() => {
     return lancamentos.filter((l) => {
@@ -223,6 +206,26 @@ const CaixaPage = () => {
       return true;
     });
   }, [lancamentos, filterTipo, filterStatus, filterDtInicio, filterDtFim]);
+
+  // ── totalizadores (respeitam filtro) ──
+  const creditosRealizados = filtered
+    .filter((l) => l.tipo === "credito" && l.status === "realizado")
+    .reduce((s, l) => s + l.valor, 0);
+
+  const debitosRealizados = filtered
+    .filter((l) => l.tipo === "debito" && l.status === "realizado")
+    .reduce((s, l) => s + l.valor, 0);
+
+  const creditosPrevistos = filtered
+    .filter((l) => l.tipo === "credito" && l.status === "previsto")
+    .reduce((s, l) => s + l.valor, 0);
+
+  const debitosPrevistos = filtered
+    .filter((l) => l.tipo === "debito" && l.status === "previsto")
+    .reduce((s, l) => s + l.valor, 0);
+
+  const saldoAtual = creditosRealizados - debitosRealizados;
+  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
 
   // ── totalizadores filtrados ──
   const totalFiltradoCredito = filtered
@@ -279,11 +282,54 @@ const CaixaPage = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="px-5 pt-6 pb-4 flex items-center gap-3">
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)}>
           <ArrowLeft size={20} className="text-muted-foreground" />
         </button>
-        <h1 className="text-2xl font-display text-foreground">CAIXA ATUAL</h1>
+        <h1 className="text-xl font-display text-foreground flex-1">CAIXA</h1>
+
+        <div className="relative">
+          <Button
+            onClick={() => setShowLancMenu((v) => !v)}
+            size="sm"
+            className="bg-gradient-primary text-primary-foreground border-0 text-xs h-9 px-3"
+          >
+            <Plus size={14} className="mr-1" /> Lançamentos
+            <ChevronDown size={13} className="ml-1" />
+          </Button>
+          {showLancMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-full mt-1 right-0 z-50 w-40 bg-card border border-border rounded-xl overflow-hidden shadow-lg"
+            >
+              <button
+                onClick={() => openNew("debito")}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors text-left"
+              >
+                <TrendingDown size={14} className="text-destructive" />
+                Débito
+              </button>
+              <div className="border-t border-border" />
+              <button
+                onClick={() => openNew("credito")}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors text-left"
+              >
+                <TrendingUp size={14} className="text-emerald-500" />
+                Crédito
+              </button>
+            </motion.div>
+          )}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters((v) => !v)}
+          className={`h-9 px-3 ${hasFilters ? "border-primary text-primary" : ""}`}
+        >
+          <Filter size={14} />
+        </Button>
       </div>
 
       <div className="px-5 space-y-4">
@@ -336,50 +382,6 @@ const CaixaPage = () => {
           </span>
         </motion.div>
 
-        {/* ── Actions ── */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Button
-              onClick={() => setShowLancMenu((v) => !v)}
-              className="w-full bg-gradient-primary text-primary-foreground border-0 text-xs"
-            >
-              <Plus size={14} className="mr-1" /> Lançamentos
-              <ChevronDown size={13} className="ml-1" />
-            </Button>
-            {showLancMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full mt-1 left-0 right-0 z-50 bg-card border border-border rounded-xl overflow-hidden shadow-lg"
-              >
-                <button
-                  onClick={() => openNew("debito")}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors text-left"
-                >
-                  <TrendingDown size={14} className="text-destructive" />
-                  Débito
-                </button>
-                <div className="border-t border-border" />
-                <button
-                  onClick={() => openNew("credito")}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary transition-colors text-left"
-                >
-                  <TrendingUp size={14} className="text-emerald-500" />
-                  Crédito
-                </button>
-              </motion.div>
-            )}
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters((v) => !v)}
-            className={`px-3 ${hasFilters ? "border-primary text-primary" : ""}`}
-          >
-            <Filter size={14} />
-            {hasFilters && <span className="ml-1 text-[10px]">•</span>}
-          </Button>
-        </div>
-
         {/* ── Filters ── */}
         {showFilters && (
           <motion.div
@@ -394,8 +396,8 @@ const CaixaPage = () => {
                   onClick={() => {
                     setFilterTipo("all");
                     setFilterStatus("all");
-                    setFilterDtInicio("");
-                    setFilterDtFim("");
+                    setFilterDtInicio(_firstDay);
+                    setFilterDtFim(_lastDay);
                   }}
                   className="text-[10px] text-primary underline"
                 >
