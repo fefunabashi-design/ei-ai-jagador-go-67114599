@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MoreHorizontal, Shield } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { mockDb } from "@/lib/mockDb";
-import { useProfile, useMatchSummons } from "@/hooks/useSupabaseData";
+import { useProfile, useMatchSummons, usePlayers, useMyTeam } from "@/hooks/useSupabaseData";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/);
@@ -18,31 +20,36 @@ const ChatPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
+  const { data: myTeam } = useMyTeam();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Fetch match info
   const { data: match } = useQuery({
     queryKey: ["match-detail", matchId],
     queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
     enabled: !!matchId,
   });
 
-  // Fetch messages
   const { data: messages = [] } = useQuery({
     queryKey: ["chat-messages", matchId],
     queryFn: async () => (matchId ? mockDb.getMessages(matchId) : []),
     enabled: !!matchId,
   });
 
-  // Fetch summons for confirmation status
   const { data: summons = [] } = useMatchSummons(matchId);
 
-  // (sem realtime em modo dev)
+  const homeTeam = match?.home_team as any;
+  const awayTeam = match?.away_team as any;
+  const matchDate = match ? new Date(match.match_date) : null;
 
-  // Auto-scroll
+  // Players of home team for the roster (presence dialog)
+  const { data: teamPlayers = [] } = usePlayers(homeTeam?.id);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -63,14 +70,48 @@ const ChatPage = () => {
     }
   };
 
-  const homeTeam = match?.home_team as any;
-  const awayTeam = match?.away_team as any;
-  const matchDate = match ? new Date(match.match_date) : null;
+  // Permission: only Admin / Coach / Sub-Coach can "Escalar Time".
+  // Plain players cannot. Owner of the home team is always allowed.
+  const role = (profile?.role || "player").toLowerCase();
+  const isStaff = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"].includes(role);
+  const isHomeOwner = !!(myTeam && homeTeam?.id === myTeam.id && myTeam.owner_id === profile?.user_id);
+  const canScheduleLineup = isHomeOwner || isStaff;
 
-  // Confirmation summary
-  const confirmed = summons.filter((s: any) => s.status === "confirmed");
-  const pending = summons.filter((s: any) => s.status === "pending");
-  const declined = summons.filter((s: any) => s.status === "declined");
+  // Roster + statuses
+  const summonByPlayerId = new Map(summons.map((s: any) => [s.player_id, s]));
+  const roster = teamPlayers.map((p: any) => {
+    const s: any = summonByPlayerId.get(p.id);
+    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
+  });
+  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
+  const declinedRoster = roster.filter((r) => r.status === "declined");
+  const pendingRoster = roster.filter((r) => r.status === "pending");
+
+  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
+  const myCurrentStatus = myPlayerForPresence
+    ? (summonByPlayerId.get(myPlayerForPresence.id) as any)?.status as "confirmed" | "declined" | undefined
+    : undefined;
+
+  const handlePresence = (status: "confirmed" | "declined") => {
+    if (!matchId) return;
+    if (!myPlayerForPresence) {
+      toast({ title: "Você não está vinculado a este time", variant: "destructive" });
+      return;
+    }
+    const existing: any = summonByPlayerId.get(myPlayerForPresence.id);
+    if (existing) {
+      mockDb.respondSummon(existing.id, status);
+    } else {
+      const created = mockDb.createSummons([
+        { match_id: matchId, player_id: myPlayerForPresence.id, status: "pending" },
+      ])[0];
+      if (created) mockDb.respondSummon(created.id, status);
+    }
+    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    queryClient.invalidateQueries({ queryKey: ["match-summons", matchId] });
+    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
+    setConfirmOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -88,7 +129,7 @@ const ChatPage = () => {
               {homeTeam?.name || "???"} × {awayTeam?.name || "???"}
             </p>
             <p className="text-[10px] text-muted-foreground">
-              {summons.length} participantes · {match?.location}
+              Detalhes da partida · {match?.location}
             </p>
           </div>
           <button><MoreHorizontal size={18} className="text-muted-foreground" /></button>
@@ -98,9 +139,6 @@ const ChatPage = () => {
       {/* Match info banner */}
       {match && (
         <div className="bg-secondary/50 px-4 py-2 text-center border-b border-border">
-          <p className="text-[10px] text-muted-foreground">
-            ⚽ {homeTeam?.name} × {awayTeam?.name || "???"}
-          </p>
           <p className="text-[10px] text-muted-foreground">
             {matchDate?.toLocaleDateString("pt-BR", { weekday: "long" })} · {matchDate?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {match.location}
           </p>
@@ -112,34 +150,42 @@ const ChatPage = () => {
         </div>
       )}
 
+      {/* Action buttons */}
+      <div className="px-4 py-3 border-b border-border bg-background space-y-2">
+        {canScheduleLineup && (
+          <Button
+            onClick={() => navigate(`/escalacao?matchId=${matchId}`)}
+            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
+          >
+            <Pencil size={14} className="mr-1" /> ESCALAR TIME
+          </Button>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            onClick={() => navigate(`/opponent-details?matchId=${matchId}`)}
+            variant="outline"
+            className="border-primary/40 text-primary font-semibold h-10"
+          >
+            <Eye size={14} className="mr-1" /> ADVERSÁRIO
+          </Button>
+          <Button
+            onClick={() => setListOpen(true)}
+            variant="outline"
+            className="border-primary/40 text-primary font-semibold h-10"
+          >
+            <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedRoster.length})
+          </Button>
+        </div>
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {/* System: chat created */}
         <div className="text-center">
           <span className="text-[10px] text-muted-foreground bg-secondary px-3 py-1 rounded-full">
             🏟️ Chat da partida criado
           </span>
         </div>
 
-        {/* Confirmation summary card */}
-        {summons.length > 0 && (
-          <div className="bg-secondary/80 rounded-xl p-3 border border-border/50 text-xs">
-            <p className="font-semibold text-foreground mb-1">✅ CONFIRMAÇÃO — {homeTeam?.name?.toUpperCase()}</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
-              {confirmed.map((s: any) => (
-                <span key={s.id} className="text-success">{s.player?.name?.split(" ")[0]} ✓</span>
-              ))}
-              {pending.map((s: any) => (
-                <span key={s.id} className="text-warning">{s.player?.name?.split(" ")[0]} ?</span>
-              ))}
-              {declined.map((s: any) => (
-                <span key={s.id} className="text-destructive">{s.player?.name?.split(" ")[0]} ✗</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Chat messages */}
         {messages.map((msg: any) => {
           const isMe = msg.user_id === profile?.user_id;
           const senderProfile = msg.profile as any;
@@ -212,6 +258,87 @@ const ChatPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Confirmations list dialog with Confirm button inside */}
+      <Dialog open={listOpen} onOpenChange={setListOpen}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
+          </DialogHeader>
+
+          {/* Confirm action inside the same screen */}
+          <div className="rounded-xl border border-border bg-secondary/40 p-3 space-y-2">
+            <p className="text-[11px] font-semibold text-foreground">Sua presença</p>
+            {myCurrentStatus && (
+              <p className="text-[11px] text-primary font-semibold">
+                Status atual: {myCurrentStatus === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={() => handlePresence("confirmed")}
+                className="bg-success text-success-foreground hover:bg-success/90 font-semibold h-10"
+              >
+                <Check size={14} className="mr-1" /> CONFIRMADO
+              </Button>
+              <Button
+                onClick={() => handlePresence("declined")}
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold h-10"
+              >
+                <X size={14} className="mr-1" /> AUSENTE
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
+              ✓ Confirmados ({confirmedRoster.length})
+            </p>
+            {confirmedRoster.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {confirmedRoster.map((r: any) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
+              ✗ Ausentes ({declinedRoster.length})
+            </p>
+            {declinedRoster.length === 0 ? (
+              <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {declinedRoster.map((r: any) => (
+                  <li key={r.player.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
+              • Aguardando ({pendingRoster.length})
+            </p>
+            {pendingRoster.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Todos responderam.</p>
+            ) : (
+              <ul className="space-y-1">
+                {pendingRoster.map((r: any) => (
+                  <li key={r.player.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
+                    {r.player?.nickname || r.player?.name || "Jogador"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
