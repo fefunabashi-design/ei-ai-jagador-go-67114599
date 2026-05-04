@@ -143,7 +143,7 @@ const Resenha = () => {
         {canPublish && (
           <Button
             size="sm"
-            onClick={() => setCreateOpen(true)}
+            onClick={openPublishFlow}
             className="bg-gradient-primary text-primary-foreground border-0 h-8"
           >
             <Plus size={14} className="mr-1" /> Publicar
