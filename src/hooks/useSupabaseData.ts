@@ -198,6 +198,34 @@ export const useCreatePhotoPost = () => {
   };
 };
 
+// ==================== RESENHA DA VARZEA ====================
+
+export const useResenhaPosts = () => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    const sync = () => setData(mockDb.getResenhaPosts());
+    sync();
+    window.addEventListener("mock-db-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("mock-db-change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return { data };
+};
+
+export const useAppSharedImages = () => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    const sync = () => setData(mockDb.getAppSharedImages());
+    sync();
+    window.addEventListener("mock-db-change", sync);
+    return () => window.removeEventListener("mock-db-change", sync);
+  }, []);
+  return { data };
+};
+
 export const useMatchSummons = (matchId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
