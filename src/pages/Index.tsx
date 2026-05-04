@@ -323,41 +323,7 @@ const Index = () => {
         </div>
       )}
 
-      {/* Feed section */}
-      <div className="px-5 mt-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-display text-foreground">FEED DO CAMPO</h2>
-          <button onClick={() => navigate("/fotos")} className="text-[10px] text-primary font-semibold">Ver tudo →</button>
-        </div>
-        {photoPosts.length === 0 ? (
-          <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="text-sm text-muted-foreground">Sem fotos publicadas ainda 📸</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Use o painel Admin para postar as fotos dos eventos</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {photoPosts.slice(0, 3).map((post: any) => (
-              <div key={post.id} className="bg-card rounded-xl border border-border overflow-hidden">
-                <button
-                  onClick={() => setSelectedFeedPhoto(post)}
-                  className="w-full bg-black/5"
-                  aria-label={`Abrir foto do evento ${post.event_title}`}
-                >
-                  <img src={post.photo_url} alt={post.event_title} className="w-full max-h-[420px] object-contain" />
-                </button>
-                <div className="p-3">
-                  <p className="text-[11px] uppercase tracking-wide text-primary font-semibold">{post.event_type}</p>
-                  <p className="text-sm font-semibold text-foreground">{post.event_title}</p>
-                  {post.comment && <p className="text-xs text-muted-foreground mt-1">{post.comment}</p>}
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {new Date(post.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Feed do Campo movido para "Resenha da Várzea" no botão + da barra inferior */}
 
       {/* No team CTA */}
       {!myTeam && (
