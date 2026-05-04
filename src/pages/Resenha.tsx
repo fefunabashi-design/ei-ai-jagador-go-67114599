@@ -187,6 +187,11 @@ const Resenha = () => {
                     {post.team_name && <span className="truncate">{post.team_name} · </span>}
                     {formatRelative(post.created_at)} · <Clock size={10} /> {remainingTime(post.created_at)}
                   </p>
+                  {post.match_label && (
+                    <p className="text-[10px] text-primary font-semibold truncate mt-0.5">
+                      ⚽ {post.match_label}
+                    </p>
+                  )}
                 </div>
                 {isAuthor && (
                   <button
