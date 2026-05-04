@@ -785,12 +785,13 @@ const TeamPage = () => {
                 />
               </div>
               <div>
-                <Label>E-mail</Label>
+                <Label>E-mail *</Label>
                 <Input
                   type="email"
                   value={playerForm.email}
                   onChange={(e) => setPF("email", e.target.value)}
                   placeholder="email@email.com"
+                  required
                   className="bg-secondary border-border"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
