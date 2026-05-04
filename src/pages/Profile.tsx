@@ -194,7 +194,7 @@ const ProfilePage = () => {
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
                 { label: "Região", value: profile?.region },
-                { label: "E-mail", value: user?.email },
+                { label: "E-mail", value: (profile as any)?.email || user?.email },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="text-muted-foreground">{item.label}</span>
