@@ -1311,6 +1311,17 @@ const TeamFormDialog = ({
                   </div>
                 </div>
 
+                <div>
+                  <Label>E-mail Sub 1</Label>
+                  <Input
+                    type="email"
+                    value={form.sub1_email}
+                    onChange={(e) => setField("sub1_email", e.target.value)}
+                    placeholder="sub1@email.com"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Substituto 2</Label>
@@ -1330,6 +1341,17 @@ const TeamFormDialog = ({
                       className="bg-secondary border-border"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label>E-mail Sub 2</Label>
+                  <Input
+                    type="email"
+                    value={form.sub2_email}
+                    onChange={(e) => setField("sub2_email", e.target.value)}
+                    placeholder="sub2@email.com"
+                    className="bg-secondary border-border"
+                  />
                 </div>
               </div>
             )}
