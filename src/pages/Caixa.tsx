@@ -174,12 +174,14 @@ const CaixaPage = () => {
     }
 
     // Débitos e créditos manuais
+    const now = Date.now();
     debitos.forEach((d: any) => {
       const isCredito = d.tipo === "credito";
+      const isFuture = new Date(d.data).getTime() > now;
       list.push({
         id: d.id,
         tipo: isCredito ? "credito" : "debito",
-        status: "realizado",
+        status: isFuture ? "previsto" : "realizado",
         descricao: d.descricao,
         data: d.data,
         valor: Number(d.valor),
@@ -204,8 +206,12 @@ const CaixaPage = () => {
     .filter((l) => l.tipo === "credito" && l.status === "previsto")
     .reduce((s, l) => s + l.valor, 0);
 
+  const debitosPrevistos = lancamentos
+    .filter((l) => l.tipo === "debito" && l.status === "previsto")
+    .reduce((s, l) => s + l.valor, 0);
+
   const saldoAtual = creditosRealizados - debitosRealizados;
-  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados;
+  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
 
   // ── filtro ──
   const filtered = useMemo(() => {
@@ -300,19 +306,19 @@ const CaixaPage = () => {
             delay={0.05}
           />
           <SummaryCard
-            label="Saldo Atual"
-            value={fmtCurrency(saldoAtual)}
-            color={saldoAtual >= 0 ? "text-primary" : "text-destructive"}
-            bg="bg-primary/10"
-            icon={<Wallet size={14} />}
-            delay={0.1}
-          />
-          <SummaryCard
             label="Créditos Previstos"
             value={fmtCurrency(creditosPrevistos)}
             color="text-amber-500"
             bg="bg-amber-500/10"
             icon={<TrendingUp size={14} />}
+            delay={0.1}
+          />
+          <SummaryCard
+            label="Débitos Previstos"
+            value={fmtCurrency(debitosPrevistos)}
+            color="text-orange-500"
+            bg="bg-orange-500/10"
+            icon={<TrendingDown size={14} />}
             delay={0.15}
           />
         </div>
