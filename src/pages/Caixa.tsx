@@ -227,17 +227,6 @@ const CaixaPage = () => {
   const saldoAtual = creditosRealizados - debitosRealizados;
   const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
 
-  // ── filtro ──
-  const filtered = useMemo(() => {
-    return lancamentos.filter((l) => {
-      if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
-      if (filterStatus !== "all" && l.status !== filterStatus) return false;
-      if (filterDtInicio && l.data < filterDtInicio) return false;
-      if (filterDtFim && l.data > filterDtFim + "T23:59:59") return false;
-      return true;
-    });
-  }, [lancamentos, filterTipo, filterStatus, filterDtInicio, filterDtFim]);
-
   // ── totalizadores filtrados ──
   const totalFiltradoCredito = filtered
     .filter((l) => l.tipo === "credito")
