@@ -1277,6 +1277,17 @@ const TeamFormDialog = ({
                   </div>
                 </div>
 
+                <div>
+                  <Label>E-mail Admin</Label>
+                  <Input
+                    type="email"
+                    value={form.admin_email}
+                    onChange={(e) => setField("admin_email", e.target.value)}
+                    placeholder="admin@email.com"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Substitutos</p>
 
                 <div className="grid grid-cols-2 gap-3">
