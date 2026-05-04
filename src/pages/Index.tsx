@@ -337,17 +337,7 @@ const Index = () => {
         </div>
       )}
 
-      <Dialog open={!!selectedFeedPhoto} onOpenChange={(open) => !open && setSelectedFeedPhoto(null)}>
-        <DialogContent className="max-w-3xl p-2 sm:p-3">
-          {selectedFeedPhoto && (
-            <img
-              src={selectedFeedPhoto.photo_url}
-              alt={selectedFeedPhoto.event_title}
-              className="w-full max-h-[80vh] object-contain rounded-md"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+
 
       {/* Confirm presence dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
