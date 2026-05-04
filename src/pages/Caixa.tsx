@@ -206,8 +206,12 @@ const CaixaPage = () => {
     .filter((l) => l.tipo === "credito" && l.status === "previsto")
     .reduce((s, l) => s + l.valor, 0);
 
+  const debitosPrevistos = lancamentos
+    .filter((l) => l.tipo === "debito" && l.status === "previsto")
+    .reduce((s, l) => s + l.valor, 0);
+
   const saldoAtual = creditosRealizados - debitosRealizados;
-  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados;
+  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
 
   // ── filtro ──
   const filtered = useMemo(() => {
