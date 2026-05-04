@@ -88,14 +88,19 @@ type TeamForm = {
   president_phone: string;
   coach_name: string;
   coach_phone: string;
+  coach_email: string;
   assistant_coach_name: string;
   assistant_coach_phone: string;
+  assistant_coach_email: string;
   admin_name: string;
   admin_phone: string;
+  admin_email: string;
   sub1_name: string;
   sub1_phone: string;
+  sub1_email: string;
   sub2_name: string;
   sub2_phone: string;
+  sub2_email: string;
   observacoes: string;
 };
 
