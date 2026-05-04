@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages } from "@/hooks/useSupabaseData";
+import { useProfile, useResenhaPosts, useAppSharedImages, useMatches } from "@/hooks/useSupabaseData";
 import { mockDb } from "@/lib/mockDb";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
@@ -56,10 +56,13 @@ const Resenha = () => {
   const { data: profile } = useProfile();
   const { data: posts } = useResenhaPosts();
   const { data: gallery } = useAppSharedImages();
+  const { data: matches } = useMatches();
 
   const role = (profile?.role || "player").toLowerCase();
   const canPublish = STAFF_ROLES.includes(role);
 
+  const [matchPickerOpen, setMatchPickerOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [pickedImage, setPickedImage] = useState<string>("");
   const [caption, setCaption] = useState("");
@@ -70,15 +73,46 @@ const Resenha = () => {
 
   const orderedPosts = useMemo(() => posts, [posts]);
 
+  const eligibleMatches = useMemo(() => {
+    return (matches || [])
+      .filter((m: any) => m.status === "confirmed" || m.status === "completed")
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+      );
+  }, [matches]);
+
+  const openPublishFlow = () => {
+    setSelectedMatch(null);
+    setPickedImage("");
+    setCaption("");
+    setMatchPickerOpen(true);
+  };
+
+  const handleSelectMatch = (m: any) => {
+    setSelectedMatch(m);
+    setMatchPickerOpen(false);
+    setCreateOpen(true);
+  };
+
   const handlePublish = () => {
     if (!pickedImage) {
       toast({ title: "Escolha uma imagem", description: "Selecione uma imagem da galeria do App." });
       return;
     }
-    mockDb.createResenhaPost({ photo_url: pickedImage, caption: caption.trim() });
+    const matchLabel = selectedMatch
+      ? `${selectedMatch.home_team?.name || "Time"} vs ${selectedMatch.away_team?.name || "Adversário"}`
+      : null;
+    mockDb.createResenhaPost({
+      photo_url: pickedImage,
+      caption: caption.trim(),
+      match_id: selectedMatch?.id || null,
+      match_label: matchLabel,
+    });
     toast({ title: "Resenha publicada! 🎉" });
     setCaption("");
     setPickedImage("");
+    setSelectedMatch(null);
     setCreateOpen(false);
   };
 
@@ -109,7 +143,7 @@ const Resenha = () => {
         {canPublish && (
           <Button
             size="sm"
-            onClick={() => setCreateOpen(true)}
+            onClick={openPublishFlow}
             className="bg-gradient-primary text-primary-foreground border-0 h-8"
           >
             <Plus size={14} className="mr-1" /> Publicar
@@ -153,6 +187,11 @@ const Resenha = () => {
                     {post.team_name && <span className="truncate">{post.team_name} · </span>}
                     {formatRelative(post.created_at)} · <Clock size={10} /> {remainingTime(post.created_at)}
                   </p>
+                  {post.match_label && (
+                    <p className="text-[10px] text-primary font-semibold truncate mt-0.5">
+                      ⚽ {post.match_label}
+                    </p>
+                  )}
                 </div>
                 {isAuthor && (
                   <button
@@ -216,6 +255,61 @@ const Resenha = () => {
         })}
       </div>
 
+      {/* Match picker dialog */}
+      <Dialog open={matchPickerOpen} onOpenChange={setMatchPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Publicar resenha</DialogTitle>
+            <DialogDescription>
+              Escolha a partida sobre a qual você quer publicar. Apenas partidas confirmadas e
+              finalizadas aparecem aqui.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {eligibleMatches.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Nenhuma partida confirmada ou finalizada disponível.
+              </p>
+            )}
+            {eligibleMatches.map((m: any) => {
+              const date = new Date(m.match_date);
+              const isFinished = m.status === "completed";
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleSelectMatch(m)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {m.home_team?.name || "Time"} vs {m.away_team?.name || "Adversário"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {date.toLocaleDateString("pt-BR")} ·{" "}
+                      {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                      isFinished
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-success/15 text-success"
+                    }`}
+                  >
+                    {isFinished ? "Finalizada" : "Confirmada"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMatchPickerOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-md">
@@ -228,6 +322,22 @@ const Resenha = () => {
           </DialogHeader>
 
           <div className="space-y-3">
+            {selectedMatch && (
+              <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Partida</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedMatch.home_team?.name || "Time"} vs{" "}
+                  {selectedMatch.away_team?.name || "Adversário"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {new Date(selectedMatch.match_date).toLocaleDateString("pt-BR")} ·{" "}
+                  {new Date(selectedMatch.match_date).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
                 <ImageIcon size={12} /> Imagens compartilhadas
