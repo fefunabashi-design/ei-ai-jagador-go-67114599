@@ -666,6 +666,106 @@ export const mockDb = {
     return post;
   },
 
+  // ==================== RESENHA DA VARZEA ====================
+
+  getResenhaPosts: (): any[] => {
+    const posts = get<any[]>("mock_resenha_posts", []);
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const valid = posts.filter((p) => new Date(p.created_at).getTime() >= cutoff);
+    if (valid.length !== posts.length) set("mock_resenha_posts", valid);
+    return valid.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  },
+
+  createResenhaPost: (data: { photo_url: string; caption?: string }) => {
+    const profile = mockDb.getProfile();
+    const team = mockDb.getTeam();
+    const post = {
+      id: genId(),
+      photo_url: data.photo_url,
+      caption: data.caption || "",
+      author_id: profile.user_id,
+      author_name: profile.display_name || profile.nickname || "Usuário",
+      author_avatar: profile.avatar_url || "",
+      author_role: profile.role || "player",
+      team_id: team?.id || null,
+      team_name: team?.name || "",
+      created_at: now(),
+      likes: [] as string[],
+      dislikes: [] as string[],
+      comments: [] as any[],
+    };
+    const posts = get<any[]>("mock_resenha_posts", []);
+    set("mock_resenha_posts", [post, ...posts]);
+    window.dispatchEvent(new Event("mock-db-change"));
+    return post;
+  },
+
+  toggleResenhaReaction: (postId: string, type: "like" | "dislike") => {
+    const profile = mockDb.getProfile();
+    const uid = profile.user_id;
+    const posts = get<any[]>("mock_resenha_posts", []);
+    const next = posts.map((p) => {
+      if (p.id !== postId) return p;
+      const likes: string[] = Array.isArray(p.likes) ? [...p.likes] : [];
+      const dislikes: string[] = Array.isArray(p.dislikes) ? [...p.dislikes] : [];
+      const inLikes = likes.includes(uid);
+      const inDislikes = dislikes.includes(uid);
+      if (type === "like") {
+        if (inLikes) likes.splice(likes.indexOf(uid), 1);
+        else { likes.push(uid); if (inDislikes) dislikes.splice(dislikes.indexOf(uid), 1); }
+      } else {
+        if (inDislikes) dislikes.splice(dislikes.indexOf(uid), 1);
+        else { dislikes.push(uid); if (inLikes) likes.splice(likes.indexOf(uid), 1); }
+      }
+      return { ...p, likes, dislikes };
+    });
+    set("mock_resenha_posts", next);
+    window.dispatchEvent(new Event("mock-db-change"));
+  },
+
+  addResenhaComment: (postId: string, text: string) => {
+    const profile = mockDb.getProfile();
+    const posts = get<any[]>("mock_resenha_posts", []);
+    const next = posts.map((p) => {
+      if (p.id !== postId) return p;
+      const comments = Array.isArray(p.comments) ? [...p.comments] : [];
+      comments.push({
+        id: genId(),
+        text,
+        author_id: profile.user_id,
+        author_name: profile.display_name || profile.nickname || "Usuário",
+        author_avatar: profile.avatar_url || "",
+        created_at: now(),
+      });
+      return { ...p, comments };
+    });
+    set("mock_resenha_posts", next);
+    window.dispatchEvent(new Event("mock-db-change"));
+  },
+
+  deleteResenhaPost: (postId: string) => {
+    const posts = get<any[]>("mock_resenha_posts", []);
+    set("mock_resenha_posts", posts.filter((p) => p.id !== postId));
+    window.dispatchEvent(new Event("mock-db-change"));
+  },
+
+  // Galeria de imagens compartilhadas no App (fonte para Resenha)
+  getAppSharedImages: (): { id: string; url: string; label?: string }[] => {
+    const team = mockDb.getTeam();
+    const photoPosts = team ? mockDb.getPhotoPosts(team.id) : [];
+    const fromPhotos = photoPosts.map((p: any) => ({
+      id: `photo-${p.id}`,
+      url: p.photo_url,
+      label: p.event_title,
+    }));
+    const teamLogo = team?.logo_url
+      ? [{ id: `logo-${team.id}`, url: team.logo_url, label: `Escudo ${team.name}` }]
+      : [];
+    return [...fromPhotos, ...teamLogo];
+  },
+
   // ==================== CHAT ====================
 
   getMessages: (matchId: string): any[] =>
