@@ -267,34 +267,36 @@ const Index = () => {
             >
               <div className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-1 flex-1">
+                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
                       {myTeam?.logo_url ? (
-                        <img src={myTeam.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                        <img src={myTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
                       ) : (
-                        <Shield size={18} className="text-primary" />
+                        <Shield size={28} className="text-primary" />
                       )}
                     </div>
-                    <div>
-                      <p className="font-display text-foreground text-sm">{homeTeam?.name?.toUpperCase()}</p>
-                      {(() => {
-                        const s = homeTeam?.id ? getTeamStats(homeTeam.id) : { nota: 0, played: 0 };
-                        return <NotaBadge nota={s.nota} played={s.played} />;
-                      })()}
+                    <p className="font-display text-foreground text-sm text-center">{homeTeam?.name?.toUpperCase()}</p>
+                    {(() => {
+                      const s = homeTeam?.id ? getTeamStats(homeTeam.id) : { nota: 0, played: 0 };
+                      return <NotaBadge nota={s.nota} played={s.played} />;
+                    })()}
+                  </div>
+                  <div className="flex flex-col items-center gap-2 px-3">
+                    <span className="text-xs font-bold text-muted-foreground">VS</span>
+                    <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
+                      <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
+                      <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-muted-foreground px-3">VS</span>
-                  <div className="flex items-center gap-2 flex-1 justify-end text-right">
-                    <div className="flex flex-col items-end">
-                      <p className="font-display text-foreground text-sm">{awayTeam?.name?.toUpperCase() || "???"}</p>
-                      {(() => {
-                        const s = awayTeam?.id ? getTeamStats(awayTeam.id) : { nota: 0, played: 0 };
-                        return <NotaBadge nota={s.nota} played={s.played} />;
-                      })()}
+                  <div className="flex flex-col items-center gap-1 flex-1">
+                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center">
+                      <Shield size={28} className="text-muted-foreground" />
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                      <Shield size={18} className="text-muted-foreground" />
-                    </div>
+                    <p className="font-display text-foreground text-sm text-center">{awayTeam?.name?.toUpperCase() || "???"}</p>
+                    {(() => {
+                      const s = awayTeam?.id ? getTeamStats(awayTeam.id) : { nota: 0, played: 0 };
+                      return <NotaBadge nota={s.nota} played={s.played} />;
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
@@ -306,17 +308,18 @@ const Index = () => {
                   </span>
                 </div>
               </div>
-              {/* Chat link */}
-              <button
-                onClick={() => navigate(`/chat/${nextMatch.id}`)}
-                className="w-full px-4 py-2 bg-secondary/50 border-t border-border flex items-center justify-between hover:bg-secondary/80 transition-colors"
-              >
-                <span className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                  <MessageCircle size={12} /> Ver chat da partida
-                </span>
-                <ChevronRight size={14} className="text-primary" />
-              </button>
             </motion.div>
+
+            {/* Detalhes da partida - fora do card */}
+            <button
+              onClick={() => navigate(`/chat/${nextMatch.id}`)}
+              className="w-full mt-2 px-4 py-2.5 rounded-xl bg-card border border-border flex items-center justify-between hover:border-primary/40 transition-colors"
+            >
+              <span className="text-[11px] text-primary font-semibold flex items-center gap-1">
+                <MessageCircle size={12} /> Detalhes da partida
+              </span>
+              <ChevronRight size={14} className="text-primary" />
+            </button>
 
             {/* Action buttons - escalar / detalhar */}
             {isOwner && (
