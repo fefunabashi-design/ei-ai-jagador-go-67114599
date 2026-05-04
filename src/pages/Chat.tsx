@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X, Flag } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X, Flag, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type MatchEvent = {
+  id: string;
+  type: "goal" | "own_goal" | "yellow" | "red";
+  player_id: string;
+};
 import { mockDb } from "@/lib/mockDb";
 import { useProfile, useMatchSummons, usePlayers, useMyTeam } from "@/hooks/useSupabaseData";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +37,9 @@ const ChatPage = () => {
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
+  const [events, setEvents] = useState<MatchEvent[]>([]);
+  const [newEventType, setNewEventType] = useState<MatchEvent["type"]>("goal");
+  const [newEventPlayer, setNewEventPlayer] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -168,6 +179,9 @@ const ChatPage = () => {
               onClick={() => {
                 setHomeScore(String(match?.home_score ?? ""));
                 setAwayScore(String(match?.away_score ?? ""));
+                setEvents(((match as any)?.events as MatchEvent[]) || []);
+                setNewEventType("goal");
+                setNewEventPlayer("");
                 setFinalizeOpen(true);
               }}
               variant="outline"
@@ -360,7 +374,7 @@ const ChatPage = () => {
 
       {/* Finalize match dialog */}
       <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
-        <DialogContent className="bg-card border-border max-w-sm">
+        <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">FINALIZAR PARTIDA</DialogTitle>
           </DialogHeader>
@@ -387,7 +401,95 @@ const ChatPage = () => {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
+
+          {/* Eventos: gols e cartões */}
+          <div className="mt-4 space-y-2">
+            <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Gols e Cartões</p>
+            {confirmedRoster.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum jogador confirmado para selecionar.</p>
+            ) : (
+              <div className="grid grid-cols-[1fr_1.3fr_auto] gap-2 items-end">
+                <div>
+                  <Label className="text-[10px]">Tipo</Label>
+                  <Select value={newEventType} onValueChange={(v) => setNewEventType(v as MatchEvent["type"])}>
+                    <SelectTrigger className="bg-secondary border-border h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="goal">⚽ Gol</SelectItem>
+                      <SelectItem value="own_goal">🥅 Gol contra</SelectItem>
+                      <SelectItem value="yellow">🟨 Amarelo</SelectItem>
+                      <SelectItem value="red">🟥 Vermelho</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px]">Jogador</Label>
+                  <Select value={newEventPlayer} onValueChange={setNewEventPlayer}>
+                    <SelectTrigger className="bg-secondary border-border h-9"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {confirmedRoster.map((r: any) => (
+                        <SelectItem key={r.player.id} value={r.player.id}>
+                          {r.player?.nickname || r.player?.name || "Jogador"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  size="icon"
+                  className="bg-primary text-primary-foreground h-9 w-9"
+                  onClick={() => {
+                    if (!newEventPlayer) {
+                      toast({ title: "Selecione um jogador", variant: "destructive" });
+                      return;
+                    }
+                    setEvents([...events, { id: crypto.randomUUID(), type: newEventType, player_id: newEventPlayer }]);
+                    setNewEventPlayer("");
+                  }}
+                >
+                  <Plus size={16} />
+                </Button>
+              </div>
+            )}
+
+            {events.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="h-8 text-[10px]">Tipo</TableHead>
+                    <TableHead className="h-8 text-[10px]">Jogador</TableHead>
+                    <TableHead className="h-8 w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((ev) => {
+                    const p: any = teamPlayers.find((pl: any) => pl.id === ev.player_id);
+                    const label =
+                      ev.type === "goal" ? "⚽ Gol" :
+                      ev.type === "own_goal" ? "🥅 Gol contra" :
+                      ev.type === "yellow" ? "🟨 Amarelo" : "🟥 Vermelho";
+                    return (
+                      <TableRow key={ev.id}>
+                        <TableCell className="py-1.5 text-xs">{label}</TableCell>
+                        <TableCell className="py-1.5 text-xs">{p?.nickname || p?.name || "Jogador"}</TableCell>
+                        <TableCell className="py-1.5">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            onClick={() => setEvents(events.filter((e) => e.id !== ev.id))}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
             <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => {
@@ -398,7 +500,7 @@ const ChatPage = () => {
                   toast({ title: "Informe o placar", variant: "destructive" });
                   return;
                 }
-                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as });
+                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as, events });
                 window.dispatchEvent(new CustomEvent("mock-db-change"));
                 queryClient.invalidateQueries({ queryKey: ["match-detail", matchId] });
                 queryClient.invalidateQueries({ queryKey: ["matches"] });
