@@ -1200,6 +1200,17 @@ const TeamFormDialog = ({
             </div>
           </div>
 
+          <div>
+            <Label>E-mail Técnico</Label>
+            <Input
+              type="email"
+              value={form.coach_email}
+              onChange={(e) => setField("coach_email", e.target.value)}
+              placeholder="tecnico@email.com"
+              className="bg-secondary border-border"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Aux. Técnico</Label>
