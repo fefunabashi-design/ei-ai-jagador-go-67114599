@@ -174,12 +174,14 @@ const CaixaPage = () => {
     }
 
     // Débitos e créditos manuais
+    const now = Date.now();
     debitos.forEach((d: any) => {
       const isCredito = d.tipo === "credito";
+      const isFuture = new Date(d.data).getTime() > now;
       list.push({
         id: d.id,
         tipo: isCredito ? "credito" : "debito",
-        status: "realizado",
+        status: isFuture ? "previsto" : "realizado",
         descricao: d.descricao,
         data: d.data,
         valor: Number(d.valor),
