@@ -61,11 +61,14 @@ const CaixaPage = () => {
   const { data: team } = useMyTeam();
   const { data: players = [] } = usePlayers(team?.id);
 
-  // ── filters ──
+  // ── filters (default = mês atual) ──
+  const _today = new Date();
+  const _firstDay = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().slice(0, 10);
+  const _lastDay = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).toISOString().slice(0, 10);
   const [filterTipo, setFilterTipo] = useState<"all" | "credito" | "debito">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "realizado" | "previsto">("all");
-  const [filterDtInicio, setFilterDtInicio] = useState("");
-  const [filterDtFim, setFilterDtFim] = useState("");
+  const [filterDtInicio, setFilterDtInicio] = useState(_firstDay);
+  const [filterDtFim, setFilterDtFim] = useState(_lastDay);
   const [showFilters, setShowFilters] = useState(false);
 
   // ── lançamento dialog ──
