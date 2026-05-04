@@ -179,6 +179,9 @@ const ChatPage = () => {
               onClick={() => {
                 setHomeScore(String(match?.home_score ?? ""));
                 setAwayScore(String(match?.away_score ?? ""));
+                setEvents(((match as any)?.events as MatchEvent[]) || []);
+                setNewEventType("goal");
+                setNewEventPlayer("");
                 setFinalizeOpen(true);
               }}
               variant="outline"
