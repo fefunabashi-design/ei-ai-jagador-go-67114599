@@ -123,11 +123,11 @@ const BuscarAdversarioPage = () => {
       away_team_name: newMatchOpponent.trim(),
       match_date,
       location: newMatchLocation.trim(),
-      status: "open",
+      status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
     window.dispatchEvent(new CustomEvent("mock-db-change"));
-    toast({ title: "Partida criada!", description: `vs ${newMatchOpponent.trim()}` });
+    toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
     navigate("/agenda");
@@ -209,7 +209,7 @@ const BuscarAdversarioPage = () => {
             onClick={() => setNewMatchOpen(true)}
             className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
           >
-            + Nova Partida (sem filtros)
+            Criar Partida
           </Button>
 
           <div className="space-y-3">
