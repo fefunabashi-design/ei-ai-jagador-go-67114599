@@ -41,6 +41,7 @@ const ProfilePage = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editRegion, setEditRegion] = useState("");
+  const [editEmail, setEditEmail] = useState("");
 
   const handleLogout = async () => {
     navigate("/");
@@ -52,6 +53,7 @@ const ProfilePage = () => {
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
     setEditRegion(profile?.region || "");
+    setEditEmail((profile as any)?.email || user?.email || "");
     setEditOpen(true);
   };
 
