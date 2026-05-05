@@ -229,9 +229,10 @@ export const useAppSharedImages = () => {
 export const useMatchSummons = (matchId?: string) => {
   const [data, setData] = useState<any[]>([]);
   useEffect(() => {
-    if (matchId) {
-      setData(mockDb.getSummons(matchId));
-    }
+    const sync = () => setData(matchId ? mockDb.getSummons(matchId) : []);
+    sync();
+    window.addEventListener("mock-db-change", sync);
+    return () => window.removeEventListener("mock-db-change", sync);
   }, [matchId]);
   return { data, isLoading: false };
 };
