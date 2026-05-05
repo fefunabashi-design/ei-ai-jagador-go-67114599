@@ -738,25 +738,36 @@ const AgendaPage = () => {
                   })()}
                 </div>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="w-full text-xs text-destructive mt-4">
-                    <Trash2 size={14} className="mr-1" /> Excluir Partida
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-card border-border">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir partida?</AlertDialogTitle>
-                    <AlertDialogDescription>Essa ação é irreversível.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 text-xs"
+                  onClick={() => { setDetailView(null); openEdit(selectedMatch); }}
+                >
+                  <Pencil size={14} className="mr-1" /> Editar Partida
+                </Button>
+                {selectedMatch.status !== "completed" && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="flex-1 text-xs text-destructive">
+                        <Trash2 size={14} className="mr-1" /> Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-card border-border">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir partida?</AlertDialogTitle>
+                        <AlertDialogDescription>Essa ação é irreversível.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </>
           )}
 
