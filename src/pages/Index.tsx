@@ -39,19 +39,26 @@ const Index = () => {
   const playerName = profile?.nickname?.trim() || profile?.display_name?.split(" ")[0] || "Craque";
   const firstName = playerName;
 
-  // Next upcoming match
+  // Next upcoming match — also keeps finalized matches visible for 24h
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const nextMatch = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
       const awayTeam = m.away_team as any;
-      return (
-        new Date(m.match_date) >= now &&
-        (m.status === "open" || m.status === "confirmed") &&
-        myTeam &&
-        (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)
-      );
+      if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
+      const md = new Date(m.match_date).getTime();
+      if (m.status === "completed") {
+        return now.getTime() - md <= DAY_MS;
+      }
+      return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
     })
-    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
+    .sort((a, b) => {
+      // upcoming first by date asc; completed (recent) shown if no upcoming
+      const aCompleted = a.status === "completed" ? 1 : 0;
+      const bCompleted = b.status === "completed" ? 1 : 0;
+      if (aCompleted !== bCompleted) return aCompleted - bCompleted;
+      return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+    })[0];
 
   // Player stats
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
