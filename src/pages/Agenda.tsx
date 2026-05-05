@@ -494,7 +494,13 @@ const AgendaPage = () => {
                         </div>
                         <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
+                      {match.status === "completed" ? (
+                        <span className="text-sm font-display text-foreground font-bold px-3">
+                          {match.home_score ?? 0} <span className="text-xs text-muted-foreground mx-1">VS</span> {match.away_score ?? 0}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
                         <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
@@ -542,11 +548,6 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
                         <Eye size={12} className="mr-1" /> Detalhes
                       </Button>
-                      {isOwner && (
-                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
-                          <Pencil size={12} className="mr-1" /> Editar
-                        </Button>
-                      )}
                       <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
                         <Users size={12} className="mr-1" /> Elenco
                       </Button>
@@ -737,25 +738,36 @@ const AgendaPage = () => {
                   })()}
                 </div>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="w-full text-xs text-destructive mt-4">
-                    <Trash2 size={14} className="mr-1" /> Excluir Partida
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-card border-border">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir partida?</AlertDialogTitle>
-                    <AlertDialogDescription>Essa ação é irreversível.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 text-xs"
+                  onClick={() => { setDetailView(null); openEdit(selectedMatch); }}
+                >
+                  <Pencil size={14} className="mr-1" /> Editar Partida
+                </Button>
+                {selectedMatch.status !== "completed" && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="flex-1 text-xs text-destructive">
+                        <Trash2 size={14} className="mr-1" /> Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-card border-border">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir partida?</AlertDialogTitle>
+                        <AlertDialogDescription>Essa ação é irreversível.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </>
           )}
 
