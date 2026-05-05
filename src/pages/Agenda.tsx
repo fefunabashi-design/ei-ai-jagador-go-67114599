@@ -494,7 +494,13 @@ const AgendaPage = () => {
                         </div>
                         <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
+                      {match.status === "completed" ? (
+                        <span className="text-sm font-display text-foreground font-bold px-3">
+                          {match.home_score ?? 0} <span className="text-xs text-muted-foreground mx-1">VS</span> {match.away_score ?? 0}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
                         <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
