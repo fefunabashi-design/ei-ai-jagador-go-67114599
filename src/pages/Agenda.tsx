@@ -667,6 +667,76 @@ const AgendaPage = () => {
                   </div>
                 ))}
               </div>
+
+              {selectedMatch.status === "completed" && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Resultado</h3>
+                  <div className="flex items-center justify-center gap-4 mb-3">
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground">{(selectedMatch.home_team as any)?.name}</p>
+                      <p className="text-3xl font-display text-foreground">{selectedMatch.home_score ?? 0}</p>
+                    </div>
+                    <span className="text-sm text-muted-foreground">x</span>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground">{(selectedMatch.away_team as any)?.name || "Adversário"}</p>
+                      <p className="text-3xl font-display text-foreground">{selectedMatch.away_score ?? 0}</p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const evs: any[] = (selectedMatch as any).events || [];
+                    const goals = evs.filter((e) => e.type === "goal" || e.type === "own_goal");
+                    const yellows = evs.filter((e) => e.type === "yellow");
+                    const reds = evs.filter((e) => e.type === "red");
+                    const nameOf = (pid: string) => {
+                      const p: any = players.find((pl) => pl.id === pid);
+                      return p?.nickname || p?.name || "Jogador";
+                    };
+                    return (
+                      <div className="space-y-2">
+                        {goals.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Gols</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {goals.map((e) => (
+                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e.player_id)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {yellows.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões amarelos</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {yellows.map((e) => (
+                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">
+                                  🟨 {nameOf(e.player_id)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {reds.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões vermelhos</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {reds.map((e) => (
+                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">
+                                  🟥 {nameOf(e.player_id)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {evs.length === 0 && (
+                          <p className="text-[11px] text-muted-foreground text-center">Sem gols ou cartões registrados.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="w-full text-xs text-destructive mt-4">
