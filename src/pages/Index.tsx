@@ -39,19 +39,26 @@ const Index = () => {
   const playerName = profile?.nickname?.trim() || profile?.display_name?.split(" ")[0] || "Craque";
   const firstName = playerName;
 
-  // Next upcoming match
+  // Next upcoming match — also keeps finalized matches visible for 24h
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const nextMatch = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
       const awayTeam = m.away_team as any;
-      return (
-        new Date(m.match_date) >= now &&
-        (m.status === "open" || m.status === "confirmed") &&
-        myTeam &&
-        (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)
-      );
+      if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
+      const md = new Date(m.match_date).getTime();
+      if (m.status === "completed") {
+        return now.getTime() - md <= DAY_MS;
+      }
+      return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
     })
-    .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
+    .sort((a, b) => {
+      // upcoming first by date asc; completed (recent) shown if no upcoming
+      const aCompleted = a.status === "completed" ? 1 : 0;
+      const bCompleted = b.status === "completed" ? 1 : 0;
+      if (aCompleted !== bCompleted) return aCompleted - bCompleted;
+      return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
+    })[0];
 
   // Player stats
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
@@ -283,11 +290,39 @@ const Index = () => {
                 <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
                   <span className="flex items-center gap-1"><MapPin size={10} /> {nextMatch.location}</span>
                   <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                    nextMatch.status === "completed" ? "bg-muted text-muted-foreground" :
                     nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
                   }`}>
-                    {nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                    {nextMatch.status === "completed" ? "🏁 Finalizado" : nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
                   </span>
                 </div>
+
+                {nextMatch.status === "completed" && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                      <span className="text-2xl font-display text-foreground">{nextMatch.home_score ?? 0}</span>
+                      <span className="text-xs text-muted-foreground">x</span>
+                      <span className="text-2xl font-display text-foreground">{nextMatch.away_score ?? 0}</span>
+                    </div>
+                    {(() => {
+                      const evs = ((nextMatch as any).events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
+                      if (!evs.length) return null;
+                      return (
+                        <div className="flex flex-wrap gap-1.5 justify-center">
+                          {evs.map((e: any) => {
+                            const p = players.find((pl: any) => pl.id === e.player_id);
+                            const name = p?.nickname || p?.name || "Jogador";
+                            return (
+                              <span key={e.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                {e.type === "own_goal" ? "🥅" : "⚽"} {name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </motion.div>
 
