@@ -548,11 +548,6 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
                         <Eye size={12} className="mr-1" /> Detalhes
                       </Button>
-                      {isOwner && (
-                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openEdit(match)}>
-                          <Pencil size={12} className="mr-1" /> Editar
-                        </Button>
-                      )}
                       <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
                         <Users size={12} className="mr-1" /> Elenco
                       </Button>
