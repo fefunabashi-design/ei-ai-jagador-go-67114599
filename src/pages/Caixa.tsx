@@ -666,7 +666,7 @@ const CaixaPage = () => {
 
             <Button
               type="submit"
-              disabled={createDebito.isPending || updateDebito.isPending}
+              disabled={createDebitoMut.isPending || updateDebitoMut.isPending}
               className={`w-full border-0 font-semibold ${
                 tipoLancamento === "credito"
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"
