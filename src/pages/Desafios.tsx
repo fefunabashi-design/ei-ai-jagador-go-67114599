@@ -50,8 +50,7 @@ const DesafiosPage = () => {
   };
 
   const handleDecline = (matchId: string) => {
-    mockDb.deleteMatch(matchId);
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    deleteMatchMut.mutate(matchId);
     toast({ title: "Desafio cancelado." });
   };
 
