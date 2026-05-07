@@ -32,6 +32,7 @@ const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const createMatch = useCreateMatch();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
