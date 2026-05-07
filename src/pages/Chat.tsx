@@ -479,7 +479,7 @@ const ChatPage = () => {
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!matchId) return;
                 const hs = parseInt(homeScore);
                 const as = parseInt(awayScore);
@@ -487,10 +487,7 @@ const ChatPage = () => {
                   toast({ title: "Informe o placar", variant: "destructive" });
                   return;
                 }
-                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as, events });
-                window.dispatchEvent(new CustomEvent("mock-db-change"));
-                queryClient.invalidateQueries({ queryKey: ["match-detail", matchId] });
-                queryClient.invalidateQueries({ queryKey: ["matches"] });
+                await updateMatch.mutateAsync({ id: matchId, status: "completed", home_score: hs, away_score: as });
                 toast({ title: "Partida finalizada! 🏁" });
                 setFinalizeOpen(false);
               }}
