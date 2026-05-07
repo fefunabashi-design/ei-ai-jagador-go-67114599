@@ -54,11 +54,7 @@ const OpponentDetails = () => {
     .map((s: any) => opponentPlayers.find((p: any) => p.id === s.player_id))
     .filter(Boolean);
 
-  const opponentPlayerIds = new Set(opponentPlayers.map((p: any) => p.id));
-  const confirmedOpponents = summons
-    .filter((s: any) => s.status === "confirmed" && opponentPlayerIds.has(s.player_id))
-    .map((s: any) => opponentPlayers.find((p: any) => p.id === s.player_id))
-    .filter(Boolean);
+
 
   const fullAddress = opponent
     ? [
