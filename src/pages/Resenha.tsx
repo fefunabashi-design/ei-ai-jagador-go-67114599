@@ -16,8 +16,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import {
+  useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams,
+  useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
+} from "@/hooks/useSupabaseData";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
 const STAFF_TEAM_FIELDS = [
