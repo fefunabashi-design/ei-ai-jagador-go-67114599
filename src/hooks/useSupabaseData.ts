@@ -813,18 +813,46 @@ export const useSendChatMessage = () => {
   return { mutate, mutateAsync: mutate };
 };
 
-// =================== LEGACY MOCK-BASED HOOKS ===================
-
-export const usePhotoEvents = (teamId?: string) => {
-  const [data, setData] = useState<any[]>([]);
-  useEffect(() => { setData(teamId ? mockDb.getPhotoEvents(teamId) : []); }, [teamId]);
-  return { data };
-};
+// =================== PHOTOS / RESENHA ===================
 
 export const usePhotoPosts = (teamId?: string) => {
   const [data, setData] = useState<any[]>([]);
-  useEffect(() => { setData(teamId ? mockDb.getPhotoPosts(teamId) : []); }, [teamId]);
+  const load = useCallback(async () => {
+    if (!teamId) { setData([]); return; }
+    const { data: rows } = await supabase
+      .from("photo_posts").select("*").eq("team_id", teamId)
+      .order("created_at", { ascending: false });
+    setData(rows || []);
+  }, [teamId]);
+  useEffect(() => { load(); }, [load]);
+  useSubscribe(load);
   return { data };
+};
+
+export const usePhotoEvents = (teamId?: string) => {
+  const { data: posts } = usePhotoPosts(teamId);
+  const events = (() => {
+    const map = new Map<string, any>();
+    for (const p of posts) {
+      const key = p.event_id || `${p.event_type}-${p.event_title}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          event_id: p.event_id,
+          event_type: p.event_type,
+          title: p.event_title,
+          match_id: p.match_id,
+          created_at: p.created_at,
+          count: 0,
+        });
+      }
+      map.get(key).count += 1;
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  })();
+  return { data: events };
 };
 
 export const useCreatePhotoPost = () => {
@@ -832,22 +860,157 @@ export const useCreatePhotoPost = () => {
   const [isPending, setIsPending] = useState(false);
   const mutateAsync = async (payload: any) => {
     setIsPending(true);
-    try { const r = mockDb.createPhotoPost(payload); toast({ title: "Foto publicada com sucesso! 📸" }); return r; }
-    catch (e: any) { toast({ title: "Erro ao publicar foto", description: e?.message, variant: "destructive" }); throw e; }
-    finally { setIsPending(false); }
+    try {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Usuário não autenticado");
+      const { error } = await supabase.from("photo_posts").insert({
+        team_id: payload.team_id,
+        event_type: payload.event_type || "partida",
+        event_id: payload.event_id || payload.match_id || crypto.randomUUID(),
+        event_title: payload.event_title || payload.title || "Evento",
+        photo_url: payload.photo_url,
+        comment: payload.comment || null,
+        match_id: payload.match_id || null,
+        author_id: userId,
+      });
+      if (error) throw error;
+      emitChange();
+      toast({ title: "Foto publicada com sucesso! 📸" });
+    } catch (e: any) {
+      toast({ title: "Erro ao publicar foto", description: e?.message, variant: "destructive" });
+      throw e;
+    } finally { setIsPending(false); }
   };
   return { mutate: (p: any) => { void mutateAsync(p); }, mutateAsync, isPending, isLoading: isPending };
 };
 
 export const useResenhaPosts = () => {
   const [data, setData] = useState<any[]>([]);
-  useSubscribe(() => setData(mockDb.getResenhaPosts()));
+  const load = useCallback(async () => {
+    const { data: posts } = await supabase
+      .from("resenha_posts").select("*")
+      .order("created_at", { ascending: false });
+    if (!posts || posts.length === 0) { setData([]); return; }
+    const ids = posts.map((p) => p.id);
+    const authorIds = Array.from(new Set(posts.map((p) => p.author_id)));
+    const teamIds = Array.from(new Set(posts.map((p) => p.team_id).filter(Boolean) as string[]));
+    const [{ data: profiles }, { data: reactions }, { data: comments }, { data: teams }] = await Promise.all([
+      supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", authorIds),
+      supabase.from("resenha_reactions").select("*").in("post_id", ids),
+      supabase.from("resenha_comments").select("*").in("post_id", ids),
+      teamIds.length ? supabase.from("teams").select("id, name").in("id", teamIds) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    const teamMap = new Map((teams || []).map((t: any) => [t.id, t]));
+    const commentAuthorIds = Array.from(new Set((comments || []).map((c: any) => c.author_id)));
+    const missing = commentAuthorIds.filter((id) => !profMap.has(id));
+    if (missing.length) {
+      const { data: cps } = await supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", missing);
+      (cps || []).forEach((p: any) => profMap.set(p.user_id, p));
+    }
+    setData(
+      posts.map((p) => {
+        const author = profMap.get(p.author_id) as any;
+        const team = p.team_id ? (teamMap.get(p.team_id) as any) : null;
+        const postReactions = (reactions || []).filter((r: any) => r.post_id === p.id);
+        const postComments = (comments || [])
+          .filter((c: any) => c.post_id === p.id)
+          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map((c: any) => {
+            const ca = profMap.get(c.author_id) as any;
+            return {
+              id: c.id,
+              text: c.text,
+              created_at: c.created_at,
+              author_id: c.author_id,
+              author_name: ca?.display_name || "Usuário",
+              author_avatar: ca?.avatar_url || null,
+            };
+          });
+        return {
+          ...p,
+          author_name: author?.display_name || "Usuário",
+          author_avatar: author?.avatar_url || null,
+          team_name: team?.name || null,
+          likes: postReactions.filter((r: any) => r.type === "like").map((r: any) => r.user_id),
+          dislikes: postReactions.filter((r: any) => r.type === "dislike").map((r: any) => r.user_id),
+          comments: postComments,
+        };
+      })
+    );
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useSubscribe(load);
   return { data };
+};
+
+export const useCreateResenhaPost = () => {
+  const { toast } = useToast();
+  const mutateAsync = async (payload: { photo_url: string; caption?: string; match_id?: string | null; match_label?: string | null; team_id?: string | null }) => {
+    const userId = await getUserId();
+    if (!userId) throw new Error("Não autenticado");
+    const { error } = await supabase.from("resenha_posts").insert({
+      author_id: userId,
+      photo_url: payload.photo_url,
+      caption: payload.caption || null,
+      match_id: payload.match_id || null,
+      match_label: payload.match_label || null,
+      team_id: payload.team_id || null,
+    });
+    if (error) { toast({ title: "Erro ao publicar", description: error.message, variant: "destructive" }); throw error; }
+    emitChange();
+  };
+  return { mutateAsync, mutate: (p: any) => { void mutateAsync(p); } };
+};
+
+export const useToggleResenhaReaction = () => {
+  const mutateAsync = async (postId: string, type: "like" | "dislike") => {
+    const userId = await getUserId();
+    if (!userId) return;
+    const { data: existing } = await supabase
+      .from("resenha_reactions").select("*").eq("post_id", postId).eq("user_id", userId).maybeSingle();
+    if (existing) {
+      if ((existing as any).type === type) {
+        await supabase.from("resenha_reactions").delete().eq("id", (existing as any).id);
+      } else {
+        await supabase.from("resenha_reactions").update({ type }).eq("id", (existing as any).id);
+      }
+    } else {
+      await supabase.from("resenha_reactions").insert({ post_id: postId, user_id: userId, type });
+    }
+    emitChange();
+  };
+  return { mutateAsync, mutate: (postId: string, type: "like" | "dislike") => { void mutateAsync(postId, type); } };
+};
+
+export const useAddResenhaComment = () => {
+  const mutateAsync = async (postId: string, text: string) => {
+    const userId = await getUserId();
+    if (!userId) return;
+    const { error } = await supabase.from("resenha_comments").insert({ post_id: postId, author_id: userId, text });
+    if (!error) emitChange();
+  };
+  return { mutateAsync, mutate: (postId: string, text: string) => { void mutateAsync(postId, text); } };
+};
+
+export const useDeleteResenhaPost = () => {
+  const mutateAsync = async (postId: string) => {
+    const { error } = await supabase.from("resenha_posts").delete().eq("id", postId);
+    if (!error) emitChange();
+  };
+  return { mutateAsync, mutate: (postId: string) => { void mutateAsync(postId); } };
 };
 
 export const useAppSharedImages = () => {
   const [data, setData] = useState<any[]>([]);
-  useSubscribe(() => setData(mockDb.getAppSharedImages()));
+  const load = useCallback(async () => {
+    const { data: photos } = await supabase
+      .from("photo_posts").select("id, photo_url, event_title, created_at")
+      .order("created_at", { ascending: false }).limit(60);
+    setData((photos || []).map((p: any) => ({ id: p.id, url: p.photo_url, label: p.event_title })));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useSubscribe(load);
   return { data };
 };
 
