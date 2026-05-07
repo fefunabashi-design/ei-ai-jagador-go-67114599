@@ -12,9 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile, useMyAdminTeams, useSetActiveTeam } from "@/hooks/useSupabaseData";
+import {
+  useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile,
+  useMyAdminTeams, useSetActiveTeam,
+  useCreateMatch, useUpdateMatch, useDeleteMatch,
+  useDebitos, useMensalidades, useMensalidadeConfig,
+} from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
-import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
