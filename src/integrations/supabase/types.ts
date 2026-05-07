@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      debitos: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          observacao: string | null
+          team_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          descricao: string
+          id?: string
+          observacao?: string | null
+          team_id: string
+          tipo?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          observacao?: string | null
+          team_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       match_chat_messages: {
         Row: {
           created_at: string
@@ -48,6 +81,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      match_events: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          minute: number | null
+          player_id: string | null
+          player_name: string | null
+          team_side: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          minute?: number | null
+          player_id?: string | null
+          player_name?: string | null
+          team_side?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          minute?: number | null
+          player_id?: string | null
+          player_name?: string | null
+          team_side?: string | null
+          type?: string
+        }
+        Relationships: []
       }
       match_lineups: {
         Row: {
@@ -300,6 +366,48 @@ export type Database = {
           },
         ]
       }
+      photo_posts: {
+        Row: {
+          author_id: string
+          comment: string | null
+          created_at: string
+          event_id: string
+          event_title: string
+          event_type: string
+          id: string
+          match_id: string | null
+          photo_url: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          comment?: string | null
+          created_at?: string
+          event_id: string
+          event_title: string
+          event_type: string
+          id?: string
+          match_id?: string | null
+          photo_url: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          comment?: string | null
+          created_at?: string
+          event_id?: string
+          event_title?: string
+          event_type?: string
+          id?: string
+          match_id?: string | null
+          photo_url?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       players: {
         Row: {
           birth_date: string | null
@@ -406,6 +514,103 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      resenha_comments: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          post_id: string
+          text: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          text: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resenha_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resenha_posts: {
+        Row: {
+          author_id: string
+          caption: string | null
+          created_at: string
+          id: string
+          match_id: string | null
+          match_label: string | null
+          photo_url: string
+          team_id: string | null
+        }
+        Insert: {
+          author_id: string
+          caption?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          match_label?: string | null
+          photo_url: string
+          team_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          caption?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          match_label?: string | null
+          photo_url?: string
+          team_id?: string | null
+        }
+        Relationships: []
+      }
+      resenha_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resenha_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams: {
         Row: {
