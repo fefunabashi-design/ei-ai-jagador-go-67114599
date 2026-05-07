@@ -12,9 +12,14 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { mockDb } from "@/lib/mockDb";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMatchSummons } from "@/hooks/useSupabaseData";
+import {
+  useMatchSummons,
+  useMatchDetail,
+  useMatchPayments,
+  useCreateMatchPayments,
+  useDeleteMatchPayment,
+  useDeleteMatchPaymentsByMatch,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
 const statusStyles: Record<string, string> = {
