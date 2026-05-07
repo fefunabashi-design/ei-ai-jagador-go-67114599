@@ -124,7 +124,7 @@ const Resenha = () => {
     setCreateOpen(true);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!pickedImage) {
       toast({ title: "Escolha uma imagem", description: "Selecione uma imagem da galeria do App." });
       return;
