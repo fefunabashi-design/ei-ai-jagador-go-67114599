@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { useMyTeam } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
 import { getTeamStats } from "@/lib/stats";
 
