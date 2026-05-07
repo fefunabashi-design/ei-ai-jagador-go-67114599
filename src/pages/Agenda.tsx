@@ -273,7 +273,7 @@ const AgendaPage = () => {
 
   const handleRemoveFromLineup = (lineupId: string) => {
     if (!selectedMatch) return;
-    deleteLineup.mutate({ id: lineupId, matchId: selectedMatch.id });
+    deleteLineup.mutate(lineupId);
   };
 
   const handlePositionClick = (position: string) => {
