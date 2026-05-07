@@ -265,7 +265,7 @@ const AdminPage = () => {
     setRescheduleMatch(m);
   };
 
-  const confirmReschedule = () => {
+  const confirmReschedule = async () => {
     if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
     const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
     await updateMatchMut.mutateAsync({ id: rescheduleMatch.id, match_date, location: rescheduleLocation });
