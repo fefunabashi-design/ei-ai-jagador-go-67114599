@@ -311,7 +311,7 @@ const MensalidadesPage = () => {
                                 playerName: player.name,
                               })
                             }
-                            disabled={upsertMensalidade.isPending}
+                            disabled={false}
                             className={`flex flex-col items-center justify-center rounded-lg py-1.5 text-[9px] font-medium transition-colors ${
                               isPaid
                                 ? "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
