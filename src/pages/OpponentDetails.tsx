@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, MapPin, Phone, Users } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -6,28 +6,54 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats, getPlayerStats } from "@/lib/stats";
-import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
+import { useMyTeam, useMatchSummons } from "@/hooks/useSupabaseData";
 
 const OpponentDetails = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const matchId = params.get("matchId") || "";
 
-  const match = useMemo(() => (matchId ? mockDb.getMatch(matchId) : null), [matchId]);
-  const myTeam = mockDb.getTeam();
+  const [match, setMatch] = useState<any>(null);
+  const [opponent, setOpponent] = useState<any>(null);
+  const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+  const { data: myTeam } = useMyTeam();
+  const { data: summons = [] } = useMatchSummons(matchId);
 
-  // Determine opponent: the team in the match that is NOT myTeam
-  const homeTeam = match?.home_team as any;
-  const awayTeam = match?.away_team as any;
-  const opponentRef =
-    myTeam && homeTeam?.id === myTeam.id ? awayTeam : myTeam && awayTeam?.id === myTeam.id ? homeTeam : awayTeam;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!matchId) return;
+      const { data: m } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .eq("id", matchId).maybeSingle();
+      if (cancelled) return;
+      setMatch(m);
+      const home = (m as any)?.home_team;
+      const away = (m as any)?.away_team;
+      let opp = null;
+      if (myTeam && home?.id === myTeam.id) opp = away;
+      else if (myTeam && away?.id === myTeam.id) opp = home;
+      else opp = away || home;
+      // Fallback: fetch opponent fully if missing fields
+      if (opp?.id) {
+        const { data: full } = await supabase.from("teams").select("*").eq("id", opp.id).maybeSingle();
+        if (full) opp = full;
+        const { data: pls } = await supabase.from("players").select("*").eq("team_id", opp.id);
+        if (!cancelled) setOpponentPlayers(pls || []);
+      }
+      if (!cancelled) setOpponent(opp);
+    })();
+    return () => { cancelled = true; };
+  }, [matchId, myTeam?.id]);
 
-  // Resolve full opponent record from the registered teams (to get address, phone, etc.)
-  const allTeams = mockDb.getAllTeams();
-  const opponent = (opponentRef?.id && allTeams.find((t: any) => t.id === opponentRef.id)) || opponentRef || null;
+  const opponentPlayerIds = new Set(opponentPlayers.map((p: any) => p.id));
+  const confirmedOpponents = (summons as any[])
+    .filter((s: any) => s.status === "confirmed" && opponentPlayerIds.has(s.player_id))
+    .map((s: any) => opponentPlayers.find((p: any) => p.id === s.player_id))
+    .filter(Boolean);
 
-  const opponentPlayers = opponent?.id ? mockDb.getPlayers(opponent.id) : [];
-  const summons = matchId ? mockDb.getSummons(matchId) : [];
   const opponentPlayerIds = new Set(opponentPlayers.map((p: any) => p.id));
   const confirmedOpponents = summons
     .filter((s: any) => s.status === "confirmed" && opponentPlayerIds.has(s.player_id))
