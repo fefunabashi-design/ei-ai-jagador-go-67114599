@@ -45,7 +45,15 @@ export type Database = {
           tipo?: string
           valor?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "debitos_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_chat_messages: {
         Row: {
@@ -73,6 +81,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_chat_messages_match_id_fkey"
             columns: ["match_id"]
@@ -113,7 +128,15 @@ export type Database = {
           team_side?: string | null
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_lineups: {
         Row: {
@@ -138,6 +161,20 @@ export type Database = {
           position?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lineups_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineups_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_lineups_match_id_fkey"
             columns: ["match_id"]
@@ -197,6 +234,20 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
         ]
       }
       match_summons: {
@@ -237,6 +288,20 @@ export type Database = {
           },
           {
             foreignKeyName: "match_summons_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "summons_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "summons_player_fk"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
@@ -289,8 +354,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "matches_away_team_fk"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "matches_away_team_id_fkey"
             columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_fk"
+            columns: ["home_team_id"]
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
@@ -326,7 +405,15 @@ export type Database = {
           updated_at?: string
           valor_mensal?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mensalidade_config_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mensalidades: {
         Row: {
@@ -357,6 +444,13 @@ export type Database = {
           player_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "mensalidades_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mensalidades_player_id_fkey"
             columns: ["player_id"]
@@ -406,7 +500,15 @@ export type Database = {
           team_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "photo_posts_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       players: {
         Row: {
@@ -470,6 +572,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "players_team_id_fkey"
             columns: ["team_id"]
@@ -548,6 +657,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "resenha_comments_post_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_posts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "resenha_comments_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
@@ -587,7 +703,22 @@ export type Database = {
           photo_url?: string
           team_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resenha_posts_match_fk"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenha_posts_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resenha_reactions: {
         Row: {
@@ -612,6 +743,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "resenha_reactions_post_fk"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_posts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resenha_reactions_post_id_fkey"
             columns: ["post_id"]
