@@ -375,7 +375,7 @@ export const useCreateMatch = () => {
     setIsPending(true);
     try {
       if (!data.home_team_id) throw new Error("Selecione o time mandante");
-      const { error } = await supabase.from("matches").insert(cleanMatchPayload(data));
+      const { error } = await supabase.from("matches").insert(cleanMatchPayload(data) as any);
       if (error) throw error;
       emitChange();
       toast({ title: "Partida criada!" });
