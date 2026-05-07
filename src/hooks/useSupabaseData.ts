@@ -308,12 +308,24 @@ export const useUploadAvatar = () => {
   const mutate = async (file: File) => {
     setIsPending(true);
     try {
-      const avatar_url = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      let avatar_url: string;
+      if (user) {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+        avatar_url = pub.publicUrl;
+        await supabase.from("profiles").update({ avatar_url }).eq("user_id", user.id);
+      } else {
+        avatar_url = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
       mockDb.updateProfile({ avatar_url });
       emitMockDbChange();
       toast({ title: "Foto atualizada!" });
