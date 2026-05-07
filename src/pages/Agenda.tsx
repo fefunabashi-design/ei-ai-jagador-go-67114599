@@ -241,12 +241,13 @@ const AgendaPage = () => {
 
   const handleSendSummons = () => {
     if (!selectedMatch || !lineups.length) return;
-    const newSummons = lineups.map((l: any) => ({
-      match_id: selectedMatch.id,
-      player_id: l.player_id,
-      position: l.position,
-    }));
-    createSummons.mutate(newSummons);
+    lineups.forEach((l: any) => {
+      createSummons.mutate({
+        matchId: selectedMatch.id,
+        playerId: l.player_id,
+        status: "pending",
+      });
+    });
   };
 
   const handleAddToLineup = () => {
@@ -272,7 +273,7 @@ const AgendaPage = () => {
 
   const handleRemoveFromLineup = (lineupId: string) => {
     if (!selectedMatch) return;
-    deleteLineup.mutate({ id: lineupId, matchId: selectedMatch.id });
+    deleteLineup.mutate(lineupId);
   };
 
   const handlePositionClick = (position: string) => {

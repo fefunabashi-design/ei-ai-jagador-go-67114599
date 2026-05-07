@@ -412,9 +412,12 @@ export type Database = {
         Row: {
           birth_date: string | null
           created_at: string
+          display_name: string | null
+          email: string | null
           goals: number | null
           id: string
           jersey_number: number | null
+          last_name: string | null
           matches: number | null
           name: string
           nickname: string | null
@@ -429,9 +432,12 @@ export type Database = {
         Insert: {
           birth_date?: string | null
           created_at?: string
+          display_name?: string | null
+          email?: string | null
           goals?: number | null
           id?: string
           jersey_number?: number | null
+          last_name?: string | null
           matches?: number | null
           name: string
           nickname?: string | null
@@ -446,9 +452,12 @@ export type Database = {
         Update: {
           birth_date?: string | null
           created_at?: string
+          display_name?: string | null
+          email?: string | null
           goals?: number | null
           id?: string
           jersey_number?: number | null
+          last_name?: string | null
           matches?: number | null
           name?: string
           nickname?: string | null
@@ -618,6 +627,7 @@ export type Database = {
           admin_email: string | null
           admin_name: string | null
           admin_phone: string | null
+          categoria: string | null
           coach_name: string | null
           created_at: string
           email: string | null
@@ -629,9 +639,13 @@ export type Database = {
           id: string
           instagram: string | null
           logo_url: string | null
+          mobile: string | null
           name: string
           owner_id: string
           phone: string | null
+          play_days: string[] | null
+          play_time_end: string | null
+          play_time_start: string | null
           president_email: string | null
           president_name: string | null
           rating: number | null
@@ -645,6 +659,7 @@ export type Database = {
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
+          categoria?: string | null
           coach_name?: string | null
           created_at?: string
           email?: string | null
@@ -656,9 +671,13 @@ export type Database = {
           id?: string
           instagram?: string | null
           logo_url?: string | null
+          mobile?: string | null
           name: string
           owner_id: string
           phone?: string | null
+          play_days?: string[] | null
+          play_time_end?: string | null
+          play_time_start?: string | null
           president_email?: string | null
           president_name?: string | null
           rating?: number | null
@@ -672,6 +691,7 @@ export type Database = {
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
+          categoria?: string | null
           coach_name?: string | null
           created_at?: string
           email?: string | null
@@ -683,9 +703,13 @@ export type Database = {
           id?: string
           instagram?: string | null
           logo_url?: string | null
+          mobile?: string | null
           name?: string
           owner_id?: string
           phone?: string | null
+          play_days?: string[] | null
+          play_time_end?: string | null
+          play_time_start?: string | null
           president_email?: string | null
           president_name?: string | null
           rating?: number | null
