@@ -6,8 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons } from "@/hooks/useSupabaseData";
 import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +26,7 @@ const Index = () => {
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
+  const createSummons = useCreateSummons();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -75,7 +75,9 @@ const Index = () => {
 
   // Presence: every active team player is implicitly summoned. We just track responses.
   const teamPlayers = players;
-  const nextMatchSummons: any[] = nextMatch ? mockDb.getSummons(nextMatch.id) : [];
+  const nextMatchSummons: any[] = nextMatch
+    ? summons.filter((s: any) => s.match_id === nextMatch.id)
+    : [];
   const summonByPlayerId = new Map(nextMatchSummons.map((s: any) => [s.player_id, s]));
 
   // Build a unified roster with status (confirmed | declined | pending) for each active player
@@ -92,7 +94,7 @@ const Index = () => {
     ? (summonByPlayerId.get(myPlayerForPresence.id)?.status as "confirmed" | "declined" | undefined)
     : undefined;
 
-  const handlePresence = (status: "confirmed" | "declined") => {
+  const handlePresence = async (status: "confirmed" | "declined") => {
     if (!nextMatch) {
       toast({ title: "Sem partida agendada", variant: "destructive" });
       return;
@@ -101,17 +103,11 @@ const Index = () => {
       toast({ title: "Você ainda não está vinculado a este time", variant: "destructive" });
       return;
     }
-    const existing = summonByPlayerId.get(myPlayerForPresence.id);
-    if (existing) {
-      mockDb.respondSummon(existing.id, status);
-    } else {
-      // Create summon on the fly and immediately respond
-      const created = mockDb.createSummons([
-        { match_id: nextMatch.id, player_id: myPlayerForPresence.id, status: "pending" },
-      ])[0];
-      if (created) mockDb.respondSummon(created.id, status);
-    }
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    await createSummons.mutateAsync({
+      matchId: nextMatch.id,
+      playerId: myPlayerForPresence.id,
+      status,
+    });
     toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
     setConfirmOpen(false);
   };

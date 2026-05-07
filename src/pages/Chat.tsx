@@ -14,9 +14,11 @@ type MatchEvent = {
   type: "goal" | "own_goal" | "yellow" | "red";
   player_id: string;
 };
-import { mockDb } from "@/lib/mockDb";
-import { useProfile, useMatchSummons, usePlayers, useMyTeam } from "@/hooks/useSupabaseData";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useProfile, useMatchSummons, usePlayers, useMyTeam,
+  useMatchDetail, useChatMessages, useSendChatMessage,
+  useCreateSummons, useUpdateMatch,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
 const getInitials = (name: string) => {
@@ -41,22 +43,14 @@ const ChatPage = () => {
   const [newEventType, setNewEventType] = useState<MatchEvent["type"]>("goal");
   const [newEventPlayer, setNewEventPlayer] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: match } = useQuery({
-    queryKey: ["match-detail", matchId],
-    queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
-    enabled: !!matchId,
-  });
-
-  const { data: messages = [] } = useQuery({
-    queryKey: ["chat-messages", matchId],
-    queryFn: async () => (matchId ? mockDb.getMessages(matchId) : []),
-    enabled: !!matchId,
-  });
-
+  const { data: match } = useMatchDetail(matchId);
+  const { data: messages = [] } = useChatMessages(matchId);
   const { data: summons = [] } = useMatchSummons(matchId);
+  const sendMessage = useSendChatMessage();
+  const createSummonsMut = useCreateSummons();
+  const updateMatch = useUpdateMatch();
 
   const homeTeam = match?.home_team as any;
   const awayTeam = match?.away_team as any;
@@ -72,8 +66,7 @@ const ChatPage = () => {
   const handleSend = async () => {
     if (!message.trim() || !matchId) return;
     setSending(true);
-    mockDb.addMessage(matchId, message.trim());
-    queryClient.invalidateQueries({ queryKey: ["chat-messages", matchId] });
+    await sendMessage.mutateAsync({ matchId, message: message.trim() });
     setMessage("");
     setSending(false);
   };
@@ -107,23 +100,17 @@ const ChatPage = () => {
     ? (summonByPlayerId.get(myPlayerForPresence.id) as any)?.status as "confirmed" | "declined" | undefined
     : undefined;
 
-  const handlePresence = (status: "confirmed" | "declined") => {
+  const handlePresence = async (status: "confirmed" | "declined") => {
     if (!matchId) return;
     if (!myPlayerForPresence) {
       toast({ title: "Você não está vinculado a este time", variant: "destructive" });
       return;
     }
-    const existing: any = summonByPlayerId.get(myPlayerForPresence.id);
-    if (existing) {
-      mockDb.respondSummon(existing.id, status);
-    } else {
-      const created = mockDb.createSummons([
-        { match_id: matchId, player_id: myPlayerForPresence.id, status: "pending" },
-      ])[0];
-      if (created) mockDb.respondSummon(created.id, status);
-    }
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
-    queryClient.invalidateQueries({ queryKey: ["match-summons", matchId] });
+    await createSummonsMut.mutateAsync({
+      matchId,
+      playerId: myPlayerForPresence.id,
+      status,
+    });
     toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
     setConfirmOpen(false);
   };
@@ -492,7 +479,7 @@ const ChatPage = () => {
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!matchId) return;
                 const hs = parseInt(homeScore);
                 const as = parseInt(awayScore);
@@ -500,10 +487,7 @@ const ChatPage = () => {
                   toast({ title: "Informe o placar", variant: "destructive" });
                   return;
                 }
-                mockDb.updateMatch(matchId, { status: "completed", home_score: hs, away_score: as, events });
-                window.dispatchEvent(new CustomEvent("mock-db-change"));
-                queryClient.invalidateQueries({ queryKey: ["match-detail", matchId] });
-                queryClient.invalidateQueries({ queryKey: ["matches"] });
+                await updateMatch.mutateAsync({ id: matchId, status: "completed", home_score: hs, away_score: as });
                 toast({ title: "Partida finalizada! 🏁" });
                 setFinalizeOpen(false);
               }}

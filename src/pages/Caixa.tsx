@@ -20,9 +20,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { mockDb } from "@/lib/mockDb";
-import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
+import {
+  useMyTeam, usePlayers,
+  useDebitos, useCreateDebito, useUpdateDebito, useDeleteDebito,
+  useMensalidades, useMensalidadeConfig,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
@@ -57,7 +59,6 @@ type Lancamento = {
 const CaixaPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { data: team } = useMyTeam();
   const { data: players = [] } = usePlayers(team?.id);
 
@@ -83,52 +84,42 @@ const CaixaPage = () => {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
-  const { data: debitos = [] } = useQuery({
-    queryKey: ["debitos", team?.id],
-    queryFn: () => (team?.id ? mockDb.getDebitos(team.id) : []),
-    enabled: !!team?.id,
-  });
-
-  const { data: mensalidades = [] } = useQuery({
-    queryKey: ["mensalidades_caixa", team?.id, currentYear],
-    queryFn: () => {
-      if (!team?.id || players.length === 0) return [];
-      return mockDb.getMensalidades(players.map((p) => p.id), currentYear);
-    },
-    enabled: !!team?.id && players.length > 0,
-  });
-
-  const { data: mensalidadeConfig } = useQuery({
-    queryKey: ["mensalidade_config", currentYear],
-    queryFn: () => mockDb.getMensalidadeConfig(currentYear),
-  });
+  const { data: debitos = [] } = useDebitos(team?.id);
+  const playerIds = players.map((p) => p.id);
+  const { data: mensalidades = [] } = useMensalidades(playerIds, currentYear);
+  const { data: mensalidadeConfig } = useMensalidadeConfig(team?.id, currentYear);
 
   // ── mutations ──
-  const createDebito = useMutation({
-    mutationFn: async (d: any) => mockDb.createDebito({ ...d, team_id: team!.id }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
-      toast({ title: "Débito registrado! ✅" });
-      setDebitoOpen(false);
-    },
-  });
+  const createDebitoMut = useCreateDebito();
+  const updateDebitoMut = useUpdateDebito();
+  const deleteDebitoMut = useDeleteDebito();
 
-  const updateDebito = useMutation({
-    mutationFn: async ({ id, ...d }: any) => mockDb.updateDebito(id, d),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
-      toast({ title: "Débito atualizado! ✅" });
-      setDebitoOpen(false);
+  const createDebito = {
+    mutate: async (d: any) => {
+      try {
+        await createDebitoMut.mutateAsync({ ...d, team_id: team!.id });
+        toast({ title: "Débito registrado! ✅" });
+        setDebitoOpen(false);
+      } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
     },
-  });
-
-  const deleteDebito = useMutation({
-    mutationFn: async (id: string) => mockDb.deleteDebito(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debitos", team?.id] });
-      toast({ title: "Débito excluído" });
+  };
+  const updateDebito = {
+    mutate: async ({ id, ...d }: any) => {
+      try {
+        await updateDebitoMut.mutateAsync({ id, ...d });
+        toast({ title: "Débito atualizado! ✅" });
+        setDebitoOpen(false);
+      } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
     },
-  });
+  };
+  const deleteDebito = {
+    mutate: async (id: string) => {
+      try {
+        await deleteDebitoMut.mutateAsync(id);
+        toast({ title: "Débito excluído" });
+      } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
+    },
+  };
 
   // ── build lancamentos ──
   const lancamentos = useMemo<Lancamento[]>(() => {
@@ -675,7 +666,7 @@ const CaixaPage = () => {
 
             <Button
               type="submit"
-              disabled={createDebito.isPending || updateDebito.isPending}
+              disabled={false}
               className={`w-full border-0 font-semibold ${
                 tipoLancamento === "credito"
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"

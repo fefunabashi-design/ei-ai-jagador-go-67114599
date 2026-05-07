@@ -12,9 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile, useMyAdminTeams, useSetActiveTeam } from "@/hooks/useSupabaseData";
+import {
+  useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile,
+  useMyAdminTeams, useSetActiveTeam,
+  useCreateMatch, useUpdateMatch, useDeleteMatch,
+  useDebitos, useMensalidades, useMensalidadeConfig,
+} from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
-import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
@@ -50,6 +55,9 @@ const AdminPage = () => {
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
   const [showOpponentSearch, setShowOpponentSearch] = useState(false);
+  const createMatchMut = useCreateMatch();
+  const updateMatchMut = useUpdateMatch();
+  const deleteMatchMut = useDeleteMatch();
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -71,24 +79,21 @@ const AdminPage = () => {
   const [newMatchLocation, setNewMatchLocation] = useState("");
   const { toast } = useToast();
 
-  const handleCreateNewMatch = () => {
+  const handleCreateNewMatch = async () => {
     if (!myTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatchMut.mutateAsync({
       home_team_id: myTeam.id,
-      home_team_name: myTeam.name,
       away_team_id: null,
-      away_team_name: newMatchOpponent.trim(),
       match_date,
       location: newMatchLocation.trim(),
       status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
@@ -124,17 +129,10 @@ const AdminPage = () => {
     return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
   };
 
-  const handleConfirmChallenge = () => {
+  const handleConfirmChallenge = async () => {
     if (!myTeam || !challengeTeam) return;
-    if (!challengeDate) {
-      toast({ title: "Informe a data", variant: "destructive" });
-      return;
-    }
-    if (!challengeTime) {
-      toast({ title: "Informe o horário", variant: "destructive" });
-      return;
-    }
-    // Se o adversário tem dias configurados, validar; senão liberar
+    if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
+    if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
       if (!isDateAllowed(challengeDate, challengeTeam.play_days)) {
         toast({
@@ -145,30 +143,22 @@ const AdminPage = () => {
         return;
       }
     }
-
     const fallbackLocation = locationChoice === "own"
       ? (myTeam.field_address || myTeam.field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
-
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatchMut.mutateAsync({
       home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      home_team_name: locationChoice === "own" ? myTeam.name : challengeTeam.name,
       away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
-      away_team_name: locationChoice === "own" ? challengeTeam.name : myTeam.name,
       match_date,
       location,
       status: "open",
       format: challengeTeam.format || myTeam.format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate("");
-    setChallengeTime("");
-    setLocationChoice("away");
-    setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
     navigate("/agenda");
   };
 
@@ -221,29 +211,17 @@ const AdminPage = () => {
   const totalChallenges = receivedChallenges.length + sentChallenges.length;
 
   const currentYear = new Date().getFullYear();
-  const { data: debitos = [] } = useQuery<Debito[]>({
-    queryKey: ["debitos", myTeam?.id],
-    queryFn: () => (myTeam?.id ? mockDb.getDebitos(myTeam.id) : []),
-    enabled: !!myTeam?.id,
-  });
-
-  const { data: mensalidades = [] } = useQuery<Mensalidade[]>({
-    queryKey: ["mensalidades_caixa", myTeam?.id, currentYear],
-    queryFn: () => {
-      if (!myTeam?.id || typedPlayers.length === 0) return [];
-      return mockDb.getMensalidades(typedPlayers.map((p) => p.id), currentYear);
-    },
-    enabled: !!myTeam?.id && typedPlayers.length > 0,
-  });
-
-  const { data: mensalidadeConfig } = useQuery<MensalidadeConfig | null>({
-    queryKey: ["mensalidade_config", currentYear],
-    queryFn: () => mockDb.getMensalidadeConfig(currentYear),
-  });
+  const { data: debitos = [] } = useDebitos(myTeam?.id);
+  const playerIds = typedPlayers.map((p) => p.id);
+  const { data: mensalidades = [] } = useMensalidades(playerIds, currentYear);
+  const { data: mensalidadeConfig } = useMensalidadeConfig(myTeam?.id, currentYear);
 
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
-    queryFn: () => mockDb.getAllTeams(),
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*");
+      return data || [];
+    },
   });
 
   const saldoAtual = (() => {

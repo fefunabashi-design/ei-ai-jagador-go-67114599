@@ -12,9 +12,14 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { mockDb } from "@/lib/mockDb";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMatchSummons } from "@/hooks/useSupabaseData";
+import {
+  useMatchSummons,
+  useMatchDetail,
+  useMatchPayments,
+  useCreateMatchPayments,
+  useDeleteMatchPayment,
+  useDeleteMatchPaymentsByMatch,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
 const statusStyles: Record<string, string> = {
@@ -38,89 +43,59 @@ const getInitials = (name: string) => {
 const PaymentsPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [setupOpen, setSetupOpen] = useState(false);
   const [amountPerPlayer, setAmountPerPlayer] = useState("15");
   const [deleteVaquinhaOpen, setDeleteVaquinhaOpen] = useState(false);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
-  // Match info
-  const { data: match } = useQuery({
-    queryKey: ["match-detail", matchId],
-    queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
-    enabled: !!matchId,
-  });
-
-  // Summons (confirmed players)
+  const { data: match } = useMatchDetail(matchId);
   const { data: summons = [] } = useMatchSummons(matchId);
+  const { data: payments = [] } = useMatchPayments(matchId);
+  const createPaymentsMut = useCreateMatchPayments();
+  const deletePaymentMut = useDeleteMatchPayment();
+  const deleteAllMut = useDeleteMatchPaymentsByMatch();
 
-  // Payments
-  const { data: payments = [] } = useQuery({
-    queryKey: ["match-payments", matchId],
-    queryFn: async () => (matchId ? mockDb.getPayments(matchId) : []),
-    enabled: !!matchId,
-  });
-
-  // Create payments for all confirmed players
-  const createPayments = useMutation({
-    mutationFn: async (amount: number) => {
-      if (!matchId) throw new Error("No match");
-      const confirmedPlayers = summons
-        .filter((s: any) => s.status === "confirmed")
-        .map((s: any) => s.player_id);
-
-      if (confirmedPlayers.length === 0) throw new Error("Nenhum jogador confirmado");
-
-      const paymentRecords = confirmedPlayers.map((playerId: string) => ({
-        match_id: matchId,
-        player_id: playerId,
-        amount,
-        status: "pending",
-      }));
-
-      mockDb.createPayments(paymentRecords);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+  const handleCreatePayments = async (amount: number) => {
+    if (!matchId) return;
+    const confirmedPlayers = summons
+      .filter((s: any) => s.status === "confirmed")
+      .map((s: any) => s.player_id);
+    if (confirmedPlayers.length === 0) {
+      toast({ title: "Nenhum jogador confirmado", variant: "destructive" });
+      return;
+    }
+    try {
+      await createPaymentsMut.mutateAsync({ matchId, playerIds: confirmedPlayers, amount });
       toast({ title: "Vaquinha criada! 💰" });
       setSetupOpen(false);
-    },
-    onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    },
-  });
+    } catch {}
+  };
 
-  // Delete all payments for this match (delete vaquinha)
-  const deleteVaquinha = useMutation({
-    mutationFn: async () => {
-      if (!matchId) throw new Error("No match");
-      mockDb.deletePaymentsByMatch(matchId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+  const handleDeleteVaquinha = async () => {
+    if (!matchId) return;
+    try {
+      await deleteAllMut.mutateAsync(matchId);
       toast({ title: "Vaquinha excluída com sucesso ✅" });
       setDeleteVaquinhaOpen(false);
-    },
-    onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    },
-  });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e?.message, variant: "destructive" });
+    }
+  };
 
-  // Delete single payment
-  const deletePayment = useMutation({
-    mutationFn: async (paymentId: string) => {
-      mockDb.deletePayment(paymentId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["match-payments", matchId] });
+  const handleDeletePayment = async (id: string) => {
+    try {
+      await deletePaymentMut.mutateAsync(id);
       toast({ title: "Contribuição removida com sucesso ✅" });
       setDeletePaymentId(null);
-    },
-    onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    },
-  });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const createPayments = { mutate: handleCreatePayments, isPending: createPaymentsMut.isPending };
+  const deleteVaquinha = { mutate: handleDeleteVaquinha };
+  const deletePayment = { mutate: handleDeletePayment };
 
   const totalAmount = payments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
   const paidAmount = payments.filter((p: any) => p.status === "paid").reduce((sum: number, p: any) => sum + Number(p.amount), 0);

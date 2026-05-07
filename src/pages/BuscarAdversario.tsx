@@ -13,8 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
 
 const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
@@ -32,6 +32,7 @@ const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const createMatch = useCreateMatch();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -73,7 +74,7 @@ const BuscarAdversarioPage = () => {
     return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
   };
 
-  const handleConfirmChallenge = () => {
+  const handleConfirmChallenge = async () => {
     if (!myTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
@@ -92,41 +93,35 @@ const BuscarAdversarioPage = () => {
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatch.mutateAsync({
       home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      home_team_name: locationChoice === "own" ? myTeam.name : challengeTeam.name,
       away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
-      away_team_name: locationChoice === "own" ? challengeTeam.name : myTeam.name,
       match_date,
       location,
       status: "open",
       format: challengeTeam.format || (myTeam as any).format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
     setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
     navigate("/agenda");
   };
 
-  const handleCreateNewMatch = () => {
+  const handleCreateNewMatch = async () => {
     if (!myTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatch.mutateAsync({
       home_team_id: myTeam.id,
-      home_team_name: myTeam.name,
       away_team_id: null,
-      away_team_name: newMatchOpponent.trim(),
       match_date,
       location: newMatchLocation.trim(),
       status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
@@ -154,7 +149,10 @@ const BuscarAdversarioPage = () => {
 
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
-    queryFn: () => mockDb.getAllTeams(),
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*");
+      return data || [];
+    },
   });
 
   const availableOpponentTeams = registeredTeams.filter(

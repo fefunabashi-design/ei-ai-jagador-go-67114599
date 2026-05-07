@@ -10,9 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam, useMatches, useAcceptMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, useAcceptMatch, useDeleteMatch, useUpdateMatch } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
-import { mockDb } from "@/lib/mockDb";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
 type Match = Database["public"]["Tables"]["matches"]["Row"] & {
@@ -26,6 +25,8 @@ const DesafiosPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const acceptMatch = useAcceptMatch();
+  const deleteMatchMut = useDeleteMatch();
+  const updateMatchMut = useUpdateMatch();
 
   const typedMatches = matches as Match[];
 
@@ -49,8 +50,7 @@ const DesafiosPage = () => {
   };
 
   const handleDecline = (matchId: string) => {
-    mockDb.deleteMatch(matchId);
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    deleteMatchMut.mutate(matchId);
     toast({ title: "Desafio cancelado." });
   };
 
@@ -75,8 +75,7 @@ const DesafiosPage = () => {
   const confirmReschedule = () => {
     if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
     const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
-    mockDb.updateMatch(rescheduleMatch.id, { match_date, location: rescheduleLocation });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    updateMatchMut.mutate({ id: rescheduleMatch.id, match_date, location: rescheduleLocation });
     toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
     setRescheduleMatch(null);
   };
