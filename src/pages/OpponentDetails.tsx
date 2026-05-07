@@ -56,16 +56,7 @@ const OpponentDetails = () => {
 
 
 
-  const fullAddress = opponent
-    ? [
-        opponent.addr_rua && `${opponent.addr_rua}${opponent.addr_numero ? ", " + opponent.addr_numero : ""}`,
-        opponent.addr_bairro,
-        opponent.addr_cidade && `${opponent.addr_cidade}${opponent.addr_uf ? " - " + opponent.addr_uf : ""}`,
-        opponent.addr_cep && `CEP ${opponent.addr_cep}`,
-      ]
-        .filter(Boolean)
-        .join(" • ")
-    : "";
+  const fullAddress = opponent?.field_address || "";
 
   return (
     <div className="min-h-screen bg-background pb-20">
