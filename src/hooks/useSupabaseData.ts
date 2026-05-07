@@ -590,8 +590,230 @@ export const useDeleteLineup = () => {
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 };
 
-// =================== LEGACY MOCK-BASED HOOKS (não migrados nesta fase) ===================
-// Mantidos para não quebrar telas. Serão migrados nas próximas fases (fotos/resenha/mensalidades/chat).
+// =================== PAYMENTS ===================
+export const useMatchPayments = (matchId?: string) => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    if (!matchId) { setData([]); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: rows = [] } = await supabase
+        .from("match_payments").select("*, player:players(*)").eq("match_id", matchId);
+      if (alive) setData(rows || []);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    const ch = supabase.channel(`payments-${matchId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_payments", filter: `match_id=eq.${matchId}` }, () => load())
+      .subscribe();
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); supabase.removeChannel(ch); };
+  }, [matchId]);
+  return { data };
+};
+
+export const useCreateMatchPayments = () => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  const mutate = async ({ matchId, playerIds, amount }: { matchId: string; playerIds: string[]; amount: number }) => {
+    setIsPending(true);
+    try {
+      if (!playerIds.length) throw new Error("Nenhum jogador confirmado");
+      const rows = playerIds.map((pid) => ({ match_id: matchId, player_id: pid, amount, status: "pending" }));
+      const { error } = await supabase.from("match_payments").upsert(rows, { onConflict: "match_id,player_id" });
+      if (error) throw error;
+      emitChange();
+    } catch (e: any) {
+      toast({ title: "Erro ao criar vaquinha", description: e?.message, variant: "destructive" });
+      throw e;
+    } finally { setIsPending(false); }
+  };
+  return { mutate, mutateAsync: mutate, isPending };
+};
+
+export const useDeleteMatchPayment = () => {
+  const mutate = async (id: string) => {
+    const { error } = await supabase.from("match_payments").delete().eq("id", id);
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+export const useDeleteMatchPaymentsByMatch = () => {
+  const mutate = async (matchId: string) => {
+    const { error } = await supabase.from("match_payments").delete().eq("match_id", matchId);
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+// =================== MENSALIDADES ===================
+export const useMensalidades = (playerIds: string[], ano: number) => {
+  const [data, setData] = useState<any[]>([]);
+  const key = playerIds.slice().sort().join(",");
+  useEffect(() => {
+    if (!playerIds.length) { setData([]); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: rows = [] } = await supabase
+        .from("mensalidades").select("*").in("player_id", playerIds).eq("ano", ano);
+      if (alive) setData(rows || []);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
+  }, [key, ano]);
+  return { data };
+};
+
+export const useUpsertMensalidade = () => {
+  const mutate = async (payload: { player_id: string; ano: number; mes: number; pago: boolean; data_pagamento?: string | null }) => {
+    const { error } = await supabase.from("mensalidades").upsert(payload, { onConflict: "player_id,ano,mes" });
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+export const useMensalidadeConfig = (teamId: string | undefined, ano: number) => {
+  const [data, setData] = useState<any | null>(null);
+  useEffect(() => {
+    if (!teamId) { setData(null); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: row } = await supabase
+        .from("mensalidade_config").select("*").eq("team_id", teamId).eq("ano", ano).maybeSingle();
+      if (alive) setData(row || null);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
+  }, [teamId, ano]);
+  return { data };
+};
+
+export const useUpsertMensalidadeConfig = () => {
+  const mutate = async (payload: { team_id: string; ano: number; valor_mensal: number }) => {
+    const { error } = await supabase.from("mensalidade_config").upsert(payload, { onConflict: "team_id,ano" });
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+// =================== DEBITOS (CAIXA) ===================
+export const useDebitos = (teamId?: string) => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    if (!teamId) { setData([]); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: rows = [] } = await supabase
+        .from("debitos").select("*").eq("team_id", teamId).order("data", { ascending: false });
+      if (alive) setData(rows || []);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
+  }, [teamId]);
+  return { data };
+};
+
+export const useCreateDebito = () => {
+  const mutate = async (payload: any) => {
+    const { error } = await supabase.from("debitos").insert(payload);
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+export const useUpdateDebito = () => {
+  const mutate = async ({ id, ...rest }: any) => {
+    const allowed: any = {};
+    ["descricao","data","valor","tipo","observacao"].forEach(k => { if (k in rest) allowed[k] = rest[k]; });
+    const { error } = await supabase.from("debitos").update(allowed).eq("id", id);
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+export const useDeleteDebito = () => {
+  const mutate = async (id: string) => {
+    const { error } = await supabase.from("debitos").delete().eq("id", id);
+    if (error) throw error;
+    emitChange();
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+// =================== CHAT ===================
+export const useMatchDetail = (matchId?: string) => {
+  const [data, setData] = useState<any | null>(null);
+  useEffect(() => {
+    if (!matchId) { setData(null); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: row } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_fk(*), away_team:teams!matches_away_team_fk(*)")
+        .eq("id", matchId).maybeSingle();
+      if (alive) setData(row);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
+  }, [matchId]);
+  return { data };
+};
+
+export const useChatMessages = (matchId?: string) => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    if (!matchId) { setData([]); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: rows = [] } = await supabase
+        .from("match_chat_messages").select("*").eq("match_id", matchId).order("created_at", { ascending: true });
+      if (!alive) return;
+      const userIds = Array.from(new Set((rows || []).map((m: any) => m.user_id).filter(Boolean)));
+      let profMap: Record<string, any> = {};
+      if (userIds.length) {
+        const { data: profs = [] } = await supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", userIds);
+        (profs || []).forEach((p: any) => { profMap[p.user_id] = p; });
+      }
+      setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
+    };
+    load();
+    const ch = supabase.channel(`chat-${matchId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(ch); };
+  }, [matchId]);
+  return { data };
+};
+
+export const useSendChatMessage = () => {
+  const { toast } = useToast();
+  const mutate = async ({ matchId, message }: { matchId: string; message: string }) => {
+    const uid = await getUserId();
+    if (!uid) { toast({ title: "Faça login", variant: "destructive" }); return; }
+    const { error } = await supabase.from("match_chat_messages").insert({
+      match_id: matchId, user_id: uid, message, message_type: "text",
+    });
+    if (error) toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
+  };
+  return { mutate, mutateAsync: mutate };
+};
+
+// =================== LEGACY MOCK-BASED HOOKS ===================
 
 export const usePhotoEvents = (teamId?: string) => {
   const [data, setData] = useState<any[]>([]);
