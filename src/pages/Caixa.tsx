@@ -20,9 +20,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { mockDb } from "@/lib/mockDb";
-import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
+import {
+  useMyTeam, usePlayers,
+  useDebitos, useCreateDebito, useUpdateDebito, useDeleteDebito,
+  useMensalidades, useMensalidadeConfig,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
