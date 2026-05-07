@@ -93,17 +93,14 @@ const BuscarAdversarioPage = () => {
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatch.mutateAsync({
       home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      home_team_name: locationChoice === "own" ? myTeam.name : challengeTeam.name,
       away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
-      away_team_name: locationChoice === "own" ? challengeTeam.name : myTeam.name,
       match_date,
       location,
       status: "open",
       format: challengeTeam.format || (myTeam as any).format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
     setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
