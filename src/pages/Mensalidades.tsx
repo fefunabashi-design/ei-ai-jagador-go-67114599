@@ -36,7 +36,6 @@ const yearOptions = Array.from({ length: 4 }, (_, i) => currentYear - i);
 
 const MensalidadesPage = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: myTeam, isLoading: teamLoading } = useMyTeam();
   const { data: players = [], isLoading: playersLoading } = usePlayers(myTeam?.id);
@@ -45,23 +44,13 @@ const MensalidadesPage = () => {
   const [valorInput, setValorInput] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ playerId: string; mes: number; isPaid: boolean; playerName: string } | null>(null);
 
-  // Fetch mensalidades for selected year
-  const { data: mensalidades = [], isLoading: mensalidadesLoading } = useQuery({
-    queryKey: ["mensalidades", myTeam?.id, selectedYear],
-    queryFn: async () => {
-      if (!myTeam?.id) return [];
-      const playerIds = players.map((p) => p.id);
-      if (playerIds.length === 0) return [];
-      return mockDb.getMensalidades(playerIds, selectedYear);
-    },
-    enabled: !!myTeam?.id && players.length > 0,
-  });
-
-  // Fetch config for selected year
-  const { data: config, isLoading: configLoading } = useQuery({
-    queryKey: ["mensalidade_config", selectedYear],
-    queryFn: async () => mockDb.getMensalidadeConfig(selectedYear),
-  });
+  const playerIds = players.map((p) => p.id);
+  const { data: mensalidades = [] } = useMensalidades(playerIds, selectedYear);
+  const { data: config } = useMensalidadeConfig(myTeam?.id, selectedYear);
+  const upsertConfigMut = useUpsertMensalidadeConfig();
+  const upsertMensalidadeMut = useUpsertMensalidade();
+  const mensalidadesLoading = false;
+  const configLoading = false;
 
   // Sync valorInput when config data changes or year changes
   useEffect(() => {
@@ -70,40 +59,30 @@ const MensalidadesPage = () => {
 
   const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
 
-  // Upsert config mutation
-  const upsertConfig = useMutation({
-    mutationFn: async (valor: number) => {
-      if (!myTeam?.id) throw new Error("Sem time");
-      mockDb.upsertMensalidadeConfig({ ano: selectedYear, valor_mensal: valor, team_id: myTeam.id });
+  const upsertConfig = {
+    mutate: async (valor: number) => {
+      if (!myTeam?.id) return;
+      try {
+        await upsertConfigMut.mutateAsync({ ano: selectedYear, valor_mensal: valor, team_id: myTeam.id });
+        toast({ title: `Valor salvo para ${selectedYear}! ✅` });
+      } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mensalidade_config", selectedYear] });
-      toast({ title: `Valor salvo para ${selectedYear}! ✅` });
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    },
-  });
+  };
 
-  // Upsert mensalidade mutation
-  const upsertMensalidade = useMutation({
-    mutationFn: async ({ playerId, mes, pago }: { playerId: string; mes: number; pago: boolean }) => {
-      mockDb.upsertMensalidade({
-        player_id: playerId,
-        ano: selectedYear,
-        mes,
-        pago,
-        data_pagamento: pago ? new Date().toISOString() : null,
-      });
+  const upsertMensalidade = {
+    mutate: async ({ playerId, mes, pago }: { playerId: string; mes: number; pago: boolean }) => {
+      try {
+        await upsertMensalidadeMut.mutateAsync({
+          player_id: playerId,
+          ano: selectedYear,
+          mes,
+          pago,
+          data_pagamento: pago ? new Date().toISOString() : null,
+        });
+        toast({ title: "Mensalidade atualizada! ✅" });
+      } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mensalidades", myTeam?.id, selectedYear] });
-      toast({ title: "Mensalidade atualizada! ✅" });
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    },
-  });
+  };
 
   const isMonthPaid = (playerId: string, mes: number) =>
     mensalidades.some((m: any) => m.player_id === playerId && m.mes === mes && m.pago);
