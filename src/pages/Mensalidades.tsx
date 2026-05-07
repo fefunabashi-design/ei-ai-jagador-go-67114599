@@ -11,9 +11,11 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { mockDb } from "@/lib/mockDb";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMyTeam, usePlayers } from "@/hooks/useSupabaseData";
+import {
+  useMyTeam, usePlayers,
+  useMensalidades, useMensalidadeConfig,
+  useUpsertMensalidade, useUpsertMensalidadeConfig,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
