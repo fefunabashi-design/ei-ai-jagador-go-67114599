@@ -26,7 +26,6 @@ const Index = () => {
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
-  const { data: nextMatchSummons = [] } = useMatchSummons(undefined); // placeholder, replaced below
   const createSummons = useCreateSummons();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
