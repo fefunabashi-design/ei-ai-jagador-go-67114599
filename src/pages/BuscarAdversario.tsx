@@ -74,7 +74,7 @@ const BuscarAdversarioPage = () => {
     return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
   };
 
-  const handleConfirmChallenge = () => {
+  const handleConfirmChallenge = async () => {
     if (!myTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
