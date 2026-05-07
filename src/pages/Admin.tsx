@@ -211,29 +211,17 @@ const AdminPage = () => {
   const totalChallenges = receivedChallenges.length + sentChallenges.length;
 
   const currentYear = new Date().getFullYear();
-  const { data: debitos = [] } = useQuery<Debito[]>({
-    queryKey: ["debitos", myTeam?.id],
-    queryFn: () => (myTeam?.id ? mockDb.getDebitos(myTeam.id) : []),
-    enabled: !!myTeam?.id,
-  });
-
-  const { data: mensalidades = [] } = useQuery<Mensalidade[]>({
-    queryKey: ["mensalidades_caixa", myTeam?.id, currentYear],
-    queryFn: () => {
-      if (!myTeam?.id || typedPlayers.length === 0) return [];
-      return mockDb.getMensalidades(typedPlayers.map((p) => p.id), currentYear);
-    },
-    enabled: !!myTeam?.id && typedPlayers.length > 0,
-  });
-
-  const { data: mensalidadeConfig } = useQuery<MensalidadeConfig | null>({
-    queryKey: ["mensalidade_config", currentYear],
-    queryFn: () => mockDb.getMensalidadeConfig(currentYear),
-  });
+  const { data: debitos = [] } = useDebitos(myTeam?.id);
+  const playerIds = typedPlayers.map((p) => p.id);
+  const { data: mensalidades = [] } = useMensalidades(playerIds, currentYear);
+  const { data: mensalidadeConfig } = useMensalidadeConfig(myTeam?.id, currentYear);
 
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
-    queryFn: () => mockDb.getAllTeams(),
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*");
+      return data || [];
+    },
   });
 
   const saldoAtual = (() => {
