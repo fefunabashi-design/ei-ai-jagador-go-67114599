@@ -100,23 +100,17 @@ const ChatPage = () => {
     ? (summonByPlayerId.get(myPlayerForPresence.id) as any)?.status as "confirmed" | "declined" | undefined
     : undefined;
 
-  const handlePresence = (status: "confirmed" | "declined") => {
+  const handlePresence = async (status: "confirmed" | "declined") => {
     if (!matchId) return;
     if (!myPlayerForPresence) {
       toast({ title: "Você não está vinculado a este time", variant: "destructive" });
       return;
     }
-    const existing: any = summonByPlayerId.get(myPlayerForPresence.id);
-    if (existing) {
-      mockDb.respondSummon(existing.id, status);
-    } else {
-      const created = mockDb.createSummons([
-        { match_id: matchId, player_id: myPlayerForPresence.id, status: "pending" },
-      ])[0];
-      if (created) mockDb.respondSummon(created.id, status);
-    }
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
-    queryClient.invalidateQueries({ queryKey: ["match-summons", matchId] });
+    await createSummonsMut.mutateAsync({
+      matchId,
+      playerId: myPlayerForPresence.id,
+      status,
+    });
     toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
     setConfirmOpen(false);
   };
