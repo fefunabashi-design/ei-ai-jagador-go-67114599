@@ -75,8 +75,7 @@ const DesafiosPage = () => {
   const confirmReschedule = () => {
     if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
     const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
-    mockDb.updateMatch(rescheduleMatch.id, { match_date, location: rescheduleLocation });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
+    updateMatchMut.mutate({ id: rescheduleMatch.id, match_date, location: rescheduleLocation });
     toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
     setRescheduleMatch(null);
   };
