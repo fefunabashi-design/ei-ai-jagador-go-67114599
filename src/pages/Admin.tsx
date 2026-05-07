@@ -268,21 +268,14 @@ const AdminPage = () => {
   const confirmReschedule = () => {
     if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
     const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
-    updateMatchMut.mutate(
-      { id: rescheduleMatch.id, patch: { match_date, location: rescheduleLocation } },
-      {
-        onSuccess: () => {
-          toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
-          setRescheduleMatch(null);
-        },
-      }
-    );
+    await updateMatchMut.mutateAsync({ id: rescheduleMatch.id, match_date, location: rescheduleLocation });
+    toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
+    setRescheduleMatch(null);
   };
 
-  const handleDecline = (matchId: string) => {
-    deleteMatchMut.mutate(matchId, {
-      onSuccess: () => toast({ title: "Pedido recusado." }),
-    });
+  const handleDecline = async (matchId: string) => {
+    await deleteMatchMut.mutateAsync(matchId);
+    toast({ title: "Pedido recusado." });
   };
 
   const toggleFilter = (
