@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { mockDb } from "@/lib/mockDb";
+
 import { supabase } from "@/integrations/supabase/client";
 
 const ACTIVE_TEAM_KEY = "active_team_id";
