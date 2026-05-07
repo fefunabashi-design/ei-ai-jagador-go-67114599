@@ -93,6 +93,10 @@ const Resenha = () => {
   const [caption, setCaption] = useState("");
   const [openComments, setOpenComments] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const createPost = useCreateResenhaPost();
+  const toggleReaction = useToggleResenhaReaction();
+  const addComment = useAddResenhaComment();
+  const deletePost = useDeleteResenhaPost();
 
   const myUid = profile?.user_id || "mock-user-id";
 
