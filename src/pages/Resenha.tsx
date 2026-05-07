@@ -132,11 +132,12 @@ const Resenha = () => {
     const matchLabel = selectedMatch
       ? `${selectedMatch.home_team?.name || "Time"} vs ${selectedMatch.away_team?.name || "Adversário"}`
       : null;
-    mockDb.createResenhaPost({
+    await createPost.mutateAsync({
       photo_url: pickedImage,
       caption: caption.trim(),
       match_id: selectedMatch?.id || null,
       match_label: matchLabel,
+      team_id: (myTeams || [])[0]?.id || null,
     });
     toast({ title: "Resenha publicada! 🎉" });
     setCaption("");
@@ -146,13 +147,13 @@ const Resenha = () => {
   };
 
   const handleReact = (postId: string, type: "like" | "dislike") => {
-    mockDb.toggleResenhaReaction(postId, type);
+    toggleReaction.mutate(postId, type);
   };
 
   const handleSendComment = (postId: string) => {
     const text = commentText.trim();
     if (!text) return;
-    mockDb.addResenhaComment(postId, text);
+    addComment.mutate(postId, text);
     setCommentText("");
   };
 
