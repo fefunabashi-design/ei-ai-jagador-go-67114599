@@ -10,9 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam, useMatches, useAcceptMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, useAcceptMatch, useDeleteMatch, useUpdateMatch } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
-import { mockDb } from "@/lib/mockDb";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
 type Match = Database["public"]["Tables"]["matches"]["Row"] & {
