@@ -14,9 +14,11 @@ type MatchEvent = {
   type: "goal" | "own_goal" | "yellow" | "red";
   player_id: string;
 };
-import { mockDb } from "@/lib/mockDb";
-import { useProfile, useMatchSummons, usePlayers, useMyTeam } from "@/hooks/useSupabaseData";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useProfile, useMatchSummons, usePlayers, useMyTeam,
+  useMatchDetail, useChatMessages, useSendChatMessage,
+  useCreateSummons, useUpdateMatch,
+} from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 
 const getInitials = (name: string) => {
