@@ -149,7 +149,10 @@ const BuscarAdversarioPage = () => {
 
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
-    queryFn: () => mockDb.getAllTeams(),
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*");
+      return data || [];
+    },
   });
 
   const availableOpponentTeams = registeredTeams.filter(
