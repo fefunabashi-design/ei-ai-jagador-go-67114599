@@ -55,6 +55,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
   return <>{children}</>;
 };
+
+const StatsLoader = () => {
+  useStatsData();
   return null;
 };
 
