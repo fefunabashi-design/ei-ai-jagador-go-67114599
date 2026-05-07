@@ -107,24 +107,21 @@ const BuscarAdversarioPage = () => {
     navigate("/agenda");
   };
 
-  const handleCreateNewMatch = () => {
+  const handleCreateNewMatch = async () => {
     if (!myTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatch.mutateAsync({
       home_team_id: myTeam.id,
-      home_team_name: myTeam.name,
       away_team_id: null,
-      away_team_name: newMatchOpponent.trim(),
       match_date,
       location: newMatchLocation.trim(),
       status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
