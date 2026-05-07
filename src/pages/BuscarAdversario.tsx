@@ -13,8 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
 
 const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
