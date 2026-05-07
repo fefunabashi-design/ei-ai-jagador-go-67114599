@@ -44,7 +44,9 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
 
   const handleLogout = async () => {
-    navigate("/");
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.auth.signOut();
+    navigate("/auth", { replace: true });
   };
 
   const openEditProfile = () => {

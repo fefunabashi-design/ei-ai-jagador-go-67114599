@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast"; // Assuming useToast is available
 import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the type for a lineup entry to be saved
 type LineupEntry = {
@@ -250,16 +251,47 @@ const pendingMutation = {
   isLoading: false,
 };
 
-export const useProfile = () => ({ data: mockDb.getProfile(), isLoading: false });
+export const useProfile = () => {
+  const [data, setData] = useState<any>(mockDb.getProfile());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (mounted) { setData(mockDb.getProfile()); setIsLoading(false); } return; }
+      const { data: p } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      const merged = { ...mockDb.getProfile(), ...(p || {}), user_id: user.id, email: user.email };
+      mockDb.updateProfile(merged);
+      if (mounted) { setData(merged); setIsLoading(false); }
+      emitMockDbChange();
+    };
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  return { data, isLoading };
+};
 
 export const useUpdateProfile = () => {
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
-  const mutate = (updates: Record<string, unknown>) => {
+  const mutate = async (updates: Record<string, unknown>) => {
     setIsPending(true);
     try {
       mockDb.updateProfile(updates);
       emitMockDbChange();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const allowed: Record<string, unknown> = {};
+        ["display_name","nickname","phone","birth_date","region","avatar_url","role","is_pro"].forEach(k => {
+          if (k in updates) allowed[k] = (updates as any)[k];
+        });
+        if (Object.keys(allowed).length) {
+          await supabase.from("profiles").update(allowed).eq("user_id", user.id);
+        }
+      }
       toast({ title: "Perfil atualizado!" });
     } catch (error: any) {
       toast({ title: "Erro ao atualizar perfil", description: error?.message, variant: "destructive" });
@@ -276,12 +308,24 @@ export const useUploadAvatar = () => {
   const mutate = async (file: File) => {
     setIsPending(true);
     try {
-      const avatar_url = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      let avatar_url: string;
+      if (user) {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+        avatar_url = pub.publicUrl;
+        await supabase.from("profiles").update({ avatar_url }).eq("user_id", user.id);
+      } else {
+        avatar_url = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
       mockDb.updateProfile({ avatar_url });
       emitMockDbChange();
       toast({ title: "Foto atualizada!" });
