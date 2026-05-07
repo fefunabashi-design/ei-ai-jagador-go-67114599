@@ -25,6 +25,8 @@ const DesafiosPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const acceptMatch = useAcceptMatch();
+  const deleteMatchMut = useDeleteMatch();
+  const updateMatchMut = useUpdateMatch();
 
   const typedMatches = matches as Match[];
 
