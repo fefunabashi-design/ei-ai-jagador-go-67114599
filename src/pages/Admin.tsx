@@ -129,17 +129,10 @@ const AdminPage = () => {
     return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
   };
 
-  const handleConfirmChallenge = () => {
+  const handleConfirmChallenge = async () => {
     if (!myTeam || !challengeTeam) return;
-    if (!challengeDate) {
-      toast({ title: "Informe a data", variant: "destructive" });
-      return;
-    }
-    if (!challengeTime) {
-      toast({ title: "Informe o horário", variant: "destructive" });
-      return;
-    }
-    // Se o adversário tem dias configurados, validar; senão liberar
+    if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
+    if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
       if (!isDateAllowed(challengeDate, challengeTeam.play_days)) {
         toast({
@@ -150,30 +143,22 @@ const AdminPage = () => {
         return;
       }
     }
-
     const fallbackLocation = locationChoice === "own"
       ? (myTeam.field_address || myTeam.field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
-
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
-    mockDb.createMatch({
+    await createMatchMut.mutateAsync({
       home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      home_team_name: locationChoice === "own" ? myTeam.name : challengeTeam.name,
       away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
-      away_team_name: locationChoice === "own" ? challengeTeam.name : myTeam.name,
       match_date,
       location,
       status: "open",
       format: challengeTeam.format || myTeam.format || "8x8",
     });
-    window.dispatchEvent(new CustomEvent("mock-db-change"));
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate("");
-    setChallengeTime("");
-    setLocationChoice("away");
-    setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
     navigate("/agenda");
   };
 
