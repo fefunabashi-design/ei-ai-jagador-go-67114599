@@ -55,6 +55,9 @@ const AdminPage = () => {
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
   const [showOpponentSearch, setShowOpponentSearch] = useState(false);
+  const createMatchMut = useCreateMatch();
+  const updateMatchMut = useUpdateMatch();
+  const deleteMatchMut = useDeleteMatch();
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
