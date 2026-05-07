@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast"; // Assuming useToast is available
 import { mockDb } from "@/lib/mockDb";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the type for a lineup entry to be saved
 type LineupEntry = {
