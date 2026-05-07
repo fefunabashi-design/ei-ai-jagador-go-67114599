@@ -290,7 +290,7 @@ export const useCreatePlayer = () => {
     setIsPending(true);
     try {
       if (!data.team_id) throw new Error("Selecione um time");
-      const { error } = await supabase.from("players").insert(cleanPlayerPayload(data));
+      const { error } = await supabase.from("players").insert(cleanPlayerPayload(data) as any);
       if (error) throw error;
       emitChange();
       toast({ title: "Jogador adicionado com sucesso!" });
