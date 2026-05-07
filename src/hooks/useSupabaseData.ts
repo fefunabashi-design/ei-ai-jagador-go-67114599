@@ -250,7 +250,28 @@ const pendingMutation = {
   isLoading: false,
 };
 
-export const useProfile = () => ({ data: mockDb.getProfile(), isLoading: false });
+export const useProfile = () => {
+  const [data, setData] = useState<any>(mockDb.getProfile());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (mounted) { setData(mockDb.getProfile()); setIsLoading(false); } return; }
+      const { data: p } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      const merged = { ...mockDb.getProfile(), ...(p || {}), user_id: user.id, email: user.email };
+      mockDb.updateProfile(merged);
+      if (mounted) { setData(merged); setIsLoading(false); }
+      emitMockDbChange();
+    };
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  return { data, isLoading };
+};
 
 export const useUpdateProfile = () => {
   const { toast } = useToast();
