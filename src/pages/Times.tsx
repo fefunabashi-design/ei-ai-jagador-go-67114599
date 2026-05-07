@@ -58,7 +58,10 @@ const TimesPage = () => {
 
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams_all"],
-    queryFn: () => mockDb.getAllTeams(),
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*");
+      return data || [];
+    },
   });
 
   const fromMinutes = toMinutes(timeFrom);
