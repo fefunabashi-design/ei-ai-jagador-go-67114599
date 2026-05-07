@@ -16,8 +16,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams } from "@/hooks/useSupabaseData";
-import { mockDb } from "@/lib/mockDb";
+import {
+  useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams,
+  useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
+} from "@/hooks/useSupabaseData";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
 const STAFF_TEAM_FIELDS = [
@@ -91,6 +93,10 @@ const Resenha = () => {
   const [caption, setCaption] = useState("");
   const [openComments, setOpenComments] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const createPost = useCreateResenhaPost();
+  const toggleReaction = useToggleResenhaReaction();
+  const addComment = useAddResenhaComment();
+  const deletePost = useDeleteResenhaPost();
 
   const myUid = profile?.user_id || "mock-user-id";
 
@@ -118,7 +124,7 @@ const Resenha = () => {
     setCreateOpen(true);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!pickedImage) {
       toast({ title: "Escolha uma imagem", description: "Selecione uma imagem da galeria do App." });
       return;
@@ -126,11 +132,12 @@ const Resenha = () => {
     const matchLabel = selectedMatch
       ? `${selectedMatch.home_team?.name || "Time"} vs ${selectedMatch.away_team?.name || "Adversário"}`
       : null;
-    mockDb.createResenhaPost({
+    await createPost.mutateAsync({
       photo_url: pickedImage,
       caption: caption.trim(),
       match_id: selectedMatch?.id || null,
       match_label: matchLabel,
+      team_id: (myTeams || [])[0]?.id || null,
     });
     toast({ title: "Resenha publicada! 🎉" });
     setCaption("");
@@ -140,13 +147,13 @@ const Resenha = () => {
   };
 
   const handleReact = (postId: string, type: "like" | "dislike") => {
-    mockDb.toggleResenhaReaction(postId, type);
+    toggleReaction.mutate(postId, type);
   };
 
   const handleSendComment = (postId: string) => {
     const text = commentText.trim();
     if (!text) return;
-    mockDb.addResenhaComment(postId, text);
+    addComment.mutate(postId, text);
     setCommentText("");
   };
 
@@ -219,7 +226,7 @@ const Resenha = () => {
                 {isAuthor && (
                   <button
                     onClick={() => {
-                      mockDb.deleteResenhaPost(post.id);
+                      deletePost.mutate(post.id);
                       toast({ title: "Resenha removida" });
                     }}
                     className="text-muted-foreground hover:text-destructive p-1"
