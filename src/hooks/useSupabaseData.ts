@@ -277,11 +277,21 @@ export const useProfile = () => {
 export const useUpdateProfile = () => {
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
-  const mutate = (updates: Record<string, unknown>) => {
+  const mutate = async (updates: Record<string, unknown>) => {
     setIsPending(true);
     try {
       mockDb.updateProfile(updates);
       emitMockDbChange();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const allowed: Record<string, unknown> = {};
+        ["display_name","nickname","phone","birth_date","region","avatar_url","role","is_pro"].forEach(k => {
+          if (k in updates) allowed[k] = (updates as any)[k];
+        });
+        if (Object.keys(allowed).length) {
+          await supabase.from("profiles").update(allowed).eq("user_id", user.id);
+        }
+      }
       toast({ title: "Perfil atualizado!" });
     } catch (error: any) {
       toast({ title: "Erro ao atualizar perfil", description: error?.message, variant: "destructive" });
