@@ -226,7 +226,7 @@ const Resenha = () => {
                 {isAuthor && (
                   <button
                     onClick={() => {
-                      mockDb.deleteResenhaPost(post.id);
+                      deletePost.mutate(post.id);
                       toast({ title: "Resenha removida" });
                     }}
                     className="text-muted-foreground hover:text-destructive p-1"
