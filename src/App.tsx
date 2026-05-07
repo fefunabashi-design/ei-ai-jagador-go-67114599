@@ -37,11 +37,24 @@ import { useStatsData } from "@/lib/stats";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const location = useLocation();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      if (_event === "SIGNED_OUT") {
+        queryClient.clear();
+      }
+    });
+    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (session === undefined) return null;
+  if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
   return <>{children}</>;
 };
-
-const StatsLoader = () => {
-  useStatsData();
   return null;
 };
 
