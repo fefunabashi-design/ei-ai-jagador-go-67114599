@@ -182,7 +182,12 @@ const Index = () => {
               </button>
             ))}
             <button
-              onClick={() => { setSettingsOpen(false); navigate("/"); }}
+              onClick={async () => {
+                setSettingsOpen(false);
+                const { supabase } = await import("@/integrations/supabase/client");
+                await supabase.auth.signOut();
+                navigate("/auth", { replace: true });
+              }}
               className="w-full flex items-center gap-3 p-3 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors mt-4"
             >
               <LogOut size={16} />
