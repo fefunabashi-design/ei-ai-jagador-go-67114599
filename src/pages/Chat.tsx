@@ -43,22 +43,14 @@ const ChatPage = () => {
   const [newEventType, setNewEventType] = useState<MatchEvent["type"]>("goal");
   const [newEventPlayer, setNewEventPlayer] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: match } = useQuery({
-    queryKey: ["match-detail", matchId],
-    queryFn: async () => (matchId ? mockDb.getMatch(matchId) : null),
-    enabled: !!matchId,
-  });
-
-  const { data: messages = [] } = useQuery({
-    queryKey: ["chat-messages", matchId],
-    queryFn: async () => (matchId ? mockDb.getMessages(matchId) : []),
-    enabled: !!matchId,
-  });
-
+  const { data: match } = useMatchDetail(matchId);
+  const { data: messages = [] } = useChatMessages(matchId);
   const { data: summons = [] } = useMatchSummons(matchId);
+  const sendMessage = useSendChatMessage();
+  const createSummonsMut = useCreateSummons();
+  const updateMatch = useUpdateMatch();
 
   const homeTeam = match?.home_team as any;
   const awayTeam = match?.away_team as any;
@@ -74,8 +66,7 @@ const ChatPage = () => {
   const handleSend = async () => {
     if (!message.trim() || !matchId) return;
     setSending(true);
-    mockDb.addMessage(matchId, message.trim());
-    queryClient.invalidateQueries({ queryKey: ["chat-messages", matchId] });
+    await sendMessage.mutateAsync({ matchId, message: message.trim() });
     setMessage("");
     setSending(false);
   };
