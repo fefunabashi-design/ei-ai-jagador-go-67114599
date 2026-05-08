@@ -47,6 +47,7 @@ import {
   useProfile,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
