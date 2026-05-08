@@ -297,9 +297,15 @@ const ProfilePage = () => {
             <DialogTitle className="font-display text-2xl">EDITAR PERFIL</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome *</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
+              </div>
+              <div>
+                <Label>Sobrenome</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" />
+              </div>
             </div>
             <div>
               <Label>Nome Social</Label>
@@ -318,12 +324,38 @@ const ProfilePage = () => {
               <Label>Data de Nascimento</Label>
               <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" />
             </div>
-            <div>
-              <Label>Região</Label>
-              <Input value={editRegion} onChange={(e) => setEditRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Cidade</Label>
+                <Input
+                  list="profile-cities"
+                  value={editCity}
+                  onChange={(e) => setEditCity(e.target.value)}
+                  placeholder="Digite sua cidade"
+                  className="bg-secondary border-border"
+                  autoComplete="off"
+                />
+                <datalist id="profile-cities">
+                  {cityOptions.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </div>
+              <div>
+                <Label>Região</Label>
+                <Select value={editRegion} onValueChange={setEditRegion}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Z/Sul">Z/Sul</SelectItem>
+                    <SelectItem value="Z/Oeste">Z/Oeste</SelectItem>
+                    <SelectItem value="Z/Norte">Z/Norte</SelectItem>
+                    <SelectItem value="Z/Leste">Z/Leste</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>E-mail *</Label>
               <Input
                 type="email"
                 value={editEmail}
