@@ -36,10 +36,13 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleDeactivate = async () => {
-    await updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
     const { supabase } = await import("@/integrations/supabase/client");
+    // Rotate password to a random value so the old credentials no longer work.
+    const randomPwd = crypto.randomUUID() + "Aa1!" + crypto.randomUUID();
+    try { await supabase.auth.updateUser({ password: randomPwd }); } catch { /* ignore */ }
+    await updateProfile.mutate({ display_name: "[Conta Desativada]", is_active: false } as any);
     await supabase.auth.signOut();
-    toast({ title: "Conta desativada" });
+    toast({ title: "Conta desativada", description: "Para voltar a usar, cadastre-se novamente." });
     navigate("/auth", { replace: true });
   };
 
