@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye, Check, X, UserCheck, ListChecks } from "lucide-react";
+import { Shield, MapPin, ChevronRight, Bell, MessageCircle, Settings, Users, User, Bell as BellIcon, LogOut, Pencil, Eye, Check, X, UserCheck, ListChecks, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useUpdateProfile } from "@/hooks/useSupabaseData";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,10 +29,20 @@ const Index = () => {
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
   const createSummons = useCreateSummons();
+  const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const { toast } = useToast();
+
+  const handleDeactivate = async () => {
+    await updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.auth.signOut();
+    toast({ title: "Conta desativada" });
+    navigate("/auth", { replace: true });
+  };
+
 
   const now = new Date();
   const hours = now.getHours();
@@ -189,6 +201,34 @@ const Index = () => {
               <LogOut size={16} />
               <span className="text-sm font-semibold">Sair da conta</span>
             </button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="w-full flex items-center gap-3 p-3 rounded-xl text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 size={14} />
+                  <span className="font-semibold">Desativar minha conta</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Desativar conta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação vai desativar seu perfil. Você poderá cadastrar novamente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => { setSettingsOpen(false); await handleDeactivate(); }}
+                    className="bg-destructive text-destructive-foreground"
+                  >
+                    Desativar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </SheetContent>
       </Sheet>

@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,17 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
@@ -124,12 +113,6 @@ const ProfilePage = () => {
       return;
     }
     uploadAvatar.mutate(file);
-  };
-
-  const handleDeleteAccount = async () => {
-    updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
-    navigate("/");
-    toast({ title: "Conta desativada" });
   };
 
   if (isLoading) {
@@ -241,7 +224,6 @@ const ProfilePage = () => {
           <div className="space-y-1">
             {[
               { label: "Meu Time", path: "/team" },
-              { label: "Histórico de Partidas", path: "/match" },
               { label: "Ranking", path: "/ranking" },
             ].map((item, i) => (
               <motion.button
@@ -267,28 +249,6 @@ const ProfilePage = () => {
             <LogOut size={16} className="mr-2" /> Sair da Conta
           </Button>
 
-          {/* Delete account */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-destructive">
-                <Trash2 size={14} className="mr-1" /> Desativar minha conta
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Desativar conta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação vai desativar seu perfil. Você pode entrar em contato para reativação.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground">
-                  Desativar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </motion.div>
       </div>
 
