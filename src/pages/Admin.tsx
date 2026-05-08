@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { AdminGate } from "@/components/AdminGate";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
   useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile,
   useMyAdminTeams, useSetActiveTeam,
@@ -48,6 +49,7 @@ const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 const AdminPage = () => {
   const navigate = useNavigate();
   useProfile();
+  const { isSuperAdmin } = useAdminAccess();
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
@@ -499,6 +501,22 @@ const AdminPage = () => {
           ))}
           </div>
         </div>
+
+        {isSuperAdmin && (
+          <button
+            onClick={() => navigate("/super-admin/pagamentos")}
+            className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30 hover:border-primary/50 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-left">
+              <Shield size={18} className="text-primary" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Pagamentos Pix</p>
+                <p className="text-[10px] text-muted-foreground">Aprovar/rejeitar mensalidades (super admin)</p>
+              </div>
+            </div>
+            <span className="text-xs text-primary font-semibold">Abrir →</span>
+          </button>
+        )}
 
 
 
