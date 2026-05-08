@@ -74,9 +74,11 @@ const ProfilePage = () => {
 
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
+    setEditLastName((profile as any)?.last_name || "");
     setEditNickname(profile?.nickname || "");
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
+    setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
     setEditOpen(true);
