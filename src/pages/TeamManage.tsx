@@ -278,7 +278,17 @@ const TeamPage = () => {
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
-    const payload = { ...teamForm, abbreviation: abbr };
+    // Derive aggregate time window from per-day schedule (for back-compat displays)
+    const starts: string[] = [];
+    const ends: string[] = [];
+    Object.values(teamForm.play_schedule || {}).forEach((s) => {
+      if (s?.start) starts.push(s.start);
+      if (s?.mode === "flexible" && s?.end) ends.push(s.end);
+      else if (s?.mode === "fixed" && s?.start) ends.push(s.start);
+    });
+    const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
+    const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
+    const payload = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
     } else {
