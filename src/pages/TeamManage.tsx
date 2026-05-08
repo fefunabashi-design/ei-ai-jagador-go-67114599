@@ -876,11 +876,30 @@ const TeamFormDialog = ({
   const [showAllWeekDays, setShowAllWeekDays] = useState(false);
 
   const togglePlayDay = (day: string) => {
-    const nextDays = form.play_days.includes(day)
-      ? form.play_days.filter((item) => item !== day)
-      : [...form.play_days, day];
+    const isAdding = !form.play_days.includes(day);
+    const nextDays = isAdding
+      ? [...form.play_days, day]
+      : form.play_days.filter((item) => item !== day);
 
     setField("play_days", nextDays);
+
+    const nextSchedule = { ...form.play_schedule };
+    if (isAdding) {
+      if (!nextSchedule[day]) {
+        nextSchedule[day] = { mode: "fixed", start: form.play_time_start || "", end: "" };
+      }
+    } else {
+      delete nextSchedule[day];
+    }
+    setField("play_schedule", nextSchedule);
+  };
+
+  const updateDaySchedule = (
+    day: string,
+    patch: Partial<{ mode: "fixed" | "flexible"; start: string; end: string }>,
+  ) => {
+    const current = form.play_schedule[day] || { mode: "fixed" as const, start: "", end: "" };
+    setField("play_schedule", { ...form.play_schedule, [day]: { ...current, ...patch } });
   };
 
   const visibleWeekDays = showAllWeekDays || form.play_days.length === 0
