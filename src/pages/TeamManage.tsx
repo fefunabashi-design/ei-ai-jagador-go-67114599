@@ -1356,23 +1356,28 @@ const TeamFormDialog = ({
 
             {showAdmin && (
               <div className="p-4 space-y-3">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Os dados do administrador do app são vinculados ao seu perfil de jogador e não podem ser alterados aqui. Para atualizá-los, edite seu perfil.
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Admin App</Label>
                     <Input
                       value={form.admin_name}
-                      onChange={(e) => setField("admin_name", e.target.value)}
+                      readOnly
+                      disabled
                       placeholder="Nome"
-                      className="bg-secondary border-border"
+                      className="bg-muted/40 border-border cursor-not-allowed"
                     />
                   </div>
                   <div>
                     <Label>Cel. Admin</Label>
                     <Input
                       value={form.admin_phone}
-                      onChange={(e) => setField("admin_phone", formatPhone(e.target.value))}
+                      readOnly
+                      disabled
                       placeholder="(11) 99999-9999"
-                      className="bg-secondary border-border"
+                      className="bg-muted/40 border-border cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1382,9 +1387,10 @@ const TeamFormDialog = ({
                   <Input
                     type="email"
                     value={form.admin_email}
-                    onChange={(e) => setField("admin_email", e.target.value)}
+                    readOnly
+                    disabled
                     placeholder="admin@email.com"
-                    className="bg-secondary border-border"
+                    className="bg-muted/40 border-border cursor-not-allowed"
                   />
                 </div>
 
