@@ -51,6 +51,13 @@ const queryClient = new QueryClient({
 
 const REQUIRED_PROFILE_FIELDS = ["display_name", "last_name", "phone", "birth_date", "city"];
 
+const clearAuthStorage = () => {
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("sb-") || key.includes("supabase.auth.token"))
+    .forEach((key) => localStorage.removeItem(key));
+  queryClient.clear();
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [profileCheck, setProfileCheck] = useState<"loading" | "ok" | "incomplete" | "deactivated">("loading");
@@ -79,7 +86,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (_event === "SIGNED_OUT") {
-        queryClient.clear();
+        clearAuthStorage();
       }
       checkProfile(s);
     });
@@ -99,7 +106,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const StatsLoader = () => {
-  useStatsData();
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (alive) setHasSession(Boolean(session));
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(Boolean(session));
+    });
+    return () => { alive = false; subscription.unsubscribe(); };
+  }, []);
+
+  useStatsData(hasSession);
   return null;
 };
 
