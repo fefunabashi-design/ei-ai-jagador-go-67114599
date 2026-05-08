@@ -29,10 +29,24 @@ const Index = () => {
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
   const createSummons = useCreateSummons();
+  const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const { toast } = useToast();
+
+  const handleDeactivate = async () => {
+    await new Promise<void>((resolve) =>
+      updateProfile.mutate(
+        { display_name: "[Conta Desativada]", avatar_url: "" },
+        { onSettled: () => resolve() }
+      )
+    );
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.auth.signOut();
+    toast({ title: "Conta desativada" });
+    navigate("/auth", { replace: true });
+  };
 
   const now = new Date();
   const hours = now.getHours();
