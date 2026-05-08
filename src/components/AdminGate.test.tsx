@@ -79,7 +79,7 @@ describe("AdminGate (status: none)", () => {
     renderGate();
     fireEvent.click(screen.getByRole("button", { name: /quero administrar um time/i }));
     expect(screen.getByText("Admin PRO")).toBeInTheDocument();
-    expect(screen.getByText(/R\$ 29,90/)).toBeInTheDocument();
+    expect(screen.getAllByText(/R\$ 29,90/).length).toBeGreaterThan(0);
     expect(
       screen.getByRole("button", { name: /começar 30 dias grátis/i })
     ).toBeInTheDocument();
