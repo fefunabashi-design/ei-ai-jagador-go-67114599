@@ -341,9 +341,10 @@ const ProfilePage = () => {
                   autoComplete="off"
                 />
                 {cityOpen && editCity.trim().length > 0 && (() => {
-                  const q = editCity.trim().toLowerCase();
+                  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                  const q = norm(editCity.trim());
                   const matches = cityOptions
-                    .filter((c) => c.toLowerCase().startsWith(q))
+                    .filter((c) => norm(c).startsWith(q))
                     .slice(0, 8);
                   if (matches.length === 0) return null;
                   return (
