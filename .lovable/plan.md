@@ -1,63 +1,44 @@
-# Integração completa com o Supabase
+## Resposta rápida
 
-Hoje o app tem o Supabase **conectado** (tabelas `teams`, `players`, `matches`, `match_lineups`, `match_summons`, `match_payments`, `match_chat_messages`, `mensalidades`, `mensalidade_config`, `profiles` com RLS, buckets `avatars` e `team-logos`, página `Auth.tsx` e `ResetPassword.tsx`), mas **toda a camada de dados ainda usa um banco simulado em memória** (`src/lib/mockDb.ts`). Os hooks em `src/hooks/useSupabaseData.ts` leem/escrevem nesse mock e ignoram o `supabase` client. Por isso nada persiste entre sessões nem entre dispositivos.
+**Código-fonte privado:** já está. Projetos Lovable são privados por padrão — só quem você convidar via Share enxerga o código. O "Public remixing" está desligado (padrão), então ninguém consegue copiar seu código pelo link.
 
-Esta integração troca o mock pelo Supabase real, ativa a proteção de rotas por autenticação e remove o `mockDb`.
+**Link do app público:** já está publicado em `https://ei-ai-jagador-go.lovable.app` com visibilidade `public`. Qualquer pessoa pode acessar, se cadastrar e usar.
 
-## O que será feito
+**Mas tem 6 falhas críticas de segurança** detectadas na varredura que precisamos corrigir antes — senão qualquer usuário cadastrado vai conseguir ler dados pessoais de todos os outros. Não publique a versão atual ainda.
 
-### 1. Proteção de rotas e estado de autenticação
-- `App.tsx`: transformar `ProtectedRoute` em real — escuta `supabase.auth.onAuthStateChange` (antes de `getSession`), redireciona para `/auth` quando não há sessão, limpa `queryClient` no logout (regra do projeto).
-- Adicionar rota pública `/auth` apontando para `src/pages/Auth.tsx`.
-- Manter `/reset-password` pública.
+## O que será corrigido
 
-### 2. Reescrever `src/hooks/useSupabaseData.ts` usando React Query + Supabase
-Cada hook abaixo passa a usar `supabase.from(...)` com `useQuery` / `useMutation` e `queryClient.invalidateQueries`:
+### 1. Vazamento de dados pessoais (3 erros críticos)
+Hoje, qualquer usuário logado consegue ler email/telefone/nascimento de **todos** os jogadores, perfis e times. Vou ajustar as policies RLS:
 
-| Hook | Tabela / ação |
-|---|---|
-| `useProfile`, `useUpdateProfile`, `useUploadAvatar` | `profiles` + bucket `avatars` |
-| `useMyTeams`, `useMyAdminTeams`, `useMyTeam`, `useSetActiveTeam` | `teams` (filtro por `owner_id` ou por jogador vinculado); time ativo persistido em `localStorage` |
-| `useCreateTeam`, `useUpdateTeam`, `useDeleteTeam`, `useUploadTeamLogo` | `teams` + bucket `team-logos` |
-| `usePlayers`, `useCreatePlayer`, `useUpdatePlayer`, `useDeletePlayer` | `players` |
-| `useMatches`, `useCreateMatch`, `useUpdateMatch`, `useDeleteMatch`, `useAcceptMatch` | `matches` |
-| `useMatchSummons`, `useCreateSummons` (jogador confirma → status `confirmed`) | `match_summons` |
-| `useMatchLineups`, `useSaveLineup`, `useCreateLineup`, `useDeleteLineup` | `match_lineups` |
-| Pagamentos, mensalidades | `match_payments`, `mensalidades`, `mensalidade_config` |
-| Chat | `match_chat_messages` (com Realtime via `supabase.channel`) |
+- **`players`**: SELECT só para o dono do time OU o próprio jogador (via `user_id`).
+- **`profiles`**: SELECT só do próprio perfil. Para exibir nome/foto de outros (resenha, ranking) crio uma view pública `public_profiles` com apenas `display_name` e `avatar_url`.
+- **`teams`**: divido em dois níveis — campos públicos (nome, logo, cidade) acessíveis via view; campos sensíveis (email, telefone, admin_*, president_*, field_address) só para owner e jogadores vinculados.
 
-Hooks de fotos/resenha (`usePhotoEvents`, `usePhotoPosts`, `useCreatePhotoPost`, `useResenhaPosts`, `useAppSharedImages`) — ver seção 4.
+### 2. Storage do `team-logos` (1 erro crítico)
+Existem policies redundantes "Auth users can delete/update team logos" que permitem **qualquer** usuário logado apagar/sobrescrever logo de qualquer time. Vou removê-las (as policies corretas, restritas ao owner, já existem).
 
-### 3. Confirmação na partida (bug recente)
-A regra original "ao confirmar, jogador entra na lista de confirmados" passa a funcionar de verdade: `match_summons.status = 'confirmed'` + insert em `match_lineups` (RLS já permite via política `Players can insert their own lineup on confirm`).
+### 3. Realtime sem proteção (1 erro + 1 warning)
+`match_payments`, `mensalidades` e `debitos` estão no Realtime sem policies em `realtime.messages` — qualquer logado pode escutar broadcasts financeiros de qualquer time. Vou adicionar policy em `realtime.messages` exigindo que o usuário seja owner ou jogador do time do tópico.
 
-### 4. Tabelas que faltam (nova migration)
-Hoje não existem tabelas para fotos/resenha/eventos de vaquinha. Migration nova vai criar:
-- `photo_events` (id, team_id, type `partida|vaquinha`, title, match_id?, created_at)
-- `photo_posts` (id, team_id, event_id, photo_url, comment, author_id, created_at)
-- `resenha_posts` (id, team_id, author_id, content, photo_url?, created_at)
-- bucket público `photos`
-- RLS: SELECT público; INSERT/UPDATE/DELETE só para `owner_id` do time ou autor.
+### 4. `mensalidade_config` público (1 warning)
+SELECT aberto pra anônimos. Restrinjo a `authenticated` + membro do time.
 
-### 5. Realtime
-- `ALTER PUBLICATION supabase_realtime ADD TABLE match_chat_messages, match_summons, match_lineups;` para chat e confirmações ao vivo.
+### 5. Funções SECURITY DEFINER (3 warnings)
+`has_role`, `is_team_member`, etc. estão executáveis por anônimos. Vou `REVOKE EXECUTE ... FROM anon` mantendo só `authenticated`.
 
-### 6. Limpeza
-- Remover `src/lib/mockDb.ts`.
-- Remover imports de `mockDb` em `Times.tsx`, `Index.tsx`, `Chat.tsx`, `Desafios.tsx`, `Caixa.tsx`, `BuscarAdversario.tsx`, `Payments.tsx`, `Admin.tsx`, `Resenha.tsx`, `Mensalidades.tsx`, `OpponentDetails.tsx`, substituindo por hooks do Supabase.
-- Remover `src/lib/stats.ts` se ainda depender do mock (recriar a partir de queries reais ou simplificar).
+### 6. Buckets públicos com listagem (3 warnings)
+`avatars`, `team-logos`, `photos` permitem `LIST` (não só leitura individual). Vou trocar a policy de SELECT em `storage.objects` para permitir só leitura por path conhecido, sem listar o bucket inteiro.
 
-### 7. Configurações de auth
-- Ativar **autoconfirm de email** (regra do projeto) e **HIBP password check**.
-- URLs de redirect já estão corretas no código (`/reset-password`).
+## Detalhes técnicos
 
-## O que **não** será feito agora
-- Pagamentos via Pix reais (continua marcação manual de pago).
-- Notificações push.
-- Edge functions novas além da `search-player-by-email` que já existe.
+- 1 migration SQL com todas as alterações de RLS, REVOKEs e remoção de policies redundantes.
+- Criar view `public_profiles` (security_invoker) e ajustar `Resenha`, `Ranking`, `OpponentDetails` para consumi-la em vez de `profiles` quando o dado for de terceiro.
+- Função helper `is_team_member(_team_id, _user_id)` (já existe ou criar) usada em policies novas.
+- Configurar **Password HIBP Check** via `configure_auth` (proteção contra senhas vazadas, recomendado pré-publicação).
 
-## Riscos / pontos de atenção
-- Dados atuais do mock (em `localStorage` do usuário) **serão perdidos** — o app passa a usar o backend real, vazio. Cada usuário precisará criar seu time/jogadores novamente.
-- Telas que dependiam de campos extras do mock (ex.: `goals_by`, eventos de cartão dentro da partida) podem precisar de pequenas migrations adicionais — vou identificar e propor conforme aparecerem durante a implementação.
+## Depois de corrigir
 
-Posso seguir com essa migração?
+Roda nova varredura, confirma 0 erros, e a publicação atual já reflete as mudanças automaticamente (backend deploya na hora; frontend você clica em **Update** no diálogo de Publish).
+
+Posso seguir?

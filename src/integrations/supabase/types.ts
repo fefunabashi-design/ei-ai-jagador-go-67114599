@@ -50,6 +50,13 @@ export type Database = {
             foreignKeyName: "debitos_team_fk"
             columns: ["team_id"]
             isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -357,7 +364,21 @@ export type Database = {
             foreignKeyName: "matches_away_team_fk"
             columns: ["away_team_id"]
             isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_away_team_fk"
+            columns: ["away_team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
             referencedColumns: ["id"]
           },
           {
@@ -371,7 +392,21 @@ export type Database = {
             foreignKeyName: "matches_home_team_fk"
             columns: ["home_team_id"]
             isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_fk"
+            columns: ["home_team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
             referencedColumns: ["id"]
           },
           {
@@ -406,6 +441,13 @@ export type Database = {
           valor_mensal?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "mensalidade_config_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mensalidade_config_team_fk"
             columns: ["team_id"]
@@ -505,6 +547,13 @@ export type Database = {
             foreignKeyName: "photo_posts_team_fk"
             columns: ["team_id"]
             isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_posts_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -576,7 +625,21 @@ export type Database = {
             foreignKeyName: "players_team_fk"
             columns: ["team_id"]
             isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
             referencedColumns: ["id"]
           },
           {
@@ -709,6 +772,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resenha_posts_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
             referencedColumns: ["id"]
           },
           {
@@ -860,10 +930,99 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          nickname: string | null
+          region: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          nickname?: string | null
+          region?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          nickname?: string | null
+          region?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      public_teams: {
+        Row: {
+          abbreviation: string | null
+          categoria: string | null
+          created_at: string | null
+          field_name: string | null
+          format: string | null
+          foundation_date: string | null
+          founder_name: string | null
+          id: string | null
+          instagram: string | null
+          logo_url: string | null
+          name: string | null
+          owner_id: string | null
+          play_days: string[] | null
+          play_time_end: string | null
+          play_time_start: string | null
+          rating: number | null
+          region: string | null
+          war_cry: string | null
+        }
+        Insert: {
+          abbreviation?: string | null
+          categoria?: string | null
+          created_at?: string | null
+          field_name?: string | null
+          format?: string | null
+          foundation_date?: string | null
+          founder_name?: string | null
+          id?: string | null
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string | null
+          owner_id?: string | null
+          play_days?: string[] | null
+          play_time_end?: string | null
+          play_time_start?: string | null
+          rating?: number | null
+          region?: string | null
+          war_cry?: string | null
+        }
+        Update: {
+          abbreviation?: string | null
+          categoria?: string | null
+          created_at?: string | null
+          field_name?: string | null
+          format?: string | null
+          foundation_date?: string | null
+          founder_name?: string | null
+          id?: string | null
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string | null
+          owner_id?: string | null
+          play_days?: string[] | null
+          play_time_end?: string | null
+          play_time_start?: string | null
+          rating?: number | null
+          region?: string | null
+          war_cry?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_team_member: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
