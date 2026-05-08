@@ -197,6 +197,13 @@ const TeamPage = () => {
     phone: (myProfile as any)?.phone || "",
     email: authEmail,
   };
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Team form
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [teamForm, setTeamForm] = useState({ ...EMPTY_TEAM_FORM });
+
   // Keep admin fields locked to the logged-in user's profile while the dialog is open
   useEffect(() => {
     if (!teamDialogOpen) return;
@@ -208,12 +215,6 @@ const TeamPage = () => {
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamDialogOpen, adminDefaults.name, adminDefaults.phone, adminDefaults.email]);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-
-  // Team form
-  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const [isEditingTeam, setIsEditingTeam] = useState(false);
-  const [teamForm, setTeamForm] = useState({ ...EMPTY_TEAM_FORM });
 
   // Player form
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
