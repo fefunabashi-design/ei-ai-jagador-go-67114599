@@ -1044,6 +1044,33 @@ export type Database = {
         }
         Relationships: []
       }
+      trial_blocklist: {
+        Row: {
+          created_at: string
+          emails: string[]
+          id: string
+          source_team_id: string | null
+          source_user_id: string | null
+          team_name_normalized: string
+        }
+        Insert: {
+          created_at?: string
+          emails?: string[]
+          id?: string
+          source_team_id?: string | null
+          source_user_id?: string | null
+          team_name_normalized: string
+        }
+        Update: {
+          created_at?: string
+          emails?: string[]
+          id?: string
+          source_team_id?: string | null
+          source_user_id?: string | null
+          team_name_normalized?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_players: {
@@ -1221,6 +1248,12 @@ export type Database = {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
+      is_trial_blocked: {
+        Args: { _email: string; _team_name?: string }
+        Returns: boolean
+      }
+      normalize_email: { Args: { _email: string }; Returns: string }
+      normalize_team_name: { Args: { _name: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
