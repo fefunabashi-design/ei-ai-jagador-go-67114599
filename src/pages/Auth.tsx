@@ -18,9 +18,13 @@ const AuthPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isStrongPassword = (p: string) =>
+    p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
