@@ -201,6 +201,34 @@ const Index = () => {
               <LogOut size={16} />
               <span className="text-sm font-semibold">Sair da conta</span>
             </button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="w-full flex items-center gap-3 p-3 rounded-xl text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 size={14} />
+                  <span className="font-semibold">Desativar minha conta</span>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Desativar conta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação vai desativar seu perfil. Você poderá cadastrar novamente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => { setSettingsOpen(false); await handleDeactivate(); }}
+                    className="bg-destructive text-destructive-foreground"
+                  >
+                    Desativar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </SheetContent>
       </Sheet>
