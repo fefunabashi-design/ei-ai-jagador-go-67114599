@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { startsWithNorm } from "@/lib/normalize";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
