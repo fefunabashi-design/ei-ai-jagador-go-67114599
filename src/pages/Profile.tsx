@@ -273,8 +273,8 @@ const ProfilePage = () => {
               <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
             </div>
             <div>
-              <Label>Apelido</Label>
-              <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer ser chamado" className="bg-secondary border-border" />
+              <Label>Nome Social</Label>
+              <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
             </div>
             <div>
               <Label>Celular</Label>
