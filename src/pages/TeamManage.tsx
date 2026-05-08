@@ -236,6 +236,7 @@ const TeamPage = () => {
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
+      play_schedule: ((team as any).play_schedule && typeof (team as any).play_schedule === "object") ? (team as any).play_schedule : {},
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
