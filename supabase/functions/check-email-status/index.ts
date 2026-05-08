@@ -20,9 +20,15 @@ Deno.serve(async (req) => {
     );
     const normalized = email.trim().toLowerCase();
 
-    // Find user by email via admin API
-    const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    const user = list?.users?.find((u) => (u.email || "").toLowerCase() === normalized);
+    // Find user by email via admin API. Paginate so older projects with more users
+    // don't miss accounts beyond the first page.
+    let user = null;
+    for (let page = 1; page <= 20 && !user; page++) {
+      const { data: list, error: listError } = await admin.auth.admin.listUsers({ page, perPage: 100 });
+      if (listError) throw listError;
+      user = list?.users?.find((u) => (u.email || "").toLowerCase() === normalized) ?? null;
+      if (!list?.users?.length || list.users.length < 100) break;
+    }
     if (!user) {
       return new Response(JSON.stringify({ exists: false, deactivated: false }), {
         headers: { ...corsHeaders, "content-type": "application/json" },
@@ -34,7 +40,14 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
     const deactivated = profile ? profile.is_active === false : false;
-    return new Response(JSON.stringify({ exists: true, deactivated }), {
+    if (deactivated) {
+      const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+      if (deleteError) throw deleteError;
+      return new Response(JSON.stringify({ exists: false, deactivated: true, cleaned: true }), {
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ exists: true, deactivated: false }), {
       headers: { ...corsHeaders, "content-type": "application/json" },
     });
   } catch (e) {
