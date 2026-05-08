@@ -12,7 +12,9 @@ import BottomNav from "@/components/BottomNav";
 const benefits = [
   "Cadastrar e gerenciar seu time",
   "Cadastrar jogadores e categorias",
-  "Agendar partidas e enviar convocações",
+  "Agendar partidas",
+  "Fazer escalações",
+  "Enviar convocações",
   "Controle de mensalidades e caixa",
   "Buscar adversários e desafios",
   "Suporte prioritário",
@@ -36,6 +38,9 @@ const Intro = ({ onContinue, onPlayerOnly }: { onContinue: () => void; onPlayerO
       <p className="mt-2 text-sm text-muted-foreground px-4 leading-relaxed">
         Se você quer apenas <strong className="text-foreground">jogar</strong> e participar de partidas,
         não precisa entrar aqui.
+      </p>
+      <p className="mt-3 text-xs text-destructive px-4 leading-relaxed font-semibold">
+        Menores de 18 anos não podem administrar times.
       </p>
     </div>
 
