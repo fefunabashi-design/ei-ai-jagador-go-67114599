@@ -786,7 +786,7 @@ export const useChatMessages = (matchId?: string) => {
       const userIds = Array.from(new Set((rows || []).map((m: any) => m.user_id).filter(Boolean)));
       let profMap: Record<string, any> = {};
       if (userIds.length) {
-        const { data: profs = [] } = await supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", userIds);
+        const { data: profs = [] } = await supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", userIds);
         (profs || []).forEach((p: any) => { profMap[p.user_id] = p; });
       }
       setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
@@ -895,17 +895,17 @@ export const useResenhaPosts = () => {
     const authorIds = Array.from(new Set(posts.map((p) => p.author_id)));
     const teamIds = Array.from(new Set(posts.map((p) => p.team_id).filter(Boolean) as string[]));
     const [{ data: profiles }, { data: reactions }, { data: comments }, { data: teams }] = await Promise.all([
-      supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", authorIds),
+      supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", authorIds),
       supabase.from("resenha_reactions").select("*").in("post_id", ids),
       supabase.from("resenha_comments").select("*").in("post_id", ids),
-      teamIds.length ? supabase.from("teams").select("id, name").in("id", teamIds) : Promise.resolve({ data: [] as any[] }),
+      teamIds.length ? supabase.from("public_teams").select("id, name").in("id", teamIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
     const teamMap = new Map((teams || []).map((t: any) => [t.id, t]));
     const commentAuthorIds = Array.from(new Set((comments || []).map((c: any) => c.author_id)));
     const missing = commentAuthorIds.filter((id) => !profMap.has(id));
     if (missing.length) {
-      const { data: cps } = await supabase.from("profiles").select("user_id, display_name, avatar_url").in("user_id", missing);
+      const { data: cps } = await supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", missing);
       (cps || []).forEach((p: any) => profMap.set(p.user_id, p));
     }
     setData(

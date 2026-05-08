@@ -38,7 +38,7 @@ const OpponentDetails = () => {
       else opp = away || home;
       // Fallback: fetch opponent fully if missing fields
       if (opp?.id) {
-        const { data: full } = await supabase.from("teams").select("*").eq("id", opp.id).maybeSingle();
+        const { data: full } = await supabase.from("public_teams").select("*").eq("id", opp.id).maybeSingle();
         if (full) opp = full;
         const { data: pls } = await supabase.from("players").select("*").eq("team_id", opp.id);
         if (!cancelled) setOpponentPlayers(pls || []);

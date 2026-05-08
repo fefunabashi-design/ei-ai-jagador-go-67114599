@@ -219,7 +219,7 @@ const AdminPage = () => {
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
     queryFn: async () => {
-      const { data } = await supabase.from("teams").select("*");
+      const { data } = await supabase.from("public_teams").select("*");
       return data || [];
     },
   });
