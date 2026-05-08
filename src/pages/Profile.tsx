@@ -192,7 +192,7 @@ const ProfilePage = () => {
             <div className="space-y-2 text-sm">
               {[
                 { label: "Nome", value: profile?.display_name },
-                { label: "Apelido", value: profile?.nickname },
+                { label: "Nome Social", value: profile?.nickname },
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
                 { label: "Região", value: profile?.region },
