@@ -34,8 +34,9 @@ const ProfilePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const requireComplete = (location.state as any)?.requireComplete === true;
+  const [justSaved, setJustSaved] = useState(false);
 
-  const isIncomplete = profile && [
+  const isIncomplete = !!profile && [
     profile?.display_name,
     (profile as any)?.last_name,
     profile?.phone,
