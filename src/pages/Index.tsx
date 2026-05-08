@@ -158,7 +158,7 @@ const Index = () => {
           </SheetHeader>
           <div className="mt-6 space-y-2">
             {[
-              { icon: User, label: "Meus dados de jogador", desc: "Cadastrar, editar e excluir", path: "/profile" },
+              { icon: User, label: "Meus dados", desc: "Cadastrar, editar e excluir", path: "/profile" },
               { icon: Users, label: "Meus Times", desc: "Times em que você joga", path: "/team" },
               { icon: BellIcon, label: "Notificações", desc: "Avisos do app e do administrador", path: "/notifications" },
             ].map((item) => (

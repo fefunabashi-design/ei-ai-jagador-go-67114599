@@ -131,7 +131,7 @@ const ProfilePage = () => {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Configurações</p>
-          <h1 className="text-xl font-display text-foreground truncate">MEUS DADOS DE JOGADOR</h1>
+          <h1 className="text-xl font-display text-foreground truncate">MEUS DADOS</h1>
         </div>
       </div>
 

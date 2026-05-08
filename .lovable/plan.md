@@ -1,14 +1,8 @@
-# Atalho visível para super admin
+# Renomear rótulo "Meus dados de jogador" → "Meus dados"
 
-Hoje a página `/super-admin/pagamentos` só é alcançada digitando a URL. Vou adicionar um acesso visível, apenas para usuários com `is_super_admin = true`.
+Atualizar os dois pontos do app onde aparece o texto:
 
-## Mudanças
+- **`src/pages/Index.tsx`** (linha 161) — item do menu na home: trocar `"Meus dados de jogador"` por `"Meus dados"`.
+- **`src/pages/Profile.tsx`** (linha 134) — título da tela de perfil: trocar `MEUS DADOS DE JOGADOR` por `MEUS DADOS`.
 
-**`src/pages/Admin.tsx`**
-- Importar `useAdminAccess` para ler `isSuperAdmin`.
-- Logo abaixo da grid "Atalhos administrativos", renderizar um card destacado **"Pagamentos Pix — Aprovar/rejeitar mensalidades"** que navega para `/super-admin/pagamentos`. Visível só se `isSuperAdmin`.
-
-**(Opcional) `src/pages/Profile.tsx`**
-- Acrescentar um link "Painel super admin → Pagamentos" no menu da conta, também condicionado a `isSuperAdmin`.
-
-Sem alterações de banco. Sem novas rotas (a rota já existe).
+Sem outras mudanças (descrições secundárias, rotas e lógica permanecem iguais).
