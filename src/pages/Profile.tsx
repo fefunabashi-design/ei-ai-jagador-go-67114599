@@ -296,14 +296,19 @@ const ProfilePage = () => {
             <DialogTitle className="font-display text-2xl">EDITAR PERFIL</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProfile} className="space-y-4">
+            {(requireComplete || isIncomplete) && (
+              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                Para começar a usar o app, complete os campos obrigatórios abaixo.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Nome *</Label>
                 <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
               </div>
               <div>
-                <Label>Sobrenome</Label>
-                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" />
+                <Label>Sobrenome *</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" required />
               </div>
             </div>
             <div>
@@ -311,21 +316,22 @@ const ProfilePage = () => {
               <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
             </div>
             <div>
-              <Label>Celular</Label>
+              <Label>Celular *</Label>
               <Input
                 value={editPhone}
                 onChange={(e) => setEditPhone(formatPhone(e.target.value))}
                 placeholder="(11) 99999-9999"
                 className="bg-secondary border-border"
+                required
               />
             </div>
             <div>
-              <Label>Data de Nascimento</Label>
-              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" />
+              <Label>Data de Nascimento *</Label>
+              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
-                <Label>Cidade</Label>
+                <Label>Cidade *</Label>
                 <Input
                   value={editCity}
                   onChange={(e) => {
