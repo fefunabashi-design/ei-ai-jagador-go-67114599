@@ -1,3 +1,4 @@
+import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, MapPin, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
