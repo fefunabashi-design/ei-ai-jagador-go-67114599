@@ -44,11 +44,27 @@ const ProfilePage = () => {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editNickname, setEditNickname] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
+  const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!editOpen || cityOptions.length > 0) return;
+    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        const names = Array.from(
+          new Set(data.map((m) => `${m.nome} - ${m.microrregiao?.mesorregiao?.UF?.sigla || ""}`))
+        ).sort();
+        setCityOptions(names);
+      })
+      .catch(() => setCityOptions([]));
+  }, [editOpen, cityOptions.length]);
 
   const handleLogout = async () => {
     const { supabase } = await import("@/integrations/supabase/client");
