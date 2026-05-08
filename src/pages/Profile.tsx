@@ -115,12 +115,6 @@ const ProfilePage = () => {
     uploadAvatar.mutate(file);
   };
 
-  const handleDeleteAccount = async () => {
-    updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
-    navigate("/");
-    toast({ title: "Conta desativada" });
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
