@@ -241,7 +241,6 @@ const ProfilePage = () => {
           <div className="space-y-1">
             {[
               { label: "Meu Time", path: "/team" },
-              { label: "Histórico de Partidas", path: "/match" },
               { label: "Ranking", path: "/ranking" },
             ].map((item, i) => (
               <motion.button
