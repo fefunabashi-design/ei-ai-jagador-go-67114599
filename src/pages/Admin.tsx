@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
+import { AdminGate } from "@/components/AdminGate";
 import {
   useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile,
   useMyAdminTeams, useSetActiveTeam,
@@ -844,4 +845,5 @@ const AdminPage = () => {
   );
 };
 
-export default AdminPage;
+const AdminPageGated = () => (<AdminGate><AdminPage /></AdminGate>);
+export default AdminPageGated;
