@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { startsWithNorm } from "@/lib/normalize";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -341,10 +342,8 @@ const ProfilePage = () => {
                   autoComplete="off"
                 />
                 {cityOpen && editCity.trim().length > 0 && (() => {
-                  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                  const q = norm(editCity.trim());
                   const matches = cityOptions
-                    .filter((c) => norm(c).startsWith(q))
+                    .filter((c) => startsWithNorm(c, editCity))
                     .slice(0, 8);
                   if (matches.length === 0) return null;
                   return (

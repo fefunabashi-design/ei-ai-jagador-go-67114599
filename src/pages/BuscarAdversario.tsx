@@ -1,3 +1,4 @@
+import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, MapPin, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
@@ -162,15 +163,13 @@ const BuscarAdversarioPage = () => {
   const toMinutesFilter = toMinutes(timeTo);
 
   const filteredCitySuggest = (() => {
-    const q = cityQuery.trim().toLowerCase();
-    if (!q) return cityOptions.slice(0, 8);
-    return cityOptions.filter((c) => c.toLowerCase().includes(q)).slice(0, 8);
+    if (!cityQuery.trim()) return cityOptions.slice(0, 8);
+    return cityOptions.filter((c) => startsWithNorm(c, cityQuery)).slice(0, 8);
   })();
 
   const filteredNameSuggest = (() => {
-    const q = nameQuery.trim().toLowerCase();
-    if (!q) return [] as any[];
-    return availableOpponentTeams.filter((t) => t.name?.toLowerCase().includes(q)).slice(0, 8);
+    if (!nameQuery.trim()) return [] as any[];
+    return availableOpponentTeams.filter((t) => startsWithNorm(t.name, nameQuery)).slice(0, 8);
   })();
 
   const filteredOpponentTeams = availableOpponentTeams.filter((team) => {
@@ -181,8 +180,8 @@ const BuscarAdversarioPage = () => {
     const matchesTime =
       (!fromMinutes || (teamEnd !== null && teamEnd >= fromMinutes)) &&
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
-    const matchesCity = !cityQuery.trim() || ((team as any).addr_cidade || "").toLowerCase().includes(cityQuery.trim().toLowerCase());
-    const matchesName = !nameQuery.trim() || (team.name || "").toLowerCase().includes(nameQuery.trim().toLowerCase());
+    const matchesCity = startsWithNorm((team as any).addr_cidade, cityQuery);
+    const matchesName = startsWithNorm(team.name, nameQuery);
     return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
   });
 

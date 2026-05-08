@@ -1,3 +1,4 @@
+import { startsWithNorm } from "@/lib/normalize";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, MapPin, Plus, Clock, Users } from "lucide-react";
@@ -52,10 +53,9 @@ const MatchPage = () => {
   const filtered = matches.filter((m) => {
     if (selectedFormat !== "Todos" && m.format !== selectedFormat) return false;
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      const homeName = (m.home_team as any)?.name?.toLowerCase() || "";
-      const loc = m.location.toLowerCase();
-      if (!homeName.includes(term) && !loc.includes(term)) return false;
+      const homeName = (m.home_team as any)?.name || "";
+      const loc = m.location || "";
+      if (!startsWithNorm(homeName, searchTerm) && !startsWithNorm(loc, searchTerm)) return false;
     }
     return true;
   });
