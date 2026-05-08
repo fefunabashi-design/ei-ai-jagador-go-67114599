@@ -94,7 +94,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       setSession(s);
       checkProfile(s);
     });
-    return () => subscription.unsubscribe();
+    const onDataChange = () => {
+      supabase.auth.getSession().then(({ data: { session: s } }) => checkProfile(s));
+    };
+    window.addEventListener("supabase-data-change", onDataChange);
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("supabase-data-change", onDataChange);
+    };
   }, []);
 
   if (session === undefined || profileCheck === "loading") return null;
