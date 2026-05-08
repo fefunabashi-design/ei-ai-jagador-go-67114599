@@ -172,7 +172,7 @@ const TeamPage = () => {
   const { toast } = useToast();
   const { data: activeTeam, isLoading: teamLoading } = useMyTeam();
   const { data: myTeams = [] } = useMyTeams();
-  const ownedTeams = myTeams.filter((t: any) => t.owner_id === "mock-user-id");
+  const ownedTeams = myTeams;
   const isOwnerOfAny = ownedTeams.length > 0;
   // Prioriza o time ATIVO (logado) se for do usuário; senão cai no primeiro próprio
   const team =
