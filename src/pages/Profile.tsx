@@ -101,27 +101,45 @@ const ProfilePage = () => {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editName.trim()) {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editLastName.trim()) {
+      toast({ title: "Sobrenome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editPhone.trim() || editPhone.replace(/\D/g, "").length < 10) {
+      toast({ title: "Celular é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editBirthDate) {
+      toast({ title: "Data de Nascimento é obrigatória", variant: "destructive" });
+      return;
+    }
+    if (!editCity.trim()) {
+      toast({ title: "Cidade é obrigatória", variant: "destructive" });
       return;
     }
     if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
       toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
       return;
     }
-    updateProfile.mutate({
+    await updateProfile.mutate({
       display_name: editName.trim(),
-      last_name: editLastName.trim() || undefined,
+      last_name: editLastName.trim(),
       nickname: editNickname.trim() || undefined,
-      phone: editPhone || undefined,
-      birth_date: editBirthDate || undefined,
-      city: editCity.trim() || undefined,
+      phone: editPhone,
+      birth_date: editBirthDate,
+      city: editCity.trim(),
       region: editRegion || undefined,
-      email: editEmail.trim(),
     } as any);
     setEditOpen(false);
+    if (requireComplete || isIncomplete) {
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
