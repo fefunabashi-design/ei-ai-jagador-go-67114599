@@ -103,12 +103,14 @@ const ProfilePage = () => {
     }
     updateProfile.mutate({
       display_name: editName.trim(),
+      last_name: editLastName.trim() || undefined,
       nickname: editNickname.trim() || undefined,
       phone: editPhone || undefined,
       birth_date: editBirthDate || undefined,
-      region: editRegion.trim() || undefined,
+      city: editCity.trim() || undefined,
+      region: editRegion || undefined,
       email: editEmail.trim(),
-    });
+    } as any);
     setEditOpen(false);
   };
 
