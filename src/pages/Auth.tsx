@@ -71,15 +71,32 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          // Check if email is from a deactivated account
+          try {
+            const { data: status } = await supabase.functions.invoke("check-email-status", {
+              body: { email },
+            });
+            if (status?.deactivated) {
+              toast({
+                title: "E-mail já utilizado",
+                description: "Esta conta foi desativada. Crie uma nova conta com uma nova senha.",
+                variant: "destructive",
+              });
+              return;
+            }
+          } catch { /* ignore */ }
+          throw error;
+        }
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
         navigate("/dashboard");
       } else {
+        const fullName = `${name.trim()} ${lastName.trim()}`.trim();
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name },
+            data: { full_name: fullName, first_name: name.trim(), last_name: lastName.trim() },
             emailRedirectTo: window.location.origin,
           },
         });
