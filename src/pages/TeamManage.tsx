@@ -72,6 +72,7 @@ type TeamForm = {
   play_days: string[];
   play_time_start: string;
   play_time_end: string;
+  play_schedule: Record<string, { mode: "fixed" | "flexible"; start: string; end: string }>;
   addr_cep: string;
   addr_rua: string;
   addr_numero: string;
