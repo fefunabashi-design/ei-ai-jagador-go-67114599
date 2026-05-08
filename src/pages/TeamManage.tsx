@@ -113,6 +113,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   play_days: [],
   play_time_start: "",
   play_time_end: "",
+  play_schedule: {},
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
