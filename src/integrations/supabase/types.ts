@@ -977,6 +977,7 @@ export type Database = {
           owner_id: string
           phone: string | null
           play_days: string[] | null
+          play_schedule: Json
           play_time_end: string | null
           play_time_start: string | null
           president_email: string | null
@@ -1009,6 +1010,7 @@ export type Database = {
           owner_id: string
           phone?: string | null
           play_days?: string[] | null
+          play_schedule?: Json
           play_time_end?: string | null
           play_time_start?: string | null
           president_email?: string | null
@@ -1041,6 +1043,7 @@ export type Database = {
           owner_id?: string
           phone?: string | null
           play_days?: string[] | null
+          play_schedule?: Json
           play_time_end?: string | null
           play_time_start?: string | null
           president_email?: string | null

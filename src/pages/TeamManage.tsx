@@ -72,6 +72,7 @@ type TeamForm = {
   play_days: string[];
   play_time_start: string;
   play_time_end: string;
+  play_schedule: Record<string, { mode: "fixed" | "flexible"; start: string; end: string }>;
   addr_cep: string;
   addr_rua: string;
   addr_numero: string;
@@ -112,6 +113,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   play_days: [],
   play_time_start: "",
   play_time_end: "",
+  play_schedule: {},
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
@@ -234,6 +236,7 @@ const TeamPage = () => {
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
+      play_schedule: ((team as any).play_schedule && typeof (team as any).play_schedule === "object") ? (team as any).play_schedule : {},
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
@@ -275,7 +278,17 @@ const TeamPage = () => {
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
-    const payload = { ...teamForm, abbreviation: abbr };
+    // Derive aggregate time window from per-day schedule (for back-compat displays)
+    const starts: string[] = [];
+    const ends: string[] = [];
+    Object.values(teamForm.play_schedule || {}).forEach((s) => {
+      if (s?.start) starts.push(s.start);
+      if (s?.mode === "flexible" && s?.end) ends.push(s.end);
+      else if (s?.mode === "fixed" && s?.start) ends.push(s.start);
+    });
+    const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
+    const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
+    const payload = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
     } else {
@@ -873,11 +886,30 @@ const TeamFormDialog = ({
   const [showAllWeekDays, setShowAllWeekDays] = useState(false);
 
   const togglePlayDay = (day: string) => {
-    const nextDays = form.play_days.includes(day)
-      ? form.play_days.filter((item) => item !== day)
-      : [...form.play_days, day];
+    const isAdding = !form.play_days.includes(day);
+    const nextDays = isAdding
+      ? [...form.play_days, day]
+      : form.play_days.filter((item) => item !== day);
 
     setField("play_days", nextDays);
+
+    const nextSchedule = { ...form.play_schedule };
+    if (isAdding) {
+      if (!nextSchedule[day]) {
+        nextSchedule[day] = { mode: "fixed", start: form.play_time_start || "", end: "" };
+      }
+    } else {
+      delete nextSchedule[day];
+    }
+    setField("play_schedule", nextSchedule);
+  };
+
+  const updateDaySchedule = (
+    day: string,
+    patch: Partial<{ mode: "fixed" | "flexible"; start: string; end: string }>,
+  ) => {
+    const current = form.play_schedule[day] || { mode: "fixed" as const, start: "", end: "" };
+    setField("play_schedule", { ...form.play_schedule, [day]: { ...current, ...patch } });
   };
 
   const visibleWeekDays = showAllWeekDays || form.play_days.length === 0
@@ -1031,26 +1063,71 @@ const TeamFormDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>De</Label>
-              <Input
-                type="time"
-                value={form.play_time_start}
-                onChange={(e) => setField("play_time_start", e.target.value)}
-                className="bg-secondary border-border"
-              />
+          {form.play_days.length > 0 && (
+            <div className="space-y-2">
+              <Label className="block">Horários por dia</Label>
+              <div className="space-y-2">
+                {WEEK_DAYS.filter((d) => form.play_days.includes(d.value)).map((day) => {
+                  const sched = form.play_schedule[day.value] || { mode: "fixed" as const, start: "", end: "" };
+                  return (
+                    <div key={day.value} className="rounded-xl border border-border p-3 space-y-2 bg-secondary/40">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">{day.label}</span>
+                        <div className="flex items-center gap-1 rounded-md bg-background border border-border p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => updateDaySchedule(day.value, { mode: "fixed", end: "" })}
+                            className={`px-2.5 py-1 text-xs rounded ${sched.mode === "fixed" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                          >
+                            Fixo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateDaySchedule(day.value, { mode: "flexible" })}
+                            className={`px-2.5 py-1 text-xs rounded ${sched.mode === "flexible" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                          >
+                            Flexível
+                          </button>
+                        </div>
+                      </div>
+                      {sched.mode === "fixed" ? (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Horário</Label>
+                          <Input
+                            type="time"
+                            value={sched.start}
+                            onChange={(e) => updateDaySchedule(day.value, { start: e.target.value })}
+                            className="bg-background border-border"
+                          />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">De</Label>
+                            <Input
+                              type="time"
+                              value={sched.start}
+                              onChange={(e) => updateDaySchedule(day.value, { start: e.target.value })}
+                              className="bg-background border-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Até</Label>
+                            <Input
+                              type="time"
+                              value={sched.end}
+                              onChange={(e) => updateDaySchedule(day.value, { end: e.target.value })}
+                              className="bg-background border-border"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div>
-              <Label>Até</Label>
-              <Input
-                type="time"
-                value={form.play_time_end}
-                onChange={(e) => setField("play_time_end", e.target.value)}
-                className="bg-secondary border-border"
-              />
-            </div>
-          </div>
+          )}
 
           <div>
             <Label>CEP</Label>
