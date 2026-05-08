@@ -188,6 +188,26 @@ const TeamPage = () => {
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
   const { data: myProfile } = useProfile();
+  const [authEmail, setAuthEmail] = useState("");
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setAuthEmail(data.user?.email || ""));
+  }, []);
+  const adminDefaults = {
+    name: [(myProfile as any)?.display_name, (myProfile as any)?.last_name].filter(Boolean).join(" ").trim(),
+    phone: (myProfile as any)?.phone || "",
+    email: authEmail,
+  };
+  // Keep admin fields locked to the logged-in user's profile while the dialog is open
+  useEffect(() => {
+    if (!teamDialogOpen) return;
+    setTeamForm((prev) => ({
+      ...prev,
+      admin_name: adminDefaults.name,
+      admin_phone: adminDefaults.phone,
+      admin_email: adminDefaults.email,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamDialogOpen, adminDefaults.name, adminDefaults.phone, adminDefaults.email]);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Team form
