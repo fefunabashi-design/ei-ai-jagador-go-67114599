@@ -36,17 +36,13 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleDeactivate = async () => {
-    await new Promise<void>((resolve) =>
-      updateProfile.mutate(
-        { display_name: "[Conta Desativada]", avatar_url: "" },
-        { onSettled: () => resolve() }
-      )
-    );
+    await updateProfile.mutate({ display_name: "[Conta Desativada]", avatar_url: "" });
     const { supabase } = await import("@/integrations/supabase/client");
     await supabase.auth.signOut();
     toast({ title: "Conta desativada" });
     navigate("/auth", { replace: true });
   };
+
 
   const now = new Date();
   const hours = now.getHours();
