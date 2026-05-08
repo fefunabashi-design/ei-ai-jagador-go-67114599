@@ -37,12 +37,15 @@ const Index = () => {
 
   const handleDeactivate = async () => {
     const { supabase } = await import("@/integrations/supabase/client");
-    // Rotate password to a random value so the old credentials no longer work.
-    const randomPwd = crypto.randomUUID() + "Aa1!" + crypto.randomUUID();
-    try { await supabase.auth.updateUser({ password: randomPwd }); } catch { /* ignore */ }
-    await updateProfile.mutate({ display_name: "[Conta Desativada]", is_active: false } as any);
+    try {
+      const { error } = await supabase.functions.invoke("deactivate-account");
+      if (error) throw error;
+    } catch (e) {
+      toast({ title: "Erro ao desativar", description: String((e as any)?.message || e), variant: "destructive" });
+      return;
+    }
     await supabase.auth.signOut();
-    toast({ title: "Conta desativada", description: "Para voltar a usar, cadastre-se novamente." });
+    toast({ title: "Conta desativada", description: "Essa ação desativou seu perfil. Você poderá cadastrar novamente." });
     navigate("/auth", { replace: true });
   };
 

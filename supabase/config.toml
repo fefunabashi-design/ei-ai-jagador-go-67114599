@@ -2,3 +2,6 @@ project_id = "fbcviuapotdfenycjgtz"
 
 [functions.check-email-status]
 verify_jwt = false
+
+[functions.deactivate-account]
+verify_jwt = false
