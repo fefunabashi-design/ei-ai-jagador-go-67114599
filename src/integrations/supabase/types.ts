@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          pix_txid: string | null
+          proof_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          pix_txid?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          pix_txid?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       debitos: {
         Row: {
           created_at: string
@@ -715,10 +763,14 @@ export type Database = {
           display_name: string | null
           id: string
           is_pro: boolean
+          is_super_admin: boolean
           nickname: string | null
           phone: string | null
           region: string | null
           role: string
+          subscription_expires_at: string | null
+          subscription_status: string
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
@@ -729,10 +781,14 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_pro?: boolean
+          is_super_admin?: boolean
           nickname?: string | null
           phone?: string | null
           region?: string | null
           role?: string
+          subscription_expires_at?: string | null
+          subscription_status?: string
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -743,10 +799,14 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_pro?: boolean
+          is_super_admin?: boolean
           nickname?: string | null
           phone?: string | null
           region?: string | null
           role?: string
+          subscription_expires_at?: string | null
+          subscription_status?: string
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1155,6 +1215,8 @@ export type Database = {
       }
     }
     Functions: {
+      has_admin_access: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_team_member: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
