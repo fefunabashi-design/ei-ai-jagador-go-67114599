@@ -160,19 +160,30 @@ export const AdminGate = ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      {status === "trialing" && (
-        <div className={`px-5 pt-3 ${daysLeft <= 7 ? "" : ""}`}>
-          <div className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${
-            daysLeft <= 7 ? "bg-destructive/10 border-destructive/30 text-destructive"
-                          : "bg-primary/10 border-primary/30 text-primary"
-          }`}>
-            <span className="flex items-center gap-2 font-semibold">
-              <ShieldCheck size={14} /> Trial: faltam {daysLeft} {daysLeft === 1 ? "dia" : "dias"}
-            </span>
-            <button onClick={() => navigate("/assinatura")} className="underline font-semibold">Assinar agora</button>
+      {status === "trialing" && (() => {
+        const urgent = daysLeft <= 3;
+        const critical = daysLeft <= 1;
+        const Icon = urgent ? AlertTriangle : ShieldCheck;
+        const label = daysLeft === 0
+          ? "Seu trial expira hoje"
+          : `Trial: ${daysLeft === 1 ? "falta 1 dia" : `faltam ${daysLeft} dias`}`;
+        return (
+          <div className="px-5 pt-3">
+            <div className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${
+              critical ? "bg-destructive/15 border-destructive/40 text-destructive animate-pulse"
+                       : urgent ? "bg-destructive/10 border-destructive/30 text-destructive"
+                                : "bg-primary/10 border-primary/30 text-primary"
+            }`}>
+              <span className="flex items-center gap-2 font-semibold">
+                <Icon size={14} /> {label}
+              </span>
+              <button onClick={() => navigate("/assinatura")} className="underline font-semibold">
+                {urgent ? "Renovar agora" : "Assinar agora"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {children}
     </>
   );
