@@ -26,7 +26,23 @@ Deno.serve(async (req) => {
     const { data: profile } = await admin.from("profiles").select("subscription_status, trial_started_at").eq("user_id", user.id).maybeSingle();
 
     if (profile?.trial_started_at) {
-      return new Response(JSON.stringify({ error: "Trial já foi iniciado anteriormente" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Trial já foi iniciado anteriormente. Para continuar, é necessário pagar a mensalidade." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Antifraude: bloqueia trial se o e-mail (ou nome de time informado) já apareceu em algum cadastro anterior
+    const body = await req.json().catch(() => ({}));
+    const teamName: string | undefined = body?.team_name;
+
+    const { data: blocked } = await admin.rpc("is_trial_blocked", {
+      _email: user.email ?? "",
+      _team_name: teamName ?? null,
+    });
+
+    if (blocked === true) {
+      return new Response(JSON.stringify({
+        error: "Este e-mail ou time já utilizou o período de teste anteriormente. Para acessar o Admin, é necessário pagar a mensalidade de R$ 29,90.",
+        code: "TRIAL_BLOCKED",
+      }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const now = new Date();

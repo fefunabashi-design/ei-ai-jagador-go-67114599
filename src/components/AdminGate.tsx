@@ -134,9 +134,11 @@ export const AdminGate = ({ children }: { children: ReactNode }) => {
   if (loading) return <div className="p-6"><Skeleton className="h-40 w-full rounded-xl" /></div>;
 
   const startTrial = async () => {
-    const { error } = await supabase.functions.invoke("start-trial");
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    const { data, error } = await supabase.functions.invoke("start-trial");
+    const errMsg = (error as any)?.message || (data as any)?.error;
+    if (errMsg) {
+      toast({ title: "Trial indisponível", description: errMsg, variant: "destructive" });
+      if ((data as any)?.code === "TRIAL_BLOCKED") navigate("/assinatura");
       return;
     }
     toast({ title: "Trial iniciado! 🎉", description: "Você tem 30 dias para explorar tudo." });
