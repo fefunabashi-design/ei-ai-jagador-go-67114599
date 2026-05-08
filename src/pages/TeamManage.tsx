@@ -47,6 +47,7 @@ import {
   useProfile,
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
@@ -187,12 +188,33 @@ const TeamPage = () => {
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
   const { data: myProfile } = useProfile();
+  const [authEmail, setAuthEmail] = useState("");
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setAuthEmail(data.user?.email || ""));
+  }, []);
+  const adminDefaults = {
+    name: [(myProfile as any)?.display_name, (myProfile as any)?.last_name].filter(Boolean).join(" ").trim(),
+    phone: (myProfile as any)?.phone || "",
+    email: authEmail,
+  };
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Team form
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
   const [teamForm, setTeamForm] = useState({ ...EMPTY_TEAM_FORM });
+
+  // Keep admin fields locked to the logged-in user's profile while the dialog is open
+  useEffect(() => {
+    if (!teamDialogOpen) return;
+    setTeamForm((prev) => ({
+      ...prev,
+      admin_name: adminDefaults.name,
+      admin_phone: adminDefaults.phone,
+      admin_email: adminDefaults.email,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamDialogOpen, adminDefaults.name, adminDefaults.phone, adminDefaults.email]);
 
   // Player form
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
@@ -1334,23 +1356,28 @@ const TeamFormDialog = ({
 
             {showAdmin && (
               <div className="p-4 space-y-3">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Os dados do administrador do app são vinculados ao seu perfil de jogador e não podem ser alterados aqui. Para atualizá-los, edite seu perfil.
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Admin App</Label>
                     <Input
                       value={form.admin_name}
-                      onChange={(e) => setField("admin_name", e.target.value)}
+                      readOnly
+                      disabled
                       placeholder="Nome"
-                      className="bg-secondary border-border"
+                      className="bg-muted/40 border-border cursor-not-allowed"
                     />
                   </div>
                   <div>
                     <Label>Cel. Admin</Label>
                     <Input
                       value={form.admin_phone}
-                      onChange={(e) => setField("admin_phone", formatPhone(e.target.value))}
+                      readOnly
+                      disabled
                       placeholder="(11) 99999-9999"
-                      className="bg-secondary border-border"
+                      className="bg-muted/40 border-border cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1360,9 +1387,10 @@ const TeamFormDialog = ({
                   <Input
                     type="email"
                     value={form.admin_email}
-                    onChange={(e) => setField("admin_email", e.target.value)}
+                    readOnly
+                    disabled
                     placeholder="admin@email.com"
-                    className="bg-secondary border-border"
+                    className="bg-muted/40 border-border cursor-not-allowed"
                   />
                 </div>
 
