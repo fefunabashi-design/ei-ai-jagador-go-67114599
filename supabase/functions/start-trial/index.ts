@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date();
-    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expires = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const { error } = await admin
       .from("profiles")
