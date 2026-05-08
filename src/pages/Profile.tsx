@@ -52,6 +52,7 @@ const ProfilePage = () => {
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [cityOptions, setCityOptions] = useState<string[]>([]);
+  const [cityOpen, setCityOpen] = useState(false);
 
   useEffect(() => {
     if (!editOpen || cityOptions.length > 0) return;
@@ -325,21 +326,44 @@ const ProfilePage = () => {
               <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
+              <div className="relative">
                 <Label>Cidade</Label>
                 <Input
-                  list="profile-cities"
                   value={editCity}
-                  onChange={(e) => setEditCity(e.target.value)}
+                  onChange={(e) => {
+                    setEditCity(e.target.value);
+                    setCityOpen(true);
+                  }}
+                  onFocus={() => setCityOpen(true)}
+                  onBlur={() => setTimeout(() => setCityOpen(false), 150)}
                   placeholder="Digite sua cidade"
                   className="bg-secondary border-border"
                   autoComplete="off"
                 />
-                <datalist id="profile-cities">
-                  {cityOptions.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
+                {cityOpen && editCity.trim().length > 0 && (() => {
+                  const q = editCity.trim().toLowerCase();
+                  const matches = cityOptions
+                    .filter((c) => c.toLowerCase().startsWith(q))
+                    .slice(0, 8);
+                  if (matches.length === 0) return null;
+                  return (
+                    <ul className="absolute z-50 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-56 overflow-y-auto">
+                      {matches.map((c) => (
+                        <li
+                          key={c}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setEditCity(c);
+                            setCityOpen(false);
+                          }}
+                          className="px-3 py-2 text-sm text-foreground hover:bg-secondary cursor-pointer"
+                        >
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
               </div>
               <div>
                 <Label>Região</Label>
