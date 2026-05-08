@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     // Mark profile as deactivated (kept for historical references)
     await admin.from("profiles").update({ is_active: false, display_name: "[Conta Desativada]" }).eq("user_id", userId);
+    await admin.auth.admin.signOut(token, "global");
     // Fully delete the auth user so the email can be reused for a new account
     const { error: delErr } = await admin.auth.admin.deleteUser(userId);
     if (delErr) {
