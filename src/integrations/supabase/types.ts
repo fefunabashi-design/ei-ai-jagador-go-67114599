@@ -183,6 +183,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lineups_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_lineups_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
@@ -194,6 +201,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
             referencedColumns: ["id"]
           },
         ]
@@ -242,6 +256,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_payments_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_match_fk"
             columns: ["match_id"]
             isOneToOne: false
@@ -253,6 +274,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
             referencedColumns: ["id"]
           },
         ]
@@ -301,6 +329,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_summons_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "summons_match_fk"
             columns: ["match_id"]
             isOneToOne: false
@@ -312,6 +347,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "summons_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
             referencedColumns: ["id"]
           },
         ]
@@ -494,10 +536,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "mensalidades_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mensalidades_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensalidades_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players"
             referencedColumns: ["id"]
           },
         ]
@@ -930,6 +986,86 @@ export type Database = {
       }
     }
     Views: {
+      public_players: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          goals: number | null
+          id: string | null
+          jersey_number: number | null
+          last_name: string | null
+          matches: number | null
+          name: string | null
+          nickname: string | null
+          position: string | null
+          rating: number | null
+          region: string | null
+          team_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          goals?: number | null
+          id?: string | null
+          jersey_number?: number | null
+          last_name?: string | null
+          matches?: number | null
+          name?: string | null
+          nickname?: string | null
+          position?: string | null
+          rating?: number | null
+          region?: string | null
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          goals?: number | null
+          id?: string | null
+          jersey_number?: number | null
+          last_name?: string | null
+          matches?: number | null
+          name?: string | null
+          nickname?: string | null
+          position?: string | null
+          rating?: number | null
+          region?: string | null
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
