@@ -729,7 +729,7 @@ const TeamPage = () => {
             </div>
 
             <div>
-              <Label>Apelido</Label>
+              <Label>Nome Social</Label>
               <Input
                 value={playerForm.nickname}
                 onChange={(e) => setPF("nickname", e.target.value)}
