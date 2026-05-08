@@ -356,6 +356,8 @@ const ProfilePage = () => {
                 </Select>
               </div>
             </div>
+            <div>
+              <Label>E-mail *</Label>
               <Input
                 type="email"
                 value={editEmail}
