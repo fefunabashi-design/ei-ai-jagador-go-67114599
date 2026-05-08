@@ -1,4 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
