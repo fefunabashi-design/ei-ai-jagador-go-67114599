@@ -38,6 +38,22 @@ const AuthPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLogin) {
+      if (!isStrongPassword(password)) {
+        toast({
+          title: "Senha fraca",
+          description: "Use no mínimo 8 caracteres, com 1 letra maiúscula e 1 número.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast({ title: "Senhas não conferem", description: "Digite a mesma senha nos dois campos.", variant: "destructive" });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
