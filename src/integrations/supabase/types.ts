@@ -763,6 +763,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_active: boolean
           is_pro: boolean
           is_super_admin: boolean
           last_name: string | null
@@ -783,6 +784,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_active?: boolean
           is_pro?: boolean
           is_super_admin?: boolean
           last_name?: string | null
@@ -803,6 +805,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_active?: boolean
           is_pro?: boolean
           is_super_admin?: boolean
           last_name?: string | null

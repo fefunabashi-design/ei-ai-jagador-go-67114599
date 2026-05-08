@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
@@ -25,12 +25,23 @@ import { startsWithNorm } from "@/lib/normalize";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { data: user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const requireComplete = (location.state as any)?.requireComplete === true;
+
+  const isIncomplete = profile && [
+    profile?.display_name,
+    (profile as any)?.last_name,
+    profile?.phone,
+    profile?.birth_date,
+    (profile as any)?.city,
+  ].some((v) => !v || String(v).trim() === "");
 
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
@@ -43,6 +54,14 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
   const [cityOptions, setCityOptions] = useState<string[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
+
+  // Auto-open edit dialog on first login when profile is incomplete
+  useEffect(() => {
+    if (!isLoading && profile && (requireComplete || isIncomplete) && !editOpen) {
+      openEditProfile();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, profile?.user_id, requireComplete, isIncomplete]);
 
   useEffect(() => {
     if (!editOpen || cityOptions.length > 0) return;
@@ -82,27 +101,45 @@ const ProfilePage = () => {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editName.trim()) {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editLastName.trim()) {
+      toast({ title: "Sobrenome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editPhone.trim() || editPhone.replace(/\D/g, "").length < 10) {
+      toast({ title: "Celular é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!editBirthDate) {
+      toast({ title: "Data de Nascimento é obrigatória", variant: "destructive" });
+      return;
+    }
+    if (!editCity.trim()) {
+      toast({ title: "Cidade é obrigatória", variant: "destructive" });
       return;
     }
     if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
       toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
       return;
     }
-    updateProfile.mutate({
+    await updateProfile.mutate({
       display_name: editName.trim(),
-      last_name: editLastName.trim() || undefined,
+      last_name: editLastName.trim(),
       nickname: editNickname.trim() || undefined,
-      phone: editPhone || undefined,
-      birth_date: editBirthDate || undefined,
-      city: editCity.trim() || undefined,
+      phone: editPhone,
+      birth_date: editBirthDate,
+      city: editCity.trim(),
       region: editRegion || undefined,
-      email: editEmail.trim(),
     } as any);
     setEditOpen(false);
+    if (requireComplete || isIncomplete) {
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,14 +296,19 @@ const ProfilePage = () => {
             <DialogTitle className="font-display text-2xl">EDITAR PERFIL</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProfile} className="space-y-4">
+            {(requireComplete || isIncomplete) && (
+              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                Para começar a usar o app, complete os campos obrigatórios abaixo.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Nome *</Label>
                 <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
               </div>
               <div>
-                <Label>Sobrenome</Label>
-                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" />
+                <Label>Sobrenome *</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" required />
               </div>
             </div>
             <div>
@@ -274,21 +316,22 @@ const ProfilePage = () => {
               <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
             </div>
             <div>
-              <Label>Celular</Label>
+              <Label>Celular *</Label>
               <Input
                 value={editPhone}
                 onChange={(e) => setEditPhone(formatPhone(e.target.value))}
                 placeholder="(11) 99999-9999"
                 className="bg-secondary border-border"
+                required
               />
             </div>
             <div>
-              <Label>Data de Nascimento</Label>
-              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" />
+              <Label>Data de Nascimento *</Label>
+              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
-                <Label>Cidade</Label>
+                <Label>Cidade *</Label>
                 <Input
                   value={editCity}
                   onChange={(e) => {

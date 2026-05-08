@@ -49,23 +49,52 @@ const queryClient = new QueryClient({
   },
 });
 
+const REQUIRED_PROFILE_FIELDS = ["display_name", "last_name", "phone", "birth_date", "city"];
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [profileCheck, setProfileCheck] = useState<"loading" | "ok" | "incomplete" | "deactivated">("loading");
   const location = useLocation();
 
   useEffect(() => {
+    const checkProfile = async (s: Session | null) => {
+      if (!s) { setProfileCheck("ok"); return; }
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("display_name,last_name,phone,birth_date,city,is_active")
+        .eq("user_id", s.user.id)
+        .maybeSingle();
+      if (p && (p as any).is_active === false) {
+        await supabase.auth.signOut();
+        setProfileCheck("deactivated");
+        return;
+      }
+      const incomplete = !p || REQUIRED_PROFILE_FIELDS.some((f) => {
+        const v = (p as any)?.[f];
+        return v === null || v === undefined || String(v).trim() === "";
+      });
+      setProfileCheck(incomplete ? "incomplete" : "ok");
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (_event === "SIGNED_OUT") {
         queryClient.clear();
       }
+      checkProfile(s);
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      checkProfile(s);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
-  if (session === undefined) return null;
+  if (session === undefined || profileCheck === "loading") return null;
   if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
+  if (profileCheck === "incomplete" && location.pathname !== "/profile") {
+    return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
+  }
   return <>{children}</>;
 };
 
