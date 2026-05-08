@@ -288,7 +288,8 @@ const TeamPage = () => {
     });
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
-    const payload = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
+    const payload: any = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
+    if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
     } else {
