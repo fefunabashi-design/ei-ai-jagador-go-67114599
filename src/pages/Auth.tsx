@@ -30,11 +30,25 @@ const AuthPage = () => {
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard", { replace: true });
-    });
+    const goIfActive = async (session: any) => {
+      if (!session) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_active")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (profile?.is_active === false) {
+        await supabase.auth.signOut();
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith("sb-") || key.includes("supabase.auth.token"))
+          .forEach((key) => localStorage.removeItem(key));
+        return;
+      }
+      navigate("/dashboard", { replace: true });
+    };
+    supabase.auth.getSession().then(({ data: { session } }) => goIfActive(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/dashboard", { replace: true });
+      void goIfActive(session);
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
