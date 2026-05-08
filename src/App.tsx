@@ -30,6 +30,8 @@ import Fotos from "./pages/Fotos.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import OpponentDetails from "./pages/OpponentDetails.tsx";
 import Resenha from "./pages/Resenha.tsx";
+import Assinatura from "./pages/Assinatura.tsx";
+import SuperAdminPagamentos from "./pages/SuperAdminPagamentos.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import { useStatsData } from "@/lib/stats";
@@ -94,6 +96,8 @@ const App = () => {
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
             <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
+            <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
+            <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
