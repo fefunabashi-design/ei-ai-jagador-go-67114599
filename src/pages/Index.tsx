@@ -364,9 +364,6 @@ const Index = () => {
         <div className="px-5 mt-5">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
             <p className="text-sm text-primary mb-2">Você ainda não pertence a nenhum time.</p>
-            <Button size="sm" onClick={() => navigate("/team")} className="bg-gradient-primary text-primary-foreground border-0">
-              Criar Time
-            </Button>
           </motion.div>
         </div>
       )}
