@@ -93,7 +93,8 @@ export function useStatsData(enabled = true) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matches")
-        .select("id, home_team_id, away_team_id, home_score, away_score, status");
+        .select("id, home_team_id, away_team_id, home_score, away_score, status")
+        .eq("status", "completed");
       if (error) throw error;
       return (data || []) as Match[];
     },
@@ -102,16 +103,19 @@ export function useStatsData(enabled = true) {
   });
 
   const lineupsQuery = useQuery({
-    queryKey: ["stats-lineups"],
+    queryKey: ["stats-lineups", matchesQuery.data?.map((m) => m.id).join(",") || "none"],
     queryFn: async () => {
+      const matchIds = matchesQuery.data?.map((m) => m.id) || [];
+      if (!matchIds.length) return [] as Lineup[];
       const { data, error } = await supabase
         .from("match_lineups")
-        .select("match_id, player_id");
+        .select("match_id, player_id")
+        .in("match_id", matchIds);
       if (error) throw error;
       return (data || []) as Lineup[];
     },
     staleTime: 60_000,
-    enabled,
+    enabled: enabled && Boolean(matchesQuery.data),
   });
 
   useEffect(() => {
