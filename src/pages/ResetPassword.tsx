@@ -13,31 +13,45 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [isRecovery, setIsRecovery] = useState<boolean | "checking">("checking");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check hash params for recovery type
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.get("type") === "recovery") {
-      setIsRecovery(true);
-    }
-
-    // Check if there's already a session (redirected from App via PASSWORD_RECOVERY event)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsRecovery(true);
+    let cancelled = false;
+    const init = async () => {
+      // 1) PKCE flow: ?code=...
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error && !cancelled) { setIsRecovery(true); return; }
+        } catch { /* fall through */ }
       }
-    });
+
+      // 2) Hash flow: #access_token=...&type=recovery
+      const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+      const hashParams = new URLSearchParams(hash);
+      const access_token = hashParams.get("access_token");
+      const refresh_token = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
+      if (access_token && refresh_token && type === "recovery") {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (!error && !cancelled) { setIsRecovery(true); return; }
+      }
+
+      // 3) Existing session from PASSWORD_RECOVERY event
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!cancelled) setIsRecovery(session ? true : false);
+    };
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setIsRecovery(true);
-      }
+      if (event === "PASSWORD_RECOVERY") setIsRecovery(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +78,14 @@ const ResetPassword = () => {
       setLoading(false);
     }
   };
+
+  if (isRecovery === "checking") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
 
   if (!isRecovery) {
     return (

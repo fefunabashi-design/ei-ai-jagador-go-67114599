@@ -16,6 +16,7 @@ const AuthPage = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,6 +26,8 @@ const AuthPage = () => {
 
   const isStrongPassword = (p: string) =>
     p.length >= 8 && /[A-Z]/.test(p) && /[0-9]/.test(p);
+  const isValidEmail = (e: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +42,16 @@ const AuthPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isValidEmail(email)) {
+      toast({ title: "E-mail inválido", description: "Informe um e-mail válido.", variant: "destructive" });
+      return;
+    }
+
     if (!isLogin) {
+      if (!name.trim() || !lastName.trim()) {
+        toast({ title: "Dados incompletos", description: "Informe nome e sobrenome.", variant: "destructive" });
+        return;
+      }
       if (!isStrongPassword(password)) {
         toast({
           title: "Senha fraca",
@@ -59,15 +71,32 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          // Check if email is from a deactivated account
+          try {
+            const { data: status } = await supabase.functions.invoke("check-email-status", {
+              body: { email },
+            });
+            if (status?.deactivated) {
+              toast({
+                title: "E-mail já utilizado",
+                description: "Esta conta foi desativada. Crie uma nova conta com uma nova senha.",
+                variant: "destructive",
+              });
+              return;
+            }
+          } catch { /* ignore */ }
+          throw error;
+        }
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
         navigate("/dashboard");
       } else {
+        const fullName = `${name.trim()} ${lastName.trim()}`.trim();
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name },
+            data: { full_name: fullName, first_name: name.trim(), last_name: lastName.trim() },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -174,17 +203,33 @@ const AuthPage = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
-                <Label className="text-xs text-muted-foreground mb-1.5 block">Nome completo</Label>
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
-                    className="pl-9 bg-card border-border"
-                    required={!isLogin}
-                  />
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Nome</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Seu nome"
+                      className="pl-9 bg-card border-border"
+                      required={!isLogin}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Sobrenome</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Seu sobrenome"
+                      className="pl-9 bg-card border-border"
+                      required={!isLogin}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
