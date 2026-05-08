@@ -58,11 +58,12 @@ const ProfilePage = () => {
 
   // Auto-open edit dialog on first login when profile is incomplete
   useEffect(() => {
+    if (justSaved) return;
     if (!isLoading && profile && (requireComplete || isIncomplete) && !editOpen) {
       openEditProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, profile?.user_id, requireComplete, isIncomplete]);
+  }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved]);
 
   useEffect(() => {
     if (!editOpen || cityOptions.length > 0) return;
