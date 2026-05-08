@@ -42,7 +42,16 @@ const AuthPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isValidEmail(email)) {
+      toast({ title: "E-mail inválido", description: "Informe um e-mail válido.", variant: "destructive" });
+      return;
+    }
+
     if (!isLogin) {
+      if (!name.trim() || !lastName.trim()) {
+        toast({ title: "Dados incompletos", description: "Informe nome e sobrenome.", variant: "destructive" });
+        return;
+      }
       if (!isStrongPassword(password)) {
         toast({
           title: "Senha fraca",
