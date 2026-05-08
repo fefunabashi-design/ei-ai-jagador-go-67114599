@@ -266,28 +266,6 @@ const ProfilePage = () => {
             <LogOut size={16} className="mr-2" /> Sair da Conta
           </Button>
 
-          {/* Delete account */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-destructive">
-                <Trash2 size={14} className="mr-1" /> Desativar minha conta
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Desativar conta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação vai desativar seu perfil. Você pode entrar em contato para reativação.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground">
-                  Desativar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </motion.div>
       </div>
 
