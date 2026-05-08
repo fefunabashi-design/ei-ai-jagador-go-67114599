@@ -25,12 +25,23 @@ import { startsWithNorm } from "@/lib/normalize";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { data: user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const requireComplete = (location.state as any)?.requireComplete === true;
+
+  const isIncomplete = profile && [
+    profile?.display_name,
+    (profile as any)?.last_name,
+    profile?.phone,
+    profile?.birth_date,
+    (profile as any)?.city,
+  ].some((v) => !v || String(v).trim() === "");
 
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
@@ -43,6 +54,14 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
   const [cityOptions, setCityOptions] = useState<string[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
+
+  // Auto-open edit dialog on first login when profile is incomplete
+  useEffect(() => {
+    if (!isLoading && profile && (requireComplete || isIncomplete) && !editOpen) {
+      openEditProfile();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, profile?.user_id, requireComplete, isIncomplete]);
 
   useEffect(() => {
     if (!editOpen || cityOptions.length > 0) return;
