@@ -203,17 +203,33 @@ const AuthPage = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
-                <Label className="text-xs text-muted-foreground mb-1.5 block">Nome completo</Label>
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
-                    className="pl-9 bg-card border-border"
-                    required={!isLogin}
-                  />
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Nome</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Seu nome"
+                      className="pl-9 bg-card border-border"
+                      required={!isLogin}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">Sobrenome</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Seu sobrenome"
+                      className="pl-9 bg-card border-border"
+                      required={!isLogin}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
