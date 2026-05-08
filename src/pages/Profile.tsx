@@ -129,6 +129,7 @@ const ProfilePage = () => {
       toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
       return;
     }
+    setJustSaved(true);
     await updateProfile.mutate({
       display_name: editName.trim(),
       last_name: editLastName.trim(),
@@ -140,7 +141,8 @@ const ProfilePage = () => {
     } as any);
     setEditOpen(false);
     if (requireComplete || isIncomplete) {
-      navigate("/dashboard", { replace: true });
+      // Clear location.state so a future remount doesn't auto-reopen
+      navigate("/dashboard", { replace: true, state: {} });
     }
   };
 
