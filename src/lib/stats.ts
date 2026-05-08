@@ -86,8 +86,8 @@ export function formatNota(nota: number): string {
 }
 
 // Hook que carrega matches + lineups do Supabase para o cache global.
-// Deve ser montado uma vez (no App).
-export function useStatsData() {
+// Deve ser montado uma vez (no App), mas só depois de existir sessão ativa.
+export function useStatsData(enabled = true) {
   const matchesQuery = useQuery({
     queryKey: ["stats-matches"],
     queryFn: async () => {
@@ -98,6 +98,7 @@ export function useStatsData() {
       return (data || []) as Match[];
     },
     staleTime: 60_000,
+    enabled,
   });
 
   const lineupsQuery = useQuery({
@@ -110,6 +111,7 @@ export function useStatsData() {
       return (data || []) as Lineup[];
     },
     staleTime: 60_000,
+    enabled,
   });
 
   useEffect(() => {
