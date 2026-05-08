@@ -759,11 +759,13 @@ export type Database = {
         Row: {
           avatar_url: string | null
           birth_date: string | null
+          city: string | null
           created_at: string
           display_name: string | null
           id: string
           is_pro: boolean
           is_super_admin: boolean
+          last_name: string | null
           nickname: string | null
           phone: string | null
           region: string | null
@@ -777,11 +779,13 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           birth_date?: string | null
+          city?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           is_pro?: boolean
           is_super_admin?: boolean
+          last_name?: string | null
           nickname?: string | null
           phone?: string | null
           region?: string | null
@@ -795,11 +799,13 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           birth_date?: string | null
+          city?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           is_pro?: boolean
           is_super_admin?: boolean
+          last_name?: string | null
           nickname?: string | null
           phone?: string | null
           region?: string | null

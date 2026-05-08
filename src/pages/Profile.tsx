@@ -1,4 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, LogOut, Pencil, Camera, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,11 +44,27 @@ const ProfilePage = () => {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editNickname, setEditNickname] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
+  const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!editOpen || cityOptions.length > 0) return;
+    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
+      .then((r) => r.json())
+      .then((data: any[]) => {
+        const names = Array.from(
+          new Set(data.map((m) => `${m.nome} - ${m.microrregiao?.mesorregiao?.UF?.sigla || ""}`))
+        ).sort();
+        setCityOptions(names);
+      })
+      .catch(() => setCityOptions([]));
+  }, [editOpen, cityOptions.length]);
 
   const handleLogout = async () => {
     const { supabase } = await import("@/integrations/supabase/client");
@@ -51,9 +74,11 @@ const ProfilePage = () => {
 
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
+    setEditLastName((profile as any)?.last_name || "");
     setEditNickname(profile?.nickname || "");
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
+    setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
     setEditOpen(true);
@@ -78,12 +103,14 @@ const ProfilePage = () => {
     }
     updateProfile.mutate({
       display_name: editName.trim(),
+      last_name: editLastName.trim() || undefined,
       nickname: editNickname.trim() || undefined,
       phone: editPhone || undefined,
       birth_date: editBirthDate || undefined,
-      region: editRegion.trim() || undefined,
+      city: editCity.trim() || undefined,
+      region: editRegion || undefined,
       email: editEmail.trim(),
-    });
+    } as any);
     setEditOpen(false);
   };
 
@@ -192,9 +219,11 @@ const ProfilePage = () => {
             <div className="space-y-2 text-sm">
               {[
                 { label: "Nome", value: profile?.display_name },
+                { label: "Sobrenome", value: (profile as any)?.last_name },
                 { label: "Nome Social", value: profile?.nickname },
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
+                { label: "Cidade", value: (profile as any)?.city },
                 { label: "Região", value: profile?.region },
                 { label: "E-mail", value: (profile as any)?.email || user?.email },
               ].map((item) => (
@@ -268,9 +297,15 @@ const ProfilePage = () => {
             <DialogTitle className="font-display text-2xl">EDITAR PERFIL</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome *</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary border-border" required />
+              </div>
+              <div>
+                <Label>Sobrenome</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" />
+              </div>
             </div>
             <div>
               <Label>Nome Social</Label>
@@ -289,9 +324,37 @@ const ProfilePage = () => {
               <Label>Data de Nascimento</Label>
               <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" />
             </div>
-            <div>
-              <Label>Região</Label>
-              <Input value={editRegion} onChange={(e) => setEditRegion(e.target.value)} placeholder="Ex: Zona Sul - SP" className="bg-secondary border-border" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Cidade</Label>
+                <Input
+                  list="profile-cities"
+                  value={editCity}
+                  onChange={(e) => setEditCity(e.target.value)}
+                  placeholder="Digite sua cidade"
+                  className="bg-secondary border-border"
+                  autoComplete="off"
+                />
+                <datalist id="profile-cities">
+                  {cityOptions.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </div>
+              <div>
+                <Label>Região</Label>
+                <Select value={editRegion} onValueChange={setEditRegion}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Z/Sul">Z/Sul</SelectItem>
+                    <SelectItem value="Z/Oeste">Z/Oeste</SelectItem>
+                    <SelectItem value="Z/Norte">Z/Norte</SelectItem>
+                    <SelectItem value="Z/Leste">Z/Leste</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label>E-mail *</Label>
