@@ -41,8 +41,9 @@ const AuthPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(normalizedEmail)) {
       toast({ title: "E-mail inválido", description: "Informe um e-mail válido.", variant: "destructive" });
       return;
     }
@@ -69,31 +70,36 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
+      const checkEmailStatus = async () => {
+        const { data } = await supabase.functions.invoke("check-email-status", {
+          body: { email: normalizedEmail },
+        });
+        return data as { exists?: boolean; deactivated?: boolean; cleaned?: boolean } | null;
+      };
+
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const status = await checkEmailStatus();
+        if (status?.deactivated || status?.cleaned) {
+          toast({
+            title: "Conta desativada",
+            description: "Este e-mail já foi utilizado. Crie uma nova conta com uma nova senha.",
+            variant: "destructive",
+          });
+          setIsLogin(false);
+          return;
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) {
-          // Check if email is from a deactivated account
-          try {
-            const { data: status } = await supabase.functions.invoke("check-email-status", {
-              body: { email },
-            });
-            if (status?.deactivated) {
-              toast({
-                title: "E-mail já utilizado",
-                description: "Esta conta foi desativada. Crie uma nova conta com uma nova senha.",
-                variant: "destructive",
-              });
-              return;
-            }
-          } catch { /* ignore */ }
           throw error;
         }
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
         navigate("/dashboard");
       } else {
+        await checkEmailStatus();
         const fullName = `${name.trim()} ${lastName.trim()}`.trim();
         const { error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
             data: { full_name: fullName, first_name: name.trim(), last_name: lastName.trim() },
