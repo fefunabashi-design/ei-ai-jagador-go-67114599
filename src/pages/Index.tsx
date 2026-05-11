@@ -37,6 +37,7 @@ const Index = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [addPostOpen, setAddPostOpen] = useState(false);
+  const [postRefresh, setPostRefresh] = useState(0);
   const { toast } = useToast();
 
   const handleDeactivate = async () => {
@@ -520,11 +521,11 @@ const Index = () => {
             </Button>
           )}
         </div>
-        <PostFeed currentUserId={profile?.user_id} />
+        <PostFeed currentUserId={profile?.user_id} refreshSignal={postRefresh} />
       </section>
 
       {profile?.user_id && (
-        <AddPostDialog open={addPostOpen} onOpenChange={setAddPostOpen} userId={profile.user_id} />
+        <AddPostDialog open={addPostOpen} onOpenChange={setAddPostOpen} userId={profile.user_id} onPublished={() => setPostRefresh((v) => v + 1)} />
       )}
 
       <BottomNav />
