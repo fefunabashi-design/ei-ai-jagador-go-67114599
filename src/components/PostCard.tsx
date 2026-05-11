@@ -111,4 +111,35 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
   );
 };
 
+const AutoplayVideo = ({ src }: { src: string }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio >= 0.6) {
+          el.play().catch(() => {});
+        } else {
+          el.pause();
+        }
+      },
+      { threshold: [0, 0.6, 1] }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <video
+      ref={ref}
+      src={src}
+      controls
+      muted
+      playsInline
+      preload="metadata"
+      className="w-full max-h-[480px]"
+    />
+  );
+};
+
 export default PostCard;
