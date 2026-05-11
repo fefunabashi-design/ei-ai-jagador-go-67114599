@@ -397,11 +397,6 @@ const AgendaPage = () => {
               <Calendar size={14} className="mr-1" /> Calendário
             </Button>
           </div>
-          {myTeam && (
-            <Button onClick={() => setCreateOpen(true)} className="bg-gradient-primary text-primary-foreground border-0 h-8 text-xs">
-              <Plus size={14} className="mr-1" /> Nova Partida
-            </Button>
-          )}
         </div>
 
         {/* Filters (only show in list view) */}
