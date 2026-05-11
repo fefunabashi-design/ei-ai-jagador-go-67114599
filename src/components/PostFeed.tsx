@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PostCard, { Post } from "./PostCard";
 
 const PostFeed = ({ currentUserId, refreshSignal = 0 }: { currentUserId?: string; refreshSignal?: number }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [index, setIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -36,6 +39,31 @@ const PostFeed = ({ currentUserId, refreshSignal = 0 }: { currentUserId?: string
     if (refreshSignal > 0) load();
   }, [refreshSignal]);
 
+  // Auto-advance every 3s
+  useEffect(() => {
+    if (posts.length <= 1) return;
+    const id = window.setInterval(() => {
+      if (pausedRef.current) return;
+      setIndex((i) => (i + 1) % posts.length);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [posts.length]);
+
+  // Reset index if posts shrink
+  useEffect(() => {
+    if (index >= posts.length) setIndex(0);
+  }, [posts.length, index]);
+
+  // Scroll track when index changes
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const child = track.children[index] as HTMLElement | undefined;
+    if (child) {
+      track.scrollTo({ left: child.offsetLeft, behavior: "smooth" });
+    }
+  }, [index]);
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -55,10 +83,36 @@ const PostFeed = ({ currentUserId, refreshSignal = 0 }: { currentUserId?: string
   }
 
   return (
-    <div className="space-y-3">
-      {posts.map((p) => (
-        <PostCard key={p.id} post={p} currentUserId={currentUserId} onDeleted={load} />
-      ))}
+    <div
+      className="space-y-2"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      onTouchStart={() => { pausedRef.current = true; }}
+      onTouchEnd={() => { pausedRef.current = false; }}
+    >
+      <div
+        ref={trackRef}
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar -mx-4 px-4"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {posts.map((p) => (
+          <div key={p.id} className="snap-center shrink-0 w-full">
+            <PostCard post={p} currentUserId={currentUserId} onDeleted={load} />
+          </div>
+        ))}
+      </div>
+      {posts.length > 1 && (
+        <div className="flex justify-center gap-1.5 pt-1">
+          {posts.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              aria-label={`Ir para post ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-primary" : "w-1.5 bg-muted-foreground/40"}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
