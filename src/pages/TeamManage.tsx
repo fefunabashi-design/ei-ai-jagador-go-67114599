@@ -171,8 +171,10 @@ const TeamPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: activeTeam, isLoading: teamLoading } = useMyTeam();
-  const { data: myTeams = [] } = useMyTeams();
-  const ownedTeams = myTeams;
+  const { data: myTeams = [], isLoading: myTeamsLoading } = useMyTeams();
+  const { data: myProfile, isLoading: profileLoading } = useProfile();
+  const currentUserId = (myProfile as any)?.user_id;
+  const ownedTeams = currentUserId ? myTeams.filter((t: any) => t.owner_id === currentUserId) : [];
   const isOwnerOfAny = ownedTeams.length > 0;
   // Prioriza o time ATIVO (logado) se for do usuário; senão cai no primeiro próprio
   const team =
@@ -187,7 +189,6 @@ const TeamPage = () => {
   const createPlayer = useCreatePlayer();
   const updatePlayer = useUpdatePlayer();
   const deletePlayer = useDeletePlayer();
-  const { data: myProfile } = useProfile();
   const [authEmail, setAuthEmail] = useState("");
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthEmail(data.user?.email || ""));
@@ -231,7 +232,7 @@ const TeamPage = () => {
 
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (teamLoading || autoOpened) return;
+    if (teamLoading || myTeamsLoading || profileLoading || autoOpened) return;
     // Aguarda hidratação dos dados de times antes de decidir
     const timer = setTimeout(() => {
       if (autoOpened) return;
@@ -245,7 +246,7 @@ const TeamPage = () => {
     }, 50);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwnerOfAny, teamLoading, team, autoOpened]);
+  }, [isOwnerOfAny, teamLoading, myTeamsLoading, profileLoading, team, autoOpened]);
 
   const openEditTeam = () => {
     if (!team) return;
