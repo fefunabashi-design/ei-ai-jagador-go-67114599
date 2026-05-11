@@ -143,9 +143,9 @@ const AgendaPage = () => {
 
   const now = new Date();
 
-  const myMatches = matches.filter((m) => {
-    const homeTeam = m.home_team as any;
-    return myTeam && homeTeam?.owner_id === myTeam.owner_id;
+  const myMatches = matches.filter((m: any) => {
+    if (!myTeam) return false;
+    return m.home_team_id === myTeam.id || m.away_team_id === myTeam.id;
   });
 
   const availableDays = Array.isArray((myTeam as any)?.play_days)
