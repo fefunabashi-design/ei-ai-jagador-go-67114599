@@ -755,6 +755,36 @@ export type Database = {
           },
         ]
       }
+      posts: {
+        Row: {
+          author_id: string
+          created_at: string
+          data: string
+          id: string
+          legenda: string | null
+          tipo: string
+          url: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          data?: string
+          id?: string
+          legenda?: string | null
+          tipo: string
+          url: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          legenda?: string | null
+          tipo?: string
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
