@@ -152,8 +152,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Status bar */}
-      <div className="px-5 pt-4 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground font-semibold">{timeStr}</span>
+      <div className="px-5 pt-4 flex items-center justify-end">
         <div className="flex items-center gap-3">
           {pendingSummons > 0 && (
             <div className="relative">
@@ -245,24 +244,27 @@ const Index = () => {
       </Sheet>
 
       {/* Greeting + Avatar */}
-      <div className="px-5 pt-3 pb-2">
-        <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={firstName} className="w-12 h-12 rounded-full object-cover" />
-            ) : (
-              getInitials(firstName)
-            )}
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
-            {myTeam && (
-              <p className="text-[10px] text-muted-foreground flex items-center gap-2">
-                <span>{myTeam.name} · {myTeam.format}</span>
-                <NotaBadge nota={teamStats.nota} played={teamStats.played} />
-              </p>
-            )}
+      <div className="relative px-5 pt-3 pb-4 overflow-hidden">
+        {myTeam?.logo_url && (
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-center bg-no-repeat bg-contain opacity-10 pointer-events-none"
+            style={{ backgroundImage: `url(${myTeam.logo_url})` }}
+          />
+        )}
+        <div className="relative">
+          <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={firstName} className="w-12 h-12 rounded-full object-cover" />
+              ) : (
+                getInitials(firstName)
+              )}
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
+            </div>
           </div>
         </div>
       </div>
