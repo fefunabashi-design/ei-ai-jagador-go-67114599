@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PostCard, { Post } from "./PostCard";
 
-const PostFeed = ({ currentUserId }: { currentUserId?: string }) => {
+const PostFeed = ({ currentUserId, refreshSignal = 0 }: { currentUserId?: string; refreshSignal?: number }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,17 +18,23 @@ const PostFeed = ({ currentUserId }: { currentUserId?: string }) => {
 
   useEffect(() => {
     load();
+    const refresh = () => load();
+    window.addEventListener("posts-feed-change", refresh);
     const channel = supabase
       .channel("posts-feed")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload) => {
-        setPosts((prev) => [payload.new as Post, ...prev]);
-      })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload) => {
-        setPosts((prev) => prev.filter((p) => p.id !== (payload.old as Post).id));
+      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => {
+        load();
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      window.removeEventListener("posts-feed-change", refresh);
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  useEffect(() => {
+    if (refreshSignal > 0) load();
+  }, [refreshSignal]);
 
   if (loading) {
     return (
