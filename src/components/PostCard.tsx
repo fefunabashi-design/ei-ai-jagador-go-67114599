@@ -100,7 +100,7 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
             />
           </div>
         ) : (
-          <video src={post.url} controls preload="metadata" className="w-full max-h-[480px]" />
+          <AutoplayVideo src={post.url} />
         )}
       </div>
 
