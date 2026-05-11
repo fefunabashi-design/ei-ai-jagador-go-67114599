@@ -53,6 +53,7 @@ const BuscarAdversarioPage = () => {
   const [newMatchDate, setNewMatchDate] = useState("");
   const [newMatchTime, setNewMatchTime] = useState("");
   const [newMatchLocation, setNewMatchLocation] = useState("");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away">("own");
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
