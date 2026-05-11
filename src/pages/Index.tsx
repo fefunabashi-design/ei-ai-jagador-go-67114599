@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
+import PostFeed from "@/components/PostFeed";
+import AddPostDialog from "@/components/AddPostDialog";
+import { Plus } from "lucide-react";
 import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons } from "@/hooks/useSupabaseData";
 import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
