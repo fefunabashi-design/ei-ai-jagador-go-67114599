@@ -41,7 +41,7 @@ const AddPostDialog = ({
 
       if (origem === "upload") {
         if (!file) { toast({ title: "Selecione um arquivo", variant: "destructive" }); return; }
-        if (file.size > MAX_BYTES) { toast({ title: "Arquivo muito grande", description: "Máximo 25 MB.", variant: "destructive" }); return; }
+        if (file.size > MAX_BYTES) { toast({ title: "Arquivo muito grande", description: "Máximo 100 MB.", variant: "destructive" }); return; }
         const ext = file.name.split(".").pop() || (tipo === "imagem" ? "jpg" : "mp4");
         const path = `${userId}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("post-media").upload(path, file, { upsert: false, contentType: file.type });
