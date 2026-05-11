@@ -19,6 +19,11 @@ const getYouTubeEmbed = (url: string): string | null => {
   return m ? `https://www.youtube.com/embed/${m[1]}` : null;
 };
 
+const getInstagramEmbed = (url: string): string | null => {
+  if (!/instagram\.com\/(p|reel|tv)\//i.test(url)) return null;
+  return `${url.split("?")[0].replace(/\/$/, "")}/embed`;
+};
+
 const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserId?: string; onDeleted?: () => void }) => {
   const [author, setAuthor] = useState<{ display_name: string | null; nickname: string | null; avatar_url: string | null } | null>(null);
 
@@ -36,10 +41,16 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
   const handleDelete = async () => {
     if (!confirm("Excluir este post?")) return;
     const { error } = await supabase.from("posts").delete().eq("id", post.id);
-    if (!error) onDeleted?.();
+    if (!error) {
+      window.dispatchEvent(new CustomEvent("posts-feed-change"));
+      onDeleted?.();
+    } else {
+      alert(error.message);
+    }
   };
 
   const youtube = post.tipo === "video" ? getYouTubeEmbed(post.url) : null;
+  const instagram = post.tipo === "video" ? getInstagramEmbed(post.url) : null;
   const name = author?.nickname || author?.display_name || "Jogador";
   const initials = name.slice(0, 2).toUpperCase();
   const isOwner = currentUserId && currentUserId === post.author_id;
@@ -75,6 +86,16 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
               title={post.legenda || "Vídeo"}
               className="absolute inset-0 w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : instagram ? (
+          <div className="relative w-full min-h-[560px] bg-background">
+            <iframe
+              src={instagram}
+              title={post.legenda || "Instagram"}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
               allowFullScreen
             />
           </div>
