@@ -510,6 +510,23 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Feed da Comunidade */}
+      <section className="px-5 mt-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg text-foreground">FEED DA COMUNIDADE</h2>
+          {profile?.user_id && (
+            <Button size="sm" onClick={() => setAddPostOpen(true)} className="gap-1">
+              <Plus size={14} /> Adicionar Post
+            </Button>
+          )}
+        </div>
+        <PostFeed currentUserId={profile?.user_id} />
+      </section>
+
+      {profile?.user_id && (
+        <AddPostDialog open={addPostOpen} onOpenChange={setAddPostOpen} userId={profile.user_id} />
+      )}
+
       <BottomNav />
     </div>
   );
