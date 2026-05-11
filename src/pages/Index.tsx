@@ -152,8 +152,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Status bar */}
-      <div className="px-5 pt-4 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground font-semibold">{timeStr}</span>
+      <div className="px-5 pt-4 flex items-center justify-end">
         <div className="flex items-center gap-3">
           {pendingSummons > 0 && (
             <div className="relative">
