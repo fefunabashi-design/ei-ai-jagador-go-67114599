@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Trash2 } from "lucide-react";
 
@@ -100,7 +100,7 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
             />
           </div>
         ) : (
-          <video src={post.url} controls preload="metadata" className="w-full max-h-[480px]" />
+          <AutoplayVideo src={post.url} />
         )}
       </div>
 
@@ -108,6 +108,37 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
         <p className="px-4 py-3 text-sm text-foreground/90 whitespace-pre-wrap">{post.legenda}</p>
       )}
     </div>
+  );
+};
+
+const AutoplayVideo = ({ src }: { src: string }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio >= 0.6) {
+          el.play().catch(() => {});
+        } else {
+          el.pause();
+        }
+      },
+      { threshold: [0, 0.6, 1] }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <video
+      ref={ref}
+      src={src}
+      controls
+      muted
+      playsInline
+      preload="metadata"
+      className="w-full max-h-[480px]"
+    />
   );
 };
 

@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_BYTES = 100 * 1024 * 1024;
 
 const AddPostDialog = ({
   open,
@@ -41,7 +41,7 @@ const AddPostDialog = ({
 
       if (origem === "upload") {
         if (!file) { toast({ title: "Selecione um arquivo", variant: "destructive" }); return; }
-        if (file.size > MAX_BYTES) { toast({ title: "Arquivo muito grande", description: "Máximo 25 MB.", variant: "destructive" }); return; }
+        if (file.size > MAX_BYTES) { toast({ title: "Arquivo muito grande", description: "Máximo 100 MB.", variant: "destructive" }); return; }
         const ext = file.name.split(".").pop() || (tipo === "imagem" ? "jpg" : "mp4");
         const path = `${userId}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("post-media").upload(path, file, { upsert: false, contentType: file.type });
@@ -107,7 +107,7 @@ const AddPostDialog = ({
 
           {origem === "upload" ? (
             <div className="space-y-2">
-              <Label>Arquivo (máx 25 MB)</Label>
+              <Label>Arquivo (máx 100 MB)</Label>
               <Input
                 type="file"
                 accept={tipo === "imagem" ? "image/*" : "video/*"}
