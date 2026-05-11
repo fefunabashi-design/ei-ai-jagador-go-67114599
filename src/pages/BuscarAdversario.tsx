@@ -207,7 +207,7 @@ const BuscarAdversarioPage = () => {
             onClick={() => setNewMatchOpen(true)}
             className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
           >
-            Criar Partida
+            Desafio/Adversário sem cadastro
           </Button>
 
           <div className="space-y-3">
