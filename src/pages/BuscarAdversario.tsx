@@ -536,7 +536,39 @@ const BuscarAdversarioPage = () => {
               <Input id="nm-time" type="time" value={newMatchTime} onChange={(e) => setNewMatchTime(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="nm-loc">Local</Label>
+              <Label className="mb-2 block">Local</Label>
+              <RadioGroup
+                value={newMatchLocationChoice}
+                onValueChange={(v) => {
+                  const choice = v as "own" | "away";
+                  setNewMatchLocationChoice(choice);
+                  if (choice === "own") {
+                    const t = myTeam as any;
+                    setNewMatchLocation(t?.field_address || t?.field_name || "");
+                  } else {
+                    setNewMatchLocation("");
+                  }
+                }}
+                className="space-y-2 mb-2"
+              >
+                <label htmlFor="nm-loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                  <RadioGroupItem id="nm-loc-own" value="own" className="mt-1" />
+                  <div className="text-sm">
+                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
+                    <div className="text-xs text-muted-foreground">
+                      {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                    </div>
+                  </div>
+                </label>
+                <label htmlFor="nm-loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                  <RadioGroupItem id="nm-loc-away" value="away" className="mt-1" />
+                  <div className="text-sm">
+                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Campo do Adversário</div>
+                    <div className="text-xs text-muted-foreground">Informe o endereço abaixo</div>
+                  </div>
+                </label>
+              </RadioGroup>
+              <Label htmlFor="nm-loc">Endereço do local</Label>
               <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
             </div>
           </div>
