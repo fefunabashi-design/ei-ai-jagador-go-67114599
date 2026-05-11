@@ -107,7 +107,7 @@ const AddPostDialog = ({
 
           {origem === "upload" ? (
             <div className="space-y-2">
-              <Label>Arquivo (máx 25 MB)</Label>
+              <Label>Arquivo (máx 100 MB)</Label>
               <Input
                 type="file"
                 accept={tipo === "imagem" ? "image/*" : "video/*"}
