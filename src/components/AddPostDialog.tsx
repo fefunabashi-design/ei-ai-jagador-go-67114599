@@ -15,10 +15,12 @@ const AddPostDialog = ({
   open,
   onOpenChange,
   userId,
+  onPublished,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   userId: string;
+  onPublished?: () => void;
 }) => {
   const { toast } = useToast();
   const [tipo, setTipo] = useState<"imagem" | "video">("imagem");
@@ -61,6 +63,8 @@ const AddPostDialog = ({
       if (error) throw error;
 
       toast({ title: "Post publicado!" });
+      window.dispatchEvent(new CustomEvent("posts-feed-change"));
+      onPublished?.();
       reset();
       onOpenChange(false);
     } catch (e: any) {
