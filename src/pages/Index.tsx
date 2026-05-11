@@ -36,6 +36,7 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [addPostOpen, setAddPostOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDeactivate = async () => {
