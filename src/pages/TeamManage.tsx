@@ -171,8 +171,8 @@ const TeamPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: activeTeam, isLoading: teamLoading } = useMyTeam();
-  const { data: myTeams = [] } = useMyTeams();
-  const ownedTeams = myTeams;
+  const { data: myTeams = [], isLoading: myTeamsLoading } = useMyTeams();
+  const ownedTeams = myTeams.filter((t: any) => t.owner_id === activeTeam?.owner_id || t.owner_id === (t as any).owner_id);
   const isOwnerOfAny = ownedTeams.length > 0;
   // Prioriza o time ATIVO (logado) se for do usuário; senão cai no primeiro próprio
   const team =
@@ -231,7 +231,7 @@ const TeamPage = () => {
 
   const [autoOpened, setAutoOpened] = useState(false);
   useEffect(() => {
-    if (teamLoading || autoOpened) return;
+    if (teamLoading || myTeamsLoading || autoOpened) return;
     // Aguarda hidratação dos dados de times antes de decidir
     const timer = setTimeout(() => {
       if (autoOpened) return;
@@ -245,7 +245,7 @@ const TeamPage = () => {
     }, 50);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwnerOfAny, teamLoading, team, autoOpened]);
+  }, [isOwnerOfAny, teamLoading, myTeamsLoading, team, autoOpened]);
 
   const openEditTeam = () => {
     if (!team) return;
