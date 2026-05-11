@@ -239,7 +239,7 @@ export const useUploadTeamLogo = () => {
       const uid = await getUserId();
       if (!uid) throw new Error("Não autenticado");
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `${uid}/${teamId}-${Date.now()}.${ext}`;
+      const path = `${teamId}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("team-logos").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data: pub } = supabase.storage.from("team-logos").getPublicUrl(path);
