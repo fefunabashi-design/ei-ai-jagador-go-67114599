@@ -351,7 +351,7 @@ export const useMatches = () => {
     if (!teamIds.length) { setData([]); setIsLoading(false); return; }
     const { data: rows = [] } = await supabase
       .from("matches")
-      .select("*")
+      .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
       .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
       .order("match_date", { ascending: true });
     setData(rows || []);
