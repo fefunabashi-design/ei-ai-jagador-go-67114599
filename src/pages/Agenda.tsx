@@ -485,8 +485,12 @@ const AgendaPage = () => {
                     {/* Teams */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <Shield size={16} className="text-primary" />
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                          {homeTeam?.logo_url ? (
+                            <img src={homeTeam.logo_url} alt="" className="w-9 h-9 object-cover" />
+                          ) : (
+                            <Shield size={16} className="text-primary" />
+                          )}
                         </div>
                         <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
                       </div>
@@ -499,8 +503,12 @@ const AgendaPage = () => {
                       )}
                       <div className="flex items-center gap-2">
                         <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
-                        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                          <Shield size={16} className="text-muted-foreground" />
+                        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          {awayTeam?.logo_url ? (
+                            <img src={awayTeam.logo_url} alt="" className="w-9 h-9 object-cover" />
+                          ) : (
+                            <Shield size={16} className="text-muted-foreground" />
+                          )}
                         </div>
                       </div>
                     </div>
