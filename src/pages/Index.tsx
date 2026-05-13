@@ -331,8 +331,12 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center">
-                      <Shield size={28} className="text-muted-foreground" />
+                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      {awayTeam?.logo_url ? (
+                        <img src={awayTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                      ) : (
+                        <Shield size={28} className="text-muted-foreground" />
+                      )}
                     </div>
                     <p className="font-display text-foreground text-sm text-center">{awayTeam?.name?.toUpperCase() || "???"}</p>
                     {(() => {
