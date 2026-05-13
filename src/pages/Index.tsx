@@ -226,11 +226,17 @@ const Index = () => {
       {/* Greeting + Avatar */}
       <div className="relative px-5 pt-3 pb-4 overflow-hidden">
         {myTeam?.logo_url && (
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-center bg-no-repeat bg-contain opacity-10 pointer-events-none"
-            style={{ backgroundImage: `url(${myTeam.logo_url})` }}
-          />
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-50 pointer-events-none"
+              style={{ backgroundImage: `url(${myTeam.logo_url})` }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/40 to-background/70 pointer-events-none"
+            />
+          </>
         )}
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
