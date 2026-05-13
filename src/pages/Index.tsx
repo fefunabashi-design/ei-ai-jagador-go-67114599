@@ -331,8 +331,12 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center">
-                      <Shield size={28} className="text-muted-foreground" />
+                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      {awayTeam?.logo_url ? (
+                        <img src={awayTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                      ) : (
+                        <Shield size={28} className="text-muted-foreground" />
+                      )}
                     </div>
                     <p className="font-display text-foreground text-sm text-center">{awayTeam?.name?.toUpperCase() || "???"}</p>
                     {(() => {
@@ -350,6 +354,35 @@ const Index = () => {
                     {nextMatch.status === "completed" ? "🏁 Finalizado" : nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
                   </span>
                 </div>
+
+                {nextMatch.status !== "completed" && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    <Button
+                      size="sm"
+                      onClick={() => setConfirmOpen(true)}
+                      className="text-xs h-8 px-3 rounded-lg bg-gradient-primary text-primary-foreground border-0 font-semibold"
+                    >
+                      <UserCheck size={12} className="mr-1" />
+                      {myCurrentStatus === "confirmed" ? "Presença ✓" : myCurrentStatus === "declined" ? "Ausente ✗" : "Confirmar presença"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setListOpen(true)}
+                      className="text-xs h-8 px-3 rounded-lg"
+                    >
+                      <ListChecks size={12} className="mr-1" /> Confirmações ({confirmedRoster.length}/{roster.length})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
+                      className="text-xs h-8 px-3 rounded-lg"
+                    >
+                      <Users size={12} className="mr-1" /> Escalação
+                    </Button>
+                  </div>
+                )}
 
                 {nextMatch.status === "completed" && (
                   <div className="mt-3 pt-3 border-t border-border">
