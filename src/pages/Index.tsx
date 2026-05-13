@@ -151,26 +151,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Status bar */}
-      <div className="px-5 pt-4 flex items-center justify-end">
-        <div className="flex items-center gap-3">
-          {pendingSummons > 0 && (
-            <div className="relative">
-              <Bell size={18} className="text-muted-foreground" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                {pendingSummons}
-              </span>
-            </div>
-          )}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Configurações"
-            className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:border-primary/40 transition-colors"
-          >
-            <Settings size={16} className="text-muted-foreground" />
-          </button>
-        </div>
-      </div>
 
       {/* Settings quick menu */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -253,7 +233,26 @@ const Index = () => {
           />
         )}
         <div className="relative">
-          <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
+            <div className="flex items-center gap-3">
+              {pendingSummons > 0 && (
+                <div className="relative">
+                  <Bell size={18} className="text-muted-foreground" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {pendingSummons}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Configurações"
+                className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center hover:border-primary/40 transition-colors"
+              >
+                <Settings size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+          </div>
           <div className="flex items-center gap-3 mt-2">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-xl shrink-0">
               {profile?.avatar_url ? (
