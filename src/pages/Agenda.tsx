@@ -487,7 +487,7 @@ const AgendaPage = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
                           {homeTeam?.logo_url ? (
-                            <img src={homeTeam.logo_url} alt="" className="w-9 h-9 object-cover" />
+                            <img src={homeTeam.logo_url} alt="" loading="eager" className="w-9 h-9 object-contain" />
                           ) : (
                             <Shield size={16} className="text-primary" />
                           )}
