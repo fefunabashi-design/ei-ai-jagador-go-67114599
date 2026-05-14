@@ -553,14 +553,13 @@ const Index = () => {
 
       {/* Feed da Comunidade */}
       <section className="px-5 mt-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-foreground">FEED DA COMUNIDADE</h2>
-          {profile?.user_id && (
-            <Button size="sm" onClick={() => setAddPostOpen(true)} className="gap-1">
-              <Plus size={14} /> Adicionar Post
+        {profile?.user_id && (
+          <div className="flex justify-end">
+            <Button onClick={() => setAddPostOpen(true)} className="gap-1 h-6 px-2 text-[10px] rounded-md">
+              <Plus size={10} /> Adicionar Post
             </Button>
-          )}
-        </div>
+          </div>
+        )}
         <PostFeed currentUserId={profile?.user_id} refreshSignal={postRefresh} />
       </section>
 
