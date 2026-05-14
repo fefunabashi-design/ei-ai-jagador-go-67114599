@@ -491,8 +491,18 @@ const Index = () => {
       <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
+            <DialogTitle className="font-display">CONFIRMAÇÕES ({confirmedRoster.length}/{roster.length})</DialogTitle>
           </DialogHeader>
+
+          {nextMatch && nextMatch.status !== "completed" && (
+            <Button
+              onClick={() => { setListOpen(false); setConfirmOpen(true); }}
+              className="bg-gradient-primary text-primary-foreground border-0 font-semibold w-full"
+            >
+              <UserCheck size={14} className="mr-1" />
+              {myCurrentStatus === "confirmed" ? "Presença ✓" : myCurrentStatus === "declined" ? "Ausente ✗" : "Confirmar presença"}
+            </Button>
+          )}
 
           <div>
             <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
