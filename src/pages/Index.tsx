@@ -229,7 +229,7 @@ const Index = () => {
           <>
             <div
               aria-hidden
-              className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-50 pointer-events-none"
+              className="absolute inset-0 bg-center bg-no-repeat bg-contain opacity-60 pointer-events-none"
               style={{ backgroundImage: `url(${myTeam.logo_url})` }}
             />
             <div
