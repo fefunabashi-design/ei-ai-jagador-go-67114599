@@ -361,30 +361,22 @@ const Index = () => {
                 </div>
 
                 {nextMatch.status !== "completed" && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    <Button
-                      size="sm"
-                      onClick={() => setConfirmOpen(true)}
-                      className="text-xs h-8 px-3 rounded-lg bg-gradient-primary text-primary-foreground border-0 font-semibold"
-                    >
-                      <UserCheck size={12} className="mr-1" />
-                      {myCurrentStatus === "confirmed" ? "Presença ✓" : myCurrentStatus === "declined" ? "Ausente ✗" : "Confirmar presença"}
-                    </Button>
+                  <div className="flex flex-wrap gap-1 mt-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setListOpen(true)}
-                      className="text-xs h-8 px-3 rounded-lg"
+                      className="text-[10px] h-6 px-2 rounded-md"
                     >
-                      <ListChecks size={12} className="mr-1" /> Confirmações ({confirmedRoster.length}/{roster.length})
+                      <ListChecks size={10} className="mr-1" /> Confirmações
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
-                      className="text-xs h-8 px-3 rounded-lg"
+                      className="text-[10px] h-6 px-2 rounded-md"
                     >
-                      <Users size={12} className="mr-1" /> Escalação
+                      <Users size={10} className="mr-1" /> Escalação
                     </Button>
                   </div>
                 )}
