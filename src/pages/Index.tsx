@@ -418,16 +418,6 @@ const Index = () => {
               </div>
             </motion.div>
 
-            {/* Detalhes da partida - fora do card */}
-            <button
-              onClick={() => navigate(`/chat/${nextMatch.id}`)}
-              className="w-full mt-2 px-4 py-2.5 rounded-xl bg-card border border-border flex items-center justify-between hover:border-primary/40 transition-colors"
-            >
-              <span className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                <MessageCircle size={12} /> Detalhes da partida
-              </span>
-              <ChevronRight size={14} className="text-primary" />
-            </button>
 
           </div>
         );
