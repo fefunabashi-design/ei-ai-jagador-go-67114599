@@ -288,10 +288,10 @@ const Index = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card rounded-xl border border-border p-2.5 text-center"
+            className="bg-card rounded-lg border border-border p-1 text-center"
             >
-              <p className="text-lg font-bold text-foreground font-display">{stat.value}</p>
-              <p className="text-[9px] text-muted-foreground font-semibold">{stat.label}</p>
+              <p className="text-xs font-bold text-foreground font-display leading-tight">{stat.value}</p>
+              <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
             </motion.div>
           ))}
         </div>
