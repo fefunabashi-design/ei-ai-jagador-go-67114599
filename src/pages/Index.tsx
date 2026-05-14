@@ -229,7 +229,7 @@ const Index = () => {
           <>
             <div
               aria-hidden
-              className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-50 pointer-events-none"
+              className="absolute inset-0 bg-center bg-no-repeat bg-contain opacity-60 pointer-events-none"
               style={{ backgroundImage: `url(${myTeam.logo_url})` }}
             />
             <div
@@ -317,7 +317,7 @@ const Index = () => {
                   <div className="flex flex-col items-center gap-1 flex-1">
                     <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
                       {myTeam?.logo_url ? (
-                        <img src={myTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                        <img src={myTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
                       ) : (
                         <Shield size={28} className="text-primary" />
                       )}
@@ -338,7 +338,7 @@ const Index = () => {
                   <div className="flex flex-col items-center gap-1 flex-1">
                     <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
                       {awayTeam?.logo_url ? (
-                        <img src={awayTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                        <img src={awayTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
                       ) : (
                         <Shield size={28} className="text-muted-foreground" />
                       )}
