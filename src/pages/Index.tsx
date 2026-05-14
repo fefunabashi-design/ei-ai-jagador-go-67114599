@@ -378,6 +378,14 @@ const Index = () => {
                     >
                       <Users size={10} className="mr-1" /> Escalação
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/chat/${nextMatch.id}`)}
+                      className="text-[10px] h-6 px-2 rounded-md"
+                    >
+                      <MessageCircle size={10} className="mr-1" /> Detalhes
+                    </Button>
                   </div>
                 )}
 
