@@ -378,6 +378,14 @@ const Index = () => {
                     >
                       <Users size={10} className="mr-1" /> Escalação
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/chat/${nextMatch.id}`)}
+                      className="text-[10px] h-6 px-2 rounded-md"
+                    >
+                      <MessageCircle size={10} className="mr-1" /> Detalhes
+                    </Button>
                   </div>
                 )}
 
@@ -410,16 +418,6 @@ const Index = () => {
               </div>
             </motion.div>
 
-            {/* Detalhes da partida - fora do card */}
-            <button
-              onClick={() => navigate(`/chat/${nextMatch.id}`)}
-              className="w-full mt-2 px-4 py-2.5 rounded-xl bg-card border border-border flex items-center justify-between hover:border-primary/40 transition-colors"
-            >
-              <span className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                <MessageCircle size={12} /> Detalhes da partida
-              </span>
-              <ChevronRight size={14} className="text-primary" />
-            </button>
 
           </div>
         );
@@ -555,14 +553,13 @@ const Index = () => {
 
       {/* Feed da Comunidade */}
       <section className="px-5 mt-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-foreground">FEED DA COMUNIDADE</h2>
-          {profile?.user_id && (
-            <Button size="sm" onClick={() => setAddPostOpen(true)} className="gap-1">
-              <Plus size={14} /> Adicionar Post
+        {profile?.user_id && (
+          <div className="flex justify-end">
+            <Button onClick={() => setAddPostOpen(true)} className="gap-1 h-6 px-2 text-[10px] rounded-md">
+              <Plus size={10} /> Adicionar Post
             </Button>
-          )}
-        </div>
+          </div>
+        )}
         <PostFeed currentUserId={profile?.user_id} refreshSignal={postRefresh} />
       </section>
 
