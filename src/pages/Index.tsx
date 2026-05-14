@@ -317,7 +317,7 @@ const Index = () => {
                   <div className="flex flex-col items-center gap-1 flex-1">
                     <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
                       {myTeam?.logo_url ? (
-                        <img src={myTeam.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                        <img src={myTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
                       ) : (
                         <Shield size={28} className="text-primary" />
                       )}
