@@ -288,10 +288,10 @@ const Index = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card rounded-xl border border-border p-2.5 text-center"
+            className="bg-card rounded-lg border border-border p-1 text-center"
             >
-              <p className="text-lg font-bold text-foreground font-display">{stat.value}</p>
-              <p className="text-[9px] text-muted-foreground font-semibold">{stat.label}</p>
+              <p className="text-xs font-bold text-foreground font-display leading-tight">{stat.value}</p>
+              <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
             </motion.div>
           ))}
         </div>
@@ -361,30 +361,22 @@ const Index = () => {
                 </div>
 
                 {nextMatch.status !== "completed" && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    <Button
-                      size="sm"
-                      onClick={() => setConfirmOpen(true)}
-                      className="text-xs h-8 px-3 rounded-lg bg-gradient-primary text-primary-foreground border-0 font-semibold"
-                    >
-                      <UserCheck size={12} className="mr-1" />
-                      {myCurrentStatus === "confirmed" ? "Presença ✓" : myCurrentStatus === "declined" ? "Ausente ✗" : "Confirmar presença"}
-                    </Button>
+                  <div className="flex flex-wrap gap-1 mt-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setListOpen(true)}
-                      className="text-xs h-8 px-3 rounded-lg"
+                      className="text-[10px] h-6 px-2 rounded-md"
                     >
-                      <ListChecks size={12} className="mr-1" /> Confirmações ({confirmedRoster.length}/{roster.length})
+                      <ListChecks size={10} className="mr-1" /> Confirmações
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
-                      className="text-xs h-8 px-3 rounded-lg"
+                      className="text-[10px] h-6 px-2 rounded-md"
                     >
-                      <Users size={12} className="mr-1" /> Escalação
+                      <Users size={10} className="mr-1" /> Escalação
                     </Button>
                   </div>
                 )}
@@ -499,8 +491,18 @@ const Index = () => {
       <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
+            <DialogTitle className="font-display">CONFIRMAÇÕES ({confirmedRoster.length}/{roster.length})</DialogTitle>
           </DialogHeader>
+
+          {nextMatch && nextMatch.status !== "completed" && (
+            <Button
+              onClick={() => { setListOpen(false); setConfirmOpen(true); }}
+              className="bg-gradient-primary text-primary-foreground border-0 font-semibold w-full"
+            >
+              <UserCheck size={14} className="mr-1" />
+              {myCurrentStatus === "confirmed" ? "Presença ✓" : myCurrentStatus === "declined" ? "Ausente ✗" : "Confirmar presença"}
+            </Button>
+          )}
 
           <div>
             <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
