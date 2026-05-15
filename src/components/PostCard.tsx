@@ -24,7 +24,19 @@ const getInstagramEmbed = (url: string): string | null => {
   return `${url.split("?")[0].replace(/\/$/, "")}/embed`;
 };
 
-const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserId?: string; onDeleted?: () => void }) => {
+const PostCard = ({
+  post,
+  currentUserId,
+  onDeleted,
+  isActive = true,
+  onPlayingChange,
+}: {
+  post: Post;
+  currentUserId?: string;
+  onDeleted?: () => void;
+  isActive?: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+}) => {
   const [author, setAuthor] = useState<{ display_name: string | null; nickname: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -80,27 +92,24 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
         {post.tipo === "imagem" ? (
           <img src={post.url} alt={post.legenda || "Post"} className="w-full max-h-[480px] object-contain" loading="lazy" />
         ) : youtube ? (
-          <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-            <iframe
-              src={youtube}
-              title={post.legenda || "Vídeo"}
-              className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          <EmbedFrame
+            src={youtube}
+            title={post.legenda || "Vídeo"}
+            isActive={isActive}
+            onPlayingChange={onPlayingChange}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            ratio
+          />
         ) : instagram ? (
-          <div className="relative w-full min-h-[560px] bg-background">
-            <iframe
-              src={instagram}
-              title={post.legenda || "Instagram"}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </div>
+          <EmbedFrame
+            src={instagram}
+            title={post.legenda || "Instagram"}
+            isActive={isActive}
+            onPlayingChange={onPlayingChange}
+            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          />
         ) : (
-          <AutoplayVideo src={post.url} />
+          <AutoplayVideo src={post.url} isActive={isActive} onPlayingChange={onPlayingChange} />
         )}
       </div>
 
@@ -111,24 +120,87 @@ const PostCard = ({ post, currentUserId, onDeleted }: { post: Post; currentUserI
   );
 };
 
-const AutoplayVideo = ({ src }: { src: string }) => {
+const EmbedFrame = ({
+  src,
+  title,
+  isActive,
+  onPlayingChange,
+  allow,
+  ratio = false,
+}: {
+  src: string;
+  title: string;
+  isActive: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+  allow: string;
+  ratio?: boolean;
+}) => {
+  // For embeds we can't detect playback; treat as "playing" only while visible/active
+  // and force a remount when leaving so the embedded player stops.
+  useEffect(() => {
+    onPlayingChange?.(isActive);
+    return () => onPlayingChange?.(false);
+  }, [isActive]);
+
+  if (!isActive) {
+    return (
+      <div className={ratio ? "relative w-full" : "relative w-full min-h-[560px] bg-background"} style={ratio ? { paddingBottom: "56.25%" } : undefined}>
+        <div className="absolute inset-0 bg-black" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={ratio ? "relative w-full" : "relative w-full min-h-[560px] bg-background"} style={ratio ? { paddingBottom: "56.25%" } : undefined}>
+      <iframe
+        src={src}
+        title={title}
+        className="absolute inset-0 w-full h-full"
+        allow={allow}
+        allowFullScreen
+      />
+    </div>
+  );
+};
+
+const AutoplayVideo = ({
+  src,
+  isActive,
+  onPlayingChange,
+}: {
+  src: string;
+  isActive: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+}) => {
   const ref = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.intersectionRatio >= 0.6) {
-          el.play().catch(() => {});
-        } else {
-          el.pause();
-        }
-      },
-      { threshold: [0, 0.6, 1] }
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    if (!isActive) {
+      el.pause();
+      el.currentTime = 0;
+      onPlayingChange?.(false);
+    }
+  }, [isActive]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onPlay = () => onPlayingChange?.(true);
+    const onPause = () => onPlayingChange?.(false);
+    const onEnded = () => onPlayingChange?.(false);
+    el.addEventListener("play", onPlay);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("ended", onEnded);
+    return () => {
+      el.removeEventListener("play", onPlay);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("ended", onEnded);
+      onPlayingChange?.(false);
+    };
   }, []);
+
   return (
     <video
       ref={ref}
