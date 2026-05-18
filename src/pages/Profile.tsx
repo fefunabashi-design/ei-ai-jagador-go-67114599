@@ -90,6 +90,15 @@ const ProfilePage = () => {
     setEditName(profile?.display_name || "");
     setEditLastName((profile as any)?.last_name || "");
     setEditNickname(profile?.nickname || "");
+    const savedGender = (profile as any)?.gender || "";
+    const knownGenders = ["Masculino", "Feminino", "Não-binário", "Prefiro não informar"];
+    if (savedGender && !knownGenders.includes(savedGender)) {
+      setEditGender("Outro");
+      setEditGenderOther(savedGender);
+    } else {
+      setEditGender(savedGender);
+      setEditGenderOther("");
+    }
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
     setEditCity((profile as any)?.city || "");
