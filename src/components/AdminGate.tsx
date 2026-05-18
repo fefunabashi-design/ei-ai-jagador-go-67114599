@@ -93,7 +93,7 @@ const Welcome = ({
           ))}
         </ul>
         <Button onClick={onStart} disabled={loading} size="lg" className="w-full mt-5">
-          {loading ? "Iniciando..." : "Começar 7 dias grátis"}
+          {loading ? "Iniciando..." : "Começar 30 dias grátis"}
         </Button>
         <Button onClick={onPlayerOnly} variant="ghost" size="lg" className="w-full mt-2">
           Quero ficar somente como jogador
