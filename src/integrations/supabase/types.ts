@@ -792,6 +792,7 @@ export type Database = {
           city: string | null
           created_at: string
           display_name: string | null
+          gender: string | null
           id: string
           is_active: boolean
           is_pro: boolean
@@ -813,6 +814,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           is_active?: boolean
           is_pro?: boolean
@@ -834,6 +836,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
           id?: string
           is_active?: boolean
           is_pro?: boolean
