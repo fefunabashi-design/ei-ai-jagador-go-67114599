@@ -146,7 +146,7 @@ export const AdminGate = ({ children }: { children: ReactNode }) => {
       if ((data as any)?.code === "TRIAL_BLOCKED") navigate("/assinatura");
       return;
     }
-    toast({ title: "Trial iniciado! 🎉", description: "Você tem 7 dias para explorar tudo." });
+    toast({ title: "Trial iniciado! 🎉", description: "Você tem 30 dias para explorar tudo." });
     await refresh();
   };
 
