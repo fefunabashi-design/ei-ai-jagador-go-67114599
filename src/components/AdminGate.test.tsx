@@ -105,7 +105,7 @@ describe("AdminGate (status: none)", () => {
     invokeMock.mockResolvedValue({ error: null });
     renderGate();
     fireEvent.click(screen.getByRole("button", { name: /quero administrar um time/i }));
-    fireEvent.click(screen.getByRole("button", { name: /começar 7 dias grátis/i }));
+    fireEvent.click(screen.getByRole("button", { name: /começar 30 dias grátis/i }));
     await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("start-trial"));
     await waitFor(() => expect(accessState.refresh).toHaveBeenCalled());
   });
