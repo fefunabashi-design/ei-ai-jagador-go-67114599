@@ -73,7 +73,7 @@ const Welcome = ({
       </motion.div>
       <h1 className="mt-4 text-2xl font-display text-foreground">Admin PRO</h1>
       <p className="mt-1 text-sm text-muted-foreground px-4">
-        Gerencie seu time como um profissional. Comece com <strong>7 dias grátis</strong>.
+        Gerencie seu time como um profissional. Comece com <strong>30 dias grátis</strong>.
       </p>
     </div>
 
