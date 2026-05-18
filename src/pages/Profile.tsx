@@ -141,10 +141,12 @@ const ProfilePage = () => {
       return;
     }
     setJustSaved(true);
+    const genderValue = editGender === "Outro" ? editGenderOther.trim() || undefined : editGender || undefined;
     await updateProfile.mutate({
       display_name: editName.trim(),
       last_name: editLastName.trim(),
       nickname: editNickname.trim() || undefined,
+      gender: genderValue,
       phone: editPhone,
       birth_date: editBirthDate,
       city: editCity.trim(),
