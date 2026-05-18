@@ -81,7 +81,7 @@ describe("AdminGate (status: none)", () => {
     expect(screen.getByText("Admin PRO")).toBeInTheDocument();
     expect(screen.getAllByText(/R\$ 29,90/).length).toBeGreaterThan(0);
     expect(
-      screen.getByRole("button", { name: /começar 7 dias grátis/i })
+      screen.getByRole("button", { name: /começar 30 dias grátis/i })
     ).toBeInTheDocument();
   });
 
