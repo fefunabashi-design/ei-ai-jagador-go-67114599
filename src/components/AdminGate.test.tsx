@@ -101,7 +101,7 @@ describe("AdminGate (status: none)", () => {
     expect(navigateMock).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("inicia o trial e chama refresh ao clicar em começar 7 dias grátis", async () => {
+  it("inicia o trial e chama refresh ao clicar em começar 30 dias grátis", async () => {
     invokeMock.mockResolvedValue({ error: null });
     renderGate();
     fireEvent.click(screen.getByRole("button", { name: /quero administrar um time/i }));
