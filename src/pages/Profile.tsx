@@ -329,9 +329,34 @@ const ProfilePage = () => {
                 <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" required />
               </div>
             </div>
-            <div>
-              <Label>Nome Social</Label>
-              <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome Social</Label>
+                <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
+              </div>
+              <div>
+                <Label>Gênero</Label>
+                <Select value={editGender} onValueChange={setEditGender}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Feminino">Feminino</SelectItem>
+                    <SelectItem value="Não-binário">Não-binário</SelectItem>
+                    <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editGender === "Outro" && (
+                  <Input
+                    value={editGenderOther}
+                    onChange={(e) => setEditGenderOther(e.target.value)}
+                    placeholder="Especifique"
+                    className="bg-secondary border-border mt-2"
+                  />
+                )}
+              </div>
             </div>
             <div>
               <Label>Celular *</Label>
