@@ -73,7 +73,7 @@ const Welcome = ({
       </motion.div>
       <h1 className="mt-4 text-2xl font-display text-foreground">Admin PRO</h1>
       <p className="mt-1 text-sm text-muted-foreground px-4">
-        Gerencie seu time como um profissional. Comece com <strong>7 dias grátis</strong>.
+        Gerencie seu time como um profissional. Comece com <strong>30 dias grátis</strong>.
       </p>
     </div>
 
@@ -84,7 +84,7 @@ const Welcome = ({
           <span className="text-3xl font-display text-foreground">R$ 29,90</span>
           <span className="text-sm text-muted-foreground">/mês</span>
         </div>
-        <p className="mt-1 text-xs text-primary font-semibold">7 dias grátis · Sem cartão</p>
+        <p className="mt-1 text-xs text-primary font-semibold">30 dias grátis · Sem cartão</p>
         <ul className="mt-4 space-y-2">
           {benefits.map((b) => (
             <li key={b} className="flex items-start gap-2 text-sm text-foreground">
@@ -93,7 +93,7 @@ const Welcome = ({
           ))}
         </ul>
         <Button onClick={onStart} disabled={loading} size="lg" className="w-full mt-5">
-          {loading ? "Iniciando..." : "Começar 7 dias grátis"}
+          {loading ? "Iniciando..." : "Começar 30 dias grátis"}
         </Button>
         <Button onClick={onPlayerOnly} variant="ghost" size="lg" className="w-full mt-2">
           Quero ficar somente como jogador
@@ -146,7 +146,7 @@ export const AdminGate = ({ children }: { children: ReactNode }) => {
       if ((data as any)?.code === "TRIAL_BLOCKED") navigate("/assinatura");
       return;
     }
-    toast({ title: "Trial iniciado! 🎉", description: "Você tem 7 dias para explorar tudo." });
+    toast({ title: "Trial iniciado! 🎉", description: "Você tem 30 dias para explorar tudo." });
     await refresh();
   };
 

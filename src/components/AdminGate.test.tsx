@@ -81,7 +81,7 @@ describe("AdminGate (status: none)", () => {
     expect(screen.getByText("Admin PRO")).toBeInTheDocument();
     expect(screen.getAllByText(/R\$ 29,90/).length).toBeGreaterThan(0);
     expect(
-      screen.getByRole("button", { name: /começar 7 dias grátis/i })
+      screen.getByRole("button", { name: /começar 30 dias grátis/i })
     ).toBeInTheDocument();
   });
 
@@ -101,11 +101,11 @@ describe("AdminGate (status: none)", () => {
     expect(navigateMock).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("inicia o trial e chama refresh ao clicar em começar 7 dias grátis", async () => {
+  it("inicia o trial e chama refresh ao clicar em começar 30 dias grátis", async () => {
     invokeMock.mockResolvedValue({ error: null });
     renderGate();
     fireEvent.click(screen.getByRole("button", { name: /quero administrar um time/i }));
-    fireEvent.click(screen.getByRole("button", { name: /começar 7 dias grátis/i }));
+    fireEvent.click(screen.getByRole("button", { name: /começar 30 dias grátis/i }));
     await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("start-trial"));
     await waitFor(() => expect(accessState.refresh).toHaveBeenCalled());
   });
