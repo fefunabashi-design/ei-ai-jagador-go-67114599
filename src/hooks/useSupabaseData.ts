@@ -65,7 +65,7 @@ export const useUpdateProfile = () => {
       const uid = await getUserId();
       if (!uid) throw new Error("Não autenticado");
       const allowed: Record<string, unknown> = {};
-      ["display_name","last_name","nickname","phone","birth_date","city","region","avatar_url","role","is_pro","is_active"].forEach(k => {
+      ["display_name","last_name","nickname","phone","birth_date","city","region","avatar_url","role","is_pro","is_active","gender"].forEach(k => {
         if (k in updates) allowed[k] = (updates as any)[k];
       });
       if (Object.keys(allowed).length) {

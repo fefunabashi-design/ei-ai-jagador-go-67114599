@@ -48,6 +48,8 @@ const ProfilePage = () => {
   const [editName, setEditName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editNickname, setEditNickname] = useState("");
+  const [editGender, setEditGender] = useState("");
+  const [editGenderOther, setEditGenderOther] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editCity, setEditCity] = useState("");
@@ -88,6 +90,15 @@ const ProfilePage = () => {
     setEditName(profile?.display_name || "");
     setEditLastName((profile as any)?.last_name || "");
     setEditNickname(profile?.nickname || "");
+    const savedGender = (profile as any)?.gender || "";
+    const knownGenders = ["Masculino", "Feminino", "Não-binário", "Prefiro não informar"];
+    if (savedGender && !knownGenders.includes(savedGender)) {
+      setEditGender("Outro");
+      setEditGenderOther(savedGender);
+    } else {
+      setEditGender(savedGender);
+      setEditGenderOther("");
+    }
     setEditPhone(profile?.phone || "");
     setEditBirthDate(profile?.birth_date || "");
     setEditCity((profile as any)?.city || "");
@@ -130,10 +141,12 @@ const ProfilePage = () => {
       return;
     }
     setJustSaved(true);
+    const genderValue = editGender === "Outro" ? editGenderOther.trim() || undefined : editGender || undefined;
     await updateProfile.mutate({
       display_name: editName.trim(),
       last_name: editLastName.trim(),
       nickname: editNickname.trim() || undefined,
+      gender: genderValue,
       phone: editPhone,
       birth_date: editBirthDate,
       city: editCity.trim(),
@@ -247,6 +260,7 @@ const ProfilePage = () => {
                 { label: "Nome", value: profile?.display_name },
                 { label: "Sobrenome", value: (profile as any)?.last_name },
                 { label: "Nome Social", value: profile?.nickname },
+                { label: "Gênero", value: (profile as any)?.gender },
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
                 { label: "Cidade", value: (profile as any)?.city },
@@ -315,9 +329,34 @@ const ProfilePage = () => {
                 <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} placeholder="Sobrenome" className="bg-secondary border-border" required />
               </div>
             </div>
-            <div>
-              <Label>Nome Social</Label>
-              <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome Social</Label>
+                <Input value={editNickname} onChange={(e) => setEditNickname(e.target.value)} placeholder="Como quer aparecer no app" className="bg-secondary border-border" />
+              </div>
+              <div>
+                <Label>Gênero</Label>
+                <Select value={editGender} onValueChange={setEditGender}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Feminino">Feminino</SelectItem>
+                    <SelectItem value="Não-binário">Não-binário</SelectItem>
+                    <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editGender === "Outro" && (
+                  <Input
+                    value={editGenderOther}
+                    onChange={(e) => setEditGenderOther(e.target.value)}
+                    placeholder="Especifique"
+                    className="bg-secondary border-border mt-2"
+                  />
+                )}
+              </div>
             </div>
             <div>
               <Label>Celular *</Label>
