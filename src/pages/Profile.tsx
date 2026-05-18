@@ -260,6 +260,7 @@ const ProfilePage = () => {
                 { label: "Nome", value: profile?.display_name },
                 { label: "Sobrenome", value: (profile as any)?.last_name },
                 { label: "Nome Social", value: profile?.nickname },
+                { label: "Gênero", value: (profile as any)?.gender },
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: profile?.birth_date },
                 { label: "Cidade", value: (profile as any)?.city },
