@@ -84,7 +84,7 @@ const Welcome = ({
           <span className="text-3xl font-display text-foreground">R$ 29,90</span>
           <span className="text-sm text-muted-foreground">/mês</span>
         </div>
-        <p className="mt-1 text-xs text-primary font-semibold">7 dias grátis · Sem cartão</p>
+        <p className="mt-1 text-xs text-primary font-semibold">30 dias grátis · Sem cartão</p>
         <ul className="mt-4 space-y-2">
           {benefits.map((b) => (
             <li key={b} className="flex items-start gap-2 text-sm text-foreground">
