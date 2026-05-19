@@ -258,7 +258,7 @@ const Index = () => {
               <img
                 src={myTeam.logo_url}
                 alt="Logo do time"
-                className="h-24 w-24 object-contain shrink-0"
+                className="h-[72px] w-[120px] object-contain shrink-0"
               />
             )}
           </div>
