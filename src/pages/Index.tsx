@@ -306,28 +306,29 @@ const Index = () => {
       </div>
 
 
-      {/* Player Stats */}
+      {/* Team Season Stats */}
       <div className="px-5 mt-3">
         <div className="grid grid-cols-4 gap-2">
           {[
-            { value: playerStats.matches, label: "Partidas" },
-            { value: playerStats.goals, label: "Gols" },
-            { value: myMatches.length, label: "Jogos temporada", sub: `${wins}V ${draws}E ${losses}D` },
-            { value: teamStats.played > 0 ? teamStats.nota.toFixed(1) : "—", label: "Nota Time" },
+            { value: jogosTemporada, label: "Jogos temporada" },
+            { value: golsTemporada, label: "Gols temporada" },
+            { value: 0, label: "Campeonatos" },
+            { value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-            className="bg-card rounded-lg border border-border p-1 text-center"
+              className={`bg-card rounded-lg border p-1 text-center ${stat.highlight ? "border-destructive/50" : "border-border"}`}
             >
-              <p className="text-xs font-bold text-foreground font-display leading-tight">{stat.value}</p>
+              <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-foreground"}`}>{stat.value}</p>
               <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
             </motion.div>
           ))}
         </div>
       </div>
+
 
       {/* Next Match Card */}
       {nextMatch && (() => {
