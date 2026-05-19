@@ -137,16 +137,55 @@ const Index = () => {
   };
 
 
-  // Team season stats
+  // Team season stats — completed matches where myTeam is home OR away
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
-    return myTeam && homeTeam?.id === myTeam.id;
+    const awayTeam = m.away_team as any;
+    return myTeam && (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id);
   });
   const completedMatches = myMatches.filter((m) => m.status === "completed");
-  const wins = completedMatches.filter((m) => (m.home_score || 0) > (m.away_score || 0)).length;
-  const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
-  const losses = completedMatches.length - wins - draws;
-  const teamStats = myTeam ? getTeamStats(myTeam.id) : { played: 0, points: 0, maxPoints: 0, nota: 0 };
+  const jogosTemporada = completedMatches.length;
+  const golsTemporada = completedMatches.reduce((acc, m) => {
+    const homeTeam = m.home_team as any;
+    const isHome = homeTeam?.id === myTeam?.id;
+    return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
+  }, 0);
+
+  // Lembretes — mensalidades em atraso + vaquinhas (match_payments) pendentes
+  const [lembretes, setLembretes] = useState(0);
+  useEffect(() => {
+    if (!myTeam?.id) { setLembretes(0); return; }
+    let alive = true;
+    (async () => {
+      const playerIds = players.map((p: any) => p.id);
+      const now = new Date();
+      const ano = now.getFullYear();
+      const mesAtual = now.getMonth() + 1;
+      let mensAtraso = 0;
+      if (playerIds.length) {
+        const { data: mens = [] } = await supabase
+          .from("mensalidades")
+          .select("id, pago, mes, ano")
+          .in("player_id", playerIds)
+          .eq("ano", ano)
+          .lte("mes", mesAtual);
+        mensAtraso = (mens || []).filter((m: any) => !m.pago).length;
+      }
+      const matchIds = myMatches.map((m) => m.id);
+      let vaquinhaPend = 0;
+      if (matchIds.length) {
+        const { data: pays = [] } = await supabase
+          .from("match_payments")
+          .select("id, status")
+          .in("match_id", matchIds)
+          .eq("status", "pending");
+        vaquinhaPend = (pays || []).length;
+      }
+      if (alive) setLembretes(mensAtraso + vaquinhaPend);
+    })();
+    return () => { alive = false; };
+  }, [myTeam?.id, players.length, myMatches.length]);
+
 
 
 
