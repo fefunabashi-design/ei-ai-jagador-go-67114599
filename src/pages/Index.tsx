@@ -16,7 +16,8 @@ import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(/\s+/);
