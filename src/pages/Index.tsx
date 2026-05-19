@@ -223,21 +223,7 @@ const Index = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Greeting + Avatar */}
-      <div className="relative px-5 pt-3 pb-4 overflow-hidden">
-        {myTeam?.logo_url && (
-          <>
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-center bg-no-repeat bg-contain opacity-60 pointer-events-none"
-              style={{ backgroundImage: `url(${myTeam.logo_url})` }}
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/40 to-background/70 pointer-events-none"
-            />
-          </>
-        )}
+      <div className="relative px-5 pt-3 pb-4">
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
@@ -259,7 +245,7 @@ const Index = () => {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl text-foreground font-display tracking-wide">{firstName.toUpperCase()}</h1>
+              <h1 className="text-2xl text-foreground font-display tracking-wide truncate">{firstName.toUpperCase()}</h1>
               <button
                 onClick={() => setSettingsOpen(true)}
                 aria-label="Editar"
@@ -268,9 +254,17 @@ const Index = () => {
                 Editar
               </button>
             </div>
+            {myTeam?.logo_url && (
+              <img
+                src={myTeam.logo_url}
+                alt="Logo do time"
+                className="h-20 w-auto max-w-[35%] object-contain shrink-0"
+              />
+            )}
           </div>
         </div>
       </div>
+
 
       {/* Player Stats */}
       <div className="px-5 mt-3">
