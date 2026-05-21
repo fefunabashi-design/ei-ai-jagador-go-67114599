@@ -94,7 +94,7 @@ const BuscarAdversarioPage = () => {
     setDefaultsApplied(true);
   }, [myTeam, defaultsApplied]);
 
-  }, [myTeam]);
+
 
   const opponentReady = (t: any) =>
     !!t && !!t.name && !!t.addr_cidade && !!t.addr_uf && !!t.field_address &&
