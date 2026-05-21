@@ -1128,7 +1128,7 @@ const TeamFormDialog = ({
                 if (v !== "Infantil") setField("sub_categoria", "");
               }}
             >
-              <SelectTrigger className="bg-secondary border-border">
+              <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
