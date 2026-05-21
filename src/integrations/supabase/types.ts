@@ -1270,12 +1270,20 @@ export type Database = {
       public_teams: {
         Row: {
           abbreviation: string | null
+          addr_bairro: string | null
+          addr_cep: string | null
+          addr_cidade: string | null
+          addr_numero: string | null
+          addr_rua: string | null
+          addr_uf: string | null
           categoria: string | null
           created_at: string | null
+          estilo: string | null
           field_name: string | null
           format: string | null
           foundation_date: string | null
           founder_name: string | null
+          gender: string | null
           id: string | null
           instagram: string | null
           logo_url: string | null
@@ -1286,16 +1294,25 @@ export type Database = {
           play_time_start: string | null
           rating: number | null
           region: string | null
+          sub_categoria: string | null
           war_cry: string | null
         }
         Insert: {
           abbreviation?: string | null
+          addr_bairro?: string | null
+          addr_cep?: string | null
+          addr_cidade?: string | null
+          addr_numero?: string | null
+          addr_rua?: string | null
+          addr_uf?: string | null
           categoria?: string | null
           created_at?: string | null
+          estilo?: string | null
           field_name?: string | null
           format?: string | null
           foundation_date?: string | null
           founder_name?: string | null
+          gender?: string | null
           id?: string | null
           instagram?: string | null
           logo_url?: string | null
@@ -1306,16 +1323,25 @@ export type Database = {
           play_time_start?: string | null
           rating?: number | null
           region?: string | null
+          sub_categoria?: string | null
           war_cry?: string | null
         }
         Update: {
           abbreviation?: string | null
+          addr_bairro?: string | null
+          addr_cep?: string | null
+          addr_cidade?: string | null
+          addr_numero?: string | null
+          addr_rua?: string | null
+          addr_uf?: string | null
           categoria?: string | null
           created_at?: string | null
+          estilo?: string | null
           field_name?: string | null
           format?: string | null
           foundation_date?: string | null
           founder_name?: string | null
+          gender?: string | null
           id?: string | null
           instagram?: string | null
           logo_url?: string | null
@@ -1326,6 +1352,7 @@ export type Database = {
           play_time_start?: string | null
           rating?: number | null
           region?: string | null
+          sub_categoria?: string | null
           war_cry?: string | null
         }
         Relationships: []
