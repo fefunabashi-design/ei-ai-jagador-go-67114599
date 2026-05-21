@@ -345,6 +345,14 @@ const TeamPage = () => {
       ["Categoria", teamForm.categoria, "tf-categoria"],
       [teamForm.categoria === "Infantil" ? "Faixa" : "Subcategoria", teamForm.sub_categoria, "tf-sub_categoria"],
       ["Gênero", teamForm.gender, "tf-gender"],
+    ];
+    // Garantir que Categoria seja validada primeiro e seja um valor válido
+    if (!teamForm.categoria || !CATEGORIA_TIPOS.includes(teamForm.categoria)) {
+      toast({ title: "Categoria é obrigatório", variant: "destructive" });
+      focusField("tf-categoria");
+      return;
+    }
+    req.push(
       ["Modalidade", teamForm.estilo, "tf-estilo"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
@@ -355,7 +363,7 @@ const TeamPage = () => {
       ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
       ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
       ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
-    ];
+    );
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
