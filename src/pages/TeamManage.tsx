@@ -378,10 +378,12 @@ const TeamPage = () => {
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
       toast({ title: "CPF do Admin inválido", variant: "destructive" });
+      focusField("tf-admin_cpf");
       return;
     }
     if (teamForm.sub1_cpf && !isValidCpf(teamForm.sub1_cpf)) {
       toast({ title: "CPF do Substituto 1 inválido", variant: "destructive" });
+      focusField("tf-sub1_cpf");
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
