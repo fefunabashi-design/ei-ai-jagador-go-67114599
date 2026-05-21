@@ -1058,7 +1058,7 @@ const TeamFormDialog = ({
           </div>
 
           <div>
-            <Label>Categoria</Label>
+            <Label>Categoria *</Label>
             <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
@@ -1072,14 +1072,14 @@ const TeamFormDialog = ({
           </div>
 
           <div>
-            <Label>Modalidade</Label>
+            <Label>Modalidade *</Label>
             <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Campo">Campo</SelectItem>
-                <SelectItem value="Mini Campo">Mini Campo</SelectItem>
+                <SelectItem value="Mini Campo (Society)">Mini Campo (Society)</SelectItem>
                 <SelectItem value="Futsal">Futsal</SelectItem>
               </SelectContent>
             </Select>
