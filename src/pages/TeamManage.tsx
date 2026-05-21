@@ -1270,6 +1270,7 @@ const TeamFormDialog = ({
             <Label>CEP *</Label>
             <div className="relative">
               <Input
+                id="tf-addr_cep"
                 value={form.addr_cep}
                 onChange={(e) => handleCepChange(e.target.value)}
                 placeholder="00000-000"
@@ -1286,6 +1287,7 @@ const TeamFormDialog = ({
             <div className="col-span-2">
               <Label>Rua *</Label>
               <Input
+                id="tf-addr_rua"
                 value={form.addr_rua}
                 onChange={(e) => setField("addr_rua", e.target.value)}
                 placeholder="Nome da rua"
@@ -1295,6 +1297,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Nº *</Label>
               <Input
+                id="tf-addr_numero"
                 value={form.addr_numero}
                 onChange={(e) => setField("addr_numero", e.target.value)}
                 placeholder="123"
@@ -1307,6 +1310,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Bairro *</Label>
               <Input
+                id="tf-addr_bairro"
                 value={form.addr_bairro}
                 onChange={(e) => setField("addr_bairro", e.target.value)}
                 placeholder="Bairro"
@@ -1318,7 +1322,7 @@ const TeamFormDialog = ({
                 Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
               </Label>
               <Select value={form.region} onValueChange={(v) => setField("region", v)}>
-                <SelectTrigger className="bg-secondary border-border">
+                <SelectTrigger id="tf-region" className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1334,6 +1338,7 @@ const TeamFormDialog = ({
             <div className="col-span-2">
               <Label>Cidade *</Label>
               <Input
+                id="tf-addr_cidade"
                 value={form.addr_cidade}
                 onChange={(e) => setField("addr_cidade", e.target.value)}
                 placeholder="Cidade"
@@ -1343,6 +1348,7 @@ const TeamFormDialog = ({
             <div>
               <Label>UF *</Label>
               <Input
+                id="tf-addr_uf"
                 value={form.addr_uf}
                 onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
                 placeholder="SP"
