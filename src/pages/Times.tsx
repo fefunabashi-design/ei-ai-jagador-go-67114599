@@ -253,7 +253,7 @@ const TimesPage = () => {
             </div>
 
             {/* Estado + Cidade + Região (3 colunas) */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-5 gap-2 [&>*:nth-child(1)]:col-span-1 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-1">
               <MultiSelect
                 label="Estado"
                 options={toOptions(UFS)}
