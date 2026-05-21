@@ -1178,8 +1178,12 @@ const TeamFormDialog = ({
             </div>
           )}
 
+          <div className="pt-2 border-t border-border">
+            <p className="text-sm font-semibold text-foreground mb-2">Endereço do Campo</p>
+          </div>
+
           <div>
-            <Label>CEP</Label>
+            <Label>CEP *</Label>
             <div className="relative">
               <Input
                 value={form.addr_cep}
@@ -1196,7 +1200,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <Label>Rua</Label>
+              <Label>Rua *</Label>
               <Input
                 value={form.addr_rua}
                 onChange={(e) => setField("addr_rua", e.target.value)}
@@ -1205,7 +1209,7 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>Nº</Label>
+              <Label>Nº *</Label>
               <Input
                 value={form.addr_numero}
                 onChange={(e) => setField("addr_numero", e.target.value)}
@@ -1217,7 +1221,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Bairro</Label>
+              <Label>Bairro *</Label>
               <Input
                 value={form.addr_bairro}
                 onChange={(e) => setField("addr_bairro", e.target.value)}
@@ -1226,7 +1230,9 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>Região</Label>
+              <Label>
+                Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
+              </Label>
               <Select value={form.region} onValueChange={(v) => setField("region", v)}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
@@ -1242,7 +1248,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <Label>Cidade</Label>
+              <Label>Cidade *</Label>
               <Input
                 value={form.addr_cidade}
                 onChange={(e) => setField("addr_cidade", e.target.value)}
@@ -1251,7 +1257,7 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>UF</Label>
+              <Label>UF *</Label>
               <Input
                 value={form.addr_uf}
                 onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
