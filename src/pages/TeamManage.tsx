@@ -51,8 +51,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Todas", "Infantil", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIA_TIPOS = ["Adulto", "Infantil"];
+const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`); // Sub 5..Sub 18
+const GENEROS = ["Masculino", "Feminino"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -71,6 +73,7 @@ type TeamForm = {
   region: string;
   categoria: string;
   sub_categoria: string;
+  gender: string;
   estilo: string;
   play_days: string[];
   play_time_start: string;
@@ -112,6 +115,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   region: "",
   categoria: "",
   sub_categoria: "",
+  gender: "",
   estilo: "",
   play_days: [],
   play_time_start: "",
@@ -285,6 +289,7 @@ const TeamPage = () => {
       region: (team as any).region || "",
       categoria: (team as any).categoria || "",
       sub_categoria: (team as any).sub_categoria || "",
+      gender: (team as any).gender || "",
       estilo: (team as any).estilo || "",
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
@@ -338,6 +343,8 @@ const TeamPage = () => {
     const req: Array<[string, string, string]> = [
       ["Nome do Time", teamForm.name.trim(), "tf-name"],
       ["Categoria", teamForm.categoria, "tf-categoria"],
+      [teamForm.categoria === "Infantil" ? "Faixa" : "Subcategoria", teamForm.sub_categoria, "tf-sub_categoria"],
+      ["Gênero", teamForm.gender, "tf-gender"],
       ["Modalidade", teamForm.estilo, "tf-estilo"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
@@ -369,11 +376,6 @@ const TeamPage = () => {
     if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
       focusField("tf-region");
-      return;
-    }
-    if (teamForm.categoria === "Infantil") {
-      toast({ title: "Selecione a faixa (Sub 5 a Sub 18) na Categoria", variant: "destructive" });
-      focusField("tf-categoria");
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
@@ -1123,39 +1125,59 @@ const TeamFormDialog = ({
             </div>
           </div>
 
-          <div>
-            <Label>Categoria *</Label>
-            {(() => {
-              const isInfantil = form.categoria === "Infantil" || form.categoria.startsWith("Infantil ");
-              return (
-                <Select
-                  value={form.categoria}
-                  onValueChange={(v) => {
-                    if (v === "__back__") { setField("categoria", ""); return; }
-                    setField("categoria", v);
-                  }}
-                >
-                  <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isInfantil ? (
-                      <>
-                        <SelectItem value="__back__">← Outras categorias</SelectItem>
-                        {SUB_CATEGORIAS_INFANTIL.map((s) => (
-                          <SelectItem key={s} value={`Infantil ${s}`}>{`Infantil ${s}`}</SelectItem>
-                        ))}
-                      </>
-                    ) : (
-                      CATEGORIAS.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              );
-            })()}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Categoria *</Label>
+              <Select
+                value={form.categoria}
+                onValueChange={(v) => {
+                  setField("categoria", v);
+                  setField("sub_categoria", "");
+                }}
+              >
+                <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIA_TIPOS.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{form.categoria === "Infantil" ? "Faixa *" : "Subcategoria *"}</Label>
+              <Select
+                value={form.sub_categoria}
+                onValueChange={(v) => setField("sub_categoria", v)}
+                disabled={!form.categoria}
+              >
+                <SelectTrigger id="tf-sub_categoria" className="bg-secondary border-border">
+                  <SelectValue placeholder={form.categoria ? "Selecione" : "Selecione categoria"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(form.categoria === "Infantil" ? SUB_CATEGORIAS_INFANTIL : SUB_CATEGORIAS_ADULTO).map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          <div>
+            <Label>Gênero *</Label>
+            <Select value={form.gender} onValueChange={(v) => setField("gender", v)}>
+              <SelectTrigger id="tf-gender" className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione o gênero" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENEROS.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
 
           <div>
             <Label>Modalidade *</Label>
