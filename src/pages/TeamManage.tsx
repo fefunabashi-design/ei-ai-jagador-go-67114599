@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
 import {
   useMyTeam,
@@ -376,7 +377,6 @@ const TeamPage = () => {
     }
     req.push(
       ["Modalidade", teamForm.estilo, "tf-estilo"],
-      ["Possui campo próprio?", teamForm.has_field, "tf-has_field"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
       ["Nº", teamForm.addr_numero.trim(), "tf-addr_numero"],
@@ -1313,23 +1313,29 @@ const TeamFormDialog = ({
             </div>
           )}
 
-          <div className="pt-2 border-t border-border space-y-3">
-            <div>
-              <Label>Possui campo próprio? *</Label>
-              <Select value={form.has_field} onValueChange={(v) => setField("has_field", v as "com" | "sem")}>
-                <SelectTrigger id="tf-has_field" className="bg-secondary border-border">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="com">Com campo</SelectItem>
-                  <SelectItem value="sem">Sem campo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-sm font-semibold text-foreground">
-              {form.has_field === "sem" ? "Endereço da Sede" : "Endereço do Campo"}
-            </p>
-          </div>
+          {(() => {
+            const isQuadra = form.estilo === "Mini Campo (Society)" || form.estilo === "Futsal";
+            const termo = isQuadra ? "quadra" : "campo";
+            const termoCap = isQuadra ? "Quadra" : "Campo";
+            const hasField = form.has_field === "com";
+            return (
+              <div className="pt-2 border-t border-border space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="tf-has_field" className="cursor-pointer">
+                    {hasField ? `Possui ${termo} próprio` : `Não possui ${termo} próprio`}
+                  </Label>
+                  <Switch
+                    id="tf-has_field"
+                    checked={hasField}
+                    onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
+                  />
+                </div>
+                <p className="text-sm font-semibold text-foreground">
+                  {hasField ? `Endereço da ${termoCap}` : "Endereço da Sede"}
+                </p>
+              </div>
+            );
+          })()}
 
           <div>
             <Label>CEP *</Label>
