@@ -1313,7 +1313,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Técnico</Label>
+              <Label>Técnico *</Label>
               <Input
                 value={form.coach_name}
                 onChange={(e) => setField("coach_name", e.target.value)}
