@@ -1158,7 +1158,7 @@ const TeamFormDialog = ({
           <div>
             <Label>Modalidade *</Label>
             <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
-              <SelectTrigger className="bg-secondary border-border">
+              <SelectTrigger id="tf-estilo" className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
