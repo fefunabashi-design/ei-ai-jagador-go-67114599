@@ -323,50 +323,67 @@ const TeamPage = () => {
     setTeamDialogOpen(true);
   };
 
+  const focusField = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(id) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        (el as HTMLInputElement).focus?.();
+      }
+    }, 50);
+  };
+
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    const req: Array<[string, string]> = [
-      ["Nome do Time", teamForm.name.trim()],
-      ["Categoria", teamForm.categoria],
-      ["Modalidade", teamForm.estilo],
-      ["CEP", teamForm.addr_cep.trim()],
-      ["Rua", teamForm.addr_rua.trim()],
-      ["Nº", teamForm.addr_numero.trim()],
-      ["Bairro", teamForm.addr_bairro.trim()],
-      ["Cidade", teamForm.addr_cidade.trim()],
-      ["UF", teamForm.addr_uf.trim()],
-      ["Técnico", teamForm.coach_name.trim()],
-      ["Admin App", teamForm.admin_name.trim()],
-      ["Cel. Admin", teamForm.admin_phone.trim()],
+    const req: Array<[string, string, string]> = [
+      ["Nome do Time", teamForm.name.trim(), "tf-name"],
+      ["Categoria", teamForm.categoria, "tf-categoria"],
+      ["Modalidade", teamForm.estilo, "tf-estilo"],
+      ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
+      ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
+      ["Nº", teamForm.addr_numero.trim(), "tf-addr_numero"],
+      ["Bairro", teamForm.addr_bairro.trim(), "tf-addr_bairro"],
+      ["Cidade", teamForm.addr_cidade.trim(), "tf-addr_cidade"],
+      ["UF", teamForm.addr_uf.trim(), "tf-addr_uf"],
+      ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
+      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
+      ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
     ];
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
+      focusField(missing[2]);
       return;
     }
     if (!teamForm.play_days.length) {
       toast({ title: "Selecione ao menos um dia da semana", variant: "destructive" });
+      focusField("tf-play-days");
       return;
     }
     const horarioMissing = teamForm.play_days.some((d) => !teamForm.play_schedule?.[d]?.start);
     if (horarioMissing) {
       toast({ title: "Informe o horário de cada dia selecionado", variant: "destructive" });
+      focusField("tf-play-days");
       return;
     }
     if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
+      focusField("tf-region");
       return;
     }
     if (teamForm.categoria === "Infantil" && !teamForm.sub_categoria) {
       toast({ title: "Selecione a faixa (Sub) para categoria Infantil", variant: "destructive" });
+      focusField("tf-sub_categoria");
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
       toast({ title: "CPF do Admin inválido", variant: "destructive" });
+      focusField("tf-admin_cpf");
       return;
     }
     if (teamForm.sub1_cpf && !isValidCpf(teamForm.sub1_cpf)) {
       toast({ title: "CPF do Substituto 1 inválido", variant: "destructive" });
+      focusField("tf-sub1_cpf");
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
@@ -1051,6 +1068,7 @@ const TeamFormDialog = ({
           <div>
             <Label>Nome do Time *</Label>
             <Input
+              id="tf-name"
               value={form.name}
               onChange={(e) => setField("name", capitalizeFirst(e.target.value))}
               placeholder="Ex: Os Crias FC"
@@ -1110,7 +1128,7 @@ const TeamFormDialog = ({
                 if (v !== "Infantil") setField("sub_categoria", "");
               }}
             >
-              <SelectTrigger className="bg-secondary border-border">
+              <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -1125,7 +1143,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Faixa Infantil *</Label>
               <Select value={form.sub_categoria} onValueChange={(v) => setField("sub_categoria", v)}>
-                <SelectTrigger className="bg-secondary border-border">
+                <SelectTrigger id="tf-sub_categoria" className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione a faixa (Sub 5 a Sub 18)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1140,7 +1158,7 @@ const TeamFormDialog = ({
           <div>
             <Label>Modalidade *</Label>
             <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
-              <SelectTrigger className="bg-secondary border-border">
+              <SelectTrigger id="tf-estilo" className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
@@ -1252,6 +1270,7 @@ const TeamFormDialog = ({
             <Label>CEP *</Label>
             <div className="relative">
               <Input
+                id="tf-addr_cep"
                 value={form.addr_cep}
                 onChange={(e) => handleCepChange(e.target.value)}
                 placeholder="00000-000"
@@ -1268,6 +1287,7 @@ const TeamFormDialog = ({
             <div className="col-span-2">
               <Label>Rua *</Label>
               <Input
+                id="tf-addr_rua"
                 value={form.addr_rua}
                 onChange={(e) => setField("addr_rua", e.target.value)}
                 placeholder="Nome da rua"
@@ -1277,6 +1297,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Nº *</Label>
               <Input
+                id="tf-addr_numero"
                 value={form.addr_numero}
                 onChange={(e) => setField("addr_numero", e.target.value)}
                 placeholder="123"
@@ -1289,6 +1310,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Bairro *</Label>
               <Input
+                id="tf-addr_bairro"
                 value={form.addr_bairro}
                 onChange={(e) => setField("addr_bairro", e.target.value)}
                 placeholder="Bairro"
@@ -1300,7 +1322,7 @@ const TeamFormDialog = ({
                 Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
               </Label>
               <Select value={form.region} onValueChange={(v) => setField("region", v)}>
-                <SelectTrigger className="bg-secondary border-border">
+                <SelectTrigger id="tf-region" className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1316,6 +1338,7 @@ const TeamFormDialog = ({
             <div className="col-span-2">
               <Label>Cidade *</Label>
               <Input
+                id="tf-addr_cidade"
                 value={form.addr_cidade}
                 onChange={(e) => setField("addr_cidade", e.target.value)}
                 placeholder="Cidade"
@@ -1325,6 +1348,7 @@ const TeamFormDialog = ({
             <div>
               <Label>UF *</Label>
               <Input
+                id="tf-addr_uf"
                 value={form.addr_uf}
                 onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
                 placeholder="SP"
@@ -1381,6 +1405,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Técnico *</Label>
               <Input
+                id="tf-coach_name"
                 value={form.coach_name}
                 onChange={(e) => setField("coach_name", e.target.value)}
                 placeholder="Nome"
@@ -1495,6 +1520,7 @@ const TeamFormDialog = ({
                 <div>
                   <Label>CPF Admin *</Label>
                   <Input
+                    id="tf-admin_cpf"
                     value={form.admin_cpf}
                     onChange={(e) => setField("admin_cpf", formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
@@ -1540,6 +1566,7 @@ const TeamFormDialog = ({
                 <div>
                   <Label>CPF Sub 1</Label>
                   <Input
+                    id="tf-sub1_cpf"
                     value={form.sub1_cpf}
                     onChange={(e) => setField("sub1_cpf", formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
