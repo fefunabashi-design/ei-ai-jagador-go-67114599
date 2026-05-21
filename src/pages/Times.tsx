@@ -80,7 +80,7 @@ const MultiSelect = ({ label, options, selected, onChange, placeholder }: MultiS
             <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+        <PopoverContent className="min-w-[220px] w-auto max-w-[90vw] p-1" align="start">
           <div className="max-h-60 overflow-auto">
             {options.map((opt) => {
               const checked = selected.includes(opt.value);
@@ -157,13 +157,18 @@ const TimesPage = () => {
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
 
-  // Cidades disponíveis: união das cidades dos UFs selecionados (ou todas)
+  // Cidades disponíveis: apenas cidades com times cadastrados (filtradas por UF se houver)
   const cityOptions = useMemo(() => {
-    const ufs = selectedUFs.length > 0 ? selectedUFs : UFS;
     const set = new Set<string>();
-    ufs.forEach((uf) => getCitiesForUf(uf).forEach((c) => set.add(c)));
+    registeredTeams.forEach((t: any) => {
+      const cidade = t.addr_cidade;
+      const uf = String(t.addr_uf || "").toUpperCase();
+      if (!cidade) return;
+      if (selectedUFs.length > 0 && !selectedUFs.includes(uf)) return;
+      set.add(cidade);
+    });
     return Array.from(set).sort();
-  }, [selectedUFs]);
+  }, [selectedUFs, registeredTeams]);
 
   // Subcategorias disponíveis conforme categoria selecionada
   const subCategoriaOptions = useMemo(() => {
