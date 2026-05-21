@@ -430,7 +430,7 @@ const TeamPage = () => {
     });
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
-    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd };
+    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd, has_field: teamForm.has_field === "com" };
     if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
