@@ -1393,7 +1393,7 @@ const TeamFormDialog = ({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Admin App</Label>
+                    <Label>Admin App *</Label>
                     <Input
                       value={form.admin_name}
                       readOnly
