@@ -371,9 +371,9 @@ const TeamPage = () => {
       focusField("tf-region");
       return;
     }
-    if (teamForm.categoria === "Infantil" && !teamForm.sub_categoria) {
-      toast({ title: "Selecione a faixa (Sub) para categoria Infantil", variant: "destructive" });
-      focusField("tf-sub_categoria");
+    if (teamForm.categoria === "Infantil") {
+      toast({ title: "Selecione a faixa (Sub 5 a Sub 18) na Categoria", variant: "destructive" });
+      focusField("tf-categoria");
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
