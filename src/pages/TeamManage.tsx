@@ -343,6 +343,8 @@ const TeamPage = () => {
     const req: Array<[string, string, string]> = [
       ["Nome do Time", teamForm.name.trim(), "tf-name"],
       ["Categoria", teamForm.categoria, "tf-categoria"],
+      [teamForm.categoria === "Infantil" ? "Faixa" : "Subcategoria", teamForm.sub_categoria, "tf-sub_categoria"],
+      ["Gênero", teamForm.gender, "tf-gender"],
       ["Modalidade", teamForm.estilo, "tf-estilo"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
@@ -374,11 +376,6 @@ const TeamPage = () => {
     if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
       focusField("tf-region");
-      return;
-    }
-    if (teamForm.categoria === "Infantil") {
-      toast({ title: "Selecione a faixa (Sub 5 a Sub 18) na Categoria", variant: "destructive" });
-      focusField("tf-categoria");
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
