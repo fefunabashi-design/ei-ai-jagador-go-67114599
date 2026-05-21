@@ -51,7 +51,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Todas", "Esporte", "Infantil", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIAS = ["Todas", "Infantil", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`); // Sub 5..Sub 18
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
