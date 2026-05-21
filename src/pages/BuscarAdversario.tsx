@@ -1,7 +1,7 @@
 import { startsWithNorm } from "@/lib/normalize";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MapPin, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
+import { ArrowLeft, Search, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { getTeamStats } from "@/lib/stats";
 import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
-import { getCitiesForUf } from "@/lib/brCities";
+import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 
-const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
+const UFS = Object.keys(CITIES_BY_UF).sort();
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
+const CATEGORIAS = ["Adulto", "Infantil"];
+const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`);
+const GENEROS = ["Masculino", "Feminino"];
+const DIAS_SEMANA = [
+  { value: "domingo", label: "Domingo" },
+  { value: "segunda", label: "Segunda" },
+  { value: "terca", label: "Terça" },
+  { value: "quarta", label: "Quarta" },
+  { value: "quinta", label: "Quinta" },
+  { value: "sexta", label: "Sexta" },
+  { value: "sabado", label: "Sábado" },
+];
 
-const WEEK_DAY_LABEL: Record<string, string> = {
-  domingo: "Domingo", segunda: "Segunda", terca: "Terça", quarta: "Quarta",
-  quinta: "Quinta", sexta: "Sexta", sabado: "Sábado",
-};
-const DAY_INDEX: Record<string, number> = {
-  domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
-};
 
 const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
