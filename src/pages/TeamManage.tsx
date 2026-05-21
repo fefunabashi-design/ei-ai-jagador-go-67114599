@@ -357,6 +357,10 @@ const TeamPage = () => {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
       return;
     }
+    if (teamForm.categoria === "Infantil" && !teamForm.sub_categoria) {
+      toast({ title: "Selecione a faixa (Sub) para categoria Infantil", variant: "destructive" });
+      return;
+    }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
       toast({ title: "CPF do Admin inválido", variant: "destructive" });
       return;
