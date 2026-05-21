@@ -166,7 +166,8 @@ export const useSetActiveTeam = () => {
 const cleanTeamPayload = (raw: Record<string, any>) => {
   const allowed = ["name","abbreviation","categoria","region","format","play_days","play_time_start","play_time_end","play_schedule",
     "field_name","field_address","foundation_date","war_cry","logo_url","instagram","phone","mobile","email",
-    "president_name","president_email","admin_name","admin_email","admin_phone","coach_name","substitute_name",
+    "president_name","president_email","admin_name","admin_email","admin_phone","admin_cpf","coach_name","substitute_name",
+    "sub1_name","sub1_phone","sub1_email","sub1_cpf",
     "founder_name","rating"];
   const out: Record<string, any> = {};
   allowed.forEach(k => { if (k in raw) out[k] = raw[k]; });
