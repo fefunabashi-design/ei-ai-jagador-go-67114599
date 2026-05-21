@@ -1,7 +1,7 @@
 import { startsWithNorm } from "@/lib/normalize";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MapPin, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
+import { ArrowLeft, Search, Shield, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,35 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { getTeamStats } from "@/lib/stats";
 import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
-import { getCitiesForUf } from "@/lib/brCities";
+import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 
-const CATEGORIAS = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
+const UFS = Object.keys(CITIES_BY_UF).sort();
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
+const CATEGORIAS = ["Adulto", "Infantil"];
+const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`);
+const GENEROS = ["Masculino", "Feminino"];
+const DIAS_SEMANA = [
+  { value: "domingo", label: "Domingo" },
+  { value: "segunda", label: "Segunda" },
+  { value: "terca", label: "Terça" },
+  { value: "quarta", label: "Quarta" },
+  { value: "quinta", label: "Quinta" },
+  { value: "sexta", label: "Sexta" },
+  { value: "sabado", label: "Sábado" },
+];
 
-const WEEK_DAY_LABEL: Record<string, string> = {
-  domingo: "Domingo", segunda: "Segunda", terca: "Terça", quarta: "Quarta",
-  quinta: "Quinta", sexta: "Sexta", sabado: "Sábado",
-};
+const WEEK_DAY_LABEL: Record<string, string> = Object.fromEntries(DIAS_SEMANA.map((d) => [d.value, d.label]));
 const DAY_INDEX: Record<string, number> = {
   domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
 };
+
+
 
 const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
@@ -35,14 +49,22 @@ const BuscarAdversarioPage = () => {
   const { data: myTeam } = useMyTeam();
   const createMatch = useCreateMatch();
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // Filtros (iguais à tela de Times Cadastrados)
+  const [nameQuery, setNameQuery] = useState("");
+  const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
+  const [selectedCategorias, setSelectedCategorias] = useState<string[]>([]);
+  const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
+  const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedFieldOpts, setSelectedFieldOpts] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
-  const [cityQuery, setCityQuery] = useState("");
-  const [nameQuery, setNameQuery] = useState("");
-  const [showCitySuggest, setShowCitySuggest] = useState(false);
-  const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
@@ -57,14 +79,22 @@ const BuscarAdversarioPage = () => {
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
-    if (!myTeam) return;
+    if (!myTeam || defaultsApplied) return;
     const t = myTeam as any;
-    if (t.addr_cidade) setCityQuery(t.addr_cidade);
-    if (t.categoria) setSelectedCategories([t.categoria]);
+    if (t.addr_uf) setSelectedUFs([String(t.addr_uf).toUpperCase()]);
+    if (t.addr_cidade) setSelectedCities([t.addr_cidade]);
     if (t.region) setSelectedRegions([t.region]);
-    if (t.play_time_start) setTimeFrom(t.play_time_start);
-    if (t.play_time_end) setTimeTo(t.play_time_end);
-  }, [myTeam]);
+    if (t.estilo) setSelectedModalidades([t.estilo]);
+    if (t.categoria) setSelectedCategorias([t.categoria]);
+    if (t.sub_categoria) setSelectedSubCategorias([t.sub_categoria]);
+    if (t.gender) setSelectedGeneros([t.gender]);
+    if (Array.isArray(t.play_days) && t.play_days.length > 0) setSelectedDays(t.play_days);
+    if (t.play_time_start) setTimeFrom(String(t.play_time_start).slice(0, 5));
+    if (t.play_time_end) setTimeTo(String(t.play_time_end).slice(0, 5));
+    setDefaultsApplied(true);
+  }, [myTeam, defaultsApplied]);
+
+
 
   const opponentReady = (t: any) =>
     !!t && !!t.name && !!t.addr_cidade && !!t.addr_uf && !!t.field_address &&
@@ -146,9 +176,6 @@ const BuscarAdversarioPage = () => {
     return hours * 60 + minutes;
   };
 
-  const myUf = ((myTeam as any)?.addr_uf || "SP").toUpperCase();
-  const cityOptions = getCitiesForUf(myUf);
-
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
     queryFn: async () => {
@@ -157,34 +184,68 @@ const BuscarAdversarioPage = () => {
     },
   });
 
-  const availableOpponentTeams = registeredTeams.filter(
-    (team) => team.id !== myTeam?.id && ((team as any).addr_uf || "SP").toUpperCase() === myUf
+  const availableOpponentTeams = useMemo(
+    () => registeredTeams.filter((team) => team.id !== myTeam?.id),
+    [registeredTeams, myTeam?.id],
   );
+
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
 
-  const filteredCitySuggest = (() => {
-    if (!cityQuery.trim()) return cityOptions.slice(0, 8);
-    return cityOptions.filter((c) => startsWithNorm(c, cityQuery)).slice(0, 8);
-  })();
+  // Cidades disponíveis: apenas cidades com times cadastrados (filtradas por UF se houver)
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    availableOpponentTeams.forEach((t: any) => {
+      const cidade = t.addr_cidade;
+      const uf = String(t.addr_uf || "").toUpperCase();
+      if (!cidade) return;
+      if (selectedUFs.length > 0 && !selectedUFs.includes(uf)) return;
+      set.add(cidade);
+    });
+    return Array.from(set).sort();
+  }, [selectedUFs, availableOpponentTeams]);
 
-  const filteredNameSuggest = (() => {
+  const subCategoriaOptions = useMemo(() => {
+    if (selectedCategorias.includes("Infantil") && !selectedCategorias.includes("Adulto")) {
+      return SUB_CATEGORIAS_INFANTIL;
+    }
+    if (selectedCategorias.includes("Adulto") && !selectedCategorias.includes("Infantil")) {
+      return SUB_CATEGORIAS_ADULTO;
+    }
+    return [...SUB_CATEGORIAS_ADULTO, ...SUB_CATEGORIAS_INFANTIL];
+  }, [selectedCategorias]);
+
+  const filteredNameSuggest = useMemo(() => {
     if (!nameQuery.trim()) return [] as any[];
     return availableOpponentTeams.filter((t) => startsWithNorm(t.name, nameQuery)).slice(0, 8);
-  })();
+  }, [nameQuery, availableOpponentTeams]);
 
   const filteredOpponentTeams = availableOpponentTeams.filter((team) => {
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(team.categoria || "");
-    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(team.region || "");
-    const teamStart = toMinutes(team.play_time_start);
-    const teamEnd = toMinutes(team.play_time_end);
+    const t = team as any;
+    const matchesName = startsWithNorm(t.name, nameQuery);
+    const matchesUf = selectedUFs.length === 0 || selectedUFs.includes(String(t.addr_uf || "").toUpperCase());
+    const matchesCity = selectedCities.length === 0 || selectedCities.includes(t.addr_cidade || "");
+    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(t.region || "");
+    const matchesModalidade = selectedModalidades.length === 0 || selectedModalidades.includes(t.estilo || "");
+    const matchesCategoria = selectedCategorias.length === 0 || selectedCategorias.includes(t.categoria || "");
+    const matchesSubCategoria = selectedSubCategorias.length === 0 || selectedSubCategorias.includes(t.sub_categoria || "");
+    const matchesGenero = selectedGeneros.length === 0 || selectedGeneros.includes(t.gender || "");
+    const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
+    const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
+    const matchesField =
+      selectedFieldOpts.length === 0 ||
+      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
+    const teamStart = toMinutes(t.play_time_start);
+    const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
       (!fromMinutes || (teamEnd !== null && teamEnd >= fromMinutes)) &&
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
-    const matchesCity = startsWithNorm((team as any).addr_cidade, cityQuery);
-    const matchesName = startsWithNorm(team.name, nameQuery);
-    return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
+    return (
+      matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
+    );
   });
+
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -211,37 +272,7 @@ const BuscarAdversarioPage = () => {
           </Button>
 
           <div className="space-y-3">
-            <div className="relative">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Cidade <span className="text-primary">({myUf})</span>
-              </p>
-              <div className="relative">
-                <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={cityQuery}
-                  onChange={(e) => { setCityQuery(e.target.value); setShowCitySuggest(true); }}
-                  onFocus={() => setShowCitySuggest(true)}
-                  onBlur={() => setTimeout(() => setShowCitySuggest(false), 150)}
-                  placeholder={`Cidades de ${myUf}...`}
-                  className="pl-8 bg-background border-border h-9 text-sm"
-                />
-              </div>
-              {showCitySuggest && filteredCitySuggest.length > 0 && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-52 overflow-auto">
-                  {filteredCitySuggest.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onMouseDown={() => { setCityQuery(c); setShowCitySuggest(false); }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
+            {/* Nome do Time com autocomplete (linha inteira) */}
             <div className="relative">
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nome do Time</p>
               <div className="relative">
@@ -251,7 +282,7 @@ const BuscarAdversarioPage = () => {
                   onChange={(e) => { setNameQuery(e.target.value); setShowNameSuggest(true); }}
                   onFocus={() => setShowNameSuggest(true)}
                   onBlur={() => setTimeout(() => setShowNameSuggest(false), 150)}
-                  placeholder="Buscar adversário pelo nome..."
+                  placeholder="Digite as iniciais do time..."
                   className="pl-8 bg-background border-border h-9 text-sm"
                 />
               </div>
@@ -272,54 +303,111 @@ const BuscarAdversarioPage = () => {
               )}
             </div>
 
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Categoria</p>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIAS.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => toggleFilter(category, setSelectedCategories)}
-                    className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                      selectedCategories.includes(category)
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background text-muted-foreground"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+            {/* Estado + Região + Possui campo (3 colunas) */}
+            <div className="grid grid-cols-3 gap-2">
+              <MultiSelect
+                label="Estado"
+                options={toOptions(UFS)}
+                selected={selectedUFs}
+                onChange={(next) => {
+                  setSelectedUFs(next);
+                  if (next.length > 0) {
+                    const allowed = new Set<string>();
+                    next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
+                    setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
+                  }
+                }}
+                placeholder="Todos"
+              />
+              <MultiSelect
+                label="Região"
+                options={toOptions(REGIOES)}
+                selected={selectedRegions}
+                onChange={setSelectedRegions}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Possui campo"
+                options={[
+                  { value: "com", label: "Possui campo" },
+                  { value: "sem", label: "Não possui campo" },
+                ]}
+                selected={selectedFieldOpts}
+                onChange={setSelectedFieldOpts}
+                placeholder="Todos"
+              />
             </div>
 
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Região</p>
-              <div className="flex flex-wrap gap-2">
-                {REGIOES.map((region) => (
-                  <button
-                    key={region}
-                    type="button"
-                    onClick={() => toggleFilter(region, setSelectedRegions)}
-                    className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                      selectedRegions.includes(region)
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background text-muted-foreground"
-                    }`}
-                  >
-                    {region}
-                  </button>
-                ))}
-              </div>
+            {/* Cidade (linha inteira) */}
+            <MultiSelect
+              label="Cidade"
+              options={toOptions(cityOptions)}
+              selected={selectedCities}
+              onChange={setSelectedCities}
+              placeholder="Todas"
+            />
+
+            {/* Modalidade + Gênero */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Modalidade"
+                options={toOptions(MODALIDADES)}
+                selected={selectedModalidades}
+                onChange={setSelectedModalidades}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Gênero"
+                options={toOptions(GENEROS)}
+                selected={selectedGeneros}
+                onChange={setSelectedGeneros}
+                placeholder="Todos"
+              />
             </div>
 
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border" />
-                <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border" />
+            {/* Categoria + Subcategoria */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Categoria"
+                options={toOptions(CATEGORIAS)}
+                selected={selectedCategorias}
+                onChange={(next) => {
+                  setSelectedCategorias(next);
+                  const allowed = new Set<string>();
+                  if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
+                  if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
+                  setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
+                }}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Subcategoria"
+                options={toOptions(subCategoriaOptions)}
+                selected={selectedSubCategorias}
+                onChange={setSelectedSubCategorias}
+                placeholder="Todas"
+              />
+            </div>
+
+            {/* Dia da Semana + Horário */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Dia da Semana"
+                options={DIAS_SEMANA}
+                selected={selectedDays}
+                onChange={setSelectedDays}
+                placeholder="Todos"
+              />
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                  <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                </div>
               </div>
             </div>
           </div>
+
 
           <div className="space-y-2">
             {filteredOpponentTeams.length > 0 ? (

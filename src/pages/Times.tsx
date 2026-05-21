@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MapPin, Shield, ChevronDown, X } from "lucide-react";
+import { ArrowLeft, Search, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 import { getTeamStats } from "@/lib/stats";
 import { startsWithNorm } from "@/lib/normalize";
+
 
 const UFS = Object.keys(CITIES_BY_UF).sort();
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
@@ -32,76 +32,6 @@ const DIAS_SEMANA = [
   { value: "sabado", label: "Sábado" },
 ];
 
-type MultiSelectProps = {
-  label: string;
-  options: { value: string; label: string }[];
-  selected: string[];
-  onChange: (next: string[]) => void;
-  placeholder?: string;
-};
-
-const MultiSelect = ({ label, options, selected, onChange, placeholder }: MultiSelectProps) => {
-  const toggle = (value: string) => {
-    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
-  };
-  const labelFor = (v: string) => options.find((o) => o.value === v)?.label || v;
-
-  return (
-    <div>
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex min-h-9 w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-left text-xs"
-          >
-            <div className="flex flex-1 flex-wrap gap-1">
-              {selected.length === 0 ? (
-                <span className="text-muted-foreground">{placeholder || "Selecione..."}</span>
-              ) : (
-                selected.map((s) => (
-                  <span
-                    key={s}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground"
-                  >
-                    {labelFor(s)}
-                    <X
-                      size={10}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        toggle(s);
-                      }}
-                    />
-                  </span>
-                ))
-              )}
-            </div>
-            <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="min-w-[220px] w-auto max-w-[90vw] p-1" align="start">
-          <div className="max-h-60 overflow-auto">
-            {options.map((opt) => {
-              const checked = selected.includes(opt.value);
-              return (
-                <label
-                  key={opt.value}
-                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-accent"
-                >
-                  <Checkbox checked={checked} onCheckedChange={() => toggle(opt.value)} />
-                  <span>{opt.label}</span>
-                </label>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-};
-
-const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
 
 const TimesPage = () => {
   const navigate = useNavigate();
@@ -118,6 +48,7 @@ const TimesPage = () => {
   const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedFieldOpts, setSelectedFieldOpts] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
@@ -198,6 +129,9 @@ const TimesPage = () => {
     const matchesGenero = selectedGeneros.length === 0 || selectedGeneros.includes(t.gender || "");
     const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
     const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
+    const matchesField =
+      selectedFieldOpts.length === 0 ||
+      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
@@ -205,7 +139,7 @@ const TimesPage = () => {
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
     return (
       matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
-      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesTime
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
     );
   });
 
@@ -257,8 +191,9 @@ const TimesPage = () => {
               )}
             </div>
 
-            {/* Estado + Cidade + Região (3 colunas) */}
-            <div className="grid grid-cols-5 gap-2 [&>*:nth-child(1)]:col-span-1 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-1">
+            {/* Estado + Região + Possui campo (3 colunas) */}
+            <div className="grid grid-cols-3 gap-2">
+
               <MultiSelect
                 label="Estado"
                 options={toOptions(UFS)}
@@ -274,20 +209,33 @@ const TimesPage = () => {
                 placeholder="Todos"
               />
               <MultiSelect
-                label="Cidade"
-                options={toOptions(cityOptions)}
-                selected={selectedCities}
-                onChange={setSelectedCities}
-                placeholder="Todas"
-              />
-              <MultiSelect
                 label="Região"
                 options={toOptions(REGIOES)}
                 selected={selectedRegions}
                 onChange={setSelectedRegions}
                 placeholder="Todas"
               />
+              <MultiSelect
+                label="Possui campo"
+                options={[
+                  { value: "com", label: "Possui campo" },
+                  { value: "sem", label: "Não possui campo" },
+                ]}
+                selected={selectedFieldOpts}
+                onChange={setSelectedFieldOpts}
+                placeholder="Todos"
+              />
             </div>
+
+            {/* Cidade (linha inteira) */}
+            <MultiSelect
+              label="Cidade"
+              options={toOptions(cityOptions)}
+              selected={selectedCities}
+              onChange={setSelectedCities}
+              placeholder="Todas"
+            />
+
 
             {/* Modalidade + Gênero (2 colunas) */}
             <div className="grid grid-cols-2 gap-2">
