@@ -49,14 +49,22 @@ const BuscarAdversarioPage = () => {
   const { data: myTeam } = useMyTeam();
   const createMatch = useCreateMatch();
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // Filtros (iguais à tela de Times Cadastrados)
+  const [nameQuery, setNameQuery] = useState("");
+  const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
+  const [selectedCategorias, setSelectedCategorias] = useState<string[]>([]);
+  const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
+  const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedFieldOpts, setSelectedFieldOpts] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
-  const [cityQuery, setCityQuery] = useState("");
-  const [nameQuery, setNameQuery] = useState("");
-  const [showCitySuggest, setShowCitySuggest] = useState(false);
-  const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
@@ -71,13 +79,21 @@ const BuscarAdversarioPage = () => {
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
-    if (!myTeam) return;
+    if (!myTeam || defaultsApplied) return;
     const t = myTeam as any;
-    if (t.addr_cidade) setCityQuery(t.addr_cidade);
-    if (t.categoria) setSelectedCategories([t.categoria]);
+    if (t.addr_uf) setSelectedUFs([String(t.addr_uf).toUpperCase()]);
+    if (t.addr_cidade) setSelectedCities([t.addr_cidade]);
     if (t.region) setSelectedRegions([t.region]);
-    if (t.play_time_start) setTimeFrom(t.play_time_start);
-    if (t.play_time_end) setTimeTo(t.play_time_end);
+    if (t.estilo) setSelectedModalidades([t.estilo]);
+    if (t.categoria) setSelectedCategorias([t.categoria]);
+    if (t.sub_categoria) setSelectedSubCategorias([t.sub_categoria]);
+    if (t.gender) setSelectedGeneros([t.gender]);
+    if (Array.isArray(t.play_days) && t.play_days.length > 0) setSelectedDays(t.play_days);
+    if (t.play_time_start) setTimeFrom(String(t.play_time_start).slice(0, 5));
+    if (t.play_time_end) setTimeTo(String(t.play_time_end).slice(0, 5));
+    setDefaultsApplied(true);
+  }, [myTeam, defaultsApplied]);
+
   }, [myTeam]);
 
   const opponentReady = (t: any) =>
