@@ -337,7 +337,7 @@ const AdminPage = () => {
   });
 
   const quickActions: Array<{ icon: any; label: string; path: string; badge?: number }> = [
-    { icon: Users, label: "Cadastro do Time", path: "/team-manage" },
+    
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
