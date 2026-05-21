@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MapPin, Shield, ChevronDown, X } from "lucide-react";
+import { ArrowLeft, Search, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 import { getTeamStats } from "@/lib/stats";
 import { startsWithNorm } from "@/lib/normalize";
+
 
 const UFS = Object.keys(CITIES_BY_UF).sort();
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
