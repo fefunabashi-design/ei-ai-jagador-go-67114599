@@ -1,0 +1,1 @@
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS estilo text, ADD COLUMN IF NOT EXISTS sub_categoria text;

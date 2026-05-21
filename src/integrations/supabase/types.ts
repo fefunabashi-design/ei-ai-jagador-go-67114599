@@ -998,6 +998,7 @@ export type Database = {
           coach_name: string | null
           created_at: string
           email: string | null
+          estilo: string | null
           field_address: string | null
           field_name: string | null
           format: string | null
@@ -1018,6 +1019,7 @@ export type Database = {
           president_name: string | null
           rating: number | null
           region: string | null
+          sub_categoria: string | null
           sub1_cpf: string | null
           sub1_email: string | null
           sub1_name: string | null
@@ -1036,6 +1038,7 @@ export type Database = {
           coach_name?: string | null
           created_at?: string
           email?: string | null
+          estilo?: string | null
           field_address?: string | null
           field_name?: string | null
           format?: string | null
@@ -1056,6 +1059,7 @@ export type Database = {
           president_name?: string | null
           rating?: number | null
           region?: string | null
+          sub_categoria?: string | null
           sub1_cpf?: string | null
           sub1_email?: string | null
           sub1_name?: string | null
@@ -1074,6 +1078,7 @@ export type Database = {
           coach_name?: string | null
           created_at?: string
           email?: string | null
+          estilo?: string | null
           field_address?: string | null
           field_name?: string | null
           format?: string | null
@@ -1094,6 +1099,7 @@ export type Database = {
           president_name?: string | null
           rating?: number | null
           region?: string | null
+          sub_categoria?: string | null
           sub1_cpf?: string | null
           sub1_email?: string | null
           sub1_name?: string | null

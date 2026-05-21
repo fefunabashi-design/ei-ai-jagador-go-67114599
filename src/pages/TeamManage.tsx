@@ -51,7 +51,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Todas", "Esporte", "Infantil", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIAS = ["Todas", "Infantil", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`); // Sub 5..Sub 18
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -69,6 +70,7 @@ type TeamForm = {
   name: string;
   region: string;
   categoria: string;
+  sub_categoria: string;
   estilo: string;
   play_days: string[];
   play_time_start: string;
@@ -109,6 +111,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   name: "",
   region: "",
   categoria: "",
+  sub_categoria: "",
   estilo: "",
   play_days: [],
   play_time_start: "",
@@ -281,6 +284,7 @@ const TeamPage = () => {
       name: team.name || "",
       region: (team as any).region || "",
       categoria: (team as any).categoria || "",
+      sub_categoria: (team as any).sub_categoria || "",
       estilo: (team as any).estilo || "",
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
@@ -351,6 +355,10 @@ const TeamPage = () => {
     }
     if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
+      return;
+    }
+    if (teamForm.categoria === "Infantil" && !teamForm.sub_categoria) {
+      toast({ title: "Selecione a faixa (Sub) para categoria Infantil", variant: "destructive" });
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
@@ -1095,7 +1103,13 @@ const TeamFormDialog = ({
 
           <div>
             <Label>Categoria *</Label>
-            <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
+            <Select
+              value={form.categoria}
+              onValueChange={(v) => {
+                setField("categoria", v);
+                if (v !== "Infantil") setField("sub_categoria", "");
+              }}
+            >
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
@@ -1106,6 +1120,22 @@ const TeamFormDialog = ({
               </SelectContent>
             </Select>
           </div>
+
+          {form.categoria === "Infantil" && (
+            <div>
+              <Label>Faixa Infantil *</Label>
+              <Select value={form.sub_categoria} onValueChange={(v) => setField("sub_categoria", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione a faixa (Sub 5 a Sub 18)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUB_CATEGORIAS_INFANTIL.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label>Modalidade *</Label>
