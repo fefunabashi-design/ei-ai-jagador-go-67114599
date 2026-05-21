@@ -36,6 +36,12 @@ const DIAS_SEMANA = [
   { value: "sabado", label: "Sábado" },
 ];
 
+const WEEK_DAY_LABEL: Record<string, string> = Object.fromEntries(DIAS_SEMANA.map((d) => [d.value, d.label]));
+const DAY_INDEX: Record<string, number> = {
+  domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
+};
+
+
 
 const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
