@@ -1068,6 +1068,7 @@ const TeamFormDialog = ({
           <div>
             <Label>Nome do Time *</Label>
             <Input
+              id="tf-name"
               value={form.name}
               onChange={(e) => setField("name", capitalizeFirst(e.target.value))}
               placeholder="Ex: Os Crias FC"
