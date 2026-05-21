@@ -1403,7 +1403,7 @@ const TeamFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label>Cel. Admin</Label>
+                    <Label>Cel. Admin *</Label>
                     <Input
                       value={form.admin_phone}
                       readOnly
