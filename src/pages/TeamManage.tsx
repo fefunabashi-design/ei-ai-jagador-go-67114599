@@ -323,42 +323,57 @@ const TeamPage = () => {
     setTeamDialogOpen(true);
   };
 
+  const focusField = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(id) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        (el as HTMLInputElement).focus?.();
+      }
+    }, 50);
+  };
+
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    const req: Array<[string, string]> = [
-      ["Nome do Time", teamForm.name.trim()],
-      ["Categoria", teamForm.categoria],
-      ["Modalidade", teamForm.estilo],
-      ["CEP", teamForm.addr_cep.trim()],
-      ["Rua", teamForm.addr_rua.trim()],
-      ["Nº", teamForm.addr_numero.trim()],
-      ["Bairro", teamForm.addr_bairro.trim()],
-      ["Cidade", teamForm.addr_cidade.trim()],
-      ["UF", teamForm.addr_uf.trim()],
-      ["Técnico", teamForm.coach_name.trim()],
-      ["Admin App", teamForm.admin_name.trim()],
-      ["Cel. Admin", teamForm.admin_phone.trim()],
+    const req: Array<[string, string, string]> = [
+      ["Nome do Time", teamForm.name.trim(), "tf-name"],
+      ["Categoria", teamForm.categoria, "tf-categoria"],
+      ["Modalidade", teamForm.estilo, "tf-estilo"],
+      ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
+      ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
+      ["Nº", teamForm.addr_numero.trim(), "tf-addr_numero"],
+      ["Bairro", teamForm.addr_bairro.trim(), "tf-addr_bairro"],
+      ["Cidade", teamForm.addr_cidade.trim(), "tf-addr_cidade"],
+      ["UF", teamForm.addr_uf.trim(), "tf-addr_uf"],
+      ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
+      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
+      ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
     ];
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
+      focusField(missing[2]);
       return;
     }
     if (!teamForm.play_days.length) {
       toast({ title: "Selecione ao menos um dia da semana", variant: "destructive" });
+      focusField("tf-play-days");
       return;
     }
     const horarioMissing = teamForm.play_days.some((d) => !teamForm.play_schedule?.[d]?.start);
     if (horarioMissing) {
       toast({ title: "Informe o horário de cada dia selecionado", variant: "destructive" });
+      focusField("tf-play-days");
       return;
     }
     if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
       toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
+      focusField("tf-region");
       return;
     }
     if (teamForm.categoria === "Infantil" && !teamForm.sub_categoria) {
       toast({ title: "Selecione a faixa (Sub) para categoria Infantil", variant: "destructive" });
+      focusField("tf-sub_categoria");
       return;
     }
     if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
