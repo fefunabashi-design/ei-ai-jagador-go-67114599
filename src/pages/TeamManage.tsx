@@ -51,7 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIAS = ["Todas", "Esporte", "Infantil", "35+", "40+", "45+", "50+", "60+"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
