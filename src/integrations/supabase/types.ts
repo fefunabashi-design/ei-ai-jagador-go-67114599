@@ -990,6 +990,12 @@ export type Database = {
       teams: {
         Row: {
           abbreviation: string | null
+          addr_bairro: string | null
+          addr_cep: string | null
+          addr_cidade: string | null
+          addr_numero: string | null
+          addr_rua: string | null
+          addr_uf: string | null
           admin_cpf: string | null
           admin_email: string | null
           admin_name: string | null
@@ -1009,6 +1015,7 @@ export type Database = {
           logo_url: string | null
           mobile: string | null
           name: string
+          observacoes: string | null
           owner_id: string
           phone: string | null
           play_days: string[] | null
@@ -1030,6 +1037,12 @@ export type Database = {
         }
         Insert: {
           abbreviation?: string | null
+          addr_bairro?: string | null
+          addr_cep?: string | null
+          addr_cidade?: string | null
+          addr_numero?: string | null
+          addr_rua?: string | null
+          addr_uf?: string | null
           admin_cpf?: string | null
           admin_email?: string | null
           admin_name?: string | null
@@ -1049,6 +1062,7 @@ export type Database = {
           logo_url?: string | null
           mobile?: string | null
           name: string
+          observacoes?: string | null
           owner_id: string
           phone?: string | null
           play_days?: string[] | null
@@ -1070,6 +1084,12 @@ export type Database = {
         }
         Update: {
           abbreviation?: string | null
+          addr_bairro?: string | null
+          addr_cep?: string | null
+          addr_cidade?: string | null
+          addr_numero?: string | null
+          addr_rua?: string | null
+          addr_uf?: string | null
           admin_cpf?: string | null
           admin_email?: string | null
           admin_name?: string | null
@@ -1089,6 +1109,7 @@ export type Database = {
           logo_url?: string | null
           mobile?: string | null
           name?: string
+          observacoes?: string | null
           owner_id?: string
           phone?: string | null
           play_days?: string[] | null
