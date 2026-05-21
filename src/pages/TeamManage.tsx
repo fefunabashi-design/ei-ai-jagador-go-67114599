@@ -115,6 +115,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   region: "",
   categoria: "",
   sub_categoria: "",
+  gender: "",
   estilo: "",
   play_days: [],
   play_time_start: "",
