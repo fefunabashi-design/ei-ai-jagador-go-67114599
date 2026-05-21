@@ -1454,34 +1454,13 @@ const TeamFormDialog = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Substituto 2</Label>
-                    <Input
-                      value={form.sub2_name}
-                      onChange={(e) => setField("sub2_name", e.target.value)}
-                      placeholder="Nome"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                  <div>
-                    <Label>Cel. Sub 2</Label>
-                    <Input
-                      value={form.sub2_phone}
-                      onChange={(e) => setField("sub2_phone", formatPhone(e.target.value))}
-                      placeholder="(11) 99999-9999"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label>E-mail Sub 2</Label>
+                  <Label>CPF Sub 1</Label>
                   <Input
-                    type="email"
-                    value={form.sub2_email}
-                    onChange={(e) => setField("sub2_email", e.target.value)}
-                    placeholder="sub2@email.com"
+                    value={form.sub1_cpf}
+                    onChange={(e) => setField("sub1_cpf", formatCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    inputMode="numeric"
                     className="bg-secondary border-border"
                   />
                 </div>
