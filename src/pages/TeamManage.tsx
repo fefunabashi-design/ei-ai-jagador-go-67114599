@@ -73,6 +73,7 @@ type TeamForm = {
   region: string;
   categoria: string;
   sub_categoria: string;
+  gender: string;
   estilo: string;
   play_days: string[];
   play_time_start: string;
