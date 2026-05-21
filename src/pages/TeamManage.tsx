@@ -1008,7 +1008,7 @@ const TeamFormDialog = ({
             <Label>Nome do Time *</Label>
             <Input
               value={form.name}
-              onChange={(e) => setField("name", e.target.value)}
+              onChange={(e) => setField("name", capitalizeFirst(e.target.value))}
               placeholder="Ex: Os Crias FC"
               className="bg-secondary border-border"
               required
