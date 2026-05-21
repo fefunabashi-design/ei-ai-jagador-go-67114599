@@ -137,12 +137,11 @@ const EMPTY_TEAM_FORM: TeamForm = {
   admin_name: "",
   admin_phone: "",
   admin_email: "",
+  admin_cpf: "",
   sub1_name: "",
   sub1_phone: "",
   sub1_email: "",
-  sub2_name: "",
-  sub2_phone: "",
-  sub2_email: "",
+  sub1_cpf: "",
   observacoes: "",
 };
 
