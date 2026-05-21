@@ -1405,6 +1405,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Técnico *</Label>
               <Input
+                id="tf-coach_name"
                 value={form.coach_name}
                 onChange={(e) => setField("coach_name", e.target.value)}
                 placeholder="Nome"
