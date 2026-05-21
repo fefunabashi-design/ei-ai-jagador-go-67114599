@@ -176,9 +176,6 @@ const BuscarAdversarioPage = () => {
     return hours * 60 + minutes;
   };
 
-  const myUf = ((myTeam as any)?.addr_uf || "SP").toUpperCase();
-  const cityOptions = getCitiesForUf(myUf);
-
   const { data: registeredTeams = [] } = useQuery<any[]>({
     queryKey: ["registered_teams"],
     queryFn: async () => {
@@ -187,34 +184,68 @@ const BuscarAdversarioPage = () => {
     },
   });
 
-  const availableOpponentTeams = registeredTeams.filter(
-    (team) => team.id !== myTeam?.id && ((team as any).addr_uf || "SP").toUpperCase() === myUf
+  const availableOpponentTeams = useMemo(
+    () => registeredTeams.filter((team) => team.id !== myTeam?.id),
+    [registeredTeams, myTeam?.id],
   );
+
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
 
-  const filteredCitySuggest = (() => {
-    if (!cityQuery.trim()) return cityOptions.slice(0, 8);
-    return cityOptions.filter((c) => startsWithNorm(c, cityQuery)).slice(0, 8);
-  })();
+  // Cidades disponíveis: apenas cidades com times cadastrados (filtradas por UF se houver)
+  const cityOptions = useMemo(() => {
+    const set = new Set<string>();
+    availableOpponentTeams.forEach((t: any) => {
+      const cidade = t.addr_cidade;
+      const uf = String(t.addr_uf || "").toUpperCase();
+      if (!cidade) return;
+      if (selectedUFs.length > 0 && !selectedUFs.includes(uf)) return;
+      set.add(cidade);
+    });
+    return Array.from(set).sort();
+  }, [selectedUFs, availableOpponentTeams]);
 
-  const filteredNameSuggest = (() => {
+  const subCategoriaOptions = useMemo(() => {
+    if (selectedCategorias.includes("Infantil") && !selectedCategorias.includes("Adulto")) {
+      return SUB_CATEGORIAS_INFANTIL;
+    }
+    if (selectedCategorias.includes("Adulto") && !selectedCategorias.includes("Infantil")) {
+      return SUB_CATEGORIAS_ADULTO;
+    }
+    return [...SUB_CATEGORIAS_ADULTO, ...SUB_CATEGORIAS_INFANTIL];
+  }, [selectedCategorias]);
+
+  const filteredNameSuggest = useMemo(() => {
     if (!nameQuery.trim()) return [] as any[];
     return availableOpponentTeams.filter((t) => startsWithNorm(t.name, nameQuery)).slice(0, 8);
-  })();
+  }, [nameQuery, availableOpponentTeams]);
 
   const filteredOpponentTeams = availableOpponentTeams.filter((team) => {
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(team.categoria || "");
-    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(team.region || "");
-    const teamStart = toMinutes(team.play_time_start);
-    const teamEnd = toMinutes(team.play_time_end);
+    const t = team as any;
+    const matchesName = startsWithNorm(t.name, nameQuery);
+    const matchesUf = selectedUFs.length === 0 || selectedUFs.includes(String(t.addr_uf || "").toUpperCase());
+    const matchesCity = selectedCities.length === 0 || selectedCities.includes(t.addr_cidade || "");
+    const matchesRegion = selectedRegions.length === 0 || selectedRegions.includes(t.region || "");
+    const matchesModalidade = selectedModalidades.length === 0 || selectedModalidades.includes(t.estilo || "");
+    const matchesCategoria = selectedCategorias.length === 0 || selectedCategorias.includes(t.categoria || "");
+    const matchesSubCategoria = selectedSubCategorias.length === 0 || selectedSubCategorias.includes(t.sub_categoria || "");
+    const matchesGenero = selectedGeneros.length === 0 || selectedGeneros.includes(t.gender || "");
+    const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
+    const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
+    const matchesField =
+      selectedFieldOpts.length === 0 ||
+      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
+    const teamStart = toMinutes(t.play_time_start);
+    const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
       (!fromMinutes || (teamEnd !== null && teamEnd >= fromMinutes)) &&
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
-    const matchesCity = startsWithNorm((team as any).addr_cidade, cityQuery);
-    const matchesName = startsWithNorm(team.name, nameQuery);
-    return matchesCategory && matchesRegion && matchesTime && matchesCity && matchesName;
+    return (
+      matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
+    );
   });
+
 
   return (
     <div className="min-h-screen bg-background pb-20">
