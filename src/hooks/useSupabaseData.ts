@@ -167,8 +167,11 @@ const cleanTeamPayload = (raw: Record<string, any>) => {
   const allowed = ["name","abbreviation","categoria","sub_categoria","estilo","gender","region","format","play_days","play_time_start","play_time_end","play_schedule",
     "field_name","field_address","foundation_date","war_cry","logo_url","instagram","phone","mobile","email",
     "addr_cep","addr_rua","addr_numero","addr_bairro","addr_cidade","addr_uf","observacoes",
-    "president_name","president_email","admin_name","admin_email","admin_phone","admin_cpf","coach_name","substitute_name",
-    "sub1_name","sub1_phone","sub1_email","sub1_cpf",
+    "president_name","president_email","president_phone",
+    "admin_name","admin_email","admin_phone","admin_cpf",
+    "coach_name","coach_phone","coach_email",
+    "assistant_coach_name","assistant_coach_phone","assistant_coach_email",
+    "substitute_name","sub1_name","sub1_phone","sub1_email","sub1_cpf",
     "founder_name","rating"];
   const out: Record<string, any> = {};
   allowed.forEach(k => { if (k in raw) out[k] = raw[k]; });
