@@ -352,7 +352,7 @@ const TeamPage = () => {
       focusField("tf-categoria");
       return;
     }
-    const _extra: Array<[string, string, string]> = [
+    req.push(
       ["Modalidade", teamForm.estilo, "tf-estilo"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
@@ -363,7 +363,7 @@ const TeamPage = () => {
       ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
       ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
       ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
-    ];
+    );
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
