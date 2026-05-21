@@ -321,8 +321,44 @@ const TeamPage = () => {
 
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamForm.name.trim()) {
-      toast({ title: "Nome do time é obrigatório", variant: "destructive" });
+    const req: Array<[string, string]> = [
+      ["Nome do Time", teamForm.name.trim()],
+      ["Categoria", teamForm.categoria],
+      ["Modalidade", teamForm.estilo],
+      ["CEP", teamForm.addr_cep.trim()],
+      ["Rua", teamForm.addr_rua.trim()],
+      ["Nº", teamForm.addr_numero.trim()],
+      ["Bairro", teamForm.addr_bairro.trim()],
+      ["Cidade", teamForm.addr_cidade.trim()],
+      ["UF", teamForm.addr_uf.trim()],
+      ["Técnico", teamForm.coach_name.trim()],
+      ["Admin App", teamForm.admin_name.trim()],
+      ["Cel. Admin", teamForm.admin_phone.trim()],
+    ];
+    const missing = req.find(([, v]) => !v);
+    if (missing) {
+      toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
+      return;
+    }
+    if (!teamForm.play_days.length) {
+      toast({ title: "Selecione ao menos um dia da semana", variant: "destructive" });
+      return;
+    }
+    const horarioMissing = teamForm.play_days.some((d) => !teamForm.play_schedule?.[d]?.start);
+    if (horarioMissing) {
+      toast({ title: "Informe o horário de cada dia selecionado", variant: "destructive" });
+      return;
+    }
+    if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
+      toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
+      return;
+    }
+    if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
+      toast({ title: "CPF do Admin inválido", variant: "destructive" });
+      return;
+    }
+    if (teamForm.sub1_cpf && !isValidCpf(teamForm.sub1_cpf)) {
+      toast({ title: "CPF do Substituto 1 inválido", variant: "destructive" });
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
