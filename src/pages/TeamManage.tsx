@@ -1114,7 +1114,7 @@ const TeamFormDialog = ({
 
           {form.play_days.length > 0 && (
             <div className="space-y-2">
-              <Label className="block">Horários por dia</Label>
+              <Label className="block">Horários por dia *</Label>
               <div className="space-y-2">
                 {WEEK_DAYS.filter((d) => form.play_days.includes(d.value)).map((day) => {
                   const sched = form.play_schedule[day.value] || { mode: "fixed" as const, start: "", end: "" };
