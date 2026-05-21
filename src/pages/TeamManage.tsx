@@ -51,7 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
-const CATEGORIAS = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const CATEGORIAS = ["Todas", "Esporte", "Infantil", "35+", "40+", "45+", "50+", "60+"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -97,12 +97,11 @@ type TeamForm = {
   admin_name: string;
   admin_phone: string;
   admin_email: string;
+  admin_cpf: string;
   sub1_name: string;
   sub1_phone: string;
   sub1_email: string;
-  sub2_name: string;
-  sub2_phone: string;
-  sub2_email: string;
+  sub1_cpf: string;
   observacoes: string;
 };
 
@@ -138,12 +137,11 @@ const EMPTY_TEAM_FORM: TeamForm = {
   admin_name: "",
   admin_phone: "",
   admin_email: "",
+  admin_cpf: "",
   sub1_name: "",
   sub1_phone: "",
   sub1_email: "",
-  sub2_name: "",
-  sub2_phone: "",
-  sub2_email: "",
+  sub1_cpf: "",
   observacoes: "",
 };
 
@@ -165,6 +163,34 @@ const formatPhone = (value: string) => {
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatCpf = (value: string) => {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
+const isValidCpf = (value: string) => {
+  const cpf = value.replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(cpf[i]) * (10 - i);
+  let rev = 11 - (sum % 11);
+  if (rev >= 10) rev = 0;
+  if (rev !== parseInt(cpf[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(cpf[i]) * (11 - i);
+  rev = 11 - (sum % 11);
+  if (rev >= 10) rev = 0;
+  return rev === parseInt(cpf[10]);
+};
+
+const capitalizeFirst = (value: string) => {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
 const TeamPage = () => {
@@ -283,12 +309,11 @@ const TeamPage = () => {
       admin_name: (team as any).admin_name || "",
       admin_phone: (team as any).admin_phone || "",
       admin_email: (team as any).admin_email || "",
+      admin_cpf: (team as any).admin_cpf || "",
       sub1_name: (team as any).sub1_name || "",
       sub1_phone: (team as any).sub1_phone || "",
       sub1_email: (team as any).sub1_email || "",
-      sub2_name: (team as any).sub2_name || "",
-      sub2_phone: (team as any).sub2_phone || "",
-      sub2_email: (team as any).sub2_email || "",
+      sub1_cpf: (team as any).sub1_cpf || "",
       observacoes: (team as any).observacoes || "",
     });
     setTeamDialogOpen(true);
@@ -296,8 +321,44 @@ const TeamPage = () => {
 
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamForm.name.trim()) {
-      toast({ title: "Nome do time é obrigatório", variant: "destructive" });
+    const req: Array<[string, string]> = [
+      ["Nome do Time", teamForm.name.trim()],
+      ["Categoria", teamForm.categoria],
+      ["Modalidade", teamForm.estilo],
+      ["CEP", teamForm.addr_cep.trim()],
+      ["Rua", teamForm.addr_rua.trim()],
+      ["Nº", teamForm.addr_numero.trim()],
+      ["Bairro", teamForm.addr_bairro.trim()],
+      ["Cidade", teamForm.addr_cidade.trim()],
+      ["UF", teamForm.addr_uf.trim()],
+      ["Técnico", teamForm.coach_name.trim()],
+      ["Admin App", teamForm.admin_name.trim()],
+      ["Cel. Admin", teamForm.admin_phone.trim()],
+    ];
+    const missing = req.find(([, v]) => !v);
+    if (missing) {
+      toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
+      return;
+    }
+    if (!teamForm.play_days.length) {
+      toast({ title: "Selecione ao menos um dia da semana", variant: "destructive" });
+      return;
+    }
+    const horarioMissing = teamForm.play_days.some((d) => !teamForm.play_schedule?.[d]?.start);
+    if (horarioMissing) {
+      toast({ title: "Informe o horário de cada dia selecionado", variant: "destructive" });
+      return;
+    }
+    if (teamForm.addr_cidade.trim().toLowerCase() === "são paulo" && !teamForm.region) {
+      toast({ title: "Região é obrigatória para São Paulo", variant: "destructive" });
+      return;
+    }
+    if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
+      toast({ title: "CPF do Admin inválido", variant: "destructive" });
+      return;
+    }
+    if (teamForm.sub1_cpf && !isValidCpf(teamForm.sub1_cpf)) {
+      toast({ title: "CPF do Substituto 1 inválido", variant: "destructive" });
       return;
     }
     const abbr = teamForm.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
@@ -983,7 +1044,7 @@ const TeamFormDialog = ({
             <Label>Nome do Time *</Label>
             <Input
               value={form.name}
-              onChange={(e) => setField("name", e.target.value)}
+              onChange={(e) => setField("name", capitalizeFirst(e.target.value))}
               placeholder="Ex: Os Crias FC"
               className="bg-secondary border-border"
               required
@@ -1033,7 +1094,7 @@ const TeamFormDialog = ({
           </div>
 
           <div>
-            <Label>Categoria</Label>
+            <Label>Categoria *</Label>
             <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
@@ -1047,14 +1108,14 @@ const TeamFormDialog = ({
           </div>
 
           <div>
-            <Label>Modalidade</Label>
+            <Label>Modalidade *</Label>
             <Select value={form.estilo} onValueChange={(v) => setField("estilo", v)}>
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Campo">Campo</SelectItem>
-                <SelectItem value="Mini Campo">Mini Campo</SelectItem>
+                <SelectItem value="Mini Campo (Society)">Mini Campo (Society)</SelectItem>
                 <SelectItem value="Futsal">Futsal</SelectItem>
               </SelectContent>
             </Select>
@@ -1063,7 +1124,7 @@ const TeamFormDialog = ({
           {/* Endereço */}
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <Label className="block">Dias da semana que o time joga</Label>
+              <Label className="block">Dias da semana que o time joga *</Label>
               {form.play_days.length > 0 && (
                 <button
                   type="button"
@@ -1089,7 +1150,7 @@ const TeamFormDialog = ({
 
           {form.play_days.length > 0 && (
             <div className="space-y-2">
-              <Label className="block">Horários por dia</Label>
+              <Label className="block">Horários por dia *</Label>
               <div className="space-y-2">
                 {WEEK_DAYS.filter((d) => form.play_days.includes(d.value)).map((day) => {
                   const sched = form.play_schedule[day.value] || { mode: "fixed" as const, start: "", end: "" };
@@ -1153,8 +1214,12 @@ const TeamFormDialog = ({
             </div>
           )}
 
+          <div className="pt-2 border-t border-border">
+            <p className="text-sm font-semibold text-foreground mb-2">Endereço do Campo</p>
+          </div>
+
           <div>
-            <Label>CEP</Label>
+            <Label>CEP *</Label>
             <div className="relative">
               <Input
                 value={form.addr_cep}
@@ -1171,7 +1236,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <Label>Rua</Label>
+              <Label>Rua *</Label>
               <Input
                 value={form.addr_rua}
                 onChange={(e) => setField("addr_rua", e.target.value)}
@@ -1180,7 +1245,7 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>Nº</Label>
+              <Label>Nº *</Label>
               <Input
                 value={form.addr_numero}
                 onChange={(e) => setField("addr_numero", e.target.value)}
@@ -1192,7 +1257,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Bairro</Label>
+              <Label>Bairro *</Label>
               <Input
                 value={form.addr_bairro}
                 onChange={(e) => setField("addr_bairro", e.target.value)}
@@ -1201,7 +1266,9 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>Região</Label>
+              <Label>
+                Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
+              </Label>
               <Select value={form.region} onValueChange={(v) => setField("region", v)}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione" />
@@ -1217,7 +1284,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <Label>Cidade</Label>
+              <Label>Cidade *</Label>
               <Input
                 value={form.addr_cidade}
                 onChange={(e) => setField("addr_cidade", e.target.value)}
@@ -1226,7 +1293,7 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>UF</Label>
+              <Label>UF *</Label>
               <Input
                 value={form.addr_uf}
                 onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
@@ -1282,7 +1349,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Técnico</Label>
+              <Label>Técnico *</Label>
               <Input
                 value={form.coach_name}
                 onChange={(e) => setField("coach_name", e.target.value)}
@@ -1362,7 +1429,7 @@ const TeamFormDialog = ({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Admin App</Label>
+                    <Label>Admin App *</Label>
                     <Input
                       value={form.admin_name}
                       readOnly
@@ -1372,7 +1439,7 @@ const TeamFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label>Cel. Admin</Label>
+                    <Label>Cel. Admin *</Label>
                     <Input
                       value={form.admin_phone}
                       readOnly
@@ -1392,6 +1459,17 @@ const TeamFormDialog = ({
                     disabled
                     placeholder="admin@email.com"
                     className="bg-muted/40 border-border cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <Label>CPF Admin *</Label>
+                  <Input
+                    value={form.admin_cpf}
+                    onChange={(e) => setField("admin_cpf", formatCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    inputMode="numeric"
+                    className="bg-secondary border-border"
                   />
                 </div>
 
@@ -1429,34 +1507,13 @@ const TeamFormDialog = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Substituto 2</Label>
-                    <Input
-                      value={form.sub2_name}
-                      onChange={(e) => setField("sub2_name", e.target.value)}
-                      placeholder="Nome"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                  <div>
-                    <Label>Cel. Sub 2</Label>
-                    <Input
-                      value={form.sub2_phone}
-                      onChange={(e) => setField("sub2_phone", formatPhone(e.target.value))}
-                      placeholder="(11) 99999-9999"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label>E-mail Sub 2</Label>
+                  <Label>CPF Sub 1</Label>
                   <Input
-                    type="email"
-                    value={form.sub2_email}
-                    onChange={(e) => setField("sub2_email", e.target.value)}
-                    placeholder="sub2@email.com"
+                    value={form.sub1_cpf}
+                    onChange={(e) => setField("sub1_cpf", formatCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    inputMode="numeric"
                     className="bg-secondary border-border"
                   />
                 </div>

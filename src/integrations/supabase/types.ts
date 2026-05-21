@@ -990,6 +990,7 @@ export type Database = {
       teams: {
         Row: {
           abbreviation: string | null
+          admin_cpf: string | null
           admin_email: string | null
           admin_name: string | null
           admin_phone: string | null
@@ -1017,12 +1018,17 @@ export type Database = {
           president_name: string | null
           rating: number | null
           region: string | null
+          sub1_cpf: string | null
+          sub1_email: string | null
+          sub1_name: string | null
+          sub1_phone: string | null
           substitute_name: string | null
           updated_at: string
           war_cry: string | null
         }
         Insert: {
           abbreviation?: string | null
+          admin_cpf?: string | null
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
@@ -1050,12 +1056,17 @@ export type Database = {
           president_name?: string | null
           rating?: number | null
           region?: string | null
+          sub1_cpf?: string | null
+          sub1_email?: string | null
+          sub1_name?: string | null
+          sub1_phone?: string | null
           substitute_name?: string | null
           updated_at?: string
           war_cry?: string | null
         }
         Update: {
           abbreviation?: string | null
+          admin_cpf?: string | null
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
@@ -1083,6 +1094,10 @@ export type Database = {
           president_name?: string | null
           rating?: number | null
           region?: string | null
+          sub1_cpf?: string | null
+          sub1_email?: string | null
+          sub1_name?: string | null
+          sub1_phone?: string | null
           substitute_name?: string | null
           updated_at?: string
           war_cry?: string | null
