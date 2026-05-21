@@ -1088,7 +1088,7 @@ const TeamFormDialog = ({
           {/* Endereço */}
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <Label className="block">Dias da semana que o time joga</Label>
+              <Label className="block">Dias da semana que o time joga *</Label>
               {form.play_days.length > 0 && (
                 <button
                   type="button"
