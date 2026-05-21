@@ -1103,7 +1103,13 @@ const TeamFormDialog = ({
 
           <div>
             <Label>Categoria *</Label>
-            <Select value={form.categoria} onValueChange={(v) => setField("categoria", v)}>
+            <Select
+              value={form.categoria}
+              onValueChange={(v) => {
+                setField("categoria", v);
+                if (v !== "Infantil") setField("sub_categoria", "");
+              }}
+            >
               <SelectTrigger className="bg-secondary border-border">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
@@ -1114,6 +1120,22 @@ const TeamFormDialog = ({
               </SelectContent>
             </Select>
           </div>
+
+          {form.categoria === "Infantil" && (
+            <div>
+              <Label>Faixa Infantil *</Label>
+              <Select value={form.sub_categoria} onValueChange={(v) => setField("sub_categoria", v)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione a faixa (Sub 5 a Sub 18)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUB_CATEGORIAS_INFANTIL.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label>Modalidade *</Label>
