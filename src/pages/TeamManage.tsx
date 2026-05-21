@@ -1520,6 +1520,7 @@ const TeamFormDialog = ({
                 <div>
                   <Label>CPF Admin *</Label>
                   <Input
+                    id="tf-admin_cpf"
                     value={form.admin_cpf}
                     onChange={(e) => setField("admin_cpf", formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
