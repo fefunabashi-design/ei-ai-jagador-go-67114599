@@ -1016,6 +1016,7 @@ export type Database = {
           foundation_date: string | null
           founder_name: string | null
           gender: string | null
+          has_field: boolean | null
           id: string
           instagram: string | null
           logo_url: string | null
@@ -1070,6 +1071,7 @@ export type Database = {
           foundation_date?: string | null
           founder_name?: string | null
           gender?: string | null
+          has_field?: boolean | null
           id?: string
           instagram?: string | null
           logo_url?: string | null
@@ -1124,6 +1126,7 @@ export type Database = {
           foundation_date?: string | null
           founder_name?: string | null
           gender?: string | null
+          has_field?: boolean | null
           id?: string
           instagram?: string | null
           logo_url?: string | null
