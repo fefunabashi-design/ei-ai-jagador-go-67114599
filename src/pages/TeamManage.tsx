@@ -1566,6 +1566,7 @@ const TeamFormDialog = ({
                 <div>
                   <Label>CPF Sub 1</Label>
                   <Input
+                    id="tf-sub1_cpf"
                     value={form.sub1_cpf}
                     onChange={(e) => setField("sub1_cpf", formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
