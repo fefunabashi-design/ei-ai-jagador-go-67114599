@@ -398,6 +398,10 @@ const TeamPage = () => {
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
     const payload: any = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
+    console.log("[TeamManage] saving team payload addr:", {
+      addr_cep: payload.addr_cep, addr_rua: payload.addr_rua, addr_numero: payload.addr_numero,
+      addr_bairro: payload.addr_bairro, addr_cidade: payload.addr_cidade, addr_uf: payload.addr_uf,
+    });
     if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
