@@ -55,6 +55,7 @@ const CATEGORIA_TIPOS = ["Adulto", "Infantil"];
 const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`); // Sub 5..Sub 18
 const GENEROS = ["Masculino", "Feminino"];
+const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -200,6 +201,23 @@ const capitalizeFirst = (value: string) => {
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
+const getTeamCategoriaValues = (team: any) => {
+  const categoria = team?.categoria || "";
+  const subCategoria = team?.sub_categoria || "";
+  if (CATEGORIA_TIPOS.includes(categoria)) return { categoria, sub_categoria: subCategoria };
+  if (SUB_CATEGORIAS_ADULTO.includes(categoria)) return { categoria: "Adulto", sub_categoria: categoria };
+  if (SUB_CATEGORIAS_INFANTIL.includes(categoria)) return { categoria: "Infantil", sub_categoria: categoria };
+  return { categoria: "", sub_categoria: subCategoria };
+};
+
+const getTeamModalidadeValue = (team: any) => {
+  const estilo = team?.estilo || "";
+  const format = team?.format || "";
+  if (MODALIDADES.includes(estilo)) return estilo;
+  if (MODALIDADES.includes(format)) return format;
+  return "";
+};
+
 const TeamPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -283,14 +301,15 @@ const TeamPage = () => {
 
   const openEditTeam = () => {
     if (!team) return;
+    const categoriaValues = getTeamCategoriaValues(team);
     setIsEditingTeam(true);
     setTeamForm({
       name: team.name || "",
       region: (team as any).region || "",
-      categoria: (team as any).categoria || "",
-      sub_categoria: (team as any).sub_categoria || "",
+      categoria: categoriaValues.categoria,
+      sub_categoria: categoriaValues.sub_categoria,
       gender: (team as any).gender || "",
-      estilo: (team as any).estilo || "",
+      estilo: getTeamModalidadeValue(team),
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
@@ -407,11 +426,7 @@ const TeamPage = () => {
     });
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
-    const payload: any = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
-    console.log("[TeamManage] saving team payload addr:", {
-      addr_cep: payload.addr_cep, addr_rua: payload.addr_rua, addr_numero: payload.addr_numero,
-      addr_bairro: payload.addr_bairro, addr_cidade: payload.addr_cidade, addr_uf: payload.addr_uf,
-    });
+    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd };
     if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
@@ -1194,9 +1209,9 @@ const TeamFormDialog = ({
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Campo">Campo</SelectItem>
-                <SelectItem value="Mini Campo (Society)">Mini Campo (Society)</SelectItem>
-                <SelectItem value="Futsal">Futsal</SelectItem>
+                {MODALIDADES.map((modalidade) => (
+                  <SelectItem key={modalidade} value={modalidade}>{modalidade}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
