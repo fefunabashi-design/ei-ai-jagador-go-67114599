@@ -1121,39 +1121,37 @@ const TeamFormDialog = ({
 
           <div>
             <Label>Categoria *</Label>
-            <Select
-              value={form.categoria}
-              onValueChange={(v) => {
-                setField("categoria", v);
-                if (v !== "Infantil") setField("sub_categoria", "");
-              }}
-            >
-              <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIAS.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(() => {
+              const isInfantil = form.categoria === "Infantil" || form.categoria.startsWith("Infantil ");
+              return (
+                <Select
+                  value={form.categoria}
+                  onValueChange={(v) => {
+                    if (v === "__back__") { setField("categoria", ""); return; }
+                    setField("categoria", v);
+                  }}
+                >
+                  <SelectTrigger id="tf-categoria" className="bg-secondary border-border">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isInfantil ? (
+                      <>
+                        <SelectItem value="__back__">← Outras categorias</SelectItem>
+                        {SUB_CATEGORIAS_INFANTIL.map((s) => (
+                          <SelectItem key={s} value={`Infantil ${s}`}>{`Infantil ${s}`}</SelectItem>
+                        ))}
+                      </>
+                    ) : (
+                      CATEGORIAS.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
-
-          {form.categoria === "Infantil" && (
-            <div>
-              <Label>Faixa Infantil *</Label>
-              <Select value={form.sub_categoria} onValueChange={(v) => setField("sub_categoria", v)}>
-                <SelectTrigger id="tf-sub_categoria" className="bg-secondary border-border">
-                  <SelectValue placeholder="Selecione a faixa (Sub 5 a Sub 18)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUB_CATEGORIAS_INFANTIL.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div>
             <Label>Modalidade *</Label>
