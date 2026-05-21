@@ -55,6 +55,7 @@ const CATEGORIA_TIPOS = ["Adulto", "Infantil"];
 const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
 const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`); // Sub 5..Sub 18
 const GENEROS = ["Masculino", "Feminino"];
+const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
 
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
@@ -198,6 +199,23 @@ const isValidCpf = (value: string) => {
 const capitalizeFirst = (value: string) => {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const getTeamCategoriaValues = (team: any) => {
+  const categoria = team?.categoria || "";
+  const subCategoria = team?.sub_categoria || "";
+  if (CATEGORIA_TIPOS.includes(categoria)) return { categoria, sub_categoria: subCategoria };
+  if (SUB_CATEGORIAS_ADULTO.includes(categoria)) return { categoria: "Adulto", sub_categoria: categoria };
+  if (SUB_CATEGORIAS_INFANTIL.includes(categoria)) return { categoria: "Infantil", sub_categoria: categoria };
+  return { categoria: "", sub_categoria: subCategoria };
+};
+
+const getTeamModalidadeValue = (team: any) => {
+  const estilo = team?.estilo || "";
+  const format = team?.format || "";
+  if (MODALIDADES.includes(estilo)) return estilo;
+  if (MODALIDADES.includes(format)) return format;
+  return "";
 };
 
 const TeamPage = () => {
