@@ -301,14 +301,15 @@ const TeamPage = () => {
 
   const openEditTeam = () => {
     if (!team) return;
+    const categoriaValues = getTeamCategoriaValues(team);
     setIsEditingTeam(true);
     setTeamForm({
       name: team.name || "",
       region: (team as any).region || "",
-      categoria: (team as any).categoria || "",
-      sub_categoria: (team as any).sub_categoria || "",
+      categoria: categoriaValues.categoria,
+      sub_categoria: categoriaValues.sub_categoria,
       gender: (team as any).gender || "",
-      estilo: (team as any).estilo || "",
+      estilo: getTeamModalidadeValue(team),
       play_days: Array.isArray((team as any).play_days) ? (team as any).play_days : [],
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
@@ -425,11 +426,7 @@ const TeamPage = () => {
     });
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
-    const payload: any = { ...teamForm, abbreviation: abbr, play_time_start: aggStart, play_time_end: aggEnd };
-    console.log("[TeamManage] saving team payload addr:", {
-      addr_cep: payload.addr_cep, addr_rua: payload.addr_rua, addr_numero: payload.addr_numero,
-      addr_bairro: payload.addr_bairro, addr_cidade: payload.addr_cidade, addr_uf: payload.addr_uf,
-    });
+    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd };
     if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
