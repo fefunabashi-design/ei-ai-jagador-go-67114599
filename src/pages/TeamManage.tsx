@@ -345,6 +345,14 @@ const TeamPage = () => {
       ["Categoria", teamForm.categoria, "tf-categoria"],
       [teamForm.categoria === "Infantil" ? "Faixa" : "Subcategoria", teamForm.sub_categoria, "tf-sub_categoria"],
       ["Gênero", teamForm.gender, "tf-gender"],
+    ];
+    // Garantir que Categoria seja validada primeiro e seja um valor válido
+    if (!teamForm.categoria || !CATEGORIA_TIPOS.includes(teamForm.categoria)) {
+      toast({ title: "Categoria é obrigatório", variant: "destructive" });
+      focusField("tf-categoria");
+      return;
+    }
+    const _extra: Array<[string, string, string]> = [
       ["Modalidade", teamForm.estilo, "tf-estilo"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
