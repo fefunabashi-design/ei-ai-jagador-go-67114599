@@ -1420,6 +1420,17 @@ const TeamFormDialog = ({
                   />
                 </div>
 
+                <div>
+                  <Label>CPF Admin *</Label>
+                  <Input
+                    value={form.admin_cpf}
+                    onChange={(e) => setField("admin_cpf", formatCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    inputMode="numeric"
+                    className="bg-secondary border-border"
+                  />
+                </div>
+
                 <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Substitutos</p>
 
                 <div className="grid grid-cols-2 gap-3">
