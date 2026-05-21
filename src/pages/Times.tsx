@@ -193,6 +193,8 @@ const TimesPage = () => {
 
             {/* Estado + Cidade + Região (3 colunas) */}
             <div className="grid grid-cols-5 gap-2 [&>*:nth-child(1)]:col-span-1 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-1">
+            {/* Estado + Região + Possui campo (3 colunas) */}
+            <div className="grid grid-cols-3 gap-2">
               <MultiSelect
                 label="Estado"
                 options={toOptions(UFS)}
@@ -208,20 +210,33 @@ const TimesPage = () => {
                 placeholder="Todos"
               />
               <MultiSelect
-                label="Cidade"
-                options={toOptions(cityOptions)}
-                selected={selectedCities}
-                onChange={setSelectedCities}
-                placeholder="Todas"
-              />
-              <MultiSelect
                 label="Região"
                 options={toOptions(REGIOES)}
                 selected={selectedRegions}
                 onChange={setSelectedRegions}
                 placeholder="Todas"
               />
+              <MultiSelect
+                label="Possui campo"
+                options={[
+                  { value: "com", label: "Possui campo" },
+                  { value: "sem", label: "Não possui campo" },
+                ]}
+                selected={selectedFieldOpts}
+                onChange={setSelectedFieldOpts}
+                placeholder="Todos"
+              />
             </div>
+
+            {/* Cidade (linha inteira) */}
+            <MultiSelect
+              label="Cidade"
+              options={toOptions(cityOptions)}
+              selected={selectedCities}
+              onChange={setSelectedCities}
+              placeholder="Todas"
+            />
+
 
             {/* Modalidade + Gênero (2 colunas) */}
             <div className="grid grid-cols-2 gap-2">
