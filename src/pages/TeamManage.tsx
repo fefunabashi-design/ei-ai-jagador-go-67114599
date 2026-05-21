@@ -377,7 +377,6 @@ const TeamPage = () => {
     }
     req.push(
       ["Modalidade", teamForm.estilo, "tf-estilo"],
-      ["Possui campo próprio?", teamForm.has_field, "tf-has_field"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
       ["Nº", teamForm.addr_numero.trim(), "tf-addr_numero"],
