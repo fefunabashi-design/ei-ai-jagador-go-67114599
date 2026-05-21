@@ -166,7 +166,7 @@ export const useSetActiveTeam = () => {
 const cleanTeamPayload = (raw: Record<string, any>) => {
   const allowed = ["name","abbreviation","categoria","sub_categoria","estilo","gender","region","format","play_days","play_time_start","play_time_end","play_schedule",
     "field_name","field_address","foundation_date","war_cry","logo_url","instagram","phone","mobile","email",
-    "addr_cep","addr_rua","addr_numero","addr_bairro","addr_cidade","addr_uf","observacoes",
+    "addr_cep","addr_rua","addr_numero","addr_bairro","addr_cidade","addr_uf","observacoes","has_field",
     "president_name","president_email","president_phone",
     "admin_name","admin_email","admin_phone","admin_cpf",
     "coach_name","coach_phone","coach_email",
