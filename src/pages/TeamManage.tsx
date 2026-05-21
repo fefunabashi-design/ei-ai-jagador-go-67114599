@@ -80,6 +80,7 @@ type TeamForm = {
   play_time_start: string;
   play_time_end: string;
   play_schedule: Record<string, { mode: "fixed" | "flexible"; start: string; end: string }>;
+  has_field: "" | "com" | "sem";
   addr_cep: string;
   addr_rua: string;
   addr_numero: string;
@@ -122,6 +123,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   play_time_start: "",
   play_time_end: "",
   play_schedule: {},
+  has_field: "",
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
@@ -314,6 +316,7 @@ const TeamPage = () => {
       play_time_start: (team as any).play_time_start || "",
       play_time_end: (team as any).play_time_end || "",
       play_schedule: ((team as any).play_schedule && typeof (team as any).play_schedule === "object") ? (team as any).play_schedule : {},
+      has_field: ((team as any).has_field === true ? "com" : (team as any).has_field === false ? "sem" : "") as "" | "com" | "sem",
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
@@ -373,6 +376,7 @@ const TeamPage = () => {
     }
     req.push(
       ["Modalidade", teamForm.estilo, "tf-estilo"],
+      ["Possui campo próprio?", teamForm.has_field, "tf-has_field"],
       ["CEP", teamForm.addr_cep.trim(), "tf-addr_cep"],
       ["Rua", teamForm.addr_rua.trim(), "tf-addr_rua"],
       ["Nº", teamForm.addr_numero.trim(), "tf-addr_numero"],
@@ -426,7 +430,7 @@ const TeamPage = () => {
     });
     const aggStart = starts.length ? starts.sort()[0] : teamForm.play_time_start;
     const aggEnd = ends.length ? ends.sort().slice(-1)[0] : teamForm.play_time_end;
-    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd };
+    const payload: any = { ...teamForm, abbreviation: abbr, format: teamForm.estilo, play_time_start: aggStart, play_time_end: aggEnd, has_field: teamForm.has_field === "com" };
     if (!payload.foundation_date) payload.foundation_date = null;
     if (isEditingTeam && team) {
       updateTeam.mutate({ id: team.id, ...payload });
@@ -1309,8 +1313,22 @@ const TeamFormDialog = ({
             </div>
           )}
 
-          <div className="pt-2 border-t border-border">
-            <p className="text-sm font-semibold text-foreground mb-2">Endereço do Campo</p>
+          <div className="pt-2 border-t border-border space-y-3">
+            <div>
+              <Label>Possui campo próprio? *</Label>
+              <Select value={form.has_field} onValueChange={(v) => setField("has_field", v as "com" | "sem")}>
+                <SelectTrigger id="tf-has_field" className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="com">Com campo</SelectItem>
+                  <SelectItem value="sem">Sem campo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm font-semibold text-foreground">
+              {form.has_field === "sem" ? "Endereço da Sede" : "Endereço do Campo"}
+            </p>
           </div>
 
           <div>
