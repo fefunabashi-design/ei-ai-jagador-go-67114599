@@ -221,7 +221,7 @@ const TimesPage = () => {
           </div>
 
           <div className="space-y-3">
-            {/* 1 - Nome do Time com autocomplete */}
+            {/* 1 - Nome do Time com autocomplete (linha inteira) */}
             <div className="relative">
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nome do Time</p>
               <div className="relative">
@@ -252,99 +252,95 @@ const TimesPage = () => {
               )}
             </div>
 
-            {/* 2 - Estado */}
-            <MultiSelect
-              label="Estado"
-              options={toOptions(UFS)}
-              selected={selectedUFs}
-              onChange={(next) => {
-                setSelectedUFs(next);
-                // limpa cidades que não pertencem mais aos UFs selecionados
-                if (next.length > 0) {
+            {/* Estado + Cidade + Região (3 colunas) */}
+            <div className="grid grid-cols-3 gap-2">
+              <MultiSelect
+                label="Estado"
+                options={toOptions(UFS)}
+                selected={selectedUFs}
+                onChange={(next) => {
+                  setSelectedUFs(next);
+                  if (next.length > 0) {
+                    const allowed = new Set<string>();
+                    next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
+                    setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
+                  }
+                }}
+                placeholder="Todos"
+              />
+              <MultiSelect
+                label="Cidade"
+                options={toOptions(cityOptions)}
+                selected={selectedCities}
+                onChange={setSelectedCities}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Região"
+                options={toOptions(REGIOES)}
+                selected={selectedRegions}
+                onChange={setSelectedRegions}
+                placeholder="Todas"
+              />
+            </div>
+
+            {/* Modalidade + Gênero (2 colunas) */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Modalidade"
+                options={toOptions(MODALIDADES)}
+                selected={selectedModalidades}
+                onChange={setSelectedModalidades}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Gênero"
+                options={toOptions(GENEROS)}
+                selected={selectedGeneros}
+                onChange={setSelectedGeneros}
+                placeholder="Todos"
+              />
+            </div>
+
+            {/* Categoria + Subcategoria (2 colunas) */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Categoria"
+                options={toOptions(CATEGORIAS)}
+                selected={selectedCategorias}
+                onChange={(next) => {
+                  setSelectedCategorias(next);
                   const allowed = new Set<string>();
-                  next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
-                  setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
-                }
-              }}
-              placeholder="Todos os estados"
-            />
+                  if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
+                  if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
+                  setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
+                }}
+                placeholder="Todas"
+              />
+              <MultiSelect
+                label="Subcategoria"
+                options={toOptions(subCategoriaOptions)}
+                selected={selectedSubCategorias}
+                onChange={setSelectedSubCategorias}
+                placeholder="Todas"
+              />
+            </div>
 
-            {/* 3 - Cidade */}
-            <MultiSelect
-              label="Cidade"
-              options={toOptions(cityOptions)}
-              selected={selectedCities}
-              onChange={setSelectedCities}
-              placeholder="Todas as cidades"
-            />
-
-            {/* 4 - Região */}
-            <MultiSelect
-              label="Região"
-              options={toOptions(REGIOES)}
-              selected={selectedRegions}
-              onChange={setSelectedRegions}
-              placeholder="Todas as regiões"
-            />
-
-            {/* Modalidade (mantida) */}
-            <MultiSelect
-              label="Modalidade"
-              options={toOptions(MODALIDADES)}
-              selected={selectedModalidades}
-              onChange={setSelectedModalidades}
-              placeholder="Todas as modalidades"
-            />
-
-            {/* 5 - Categoria */}
-            <MultiSelect
-              label="Categoria"
-              options={toOptions(CATEGORIAS)}
-              selected={selectedCategorias}
-              onChange={(next) => {
-                setSelectedCategorias(next);
-                // limpa subcategorias incompatíveis
-                const allowed = new Set<string>();
-                if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
-                if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
-                setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
-              }}
-              placeholder="Todas as categorias"
-            />
-
-            {/* 6 - Subcategoria */}
-            <MultiSelect
-              label="Subcategoria"
-              options={toOptions(subCategoriaOptions)}
-              selected={selectedSubCategorias}
-              onChange={setSelectedSubCategorias}
-              placeholder="Todas as subcategorias"
-            />
-
-            {/* 7 - Gênero */}
-            <MultiSelect
-              label="Gênero"
-              options={toOptions(GENEROS)}
-              selected={selectedGeneros}
-              onChange={setSelectedGeneros}
-              placeholder="Todos os gêneros"
-            />
-
-            {/* 8 - Dia da Semana */}
-            <MultiSelect
-              label="Dia da Semana"
-              options={DIAS_SEMANA}
-              selected={selectedDays}
-              onChange={setSelectedDays}
-              placeholder="Todos os dias"
-            />
-
-            {/* 9 - Horário */}
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border" />
-                <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border" />
+            {/* Dia da Semana + Horário (2 colunas) */}
+            <div className="grid grid-cols-2 gap-2">
+              <MultiSelect
+                label="Dia da Semana"
+                options={DIAS_SEMANA}
+                selected={selectedDays}
+                onChange={setSelectedDays}
+                placeholder="Todos"
+              />
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                  <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                </div>
               </div>
             </div>
           </div>
