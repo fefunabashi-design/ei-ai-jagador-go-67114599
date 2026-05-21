@@ -1209,9 +1209,9 @@ const TeamFormDialog = ({
                 <SelectValue placeholder="Selecione a modalidade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Campo">Campo</SelectItem>
-                <SelectItem value="Mini Campo (Society)">Mini Campo (Society)</SelectItem>
-                <SelectItem value="Futsal">Futsal</SelectItem>
+                {MODALIDADES.map((modalidade) => (
+                  <SelectItem key={modalidade} value={modalidade}>{modalidade}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
