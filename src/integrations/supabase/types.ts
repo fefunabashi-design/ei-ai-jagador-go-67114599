@@ -1000,8 +1000,13 @@ export type Database = {
           admin_email: string | null
           admin_name: string | null
           admin_phone: string | null
+          assistant_coach_email: string | null
+          assistant_coach_name: string | null
+          assistant_coach_phone: string | null
           categoria: string | null
+          coach_email: string | null
           coach_name: string | null
+          coach_phone: string | null
           created_at: string
           email: string | null
           estilo: string | null
@@ -1025,6 +1030,7 @@ export type Database = {
           play_time_start: string | null
           president_email: string | null
           president_name: string | null
+          president_phone: string | null
           rating: number | null
           region: string | null
           sub_categoria: string | null
@@ -1048,8 +1054,13 @@ export type Database = {
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
+          assistant_coach_email?: string | null
+          assistant_coach_name?: string | null
+          assistant_coach_phone?: string | null
           categoria?: string | null
+          coach_email?: string | null
           coach_name?: string | null
+          coach_phone?: string | null
           created_at?: string
           email?: string | null
           estilo?: string | null
@@ -1073,6 +1084,7 @@ export type Database = {
           play_time_start?: string | null
           president_email?: string | null
           president_name?: string | null
+          president_phone?: string | null
           rating?: number | null
           region?: string | null
           sub_categoria?: string | null
@@ -1096,8 +1108,13 @@ export type Database = {
           admin_email?: string | null
           admin_name?: string | null
           admin_phone?: string | null
+          assistant_coach_email?: string | null
+          assistant_coach_name?: string | null
+          assistant_coach_phone?: string | null
           categoria?: string | null
+          coach_email?: string | null
           coach_name?: string | null
+          coach_phone?: string | null
           created_at?: string
           email?: string | null
           estilo?: string | null
@@ -1121,6 +1138,7 @@ export type Database = {
           play_time_start?: string | null
           president_email?: string | null
           president_name?: string | null
+          president_phone?: string | null
           rating?: number | null
           region?: string | null
           sub_categoria?: string | null
