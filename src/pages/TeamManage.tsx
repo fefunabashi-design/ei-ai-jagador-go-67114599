@@ -1143,7 +1143,7 @@ const TeamFormDialog = ({
             <div>
               <Label>Faixa Infantil *</Label>
               <Select value={form.sub_categoria} onValueChange={(v) => setField("sub_categoria", v)}>
-                <SelectTrigger className="bg-secondary border-border">
+                <SelectTrigger id="tf-sub_categoria" className="bg-secondary border-border">
                   <SelectValue placeholder="Selecione a faixa (Sub 5 a Sub 18)" />
                 </SelectTrigger>
                 <SelectContent>
