@@ -146,6 +146,9 @@ const TimesPage = () => {
     const matchesField =
       fieldChoice === "tanto" ||
       (fieldChoice === "sim" ? t.has_field === true : t.has_field === false);
+    const teamNota = getTeamStats(t.id).nota || 0;
+    const matchesNivel = nivelChoice === "todas" || teamNota >= Number(nivelChoice);
+    const matchesFavorite = !onlyFavorites || favorites.includes(t.id);
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
