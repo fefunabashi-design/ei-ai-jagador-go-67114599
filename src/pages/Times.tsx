@@ -48,7 +48,6 @@ const TimesPage = () => {
   const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [selectedFieldOpts, setSelectedFieldOpts] = useState<string[]>([]);
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
@@ -129,9 +128,6 @@ const TimesPage = () => {
     const matchesGenero = selectedGeneros.length === 0 || selectedGeneros.includes(t.gender || "");
     const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
     const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
-    const matchesField =
-      selectedFieldOpts.length === 0 ||
-      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
@@ -139,9 +135,14 @@ const TimesPage = () => {
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
     return (
       matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
-      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesTime
     );
   });
+
+  const regionEnabled = selectedCities.includes("São Paulo");
+  useEffect(() => {
+    if (!regionEnabled && selectedRegions.length > 0) setSelectedRegions([]);
+  }, [regionEnabled, selectedRegions.length]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -191,9 +192,8 @@ const TimesPage = () => {
               )}
             </div>
 
-            {/* Estado + Região + Possui campo (3 colunas) */}
+            {/* Estado + Cidade + Região (3 colunas) */}
             <div className="grid grid-cols-3 gap-2">
-
               <MultiSelect
                 label="Estado"
                 options={toOptions(UFS)}
@@ -209,32 +209,30 @@ const TimesPage = () => {
                 placeholder="Todos"
               />
               <MultiSelect
-                label="Região"
-                options={toOptions(REGIOES)}
-                selected={selectedRegions}
-                onChange={setSelectedRegions}
+                label="Cidade"
+                options={toOptions(cityOptions)}
+                selected={selectedCities}
+                onChange={setSelectedCities}
                 placeholder="Todas"
               />
-              <MultiSelect
-                label="Possui campo"
-                options={[
-                  { value: "com", label: "Possui campo" },
-                  { value: "sem", label: "Não possui campo" },
-                ]}
-                selected={selectedFieldOpts}
-                onChange={setSelectedFieldOpts}
-                placeholder="Todos"
-              />
+              {regionEnabled ? (
+                <MultiSelect
+                  label="Região"
+                  options={toOptions(REGIOES)}
+                  selected={selectedRegions}
+                  onChange={setSelectedRegions}
+                  placeholder="Todas"
+                />
+              ) : (
+                <div className="min-w-0 opacity-60">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">Região</p>
+                  <div className="flex min-h-9 w-full items-center rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground">
+                    Todas
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Cidade (linha inteira) */}
-            <MultiSelect
-              label="Cidade"
-              options={toOptions(cityOptions)}
-              selected={selectedCities}
-              onChange={setSelectedCities}
-              placeholder="Todas"
-            />
 
 
             {/* Modalidade + Gênero (2 colunas) */}
