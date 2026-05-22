@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
@@ -60,7 +61,7 @@ const BuscarAdversarioPage = () => {
   const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [selectedFieldOpts, setSelectedFieldOpts] = useState<string[]>([]);
+  const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
@@ -93,6 +94,12 @@ const BuscarAdversarioPage = () => {
     if (t.play_time_end) setTimeTo(String(t.play_time_end).slice(0, 5));
     setDefaultsApplied(true);
   }, [myTeam, defaultsApplied]);
+
+  useEffect(() => {
+    if (!selectedCities.includes("São Paulo") && selectedRegions.length > 0) {
+      setSelectedRegions([]);
+    }
+  }, [selectedCities, selectedRegions.length]);
 
 
 
@@ -233,8 +240,8 @@ const BuscarAdversarioPage = () => {
     const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
     const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
     const matchesField =
-      selectedFieldOpts.length === 0 ||
-      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
+      fieldChoice === "tanto" ||
+      (fieldChoice === "sim" ? t.has_field === true : t.has_field === false);
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
@@ -303,7 +310,7 @@ const BuscarAdversarioPage = () => {
               )}
             </div>
 
-            {/* Estado + Região + Possui campo (3 colunas) */}
+            {/* Estado + Cidade + Região (3 colunas) */}
             <div className="grid grid-cols-3 gap-2">
               <MultiSelect
                 label="Estado"
@@ -320,32 +327,29 @@ const BuscarAdversarioPage = () => {
                 placeholder="Todos"
               />
               <MultiSelect
-                label="Região"
-                options={toOptions(REGIOES)}
-                selected={selectedRegions}
-                onChange={setSelectedRegions}
+                label="Cidade"
+                options={toOptions(cityOptions)}
+                selected={selectedCities}
+                onChange={setSelectedCities}
                 placeholder="Todas"
               />
-              <MultiSelect
-                label="Possui campo"
-                options={[
-                  { value: "com", label: "Possui campo" },
-                  { value: "sem", label: "Não possui campo" },
-                ]}
-                selected={selectedFieldOpts}
-                onChange={setSelectedFieldOpts}
-                placeholder="Todos"
-              />
+              {selectedCities.includes("São Paulo") ? (
+                <MultiSelect
+                  label="Região"
+                  options={toOptions(REGIOES)}
+                  selected={selectedRegions}
+                  onChange={setSelectedRegions}
+                  placeholder="Todas"
+                />
+              ) : (
+                <div className="min-w-0 opacity-60">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">Região</p>
+                  <div className="flex min-h-9 w-full items-center rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground">
+                    Todas
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Cidade (linha inteira) */}
-            <MultiSelect
-              label="Cidade"
-              options={toOptions(cityOptions)}
-              selected={selectedCities}
-              onChange={setSelectedCities}
-              placeholder="Todas"
-            />
 
             {/* Modalidade + Gênero */}
             <div className="grid grid-cols-2 gap-2">
@@ -387,6 +391,21 @@ const BuscarAdversarioPage = () => {
                 onChange={setSelectedSubCategorias}
                 placeholder="Todas"
               />
+            </div>
+
+            {/* Time com Campo */}
+            <div className="min-w-0">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
+              <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
+                <SelectTrigger className="h-9 bg-background border-border text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                  <SelectItem value="tanto">Tanto Faz</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Dia da Semana + Horário */}
