@@ -574,7 +574,7 @@ const BuscarAdversarioPage = () => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
                     const addr = choice === "own"
-                      ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
+                      ? ((matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "")
                       : (challengeTeam.field_address || challengeTeam.field_name || "");
                     setChallengeLocation(addr);
                   }}
@@ -587,7 +587,7 @@ const BuscarAdversarioPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                        {(matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "Endereço não cadastrado"}
                       </div>
                     </div>
                   </label>
