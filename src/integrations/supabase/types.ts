@@ -854,11 +854,44 @@ export type Database = {
         }
         Relationships: []
       }
+      resenha_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resenha_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resenha_comments: {
         Row: {
           author_id: string
           created_at: string
           id: string
+          parent_comment_id: string | null
           post_id: string
           text: string
         }
@@ -866,6 +899,7 @@ export type Database = {
           author_id: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           post_id: string
           text: string
         }
@@ -873,10 +907,18 @@ export type Database = {
           author_id?: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           post_id?: string
           text?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "resenha_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "resenha_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resenha_comments_post_fk"
             columns: ["post_id"]
