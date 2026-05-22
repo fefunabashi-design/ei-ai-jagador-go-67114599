@@ -16,7 +16,7 @@ import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyAdminTeams, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 
@@ -48,7 +48,13 @@ const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const { data: myAdminTeams = [] } = useMyAdminTeams();
   const createMatch = useCreateMatch();
+  const matchActionTeam = useMemo(
+    () => myAdminTeams.find((team: any) => team.id === (myTeam as any)?.id) || myAdminTeams[0] || null,
+    [myAdminTeams, myTeam]
+  );
+  const canLaunchChallenges = !!matchActionTeam;
 
   // Filtros (iguais à tela de Times Cadastrados)
   const [nameQuery, setNameQuery] = useState("");
