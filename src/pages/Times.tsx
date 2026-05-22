@@ -628,7 +628,9 @@ const TimesPage = () => {
               {!opponentReady(challengeTeam) && (
                 <div className="flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                  <div>Cadastro do adversário incompleto — preencha os dados manualmente.</div>
+                  <div>
+                    Cadastro do adversário incompleto. Faltando: <strong>{opponentMissingFields(challengeTeam).join(", ")}</strong>. Preencha os dados manualmente.
+                  </div>
                 </div>
               )}
 
