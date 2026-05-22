@@ -396,30 +396,62 @@ const Index = () => {
 
                 {nextMatch.status !== "completed" && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setListOpen(true)}
-                      className="text-[10px] h-6 px-2 rounded-md"
-                    >
-                      <ListChecks size={10} className="mr-1" /> Confirmações
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
-                      className="text-[10px] h-6 px-2 rounded-md"
-                    >
-                      <Users size={10} className="mr-1" /> Escalação
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/chat/${nextMatch.id}`)}
-                      className="text-[10px] h-6 px-2 rounded-md"
-                    >
-                      <MessageCircle size={10} className="mr-1" /> Detalhes
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
+                          <MessageCircle size={10} className="mr-1" /> Detalhes
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => navigate(`/chat/${nextMatch.id}`)}>
+                          <MessageCircle size={14} className="mr-2" /> Chat / Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setListOpen(true)}>
+                          <ListChecks size={14} className="mr-2" /> Confirmações
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}>
+                          <Users size={14} className="mr-2" /> Escalação
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
+                          <Share2 size={10} className="mr-1" /> Compartilhar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {(() => {
+                          const shareText = `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${nextMatch.location}`;
+                          return (
+                            <>
+                              <DropdownMenuItem onClick={() => {
+                                window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+                              }}>
+                                <MessageCircle size={14} className="mr-2" /> WhatsApp
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(shareText);
+                                  toast({ title: "Texto copiado!", description: "Abra o Instagram e cole na sua publicação." });
+                                } catch {
+                                  toast({ title: "Não foi possível copiar", variant: "destructive" });
+                                }
+                                window.open("https://www.instagram.com/", "_blank");
+                              }}>
+                                <Instagram size={14} className="mr-2" /> Instagram
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                navigate(`/resenha?compose=${encodeURIComponent(shareText)}`);
+                              }}>
+                                <Users size={14} className="mr-2" /> Resenha da Várzea
+                              </DropdownMenuItem>
+                            </>
+                          );
+                        })()}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )}
 
