@@ -342,7 +342,7 @@ const AdminPage = () => {
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
     { icon: MessageCircle, label: "Avisar o time", path: "#" },
-    { icon: Search, label: "Buscar adversário", path: "/buscar-adversario" },
+    
     { icon: Camera, label: "Postar fotos", path: "/fotos" },
   ];
 
