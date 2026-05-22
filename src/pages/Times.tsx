@@ -1020,7 +1020,7 @@ const TimesPage = () => {
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {teamAddress(myTeam) || "Endereço não cadastrado"}
+                      {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
                     </div>
                   </div>
                 </label>
