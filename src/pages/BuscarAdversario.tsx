@@ -304,7 +304,7 @@ const BuscarAdversarioPage = () => {
               )}
             </div>
 
-            {/* Estado + Região + Possui campo (3 colunas) */}
+            {/* Estado + Cidade + Região (3 colunas) */}
             <div className="grid grid-cols-3 gap-2">
               <MultiSelect
                 label="Estado"
@@ -321,32 +321,29 @@ const BuscarAdversarioPage = () => {
                 placeholder="Todos"
               />
               <MultiSelect
-                label="Região"
-                options={toOptions(REGIOES)}
-                selected={selectedRegions}
-                onChange={setSelectedRegions}
+                label="Cidade"
+                options={toOptions(cityOptions)}
+                selected={selectedCities}
+                onChange={setSelectedCities}
                 placeholder="Todas"
               />
-              <MultiSelect
-                label="Possui campo"
-                options={[
-                  { value: "com", label: "Possui campo" },
-                  { value: "sem", label: "Não possui campo" },
-                ]}
-                selected={selectedFieldOpts}
-                onChange={setSelectedFieldOpts}
-                placeholder="Todos"
-              />
+              {selectedCities.includes("São Paulo") ? (
+                <MultiSelect
+                  label="Região"
+                  options={toOptions(REGIOES)}
+                  selected={selectedRegions}
+                  onChange={setSelectedRegions}
+                  placeholder="Todas"
+                />
+              ) : (
+                <div className="min-w-0 opacity-60">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">Região</p>
+                  <div className="flex min-h-9 w-full items-center rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground">
+                    Todas
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Cidade (linha inteira) */}
-            <MultiSelect
-              label="Cidade"
-              options={toOptions(cityOptions)}
-              selected={selectedCities}
-              onChange={setSelectedCities}
-              placeholder="Todas"
-            />
 
             {/* Modalidade + Gênero */}
             <div className="grid grid-cols-2 gap-2">
