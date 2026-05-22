@@ -94,12 +94,23 @@ const TimesPage = () => {
   const [newMatchLocation, setNewMatchLocation] = useState("");
   const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | null>("own");
 
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      if (currentUserId) localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(next));
-      return next;
-    });
+  const toggleFavorite = async (id: string) => {
+    if (!currentUserId) return;
+    const isFavorite = favorites.includes(id);
+    const next = isFavorite ? favorites.filter((x) => x !== id) : [...favorites, id];
+    setFavorites(next);
+    localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(next));
+
+    const table = supabase.from("team_favorites" as any) as any;
+    const { error } = isFavorite
+      ? await table.delete().eq("user_id", currentUserId).eq("team_id", id)
+      : await table.insert({ user_id: currentUserId, team_id: id });
+
+    if (error) {
+      setFavorites(favorites);
+      localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(favorites));
+      toast({ title: "Erro ao atualizar favorito", description: error.message, variant: "destructive" });
+    }
   };
 
   useEffect(() => {
@@ -117,8 +128,22 @@ const TimesPage = () => {
 
   useEffect(() => {
     if (!currentUserId) { setFavorites([]); return; }
-    try { setFavorites(JSON.parse(localStorage.getItem(`times_favorites_${currentUserId}`) || "[]")); }
-    catch { setFavorites([]); }
+    let alive = true;
+    const cached = (() => {
+      try { return JSON.parse(localStorage.getItem(`times_favorites_${currentUserId}`) || "[]"); }
+      catch { return []; }
+    })();
+    setFavorites(cached);
+    const loadFavorites = async () => {
+      const table = supabase.from("team_favorites" as any) as any;
+      const { data, error } = await table.select("team_id").eq("user_id", currentUserId);
+      if (!alive || error) return;
+      const ids = (data || []).map((row: any) => row.team_id).filter(Boolean);
+      setFavorites(ids);
+      localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(ids));
+    };
+    loadFavorites();
+    return () => { alive = false; };
   }, [currentUserId]);
 
   useEffect(() => {
