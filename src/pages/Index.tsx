@@ -434,8 +434,36 @@ const Index = () => {
                               }}>
                                 <Instagram size={14} className="mr-2" /> Instagram
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                navigate(`/resenha?compose=${encodeURIComponent(shareText)}`);
+                              <DropdownMenuItem onClick={async () => {
+                                try {
+                                  toast({ title: "Gerando imagem da partida..." });
+                                  const blob = await generateMatchShareImage({
+                                    homeName: homeTeam?.name,
+                                    awayName: awayTeam?.name,
+                                    homeLogoUrl: homeTeam?.logo_url,
+                                    awayLogoUrl: awayTeam?.logo_url,
+                                    matchDate,
+                                    location: (homeTeam as any)?.field_name || nextMatch.location,
+                                  });
+                                  const path = `match-share/${nextMatch.id}-${Date.now()}.png`;
+                                  const { error: upErr } = await supabase.storage.from("post-media").upload(path, blob, {
+                                    contentType: "image/png",
+                                    upsert: true,
+                                  });
+                                  if (upErr) throw upErr;
+                                  const { data: pub } = supabase.storage.from("post-media").getPublicUrl(path);
+                                  await createResenhaPost.mutateAsync({
+                                    photo_url: pub.publicUrl,
+                                    caption: shareText,
+                                    match_id: nextMatch.id,
+                                    match_label: `${homeTeam?.name || "Time"} vs ${awayTeam?.name || "Adversário"}`,
+                                    team_id: myTeam?.id || null,
+                                  });
+                                  toast({ title: "Publicado na Resenha da Várzea! 🎉" });
+                                  navigate("/resenha");
+                                } catch (e: any) {
+                                  toast({ title: "Erro ao publicar", description: e?.message, variant: "destructive" });
+                                }
                               }}>
                                 <Users size={14} className="mr-2" /> Resenha da Várzea
                               </DropdownMenuItem>
