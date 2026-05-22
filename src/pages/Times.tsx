@@ -87,7 +87,7 @@ const TimesPage = () => {
   const [newMatchDate, setNewMatchDate] = useState("");
   const [newMatchTime, setNewMatchTime] = useState("");
   const [newMatchLocation, setNewMatchLocation] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away">("own");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | null>("own");
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
