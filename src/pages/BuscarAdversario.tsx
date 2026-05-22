@@ -95,6 +95,12 @@ const BuscarAdversarioPage = () => {
     setDefaultsApplied(true);
   }, [myTeam, defaultsApplied]);
 
+  useEffect(() => {
+    if (!selectedCities.includes("São Paulo") && selectedRegions.length > 0) {
+      setSelectedRegions([]);
+    }
+  }, [selectedCities, selectedRegions.length]);
+
 
 
   const opponentReady = (t: any) =>
