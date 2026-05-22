@@ -320,6 +320,7 @@ const TeamPage = () => {
       play_time_end: (team as any).play_time_end || "",
       play_schedule: ((team as any).play_schedule && typeof (team as any).play_schedule === "object") ? (team as any).play_schedule : {},
       has_field: ((team as any).has_field === true ? "com" : (team as any).has_field === false ? "sem" : "") as "" | "com" | "sem",
+      field_name: (team as any).field_name || "",
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
