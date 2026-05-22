@@ -627,8 +627,8 @@ const BuscarAdversarioPage = () => {
         open={newMatchOpen}
         onOpenChange={(open) => {
           setNewMatchOpen(open);
-          if (open && myTeam) {
-            const t = myTeam as any;
+          if (open && matchActionTeam) {
+            const t = matchActionTeam as any;
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
             if (!newMatchLocation && (t.field_address || t.field_name)) {
               setNewMatchLocation(t.field_address || t.field_name);
@@ -661,7 +661,7 @@ const BuscarAdversarioPage = () => {
                   const choice = v as "own" | "away";
                   setNewMatchLocationChoice(choice);
                   if (choice === "own") {
-                    const t = myTeam as any;
+                    const t = matchActionTeam as any;
                     setNewMatchLocation(t?.field_address || t?.field_name || "");
                   } else {
                     setNewMatchLocation("");
@@ -674,7 +674,7 @@ const BuscarAdversarioPage = () => {
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                      {(matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "Endereço não cadastrado"}
                     </div>
                   </div>
                 </label>
