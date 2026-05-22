@@ -529,8 +529,16 @@ const TimesPage = () => {
                       </button>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    {!isOwnTeam && (
-                      <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
+                    {!isOwnTeam ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setChallengeTeam(team); }}
+                        className="mt-3 flex h-9 w-full items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                      >
+                        Toque para desafiar →
+                      </button>
+                    ) : (
+                      <p className="mt-3 text-center text-[10px] font-semibold text-muted-foreground">Este é seu time</p>
                     )}
                   </div>
                 );
