@@ -1318,14 +1318,13 @@ const TeamFormDialog = ({
 
           {(() => {
             const isQuadra = form.estilo === "Mini Campo (Society)" || form.estilo === "Futsal";
-            const termo = isQuadra ? "quadra" : "campo";
             const termoCap = isQuadra ? "Quadra" : "Campo";
             const hasField = form.has_field === "com";
             return (
               <div className="pt-2 border-t border-border space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="tf-has_field" className="cursor-pointer">
-                    {hasField ? `Possui ${termo} próprio` : `Não possui ${termo} próprio`}
+                    {hasField ? "Possui Arena" : "Não Possui Arena"}
                   </Label>
                   <Switch
                     id="tf-has_field"
@@ -1333,6 +1332,18 @@ const TeamFormDialog = ({
                     onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
                   />
                 </div>
+                {hasField && (
+                  <div>
+                    <Label htmlFor="tf-field_name">Nome da Arena *</Label>
+                    <Input
+                      id="tf-field_name"
+                      value={form.field_name}
+                      onChange={(e) => setField("field_name", e.target.value)}
+                      placeholder="Ex: Arena do time"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                )}
                 <p className="text-sm font-semibold text-foreground">
                   {hasField ? `Endereço da ${termoCap}` : "Endereço da Sede"}
                 </p>
