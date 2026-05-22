@@ -313,22 +313,31 @@ const TimesPage = () => {
 
   const handleCreateNewMatch = async () => {
     if (!myTeam) return;
-    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
+    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
+    const hasCustom = newMatchLocation.trim().length > 0;
+    if (!hasCustom && !newMatchLocationChoice) {
+      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo Adversário ou informe um endereço.", variant: "destructive" });
+      return;
+    }
+    const fallbackLoc = newMatchLocationChoice === "own"
+      ? (teamAddress(myTeam) || "Meu campo")
+      : "Campo do adversário";
+    const location = hasCustom ? newMatchLocation.trim() : fallbackLoc;
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
       home_team_id: myTeam.id,
       away_team_id: null,
       match_date,
-      location: newMatchLocation.trim(),
+      location,
       status: "confirmed",
       format: (myTeam as any).format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
-    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
+    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation(""); setNewMatchLocationChoice("own");
     navigate("/agenda");
   };
 
