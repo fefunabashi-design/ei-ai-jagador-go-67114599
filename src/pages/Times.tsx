@@ -223,9 +223,14 @@ const TimesPage = () => {
     if (!t) return ["dados do time"];
     const miss: string[] = [];
     if (!t.name) miss.push("nome");
-    if (!t.addr_cidade) miss.push("cidade");
-    if (!t.addr_uf) miss.push("UF");
-    if (!t.field_address && !t.field_name) miss.push("endereço do campo");
+    const hasCity = !!t.addr_cidade;
+    const hasUf = !!t.addr_uf;
+    if (!hasCity) miss.push("cidade");
+    if (!hasUf) miss.push("UF");
+    const hasAddress =
+      !!t.field_address || !!t.field_name ||
+      (!!t.addr_rua && (hasCity || hasUf));
+    if (!hasAddress) miss.push("endereço");
     if (!Array.isArray(t.play_days) || t.play_days.length === 0) miss.push("dias de jogo");
     if (!t.play_time_start) miss.push("horário fixo");
     return miss;
