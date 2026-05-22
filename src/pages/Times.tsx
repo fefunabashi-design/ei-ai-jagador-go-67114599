@@ -156,7 +156,8 @@ const TimesPage = () => {
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
     return (
       matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
-      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField &&
+      matchesNivel && matchesFavorite && matchesTime
     );
   });
 
