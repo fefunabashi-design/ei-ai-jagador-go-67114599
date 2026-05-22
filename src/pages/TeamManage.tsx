@@ -390,6 +390,9 @@ const TeamPage = () => {
       ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
       ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
     );
+    if (teamForm.has_field === "com") {
+      req.push(["Nome da Arena", teamForm.field_name.trim(), "tf-field_name"]);
+    }
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
