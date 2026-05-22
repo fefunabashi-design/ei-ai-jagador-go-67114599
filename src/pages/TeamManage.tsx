@@ -82,6 +82,7 @@ type TeamForm = {
   play_time_end: string;
   play_schedule: Record<string, { mode: "fixed" | "flexible"; start: string; end: string }>;
   has_field: "" | "com" | "sem";
+  field_name: string;
   addr_cep: string;
   addr_rua: string;
   addr_numero: string;
@@ -125,6 +126,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   play_time_end: "",
   play_schedule: {},
   has_field: "",
+  field_name: "",
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
@@ -318,6 +320,7 @@ const TeamPage = () => {
       play_time_end: (team as any).play_time_end || "",
       play_schedule: ((team as any).play_schedule && typeof (team as any).play_schedule === "object") ? (team as any).play_schedule : {},
       has_field: ((team as any).has_field === true ? "com" : (team as any).has_field === false ? "sem" : "") as "" | "com" | "sem",
+      field_name: (team as any).field_name || "",
       addr_cep: (team as any).addr_cep || "",
       addr_rua: (team as any).addr_rua || "",
       addr_numero: (team as any).addr_numero || "",
@@ -1315,14 +1318,13 @@ const TeamFormDialog = ({
 
           {(() => {
             const isQuadra = form.estilo === "Mini Campo (Society)" || form.estilo === "Futsal";
-            const termo = isQuadra ? "quadra" : "campo";
             const termoCap = isQuadra ? "Quadra" : "Campo";
             const hasField = form.has_field === "com";
             return (
               <div className="pt-2 border-t border-border space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="tf-has_field" className="cursor-pointer">
-                    {hasField ? `Possui ${termo} próprio` : `Não possui ${termo} próprio`}
+                    {hasField ? "Possui Arena" : "Não Possui Arena"}
                   </Label>
                   <Switch
                     id="tf-has_field"
@@ -1330,6 +1332,18 @@ const TeamFormDialog = ({
                     onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
                   />
                 </div>
+                {hasField && (
+                  <div>
+                    <Label htmlFor="tf-field_name">Nome da Arena *</Label>
+                    <Input
+                      id="tf-field_name"
+                      value={form.field_name}
+                      onChange={(e) => setField("field_name", e.target.value)}
+                      placeholder="Ex: Arena do time"
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                )}
                 <p className="text-sm font-semibold text-foreground">
                   {hasField ? `Endereço da ${termoCap}` : "Endereço da Sede"}
                 </p>
