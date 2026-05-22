@@ -279,12 +279,14 @@ const BuscarAdversarioPage = () => {
             <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
           </div>
 
-          <Button
-            onClick={() => setNewMatchOpen(true)}
-            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
-          >
-            Desafio/Adversário sem cadastro
-          </Button>
+          {canLaunchChallenges && (
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              Desafio/Adversário sem cadastro
+            </Button>
+          )}
 
           <div className="space-y-3">
             {/* Nome do Time com autocomplete (linha inteira) */}
@@ -451,8 +453,9 @@ const BuscarAdversarioPage = () => {
                   <button
                     key={team.id}
                     type="button"
-                    onClick={() => setChallengeTeam(team)}
-                    className="w-full text-left rounded-xl border border-border bg-background p-3 hover:border-primary/50 transition-colors"
+                    disabled={!canLaunchChallenges}
+                    onClick={() => { if (canLaunchChallenges) setChallengeTeam(team); }}
+                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${canLaunchChallenges ? "hover:border-primary/50" : "opacity-80"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -470,7 +473,7 @@ const BuscarAdversarioPage = () => {
                       </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
+                    {canLaunchChallenges && <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>}
                   </button>
                 );
               })
