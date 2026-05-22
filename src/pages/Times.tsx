@@ -591,7 +591,13 @@ const TimesPage = () => {
             setLocationChoice("away"); setChallengeLocation("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start || "");
-            setChallengeLocation(challengeTeam.field_address || challengeTeam.field_name || "");
+            const myHasField = (myTeam as any)?.has_field === true;
+            const initialChoice: "own" | "away" = myHasField ? "own" : "away";
+            setLocationChoice(initialChoice);
+            const addr = initialChoice === "own"
+              ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
+              : (challengeTeam.field_address || challengeTeam.field_name || "");
+            setChallengeLocation(addr);
           }
         }}
       >
