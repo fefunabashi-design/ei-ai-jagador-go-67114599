@@ -629,7 +629,7 @@ const TimesPage = () => {
             setChallengeDate(""); setChallengeTime("");
             setLocationChoice("away"); setChallengeLocation("");
           } else if (challengeTeam) {
-            setChallengeTime(challengeTeam.play_time_start || "");
+            setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
             const myHasField = (myTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
