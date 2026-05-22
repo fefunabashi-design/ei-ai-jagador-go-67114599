@@ -35,6 +35,7 @@ const Index = () => {
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
   const createSummons = useCreateSummons();
+  const createResenhaPost = useCreateResenhaPost();
   const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
