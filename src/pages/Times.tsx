@@ -411,12 +411,14 @@ const TimesPage = () => {
             <Badge variant="secondary">{filteredTeams.length} times</Badge>
           </div>
 
-          <Button
-            onClick={() => setNewMatchOpen(true)}
-            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
-          >
-            Desafio/Adversário sem cadastro
-          </Button>
+          {canLaunchChallenges && (
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              Desafio/Adversário sem cadastro
+            </Button>
+          )}
 
           <div className="space-y-3">
             {/* 1 - Nome do Time com autocomplete (linha inteira) */}
@@ -615,18 +617,19 @@ const TimesPage = () => {
                   ? team.play_days.map((d: string) => DIAS_SEMANA.find((x) => x.value === d)?.label || d).join(", ")
                   : "Dias não informados";
                 const isOwnTeam = myTeam?.id === team.id;
+                const canChallengeTeam = canLaunchChallenges && !isOwnTeam;
 
                 return (
                   <div
                     key={team.id}
-                    role={isOwnTeam ? undefined : "button"}
-                    tabIndex={isOwnTeam ? -1 : 0}
-                    onClick={() => { if (!isOwnTeam) setChallengeTeam(team); }}
+                    role={canChallengeTeam ? "button" : undefined}
+                    tabIndex={canChallengeTeam ? 0 : -1}
+                    onClick={() => { if (canChallengeTeam) setChallengeTeam(team); }}
                     onKeyDown={(e) => {
-                      if (isOwnTeam) return;
+                      if (!canChallengeTeam) return;
                       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChallengeTeam(team); }
                     }}
-                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${isOwnTeam ? "opacity-80" : "cursor-pointer hover:border-primary/50"}`}
+                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${canChallengeTeam ? "cursor-pointer hover:border-primary/50" : "opacity-80"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
@@ -669,7 +672,7 @@ const TimesPage = () => {
                       </button>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    {!isOwnTeam ? (
+                    {canChallengeTeam ? (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setChallengeTeam(team); }}
@@ -677,9 +680,9 @@ const TimesPage = () => {
                       >
                         Toque para desafiar →
                       </button>
-                    ) : (
+                    ) : isOwnTeam ? (
                       <p className="mt-3 text-center text-[10px] font-semibold text-muted-foreground">Este é seu time</p>
-                    )}
+                    ) : null}
                   </div>
                 );
 
