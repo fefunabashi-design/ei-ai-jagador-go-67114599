@@ -862,11 +862,14 @@ const TimesPage = () => {
           setNewMatchOpen(open);
           if (open && myTeam) {
             const t = myTeam as any;
-            if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
-            const addr = teamAddress(t);
-            if (!newMatchLocation && addr) {
-              setNewMatchLocation(addr);
+            if (!newMatchTime && t.play_time_start) {
+              setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
+            setNewMatchLocationChoice("own");
+            setNewMatchLocation("");
+          } else if (!open) {
+            setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime("");
+            setNewMatchLocation(""); setNewMatchLocationChoice("own");
           }
         }}>
         <DialogContent className="max-w-sm">
@@ -880,27 +883,84 @@ const TimesPage = () => {
               <Input id="nm-opp" value={newMatchOpponent} onChange={(e) => setNewMatchOpponent(e.target.value)} placeholder="Ex: Águias FC" />
             </div>
             <div>
-              <Label htmlFor="nm-date">Data</Label>
-              <Input id="nm-date" type="date" min={new Date().toISOString().slice(0, 10)} value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} />
+              <Label className="flex items-center gap-1 mb-1">
+                <CalIcon size={14} /> Data do jogo
+              </Label>
+              {(() => {
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const selected = newMatchDate ? new Date(newMatchDate + "T12:00:00") : undefined;
+                const isBusy = (date: Date) =>
+                  myBusyDateKeys.has(`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`);
+                const isAvailable = (date: Date) => {
+                  const d = new Date(date); d.setHours(0, 0, 0, 0);
+                  if (d < today) return false;
+                  if (isBusy(d)) return false;
+                  return true;
+                };
+                return (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selected && "text-muted-foreground"
+                        )}
+                      >
+                        <CalIcon className="mr-2 h-4 w-4" />
+                        {selected ? format(selected, "PPP", { locale: ptBR }) : "Selecione uma data disponível"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        locale={ptBR}
+                        selected={selected}
+                        onSelect={(d) => {
+                          if (!d) return;
+                          if (isBusy(d)) {
+                            toast({ title: "Data ocupada", description: "Seu time já tem jogo confirmado nesse dia.", variant: "destructive" });
+                            return;
+                          }
+                          setNewMatchDate(format(d, "yyyy-MM-dd"));
+                        }}
+                        disabled={(date) => !isAvailable(date)}
+                        modifiers={{ busy: (date) => isBusy(date) && date >= today }}
+                        modifiersClassNames={{ busy: "line-through opacity-50" }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                      <div className="px-3 pb-3 pt-1 text-[10px] text-muted-foreground">
+                        Datas com jogo já confirmado ficam indisponíveis.
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
+              })()}
             </div>
             <div>
-              <Label htmlFor="nm-time">Horário</Label>
-              <Input id="nm-time" type="time" value={newMatchTime} onChange={(e) => setNewMatchTime(e.target.value)} />
+              <Label htmlFor="nm-time" className="flex items-center gap-1">
+                <Clock size={14} /> Horário {(myTeam as any)?.play_time_start ? "(fixo)" : ""}
+              </Label>
+              <Input
+                id="nm-time"
+                type="time"
+                value={newMatchTime}
+                readOnly={!!(myTeam as any)?.play_time_start}
+                onChange={(e) => setNewMatchTime(e.target.value)}
+                className={(myTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+              />
             </div>
             <div>
               <Label className="mb-2 block">Local</Label>
               <RadioGroup
-                value={newMatchLocationChoice}
+                value={newMatchLocationChoice ?? ""}
                 onValueChange={(v) => {
                   const choice = v as "own" | "away";
                   setNewMatchLocationChoice(choice);
-                  if (choice === "own") {
-                    setNewMatchLocation(teamAddress(myTeam));
-                  } else {
-                    setNewMatchLocation("");
-                  }
+                  setNewMatchLocation("");
                 }}
-                className="space-y-2 mb-2"
+                className="space-y-2"
               >
                 <label htmlFor="nm-loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
                   <RadioGroupItem id="nm-loc-own" value="own" className="mt-1" />
@@ -919,8 +979,15 @@ const TimesPage = () => {
                   </div>
                 </label>
               </RadioGroup>
-              <Label htmlFor="nm-loc">Endereço do local</Label>
-              <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
+              <Input
+                className="mt-2"
+                value={newMatchLocation}
+                onChange={(e) => {
+                  setNewMatchLocation(e.target.value);
+                  if (e.target.value.trim()) setNewMatchLocationChoice(null);
+                }}
+                placeholder="Outro endereço (opcional)"
+              />
             </div>
           </div>
           <DialogFooter>
