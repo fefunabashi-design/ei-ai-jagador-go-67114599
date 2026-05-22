@@ -627,9 +627,7 @@ const TimesPage = () => {
             const myHasField = (myTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
-            const addr = initialChoice === "own"
-              ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
-              : (challengeTeam.field_address || challengeTeam.field_name || "");
+            const addr = initialChoice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
             setChallengeLocation(addr);
           }
         }}
@@ -762,9 +760,7 @@ const TimesPage = () => {
                   onValueChange={(v) => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
-                    const addr = choice === "own"
-                      ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
-                      : (challengeTeam.field_address || challengeTeam.field_name || "");
+                    const addr = choice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
                     setChallengeLocation(addr);
                   }}
                   className="space-y-2"
@@ -776,7 +772,7 @@ const TimesPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                        {teamAddress(myTeam) || "Endereço não cadastrado"}
                       </div>
                     </div>
                   </label>
@@ -787,7 +783,7 @@ const TimesPage = () => {
                         <Building2 size={14} /> Campo do adversário
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {challengeTeam.field_address || challengeTeam.field_name || "—"}
+                        {teamAddress(challengeTeam) || "—"}
                       </div>
                     </div>
                   </label>
