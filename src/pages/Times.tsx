@@ -887,6 +887,8 @@ const TimesPage = () => {
                 <CalIcon size={14} /> Data do jogo
               </Label>
               {(() => {
+                const myPlayDays: string[] = Array.isArray((myTeam as any)?.play_days) ? (myTeam as any).play_days : [];
+                const allowedDow = new Set(myPlayDays.map((d) => DAY_INDEX[d]).filter((n) => n !== undefined));
                 const today = new Date(); today.setHours(0, 0, 0, 0);
                 const selected = newMatchDate ? new Date(newMatchDate + "T12:00:00") : undefined;
                 const isBusy = (date: Date) =>
@@ -894,6 +896,7 @@ const TimesPage = () => {
                 const isAvailable = (date: Date) => {
                   const d = new Date(date); d.setHours(0, 0, 0, 0);
                   if (d < today) return false;
+                  if (allowedDow.size > 0 && !allowedDow.has(d.getDay())) return false;
                   if (isBusy(d)) return false;
                   return true;
                 };
@@ -922,16 +925,31 @@ const TimesPage = () => {
                             toast({ title: "Data ocupada", description: "Seu time já tem jogo confirmado nesse dia.", variant: "destructive" });
                             return;
                           }
+                          if (allowedDow.size > 0 && !allowedDow.has(d.getDay())) {
+                            toast({
+                              title: "Dia não permitido",
+                              description: `Seu time só joga: ${myPlayDays.map((x) => WEEK_DAY_LABEL[x]).join(", ")}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
                           setNewMatchDate(format(d, "yyyy-MM-dd"));
                         }}
                         disabled={(date) => !isAvailable(date)}
-                        modifiers={{ busy: (date) => isBusy(date) && date >= today }}
-                        modifiersClassNames={{ busy: "line-through opacity-50" }}
+                        modifiers={{ available: (date) => isAvailable(date), busy: (date) => isBusy(date) && date >= today }}
+                        modifiersClassNames={{
+                          available: "bg-primary/15 text-primary font-semibold",
+                          busy: "line-through opacity-50",
+                        }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
-                      <div className="px-3 pb-3 pt-1 text-[10px] text-muted-foreground">
-                        Datas com jogo já confirmado ficam indisponíveis.
+                      <div className="px-3 pb-3 pt-1 text-[10px] text-muted-foreground space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-3 h-3 rounded bg-primary/30 border border-primary/50" />
+                          Datas disponíveis do seu time
+                        </div>
+                        <div>Datas com jogo já confirmado ficam indisponíveis.</div>
                       </div>
                     </PopoverContent>
                   </Popover>
