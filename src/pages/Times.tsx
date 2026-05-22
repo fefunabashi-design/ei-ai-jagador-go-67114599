@@ -80,7 +80,7 @@ const TimesPage = () => {
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away" | null>("away");
   const [challengeLocation, setChallengeLocation] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
@@ -276,14 +276,20 @@ const TimesPage = () => {
       toast({ title: "Data ocupada", description: "Adversário já tem jogo confirmado nesse dia.", variant: "destructive" });
       return;
     }
+    const hasCustom = challengeLocation.trim().length > 0;
+    if (!hasCustom && !locationChoice) {
+      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo do adversário ou informe um endereço.", variant: "destructive" });
+      return;
+    }
     const fallbackLocation = locationChoice === "own"
       ? (teamAddress(myTeam) || "Campo do mandante")
       : (teamAddress(challengeTeam) || "Campo do adversário");
-    const location = challengeLocation.trim() || fallbackLocation;
+    const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
+    const homeIsOwn = locationChoice ? locationChoice === "own" : true;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
+      home_team_id: homeIsOwn ? myTeam.id : challengeTeam.id,
+      away_team_id: homeIsOwn ? challengeTeam.id : myTeam.id,
       match_date,
       location,
       status: "open",
@@ -755,10 +761,11 @@ const TimesPage = () => {
               <div>
                 <Label className="mb-2 block">Local</Label>
                 <RadioGroup
-                  value={locationChoice}
+                  value={locationChoice ?? ""}
                   onValueChange={(v) => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
+                    setChallengeLocation("");
                   }}
                   className="space-y-2"
                 >
@@ -788,7 +795,10 @@ const TimesPage = () => {
                 <Input
                   className="mt-2"
                   value={challengeLocation}
-                  onChange={(e) => setChallengeLocation(e.target.value)}
+                  onChange={(e) => {
+                    setChallengeLocation(e.target.value);
+                    if (e.target.value.trim()) setLocationChoice(null);
+                  }}
                   placeholder="Outro endereço (opcional)"
                 />
               </div>
