@@ -627,8 +627,7 @@ const TimesPage = () => {
             const myHasField = (myTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
-            const addr = initialChoice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
-            setChallengeLocation(addr);
+            setChallengeLocation("");
           }
         }}
       >
@@ -760,8 +759,6 @@ const TimesPage = () => {
                   onValueChange={(v) => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
-                    const addr = choice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
-                    setChallengeLocation(addr);
                   }}
                   className="space-y-2"
                 >
@@ -792,7 +789,7 @@ const TimesPage = () => {
                   className="mt-2"
                   value={challengeLocation}
                   onChange={(e) => setChallengeLocation(e.target.value)}
-                  placeholder="Endereço do local da partida"
+                  placeholder="Outro endereço (opcional)"
                 />
               </div>
 
