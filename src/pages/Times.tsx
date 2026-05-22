@@ -49,6 +49,7 @@ const TimesPage = () => {
   const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
