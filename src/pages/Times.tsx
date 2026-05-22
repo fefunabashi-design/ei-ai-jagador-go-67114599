@@ -477,12 +477,16 @@ const TimesPage = () => {
                 const isOwnTeam = myTeam?.id === team.id;
 
                 return (
-                  <button
+                  <div
                     key={team.id}
-                    type="button"
+                    role={isOwnTeam ? undefined : "button"}
+                    tabIndex={isOwnTeam ? -1 : 0}
                     onClick={() => { if (!isOwnTeam) setChallengeTeam(team); }}
-                    disabled={isOwnTeam}
-                    className="w-full text-left rounded-xl border border-border bg-background p-3 hover:border-primary/50 transition-colors disabled:hover:border-border disabled:opacity-80"
+                    onKeyDown={(e) => {
+                      if (isOwnTeam) return;
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChallengeTeam(team); }
+                    }}
+                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${isOwnTeam ? "opacity-80" : "cursor-pointer hover:border-primary/50"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
@@ -528,8 +532,9 @@ const TimesPage = () => {
                     {!isOwnTeam && (
                       <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
                     )}
-                  </button>
+                  </div>
                 );
+
               })
             ) : (
               <div className="rounded-xl border border-border bg-background p-4 text-center text-sm text-muted-foreground">
