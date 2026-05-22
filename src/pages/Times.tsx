@@ -789,7 +789,7 @@ const TimesPage = () => {
                   className="mt-2"
                   value={challengeLocation}
                   onChange={(e) => setChallengeLocation(e.target.value)}
-                  placeholder="Endereço do local da partida"
+                  placeholder="Outro endereço (opcional)"
                 />
               </div>
 
