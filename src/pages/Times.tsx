@@ -129,6 +129,29 @@ const TimesPage = () => {
     },
   });
 
+  // Partidas confirmadas do adversário selecionado (para bloquear datas ocupadas)
+  const { data: opponentMatches = [] } = useQuery<any[]>({
+    queryKey: ["opponent_matches", challengeTeam?.id],
+    enabled: !!challengeTeam?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("match_date,status,home_team_id,away_team_id")
+        .or(`home_team_id.eq.${challengeTeam.id},away_team_id.eq.${challengeTeam.id}`)
+        .eq("status", "confirmed");
+      return data || [];
+    },
+  });
+
+  const busyDateKeys = useMemo(() => {
+    const set = new Set<string>();
+    (opponentMatches || []).forEach((m: any) => {
+      const d = new Date(m.match_date);
+      set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    });
+    return set;
+  }, [opponentMatches]);
+
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
 
