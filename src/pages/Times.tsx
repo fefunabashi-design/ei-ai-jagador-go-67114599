@@ -627,8 +627,7 @@ const TimesPage = () => {
             const myHasField = (myTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
-            const addr = initialChoice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
-            setChallengeLocation(addr);
+            setChallengeLocation("");
           }
         }}
       >
