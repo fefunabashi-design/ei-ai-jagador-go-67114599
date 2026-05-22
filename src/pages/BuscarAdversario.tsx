@@ -233,8 +233,8 @@ const BuscarAdversarioPage = () => {
     const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
     const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
     const matchesField =
-      selectedFieldOpts.length === 0 ||
-      selectedFieldOpts.some((o) => (o === "com" ? t.has_field === true : t.has_field === false));
+      fieldChoice === "tanto" ||
+      (fieldChoice === "sim" ? t.has_field === true : t.has_field === false);
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
