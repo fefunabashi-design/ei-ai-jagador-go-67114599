@@ -126,6 +126,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
   play_time_end: "",
   play_schedule: {},
   has_field: "",
+  field_name: "",
   addr_cep: "",
   addr_rua: "",
   addr_numero: "",
