@@ -445,7 +445,9 @@ const Index = () => {
                                     matchDate,
                                     location: (homeTeam as any)?.field_name || nextMatch.location,
                                   });
-                                  const path = `match-share/${nextMatch.id}-${Date.now()}.png`;
+                                  const { data: { user } } = await supabase.auth.getUser();
+                                  if (!user) throw new Error("Sessão expirada. Faça login novamente.");
+                                  const path = `${user.id}/match-share/${nextMatch.id}-${Date.now()}.png`;
                                   const { error: upErr } = await supabase.storage.from("post-media").upload(path, blob, {
                                     contentType: "image/png",
                                     upsert: true,
