@@ -114,6 +114,16 @@ const TimesPage = () => {
     setDefaultsApplied(true);
   }, [myTeam, defaultsApplied]);
 
+  // Pré-popular dialog de desafio quando seleciona um adversário
+  useEffect(() => {
+    if (!challengeTeam) return;
+    setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
+    const myHasField = (myTeam as any)?.has_field === true;
+    setLocationChoice(myHasField ? "own" : "away");
+    setChallengeLocation("");
+    setChallengeDate("");
+  }, [challengeTeam, myTeam]);
+
   const toMinutes = (value?: string | null) => {
     if (!value || !value.includes(":")) return null;
     const [hours, minutes] = value.split(":").map(Number);
@@ -629,7 +639,7 @@ const TimesPage = () => {
             setChallengeDate(""); setChallengeTime("");
             setLocationChoice("away"); setChallengeLocation("");
           } else if (challengeTeam) {
-            setChallengeTime(challengeTeam.play_time_start || "");
+            setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
             const myHasField = (myTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
