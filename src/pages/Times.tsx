@@ -282,6 +282,22 @@ const TimesPage = () => {
               />
             </div>
 
+            {/* Time com Campo */}
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
+              <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
+                <SelectTrigger className="h-9 bg-background border-border text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                  <SelectItem value="tanto">Tanto Faz</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+
             {/* Dia da Semana + Horário (2 colunas) */}
             <div className="grid grid-cols-2 gap-2">
               <MultiSelect
