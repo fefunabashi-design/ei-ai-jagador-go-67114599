@@ -36,6 +36,7 @@ const OpponentDetails = lazy(() => import("./pages/OpponentDetails.tsx"));
 const Resenha = lazy(() => import("./pages/Resenha.tsx"));
 const Assinatura = lazy(() => import("./pages/Assinatura.tsx"));
 const SuperAdminPagamentos = lazy(() => import("./pages/SuperAdminPagamentos.tsx"));
+const MatchDetails = lazy(() => import("./pages/MatchDetails.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 
@@ -155,6 +156,7 @@ const App = () => {
               <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
               <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
               <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
               <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />

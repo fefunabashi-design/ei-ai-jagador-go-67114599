@@ -396,24 +396,14 @@ const Index = () => {
 
                 {nextMatch.status !== "completed" && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
-                          <MessageCircle size={10} className="mr-1" /> Detalhes
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuItem onClick={() => navigate(`/chat/${nextMatch.id}`)}>
-                          <MessageCircle size={14} className="mr-2" /> Chat / Detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setListOpen(true)}>
-                          <ListChecks size={14} className="mr-2" /> Confirmações
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}>
-                          <Users size={14} className="mr-2" /> Escalação
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[10px] h-6 px-2 rounded-md"
+                      onClick={() => navigate(`/match/${nextMatch.id}`)}
+                    >
+                      <MessageCircle size={10} className="mr-1" /> Detalhes
+                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
