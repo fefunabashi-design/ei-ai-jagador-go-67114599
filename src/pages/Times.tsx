@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMyTeam } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
@@ -48,6 +49,7 @@ const TimesPage = () => {
   const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
@@ -128,6 +130,9 @@ const TimesPage = () => {
     const matchesGenero = selectedGeneros.length === 0 || selectedGeneros.includes(t.gender || "");
     const teamDaysArr: string[] = Array.isArray(t.play_days) ? t.play_days : [];
     const matchesDays = selectedDays.length === 0 || selectedDays.some((d) => teamDaysArr.includes(d));
+    const matchesField =
+      fieldChoice === "tanto" ||
+      (fieldChoice === "sim" ? t.has_field === true : t.has_field === false);
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
@@ -135,7 +140,7 @@ const TimesPage = () => {
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
     return (
       matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
-      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesTime
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
     );
   });
 
@@ -156,7 +161,7 @@ const TimesPage = () => {
       <div className="px-5 space-y-4">
         <div className="bg-card rounded-xl border border-border p-4 space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] text-muted-foreground">Filtros pré-selecionados conforme seu time</p>
+            <p className="text-[10px] text-muted-foreground">Selecione uma ou mais opções por filtro</p>
             <Badge variant="secondary">{filteredTeams.length} times</Badge>
           </div>
 
@@ -276,6 +281,22 @@ const TimesPage = () => {
                 placeholder="Todas"
               />
             </div>
+
+            {/* Time com Campo */}
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
+              <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
+                <SelectTrigger className="h-9 bg-background border-border text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                  <SelectItem value="tanto">Tanto Faz</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
 
             {/* Dia da Semana + Horário (2 colunas) */}
             <div className="grid grid-cols-2 gap-2">
