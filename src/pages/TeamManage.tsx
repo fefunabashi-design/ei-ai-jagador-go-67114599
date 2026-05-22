@@ -82,6 +82,7 @@ type TeamForm = {
   play_time_end: string;
   play_schedule: Record<string, { mode: "fixed" | "flexible"; start: string; end: string }>;
   has_field: "" | "com" | "sem";
+  field_name: string;
   addr_cep: string;
   addr_rua: string;
   addr_numero: string;
