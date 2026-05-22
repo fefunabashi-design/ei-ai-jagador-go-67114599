@@ -80,7 +80,7 @@ const TimesPage = () => {
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away" | null>("away");
   const [challengeLocation, setChallengeLocation] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
