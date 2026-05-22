@@ -393,8 +393,6 @@ const TeamPage = () => {
     if (teamForm.has_field === "com") {
       req.push(["Nome da Arena", teamForm.field_name.trim(), "tf-field_name"]);
     }
-    (() => {})();
-    const _noop = (
     const missing = req.find(([, v]) => !v);
     if (missing) {
       toast({ title: `${missing[0]} é obrigatório`, variant: "destructive" });
