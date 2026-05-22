@@ -243,6 +243,11 @@ const TimesPage = () => {
         return;
       }
     }
+    const d = new Date(challengeDate + "T12:00:00");
+    if (busyDateKeys.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)) {
+      toast({ title: "Data ocupada", description: "Adversário já tem jogo confirmado nesse dia.", variant: "destructive" });
+      return;
+    }
     const fallbackLocation = locationChoice === "own"
       ? ((myTeam as any).field_address || (myTeam as any).field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
