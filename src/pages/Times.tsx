@@ -385,34 +385,44 @@ const TimesPage = () => {
                     className="w-full text-left rounded-xl border border-border bg-background p-3"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <span className="truncate">{team.name}</span>
-                          {(() => { const s = getTeamStats(team.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {(team as any).estilo || "Sem modalidade"} · {team.categoria || "Sem categoria"}
-                          {(team as any).sub_categoria ? ` · ${(team as any).sub_categoria}` : ""} · {team.region || "Sem região"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {(team as any).addr_cidade || "—"}/{(team as any).addr_uf || "—"}
-                          {(team as any).gender ? ` · ${(team as any).gender}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(team.id); }}
-                          aria-label="Favoritar"
-                          className="p-1"
-                        >
-                          <Heart
-                            size={18}
-                            className={favorites.includes(team.id) ? "text-red-500 fill-red-500" : "text-muted-foreground"}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {(team as any).logo_url ? (
+                          <img
+                            src={(team as any).logo_url}
+                            alt={team.name}
+                            className="h-10 w-10 rounded-full object-cover border border-border shrink-0"
                           />
-                        </button>
-                        <Shield size={16} className="text-primary" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <Shield size={18} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <span className="truncate">{team.name}</span>
+                            {(() => { const s = getTeamStats(team.id); return <NotaBadge nota={s.nota} played={s.played} />; })()}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {(team as any).estilo || "Sem modalidade"} · {team.categoria || "Sem categoria"}
+                            {(team as any).sub_categoria ? ` · ${(team as any).sub_categoria}` : ""}
+                            {team.region ? ` · ${team.region}` : ""}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {(team as any).addr_cidade || "—"}/{(team as any).addr_uf || "—"}
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(team.id); }}
+                        aria-label="Favoritar"
+                        className="p-1 shrink-0"
+                      >
+                        <Heart
+                          size={18}
+                          className={favorites.includes(team.id) ? "text-red-500 fill-red-500" : "text-muted-foreground"}
+                        />
+                      </button>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
                   </div>
