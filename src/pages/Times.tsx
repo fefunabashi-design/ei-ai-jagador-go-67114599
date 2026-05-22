@@ -237,6 +237,20 @@ const TimesPage = () => {
   };
   const opponentReady = (t: any) => opponentMissingFields(t).length === 0;
 
+  const teamAddress = (t: any): string => {
+    if (!t) return "";
+    const clean = (value?: string | null) => String(value || "").trim();
+    const fieldAddress = clean(t.field_address);
+    const fieldName = clean(t.field_name);
+    const street = [clean(t.addr_rua), clean(t.addr_numero)].filter(Boolean).join(", ");
+    const cityUf = [clean(t.addr_cidade), clean(t.addr_uf)].filter(Boolean).join("/");
+    const registeredAddress = [street, clean(t.addr_bairro), cityUf, clean(t.addr_cep)].filter(Boolean).join(" - ");
+
+    if (fieldAddress) return fieldName ? `${fieldName} — ${fieldAddress}` : fieldAddress;
+    if (registeredAddress) return fieldName ? `${fieldName} — ${registeredAddress}` : registeredAddress;
+    return fieldName;
+  };
+
   const isDateAllowed = (dateStr: string, allowedDays: string[]) => {
     if (!dateStr) return false;
     const d = new Date(dateStr + "T12:00:00");
@@ -263,8 +277,8 @@ const TimesPage = () => {
       return;
     }
     const fallbackLocation = locationChoice === "own"
-      ? ((myTeam as any).field_address || (myTeam as any).field_name || "Campo do mandante")
-      : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
+      ? (teamAddress(myTeam) || "Campo do mandante")
+      : (teamAddress(challengeTeam) || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
