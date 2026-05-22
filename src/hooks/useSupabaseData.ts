@@ -905,6 +905,10 @@ export const useResenhaPosts = () => {
       supabase.from("resenha_comments").select("*").in("post_id", ids),
       teamIds.length ? supabase.from("public_teams").select("id, name").in("id", teamIds) : Promise.resolve({ data: [] as any[] }),
     ]);
+    const commentIds = (comments || []).map((c: any) => c.id);
+    const { data: commentReactions } = commentIds.length
+      ? await supabase.from("resenha_comment_reactions").select("*").in("comment_id", commentIds)
+      : { data: [] as any[] };
     const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
     const teamMap = new Map((teams || []).map((t: any) => [t.id, t]));
     const commentAuthorIds = Array.from(new Set((comments || []).map((c: any) => c.author_id)));
@@ -913,25 +917,40 @@ export const useResenhaPosts = () => {
       const { data: cps } = await supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", missing);
       (cps || []).forEach((p: any) => profMap.set(p.user_id, p));
     }
+    const mapComment = (c: any) => {
+      const ca = profMap.get(c.author_id) as any;
+      const reacts = (commentReactions || []).filter((r: any) => r.comment_id === c.id);
+      return {
+        id: c.id,
+        text: c.text,
+        created_at: c.created_at,
+        author_id: c.author_id,
+        parent_comment_id: c.parent_comment_id || null,
+        author_name: ca?.display_name || "Usuário",
+        author_avatar: ca?.avatar_url || null,
+        likes: reacts.filter((r: any) => r.type === "like").map((r: any) => r.user_id),
+        dislikes: reacts.filter((r: any) => r.type === "dislike").map((r: any) => r.user_id),
+      };
+    };
     setData(
       posts.map((p) => {
         const author = profMap.get(p.author_id) as any;
         const team = p.team_id ? (teamMap.get(p.team_id) as any) : null;
         const postReactions = (reactions || []).filter((r: any) => r.post_id === p.id);
-        const postComments = (comments || [])
+        const flatComments = (comments || [])
           .filter((c: any) => c.post_id === p.id)
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .map((c: any) => {
-            const ca = profMap.get(c.author_id) as any;
-            return {
-              id: c.id,
-              text: c.text,
-              created_at: c.created_at,
-              author_id: c.author_id,
-              author_name: ca?.display_name || "Usuário",
-              author_avatar: ca?.avatar_url || null,
-            };
-          });
+          .map(mapComment);
+        const roots = flatComments.filter((c: any) => !c.parent_comment_id);
+        const repliesMap = new Map<string, any[]>();
+        flatComments.forEach((c: any) => {
+          if (c.parent_comment_id) {
+            const arr = repliesMap.get(c.parent_comment_id) || [];
+            arr.push(c);
+            repliesMap.set(c.parent_comment_id, arr);
+          }
+        });
+        const threaded = roots.map((r: any) => ({ ...r, replies: repliesMap.get(r.id) || [] }));
         return {
           ...p,
           author_name: author?.display_name || "Usuário",
@@ -939,10 +958,11 @@ export const useResenhaPosts = () => {
           team_name: team?.name || null,
           likes: postReactions.filter((r: any) => r.type === "like").map((r: any) => r.user_id),
           dislikes: postReactions.filter((r: any) => r.type === "dislike").map((r: any) => r.user_id),
-          comments: postComments,
+          comments: threaded,
         };
       })
     );
+
   }, []);
   useEffect(() => { load(); }, [load]);
   useSubscribe(load);
@@ -989,14 +1009,43 @@ export const useToggleResenhaReaction = () => {
 };
 
 export const useAddResenhaComment = () => {
-  const mutateAsync = async (postId: string, text: string) => {
+  const mutateAsync = async (postId: string, text: string, parentCommentId?: string | null) => {
     const userId = await getUserId();
     if (!userId) return;
-    const { error } = await supabase.from("resenha_comments").insert({ post_id: postId, author_id: userId, text });
+    const { error } = await supabase.from("resenha_comments").insert({
+      post_id: postId,
+      author_id: userId,
+      text,
+      parent_comment_id: parentCommentId || null,
+    } as any);
     if (!error) emitChange();
   };
-  return { mutateAsync, mutate: (postId: string, text: string) => { void mutateAsync(postId, text); } };
+  return {
+    mutateAsync,
+    mutate: (postId: string, text: string, parentCommentId?: string | null) => { void mutateAsync(postId, text, parentCommentId); },
+  };
 };
+
+export const useToggleResenhaCommentReaction = () => {
+  const mutateAsync = async (commentId: string, type: "like" | "dislike") => {
+    const userId = await getUserId();
+    if (!userId) return;
+    const { data: existing } = await supabase
+      .from("resenha_comment_reactions").select("*").eq("comment_id", commentId).eq("user_id", userId).maybeSingle();
+    if (existing) {
+      if ((existing as any).type === type) {
+        await supabase.from("resenha_comment_reactions").delete().eq("id", (existing as any).id);
+      } else {
+        await supabase.from("resenha_comment_reactions").update({ type }).eq("id", (existing as any).id);
+      }
+    } else {
+      await supabase.from("resenha_comment_reactions").insert({ comment_id: commentId, user_id: userId, type });
+    }
+    emitChange();
+  };
+  return { mutateAsync, mutate: (commentId: string, type: "like" | "dislike") => { void mutateAsync(commentId, type); } };
+};
+
 
 export const useDeleteResenhaPost = () => {
   const mutateAsync = async (postId: string) => {

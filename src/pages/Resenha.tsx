@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImageIcon, Plus, ThumbsDown, ThumbsUp, MessageCircle, Send, Trash2, Clock, X } from "lucide-react";
+import { ArrowLeft, ImageIcon, Plus, ThumbsDown, ThumbsUp, Send, Trash2, Clock, CornerDownRight } from "lucide-react";
 import { motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -19,20 +19,13 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams,
   useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
+  useToggleResenhaCommentReaction,
 } from "@/hooks/useSupabaseData";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
 const STAFF_TEAM_FIELDS = [
-  "admin_email",
-  "coach_email",
-  "assistant_coach_email",
-  "sub1_email",
-  "sub2_email",
-  "admin_name",
-  "coach_name",
-  "assistant_coach_name",
-  "sub1_name",
-  "sub2_name",
+  "admin_email", "coach_email", "assistant_coach_email", "sub1_email", "sub2_email",
+  "admin_name", "coach_name", "assistant_coach_name", "sub1_name", "sub2_name",
 ];
 
 const norm = (v: any) => (v || "").toString().trim().toLowerCase();
@@ -59,12 +52,7 @@ const remainingTime = (iso: string) => {
 };
 
 const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
 const Resenha = () => {
   const navigate = useNavigate();
@@ -91,24 +79,24 @@ const Resenha = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [pickedImage, setPickedImage] = useState<string>("");
   const [caption, setCaption] = useState("");
-  const [openComments, setOpenComments] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
+  // Per-post comment input: { [postId]: text }
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  // Reply target per post: { [postId]: { id, name } | null }
+  const [replyTarget, setReplyTarget] = useState<Record<string, { id: string; name: string } | null>>({});
+
   const createPost = useCreateResenhaPost();
   const toggleReaction = useToggleResenhaReaction();
+  const toggleCommentReaction = useToggleResenhaCommentReaction();
   const addComment = useAddResenhaComment();
   const deletePost = useDeleteResenhaPost();
 
   const myUid = profile?.user_id || "mock-user-id";
-
   const orderedPosts = useMemo(() => posts, [posts]);
 
   const eligibleMatches = useMemo(() => {
     return (matches || [])
       .filter((m: any) => m.status === "confirmed" || m.status === "completed")
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
-      );
+      .sort((a: any, b: any) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
   }, [matches]);
 
   const openPublishFlow = () => {
@@ -146,18 +134,58 @@ const Resenha = () => {
     setCreateOpen(false);
   };
 
-  const handleReact = (postId: string, type: "like" | "dislike") => {
-    toggleReaction.mutate(postId, type);
-  };
-
   const handleSendComment = (postId: string) => {
-    const text = commentText.trim();
+    const text = (commentDrafts[postId] || "").trim();
     if (!text) return;
-    addComment.mutate(postId, text);
-    setCommentText("");
+    const target = replyTarget[postId] || null;
+    addComment.mutate(postId, text, target?.id || null);
+    setCommentDrafts((d) => ({ ...d, [postId]: "" }));
+    setReplyTarget((r) => ({ ...r, [postId]: null }));
   };
 
-  const activePost = orderedPosts.find((p) => p.id === openComments) || null;
+  const renderCommentItem = (c: any, postId: string, isReply = false) => {
+    const liked = (c.likes || []).includes(myUid);
+    const disliked = (c.dislikes || []).includes(myUid);
+    return (
+      <div key={c.id} className={`flex gap-2 ${isReply ? "ml-8" : ""}`}>
+        <Avatar className="w-7 h-7 shrink-0">
+          <AvatarImage src={c.author_avatar} alt={c.author_name} />
+          <AvatarFallback className="text-[10px]">{initials(c.author_name)}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="bg-muted/50 rounded-2xl px-3 py-2">
+            <p className="text-[11px] font-semibold text-foreground">
+              {c.author_name}
+              <span className="font-normal text-muted-foreground"> · {formatRelative(c.created_at)}</span>
+            </p>
+            <p className="text-sm text-foreground whitespace-pre-wrap break-words">{c.text}</p>
+          </div>
+          <div className="flex items-center gap-3 mt-1 px-2">
+            <button
+              onClick={() => toggleCommentReaction.mutate(c.id, "like")}
+              className={`flex items-center gap-1 text-[11px] ${liked ? "text-primary font-semibold" : "text-muted-foreground"}`}
+            >
+              <ThumbsUp size={12} /> {(c.likes || []).length || ""}
+            </button>
+            <button
+              onClick={() => toggleCommentReaction.mutate(c.id, "dislike")}
+              className={`flex items-center gap-1 text-[11px] ${disliked ? "text-destructive font-semibold" : "text-muted-foreground"}`}
+            >
+              <ThumbsDown size={12} /> {(c.dislikes || []).length || ""}
+            </button>
+            {!isReply && (
+              <button
+                onClick={() => setReplyTarget((r) => ({ ...r, [postId]: { id: c.id, name: c.author_name } }))}
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary"
+              >
+                <CornerDownRight size={12} /> Responder
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -198,6 +226,7 @@ const Resenha = () => {
           const liked = (post.likes || []).includes(myUid);
           const disliked = (post.dislikes || []).includes(myUid);
           const isAuthor = post.author_id === myUid;
+          const target = replyTarget[post.id] || null;
           return (
             <motion.article
               key={post.id}
@@ -249,37 +278,78 @@ const Resenha = () => {
                 <p className="px-4 py-3 text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
               )}
 
-              <footer className="flex items-center gap-1 border-t border-border px-2 py-2">
-                <button
-                  onClick={() => handleReact(post.id, "like")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                    liked
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  <ThumbsUp size={14} />
-                  {(post.likes || []).length}
-                </button>
-                <button
-                  onClick={() => handleReact(post.id, "dislike")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                    disliked
-                      ? "bg-destructive/15 text-destructive"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  <ThumbsDown size={14} />
-                  {(post.dislikes || []).length}
-                </button>
-                <button
-                  onClick={() => setOpenComments(post.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-muted-foreground hover:bg-muted ml-auto"
-                >
-                  <MessageCircle size={14} />
-                  {(post.comments || []).length}
-                </button>
-              </footer>
+              {/* Inline reactions + comments */}
+              <div className="px-3 pb-3 pt-1 space-y-3">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => toggleReaction.mutate(post.id, "like")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                      liked ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <ThumbsUp size={14} />
+                    {(post.likes || []).length}
+                  </button>
+                  <button
+                    onClick={() => toggleReaction.mutate(post.id, "dislike")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                      disliked ? "bg-destructive/15 text-destructive" : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <ThumbsDown size={14} />
+                    {(post.dislikes || []).length}
+                  </button>
+                </div>
+
+                {(post.comments || []).length > 0 && (
+                  <div className="space-y-3 border-t border-border/60 pt-3">
+                    {(post.comments || []).map((c: any) => (
+                      <div key={c.id} className="space-y-2">
+                        {renderCommentItem(c, post.id, false)}
+                        {(c.replies || []).map((r: any) => renderCommentItem(r, post.id, true))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="border-t border-border/60 pt-3">
+                  {target && (
+                    <div className="flex items-center justify-between bg-muted/40 rounded-md px-2 py-1 mb-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        Respondendo a <span className="text-foreground font-semibold">{target.name}</span>
+                      </span>
+                      <button
+                        onClick={() => setReplyTarget((r) => ({ ...r, [post.id]: null }))}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={commentDrafts[post.id] || ""}
+                      onChange={(e) => setCommentDrafts((d) => ({ ...d, [post.id]: e.target.value }))}
+                      placeholder={target ? `Responder a ${target.name}...` : "Escreva um comentário..."}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendComment(post.id);
+                        }
+                      }}
+                      className="h-9 text-sm"
+                    />
+                    <Button
+                      size="icon"
+                      onClick={() => handleSendComment(post.id)}
+                      disabled={!(commentDrafts[post.id] || "").trim()}
+                      className="h-9 w-9"
+                    >
+                      <Send size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </motion.article>
           );
         })}
@@ -321,9 +391,7 @@ const Resenha = () => {
                   </div>
                   <span
                     className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                      isFinished
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-success/15 text-success"
+                      isFinished ? "bg-muted text-muted-foreground" : "bg-success/15 text-success"
                     }`}
                   >
                     {isFinished ? "Finalizada" : "Confirmada"}
@@ -420,60 +488,6 @@ const Resenha = () => {
               Publicar resenha
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Comments dialog */}
-      <Dialog open={!!openComments} onOpenChange={(open) => !open && setOpenComments(null)}>
-        <DialogContent className="max-w-md flex flex-col max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle>Comentários</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            {activePost && (activePost.comments || []).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                Seja o primeiro a comentar.
-              </p>
-            )}
-            {activePost &&
-              (activePost.comments || []).map((c: any) => (
-                <div key={c.id} className="flex gap-2">
-                  <Avatar className="w-8 h-8 shrink-0">
-                    <AvatarImage src={c.author_avatar} alt={c.author_name} />
-                    <AvatarFallback className="text-[10px]">{initials(c.author_name)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 bg-muted/50 rounded-2xl px-3 py-2">
-                    <p className="text-[11px] font-semibold text-foreground">
-                      {c.author_name}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        · {formatRelative(c.created_at)}
-                      </span>
-                    </p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{c.text}</p>
-                  </div>
-                </div>
-              ))}
-          </div>
-          <div className="flex items-center gap-2 border-t border-border pt-3">
-            <Input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Escreva um comentário..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (activePost) handleSendComment(activePost.id);
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              onClick={() => activePost && handleSendComment(activePost.id)}
-              disabled={!commentText.trim()}
-            >
-              <Send size={16} />
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
