@@ -630,27 +630,80 @@ const TimesPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="ch-date" className="flex items-center gap-1">
+                <Label className="flex items-center gap-1 mb-1">
                   <CalIcon size={14} /> Data do jogo
                 </Label>
-                <Input
-                  id="ch-date"
-                  type="date"
-                  min={new Date().toISOString().slice(0, 10)}
-                  value={challengeDate}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v && Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0 && !isDateAllowed(v, challengeTeam.play_days)) {
-                      toast({
-                        title: "Dia não permitido",
-                        description: `Adversário só joga: ${challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")}`,
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    setChallengeDate(v);
-                  }}
-                />
+                {(() => {
+                  const playDays: string[] = Array.isArray(challengeTeam.play_days) ? challengeTeam.play_days : [];
+                  const allowedDow = new Set(playDays.map((d) => DAY_INDEX[d]).filter((n) => n !== undefined));
+                  const today = new Date(); today.setHours(0, 0, 0, 0);
+                  const selected = challengeDate ? new Date(challengeDate + "T12:00:00") : undefined;
+                  const isBusy = (date: Date) =>
+                    busyDateKeys.has(`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`);
+                  const isAvailable = (date: Date) => {
+                    const d = new Date(date); d.setHours(0, 0, 0, 0);
+                    if (d < today) return false;
+                    if (allowedDow.size > 0 && !allowedDow.has(d.getDay())) return false;
+                    if (isBusy(d)) return false;
+                    return true;
+                  };
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !selected && "text-muted-foreground"
+                          )}
+                        >
+                          <CalIcon className="mr-2 h-4 w-4" />
+                          {selected
+                            ? format(selected, "PPP", { locale: ptBR })
+                            : "Selecione uma data disponível"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          locale={ptBR}
+                          selected={selected}
+                          onSelect={(d) => {
+                            if (!d) return;
+                            if (isBusy(d)) {
+                              toast({ title: "Data ocupada", description: "Adversário já tem jogo confirmado nesse dia.", variant: "destructive" });
+                              return;
+                            }
+                            if (allowedDow.size > 0 && !allowedDow.has(d.getDay())) {
+                              toast({
+                                title: "Dia não permitido",
+                                description: `Adversário só joga: ${playDays.map((x) => WEEK_DAY_LABEL[x]).join(", ")}`,
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            setChallengeDate(format(d, "yyyy-MM-dd"));
+                          }}
+                          disabled={(date) => !isAvailable(date)}
+                          modifiers={{ available: (date) => isAvailable(date), busy: (date) => isBusy(date) && date >= today }}
+                          modifiersClassNames={{
+                            available: "bg-primary/15 text-primary font-semibold",
+                            busy: "line-through opacity-50",
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                        <div className="px-3 pb-3 pt-1 text-[10px] text-muted-foreground space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-3 h-3 rounded bg-primary/30 border border-primary/50" />
+                            Datas disponíveis do adversário
+                          </div>
+                          <div>Datas com jogo já confirmado ficam indisponíveis.</div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })()}
               </div>
 
               <div>
