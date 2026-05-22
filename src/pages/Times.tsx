@@ -50,9 +50,22 @@ const TimesPage = () => {
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
+  const [nivelChoice, setNivelChoice] = useState<string>("todas");
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("times_favorites") || "[]"); } catch { return []; }
+  });
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      localStorage.setItem("times_favorites", JSON.stringify(next));
+      return next;
+    });
+  };
 
   // Pré-popular filtros conforme o time do usuário
   useEffect(() => {
