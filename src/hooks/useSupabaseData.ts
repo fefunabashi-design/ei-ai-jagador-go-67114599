@@ -1009,14 +1009,43 @@ export const useToggleResenhaReaction = () => {
 };
 
 export const useAddResenhaComment = () => {
-  const mutateAsync = async (postId: string, text: string) => {
+  const mutateAsync = async (postId: string, text: string, parentCommentId?: string | null) => {
     const userId = await getUserId();
     if (!userId) return;
-    const { error } = await supabase.from("resenha_comments").insert({ post_id: postId, author_id: userId, text });
+    const { error } = await supabase.from("resenha_comments").insert({
+      post_id: postId,
+      author_id: userId,
+      text,
+      parent_comment_id: parentCommentId || null,
+    } as any);
     if (!error) emitChange();
   };
-  return { mutateAsync, mutate: (postId: string, text: string) => { void mutateAsync(postId, text); } };
+  return {
+    mutateAsync,
+    mutate: (postId: string, text: string, parentCommentId?: string | null) => { void mutateAsync(postId, text, parentCommentId); },
+  };
 };
+
+export const useToggleResenhaCommentReaction = () => {
+  const mutateAsync = async (commentId: string, type: "like" | "dislike") => {
+    const userId = await getUserId();
+    if (!userId) return;
+    const { data: existing } = await supabase
+      .from("resenha_comment_reactions").select("*").eq("comment_id", commentId).eq("user_id", userId).maybeSingle();
+    if (existing) {
+      if ((existing as any).type === type) {
+        await supabase.from("resenha_comment_reactions").delete().eq("id", (existing as any).id);
+      } else {
+        await supabase.from("resenha_comment_reactions").update({ type }).eq("id", (existing as any).id);
+      }
+    } else {
+      await supabase.from("resenha_comment_reactions").insert({ comment_id: commentId, user_id: userId, type });
+    }
+    emitChange();
+  };
+  return { mutateAsync, mutate: (commentId: string, type: "like" | "dislike") => { void mutateAsync(commentId, type); } };
+};
+
 
 export const useDeleteResenhaPost = () => {
   const mutateAsync = async (postId: string) => {
