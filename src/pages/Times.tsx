@@ -399,7 +399,20 @@ const TimesPage = () => {
                           {(team as any).gender ? ` · ${(team as any).gender}` : ""}
                         </p>
                       </div>
-                      <Shield size={16} className="text-primary" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(team.id); }}
+                          aria-label="Favoritar"
+                          className="p-1"
+                        >
+                          <Heart
+                            size={18}
+                            className={favorites.includes(team.id) ? "text-red-500 fill-red-500" : "text-muted-foreground"}
+                          />
+                        </button>
+                        <Shield size={16} className="text-primary" />
+                      </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
                   </div>
