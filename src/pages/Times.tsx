@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Shield } from "lucide-react";
+import { ArrowLeft, Search, Shield, Heart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
@@ -50,9 +50,22 @@ const TimesPage = () => {
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
+  const [nivelChoice, setNivelChoice] = useState<string>("todas");
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("times_favorites") || "[]"); } catch { return []; }
+  });
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      localStorage.setItem("times_favorites", JSON.stringify(next));
+      return next;
+    });
+  };
 
   // Pré-popular filtros conforme o time do usuário
   useEffect(() => {
@@ -133,6 +146,9 @@ const TimesPage = () => {
     const matchesField =
       fieldChoice === "tanto" ||
       (fieldChoice === "sim" ? t.has_field === true : t.has_field === false);
+    const teamNota = getTeamStats(t.id).nota || 0;
+    const matchesNivel = nivelChoice === "todas" || teamNota >= Number(nivelChoice);
+    const matchesFavorite = !onlyFavorites || favorites.includes(t.id);
     const teamStart = toMinutes(t.play_time_start);
     const teamEnd = toMinutes(t.play_time_end);
     const matchesTime =
@@ -140,7 +156,8 @@ const TimesPage = () => {
       (!toMinutesFilter || (teamStart !== null && teamStart <= toMinutesFilter));
     return (
       matchesName && matchesUf && matchesCity && matchesRegion && matchesModalidade &&
-      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField && matchesTime
+      matchesCategoria && matchesSubCategoria && matchesGenero && matchesDays && matchesField &&
+      matchesNivel && matchesFavorite && matchesTime
     );
   });
 
@@ -282,19 +299,53 @@ const TimesPage = () => {
               />
             </div>
 
-            {/* Time com Campo */}
-            <div>
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
-              <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
-                <SelectTrigger className="h-9 bg-background border-border text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sim">Sim</SelectItem>
-                  <SelectItem value="nao">Não</SelectItem>
-                  <SelectItem value="tanto">Tanto Faz</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Time com Campo + Nível (2 colunas) */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
+                <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
+                  <SelectTrigger className="h-9 bg-background border-border text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sim">Sim</SelectItem>
+                    <SelectItem value="nao">Não</SelectItem>
+                    <SelectItem value="tanto">Tanto Faz</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nível</p>
+                <Select value={nivelChoice} onValueChange={setNivelChoice}>
+                  <SelectTrigger className="h-9 bg-background border-border text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="5">5+</SelectItem>
+                    <SelectItem value="6">6+</SelectItem>
+                    <SelectItem value="7">7+</SelectItem>
+                    <SelectItem value="8">8+</SelectItem>
+                    <SelectItem value="9">9+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Favoritos */}
+            <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
+              <div className="flex items-center gap-2">
+                <Heart size={14} className={onlyFavorites ? "text-red-500 fill-red-500" : "text-muted-foreground"} />
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Mostrar apenas favoritos</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOnlyFavorites((v) => !v)}
+                className={`h-5 w-9 rounded-full transition-colors relative ${onlyFavorites ? "bg-primary" : "bg-muted"}`}
+                aria-pressed={onlyFavorites}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-background transition-all ${onlyFavorites ? "left-[18px]" : "left-0.5"}`} />
+              </button>
             </div>
 
 
@@ -348,7 +399,20 @@ const TimesPage = () => {
                           {(team as any).gender ? ` · ${(team as any).gender}` : ""}
                         </p>
                       </div>
-                      <Shield size={16} className="text-primary" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(team.id); }}
+                          aria-label="Favoritar"
+                          className="p-1"
+                        >
+                          <Heart
+                            size={18}
+                            className={favorites.includes(team.id) ? "text-red-500 fill-red-500" : "text-muted-foreground"}
+                          />
+                        </button>
+                        <Shield size={16} className="text-primary" />
+                      </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
                   </div>
