@@ -36,6 +36,7 @@ const OpponentDetails = lazy(() => import("./pages/OpponentDetails.tsx"));
 const Resenha = lazy(() => import("./pages/Resenha.tsx"));
 const Assinatura = lazy(() => import("./pages/Assinatura.tsx"));
 const SuperAdminPagamentos = lazy(() => import("./pages/SuperAdminPagamentos.tsx"));
+const MatchDetails = lazy(() => import("./pages/MatchDetails.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
 
