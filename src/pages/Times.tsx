@@ -1043,17 +1043,26 @@ const TimesPage = () => {
               })()}
             </div>
             <div>
-              <Label htmlFor="nm-time" className="flex items-center gap-1">
-                <Clock size={14} /> Horário {(matchActionTeam as any)?.play_time_start ? "(fixo)" : ""}
-              </Label>
-              <Input
-                id="nm-time"
-                type="time"
-                value={newMatchTime}
-                readOnly={!!(matchActionTeam as any)?.play_time_start}
-                onChange={(e) => setNewMatchTime(e.target.value)}
-                className={(matchActionTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
-              />
+              {(() => {
+                const flex = isAdminTimeFlexible(newMatchDate);
+                const sched = adminScheduleForDate(newMatchDate);
+                const rangeHint = flex && sched?.start && sched?.end ? ` (${sched.start}–${sched.end})` : "";
+                return (
+                  <>
+                    <Label htmlFor="nm-time" className="flex items-center gap-1">
+                      <Clock size={14} /> Horário {flex ? `(flexível${rangeHint})` : "(fixo)"}
+                    </Label>
+                    <Input
+                      id="nm-time"
+                      type="time"
+                      value={newMatchTime}
+                      readOnly={!flex}
+                      onChange={(e) => setNewMatchTime(e.target.value)}
+                      className={!flex ? "opacity-80 cursor-not-allowed" : ""}
+                    />
+                  </>
+                );
+              })()}
             </div>
             <div>
               <Label className="mb-2 block">Local</Label>
