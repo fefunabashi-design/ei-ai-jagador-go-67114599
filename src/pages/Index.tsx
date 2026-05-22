@@ -367,6 +367,7 @@ const Index = () => {
                     <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
                       <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
                       <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+                      <p className="mt-2 flex items-center justify-center gap-1"><MapPin size={10} /> {(homeTeam as any)?.field_name || nextMatch.location}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1 flex-1">
@@ -385,7 +386,6 @@ const Index = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><MapPin size={10} /> {(homeTeam as any)?.field_name || nextMatch.location}</span>
                   <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
                     nextMatch.status === "completed" ? "bg-muted text-muted-foreground" :
                     nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
