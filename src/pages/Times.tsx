@@ -706,7 +706,7 @@ const TimesPage = () => {
             setLocationChoice("away"); setChallengeLocation("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-            const myHasField = (myTeam as any)?.has_field === true;
+            const myHasField = (matchActionTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
             setChallengeLocation("");
@@ -852,7 +852,7 @@ const TimesPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {teamAddress(myTeam) || "Endereço não cadastrado"}
+                        {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
                       </div>
                     </div>
                   </label>
