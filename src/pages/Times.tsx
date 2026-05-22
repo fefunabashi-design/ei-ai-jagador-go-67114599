@@ -19,7 +19,7 @@ import NotaBadge from "@/components/NotaBadge";
 import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyAdminTeams, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 import { getTeamStats } from "@/lib/stats";
@@ -53,7 +53,13 @@ const TimesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const { data: myAdminTeams = [] } = useMyAdminTeams();
   const createMatch = useCreateMatch();
+  const matchActionTeam = useMemo(
+    () => myAdminTeams.find((team: any) => team.id === (myTeam as any)?.id) || myAdminTeams[0] || null,
+    [myAdminTeams, myTeam]
+  );
+  const canLaunchChallenges = !!matchActionTeam;
 
   // Filtros
   const [nameQuery, setNameQuery] = useState("");
@@ -71,9 +77,8 @@ const TimesPage = () => {
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("times_favorites") || "[]"); } catch { return []; }
-  });
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
   // Desafio
@@ -92,10 +97,35 @@ const TimesPage = () => {
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      localStorage.setItem("times_favorites", JSON.stringify(next));
+      if (currentUserId) localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(next));
       return next;
     });
   };
+
+  useEffect(() => {
+    let alive = true;
+    const loadUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (alive) setCurrentUserId(data.user?.id ?? null);
+    };
+    loadUser();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id ?? null);
+    });
+    return () => { alive = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId) { setFavorites([]); return; }
+    try { setFavorites(JSON.parse(localStorage.getItem(`times_favorites_${currentUserId}`) || "[]")); }
+    catch { setFavorites([]); }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (newMatchOpen && (matchActionTeam as any)?.play_time_start) {
+      setNewMatchTime(String((matchActionTeam as any).play_time_start).slice(0, 5));
+    }
+  }, [newMatchOpen, matchActionTeam]);
 
   // Pré-popular filtros conforme o time do usuário
   useEffect(() => {
