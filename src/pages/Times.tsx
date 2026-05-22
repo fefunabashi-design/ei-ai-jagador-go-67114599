@@ -153,6 +153,19 @@ const TimesPage = () => {
     },
   });
 
+  const { data: myTeamMatches = [] } = useQuery<any[]>({
+    queryKey: ["my_team_matches", (myTeam as any)?.id],
+    enabled: !!(myTeam as any)?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("match_date,status,home_team_id,away_team_id")
+        .or(`home_team_id.eq.${(myTeam as any).id},away_team_id.eq.${(myTeam as any).id}`)
+        .eq("status", "confirmed");
+      return data || [];
+    },
+  });
+
   const busyDateKeys = useMemo(() => {
     const set = new Set<string>();
     (opponentMatches || []).forEach((m: any) => {
@@ -161,6 +174,15 @@ const TimesPage = () => {
     });
     return set;
   }, [opponentMatches]);
+
+  const myBusyDateKeys = useMemo(() => {
+    const set = new Set<string>();
+    (myTeamMatches || []).forEach((m: any) => {
+      const d = new Date(m.match_date);
+      set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    });
+    return set;
+  }, [myTeamMatches]);
 
   const fromMinutes = toMinutes(timeFrom);
   const toMinutesFilter = toMinutes(timeTo);
