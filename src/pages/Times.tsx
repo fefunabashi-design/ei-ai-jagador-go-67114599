@@ -815,8 +815,9 @@ const TimesPage = () => {
           if (open && myTeam) {
             const t = myTeam as any;
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
-            if (!newMatchLocation && (t.field_address || t.field_name)) {
-              setNewMatchLocation(t.field_address || t.field_name);
+            const addr = teamAddress(t);
+            if (!newMatchLocation && addr) {
+              setNewMatchLocation(addr);
             }
           }
         }}>
@@ -846,8 +847,7 @@ const TimesPage = () => {
                   const choice = v as "own" | "away";
                   setNewMatchLocationChoice(choice);
                   if (choice === "own") {
-                    const t = myTeam as any;
-                    setNewMatchLocation(t?.field_address || t?.field_name || "");
+                    setNewMatchLocation(teamAddress(myTeam));
                   } else {
                     setNewMatchLocation("");
                   }
@@ -859,7 +859,7 @@ const TimesPage = () => {
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                      {teamAddress(myTeam) || "Endereço não cadastrado"}
                     </div>
                   </div>
                 </label>
