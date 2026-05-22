@@ -862,18 +862,28 @@ const TimesPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="ch-time" className="flex items-center gap-1">
-                  <Clock size={14} /> Horário {challengeTeam.play_time_start ? "(fixo)" : ""}
-                </Label>
-                <Input
-                  id="ch-time"
-                  type="time"
-                  value={challengeTime}
-                  readOnly={!!challengeTeam.play_time_start}
-                  onChange={(e) => setChallengeTime(e.target.value)}
-                  className={challengeTeam.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
-                />
+                {(() => {
+                  const flex = isAdminTimeFlexible(challengeDate);
+                  const sched = adminScheduleForDate(challengeDate);
+                  const rangeHint = flex && sched?.start && sched?.end ? ` (${sched.start}–${sched.end})` : "";
+                  return (
+                    <>
+                      <Label htmlFor="ch-time" className="flex items-center gap-1">
+                        <Clock size={14} /> Horário {flex ? `(flexível${rangeHint})` : "(fixo)"}
+                      </Label>
+                      <Input
+                        id="ch-time"
+                        type="time"
+                        value={challengeTime}
+                        readOnly={!flex}
+                        onChange={(e) => setChallengeTime(e.target.value)}
+                        className={!flex ? "opacity-80 cursor-not-allowed" : ""}
+                      />
+                    </>
+                  );
+                })()}
               </div>
+
 
               <div>
                 <Label className="mb-2 block">Local</Label>
