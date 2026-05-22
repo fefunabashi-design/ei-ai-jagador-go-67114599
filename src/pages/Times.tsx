@@ -324,6 +324,22 @@ const TimesPage = () => {
   };
   const opponentReady = (t: any) => opponentMissingFields(t).length === 0;
 
+  const WEEK_DAY_KEYS = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const adminScheduleForDate = (dateStr: string): { mode?: "fixed" | "flexible"; start?: string; end?: string } | null => {
+    const t = matchActionTeam as any;
+    if (!t || !dateStr) return null;
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    const key = WEEK_DAY_KEYS[d.getDay()];
+    const sched = t.play_schedule?.[key];
+    return sched || null;
+  };
+  const isAdminTimeFlexible = (dateStr: string): boolean => {
+    const sched = adminScheduleForDate(dateStr);
+    if (sched) return sched.mode === "flexible";
+    return !(matchActionTeam as any)?.play_time_start;
+  };
+
   const teamAddress = (t: any): string => {
     if (!t) return "";
     const clean = (value?: string | null) => String(value || "").trim();
@@ -846,18 +862,28 @@ const TimesPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="ch-time" className="flex items-center gap-1">
-                  <Clock size={14} /> Horário {challengeTeam.play_time_start ? "(fixo)" : ""}
-                </Label>
-                <Input
-                  id="ch-time"
-                  type="time"
-                  value={challengeTime}
-                  readOnly={!!challengeTeam.play_time_start}
-                  onChange={(e) => setChallengeTime(e.target.value)}
-                  className={challengeTeam.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
-                />
+                {(() => {
+                  const flex = isAdminTimeFlexible(challengeDate);
+                  const sched = adminScheduleForDate(challengeDate);
+                  const rangeHint = flex && sched?.start && sched?.end ? ` (${sched.start}–${sched.end})` : "";
+                  return (
+                    <>
+                      <Label htmlFor="ch-time" className="flex items-center gap-1">
+                        <Clock size={14} /> Horário {flex ? `(flexível${rangeHint})` : "(fixo)"}
+                      </Label>
+                      <Input
+                        id="ch-time"
+                        type="time"
+                        value={challengeTime}
+                        readOnly={!flex}
+                        onChange={(e) => setChallengeTime(e.target.value)}
+                        className={!flex ? "opacity-80 cursor-not-allowed" : ""}
+                      />
+                    </>
+                  );
+                })()}
               </div>
+
 
               <div>
                 <Label className="mb-2 block">Local</Label>
@@ -1017,17 +1043,26 @@ const TimesPage = () => {
               })()}
             </div>
             <div>
-              <Label htmlFor="nm-time" className="flex items-center gap-1">
-                <Clock size={14} /> Horário {(matchActionTeam as any)?.play_time_start ? "(fixo)" : ""}
-              </Label>
-              <Input
-                id="nm-time"
-                type="time"
-                value={newMatchTime}
-                readOnly={!!(matchActionTeam as any)?.play_time_start}
-                onChange={(e) => setNewMatchTime(e.target.value)}
-                className={(matchActionTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
-              />
+              {(() => {
+                const flex = isAdminTimeFlexible(newMatchDate);
+                const sched = adminScheduleForDate(newMatchDate);
+                const rangeHint = flex && sched?.start && sched?.end ? ` (${sched.start}–${sched.end})` : "";
+                return (
+                  <>
+                    <Label htmlFor="nm-time" className="flex items-center gap-1">
+                      <Clock size={14} /> Horário {flex ? `(flexível${rangeHint})` : "(fixo)"}
+                    </Label>
+                    <Input
+                      id="nm-time"
+                      type="time"
+                      value={newMatchTime}
+                      readOnly={!flex}
+                      onChange={(e) => setNewMatchTime(e.target.value)}
+                      className={!flex ? "opacity-80 cursor-not-allowed" : ""}
+                    />
+                  </>
+                );
+              })()}
             </div>
             <div>
               <Label className="mb-2 block">Local</Label>
