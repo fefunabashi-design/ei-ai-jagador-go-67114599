@@ -219,9 +219,18 @@ const TimesPage = () => {
     if (!regionEnabled && selectedRegions.length > 0) setSelectedRegions([]);
   }, [regionEnabled, selectedRegions.length]);
 
-  const opponentReady = (t: any) =>
-    !!t && !!t.name && !!t.addr_cidade && !!t.addr_uf && !!t.field_address &&
-    Array.isArray(t.play_days) && t.play_days.length > 0 && !!t.play_time_start;
+  const opponentMissingFields = (t: any): string[] => {
+    if (!t) return ["dados do time"];
+    const miss: string[] = [];
+    if (!t.name) miss.push("nome");
+    if (!t.addr_cidade) miss.push("cidade");
+    if (!t.addr_uf) miss.push("UF");
+    if (!t.field_address && !t.field_name) miss.push("endereço do campo");
+    if (!Array.isArray(t.play_days) || t.play_days.length === 0) miss.push("dias de jogo");
+    if (!t.play_time_start) miss.push("horário fixo");
+    return miss;
+  };
+  const opponentReady = (t: any) => opponentMissingFields(t).length === 0;
 
   const isDateAllowed = (dateStr: string, allowedDays: string[]) => {
     if (!dateStr) return false;
@@ -619,7 +628,9 @@ const TimesPage = () => {
               {!opponentReady(challengeTeam) && (
                 <div className="flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                  <div>Cadastro do adversário incompleto — preencha os dados manualmente.</div>
+                  <div>
+                    Cadastro do adversário incompleto. Faltando: <strong>{opponentMissingFields(challengeTeam).join(", ")}</strong>. Preencha os dados manualmente.
+                  </div>
                 </div>
               )}
 
