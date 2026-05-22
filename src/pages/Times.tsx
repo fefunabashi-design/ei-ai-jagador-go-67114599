@@ -324,6 +324,22 @@ const TimesPage = () => {
   };
   const opponentReady = (t: any) => opponentMissingFields(t).length === 0;
 
+  const WEEK_DAY_KEYS = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const adminScheduleForDate = (dateStr: string): { mode?: "fixed" | "flexible"; start?: string; end?: string } | null => {
+    const t = matchActionTeam as any;
+    if (!t || !dateStr) return null;
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    const key = WEEK_DAY_KEYS[d.getDay()];
+    const sched = t.play_schedule?.[key];
+    return sched || null;
+  };
+  const isAdminTimeFlexible = (dateStr: string): boolean => {
+    const sched = adminScheduleForDate(dateStr);
+    if (sched) return sched.mode === "flexible";
+    return !(matchActionTeam as any)?.play_time_start;
+  };
+
   const teamAddress = (t: any): string => {
     if (!t) return "";
     const clean = (value?: string | null) => String(value || "").trim();
