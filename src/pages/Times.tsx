@@ -161,7 +161,7 @@ const TimesPage = () => {
       <div className="px-5 space-y-4">
         <div className="bg-card rounded-xl border border-border p-4 space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] text-muted-foreground">Filtros pré-selecionados conforme seu time</p>
+            <p className="text-[10px] text-muted-foreground">Selecione uma ou mais opções por filtro</p>
             <Badge variant="secondary">{filteredTeams.length} times</Badge>
           </div>
 
