@@ -148,11 +148,11 @@ const TimesPage = () => {
   useEffect(() => {
     if (!challengeTeam) return;
     setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-    const myHasField = (myTeam as any)?.has_field === true;
+    const myHasField = (matchActionTeam as any)?.has_field === true;
     setLocationChoice(myHasField ? "own" : "away");
     setChallengeLocation("");
     setChallengeDate("");
-  }, [challengeTeam, myTeam]);
+  }, [challengeTeam, matchActionTeam]);
 
   const toMinutes = (value?: string | null) => {
     if (!value || !value.includes(":")) return null;
@@ -184,13 +184,13 @@ const TimesPage = () => {
   });
 
   const { data: myTeamMatches = [] } = useQuery<any[]>({
-    queryKey: ["my_team_matches", (myTeam as any)?.id],
-    enabled: !!(myTeam as any)?.id,
+    queryKey: ["my_team_matches", (matchActionTeam as any)?.id],
+    enabled: !!(matchActionTeam as any)?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from("matches")
         .select("match_date,status,home_team_id,away_team_id")
-        .or(`home_team_id.eq.${(myTeam as any).id},away_team_id.eq.${(myTeam as any).id}`)
+        .or(`home_team_id.eq.${(matchActionTeam as any).id},away_team_id.eq.${(matchActionTeam as any).id}`)
         .eq("status", "confirmed");
       return data || [];
     },
@@ -320,7 +320,8 @@ const TimesPage = () => {
   };
 
   const handleConfirmChallenge = async () => {
-    if (!myTeam || !challengeTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
@@ -344,14 +345,14 @@ const TimesPage = () => {
       return;
     }
     const fallbackLocation = locationChoice === "own"
-      ? (teamAddress(myTeam) || "Campo do mandante")
+      ? (teamAddress(adminTeam) || "Campo do mandante")
       : (teamAddress(challengeTeam) || "Campo do adversário");
     const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
     const homeIsOwn = locationChoice ? locationChoice === "own" : true;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: homeIsOwn ? myTeam.id : challengeTeam.id,
-      away_team_id: homeIsOwn ? challengeTeam.id : myTeam.id,
+      home_team_id: homeIsOwn ? adminTeam.id : challengeTeam.id,
+      away_team_id: homeIsOwn ? challengeTeam.id : adminTeam.id,
       match_date,
       location,
       status: "open",
