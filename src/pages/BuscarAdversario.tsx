@@ -120,7 +120,8 @@ const BuscarAdversarioPage = () => {
   };
 
   const handleConfirmChallenge = async () => {
-    if (!myTeam || !challengeTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
@@ -134,17 +135,17 @@ const BuscarAdversarioPage = () => {
       }
     }
     const fallbackLocation = locationChoice === "own"
-      ? ((myTeam as any).field_address || (myTeam as any).field_name || "Campo do mandante")
+      ? (adminTeam.field_address || adminTeam.field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
+      home_team_id: locationChoice === "own" ? adminTeam.id : challengeTeam.id,
+      away_team_id: locationChoice === "own" ? challengeTeam.id : adminTeam.id,
       match_date,
       location,
       status: "open",
-      format: challengeTeam.format || (myTeam as any).format || "8x8",
+      format: challengeTeam.format || adminTeam.format || "8x8",
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
@@ -153,19 +154,20 @@ const BuscarAdversarioPage = () => {
   };
 
   const handleCreateNewMatch = async () => {
-    if (!myTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: myTeam.id,
+      home_team_id: adminTeam.id,
       away_team_id: null,
       match_date,
       location: newMatchLocation.trim(),
       status: "confirmed",
-      format: (myTeam as any).format || "8x8",
+      format: adminTeam.format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
