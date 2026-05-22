@@ -862,7 +862,7 @@ const TimesPage = () => {
           setNewMatchOpen(open);
           if (open && myTeam) {
             const t = myTeam as any;
-            if (!newMatchTime && t.play_time_start) {
+            if (t.play_time_start) {
               setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
             setNewMatchLocationChoice("own");
