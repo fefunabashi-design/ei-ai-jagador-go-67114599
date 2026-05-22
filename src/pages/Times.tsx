@@ -895,8 +895,8 @@ const TimesPage = () => {
         open={newMatchOpen}
         onOpenChange={(open) => {
           setNewMatchOpen(open);
-          if (open && myTeam) {
-            const t = myTeam as any;
+          if (open && matchActionTeam) {
+            const t = matchActionTeam as any;
             if (t.play_time_start) {
               setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
@@ -922,7 +922,7 @@ const TimesPage = () => {
                 <CalIcon size={14} /> Data do jogo
               </Label>
               {(() => {
-                const myPlayDays: string[] = Array.isArray((myTeam as any)?.play_days) ? (myTeam as any).play_days : [];
+                const myPlayDays: string[] = Array.isArray((matchActionTeam as any)?.play_days) ? (matchActionTeam as any).play_days : [];
                 const allowedDow = new Set(myPlayDays.map((d) => DAY_INDEX[d]).filter((n) => n !== undefined));
                 const today = new Date(); today.setHours(0, 0, 0, 0);
                 const selected = newMatchDate ? new Date(newMatchDate + "T12:00:00") : undefined;
@@ -993,15 +993,15 @@ const TimesPage = () => {
             </div>
             <div>
               <Label htmlFor="nm-time" className="flex items-center gap-1">
-                <Clock size={14} /> Horário {(myTeam as any)?.play_time_start ? "(fixo)" : ""}
+                <Clock size={14} /> Horário {(matchActionTeam as any)?.play_time_start ? "(fixo)" : ""}
               </Label>
               <Input
                 id="nm-time"
                 type="time"
                 value={newMatchTime}
-                readOnly={!!(myTeam as any)?.play_time_start}
+                readOnly={!!(matchActionTeam as any)?.play_time_start}
                 onChange={(e) => setNewMatchTime(e.target.value)}
-                className={(myTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+                className={(matchActionTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
               />
             </div>
             <div>
