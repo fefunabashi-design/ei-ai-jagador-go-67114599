@@ -759,8 +759,6 @@ const TimesPage = () => {
                   onValueChange={(v) => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
-                    const addr = choice === "own" ? teamAddress(myTeam) : teamAddress(challengeTeam);
-                    setChallengeLocation(addr);
                   }}
                   className="space-y-2"
                 >
