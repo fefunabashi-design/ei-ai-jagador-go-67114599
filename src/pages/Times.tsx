@@ -761,10 +761,11 @@ const TimesPage = () => {
               <div>
                 <Label className="mb-2 block">Local</Label>
                 <RadioGroup
-                  value={locationChoice}
+                  value={locationChoice ?? ""}
                   onValueChange={(v) => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
+                    setChallengeLocation("");
                   }}
                   className="space-y-2"
                 >
@@ -794,7 +795,10 @@ const TimesPage = () => {
                 <Input
                   className="mt-2"
                   value={challengeLocation}
-                  onChange={(e) => setChallengeLocation(e.target.value)}
+                  onChange={(e) => {
+                    setChallengeLocation(e.target.value);
+                    if (e.target.value.trim()) setLocationChoice(null);
+                  }}
                   placeholder="Outro endereço (opcional)"
                 />
               </div>
