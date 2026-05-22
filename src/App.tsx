@@ -156,6 +156,7 @@ const App = () => {
               <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
               <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
               <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
               <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
