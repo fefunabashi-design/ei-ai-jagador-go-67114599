@@ -19,7 +19,7 @@ import NotaBadge from "@/components/NotaBadge";
 import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyAdminTeams, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 import { getTeamStats } from "@/lib/stats";
@@ -53,7 +53,13 @@ const TimesPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const { data: myAdminTeams = [] } = useMyAdminTeams();
   const createMatch = useCreateMatch();
+  const matchActionTeam = useMemo(
+    () => myAdminTeams.find((team: any) => team.id === (myTeam as any)?.id) || myAdminTeams[0] || null,
+    [myAdminTeams, myTeam]
+  );
+  const canLaunchChallenges = !!matchActionTeam;
 
   // Filtros
   const [nameQuery, setNameQuery] = useState("");
@@ -71,9 +77,8 @@ const TimesPage = () => {
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [defaultsApplied, setDefaultsApplied] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("times_favorites") || "[]"); } catch { return []; }
-  });
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
   // Desafio
@@ -89,13 +94,63 @@ const TimesPage = () => {
   const [newMatchLocation, setNewMatchLocation] = useState("");
   const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | null>("own");
 
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      localStorage.setItem("times_favorites", JSON.stringify(next));
-      return next;
-    });
+  const toggleFavorite = async (id: string) => {
+    if (!currentUserId) return;
+    const isFavorite = favorites.includes(id);
+    const next = isFavorite ? favorites.filter((x) => x !== id) : [...favorites, id];
+    setFavorites(next);
+    localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(next));
+
+    const table = supabase.from("team_favorites" as any) as any;
+    const { error } = isFavorite
+      ? await table.delete().eq("user_id", currentUserId).eq("team_id", id)
+      : await table.insert({ user_id: currentUserId, team_id: id });
+
+    if (error) {
+      setFavorites(favorites);
+      localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(favorites));
+      toast({ title: "Erro ao atualizar favorito", description: error.message, variant: "destructive" });
+    }
   };
+
+  useEffect(() => {
+    let alive = true;
+    const loadUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (alive) setCurrentUserId(data.user?.id ?? null);
+    };
+    loadUser();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUserId(session?.user?.id ?? null);
+    });
+    return () => { alive = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId) { setFavorites([]); return; }
+    let alive = true;
+    const cached = (() => {
+      try { return JSON.parse(localStorage.getItem(`times_favorites_${currentUserId}`) || "[]"); }
+      catch { return []; }
+    })();
+    setFavorites(cached);
+    const loadFavorites = async () => {
+      const table = supabase.from("team_favorites" as any) as any;
+      const { data, error } = await table.select("team_id").eq("user_id", currentUserId);
+      if (!alive || error) return;
+      const ids = (data || []).map((row: any) => row.team_id).filter(Boolean);
+      setFavorites(ids);
+      localStorage.setItem(`times_favorites_${currentUserId}`, JSON.stringify(ids));
+    };
+    loadFavorites();
+    return () => { alive = false; };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (newMatchOpen && (matchActionTeam as any)?.play_time_start) {
+      setNewMatchTime(String((matchActionTeam as any).play_time_start).slice(0, 5));
+    }
+  }, [newMatchOpen, matchActionTeam]);
 
   // Pré-popular filtros conforme o time do usuário
   useEffect(() => {
@@ -118,11 +173,11 @@ const TimesPage = () => {
   useEffect(() => {
     if (!challengeTeam) return;
     setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-    const myHasField = (myTeam as any)?.has_field === true;
+    const myHasField = (matchActionTeam as any)?.has_field === true;
     setLocationChoice(myHasField ? "own" : "away");
     setChallengeLocation("");
     setChallengeDate("");
-  }, [challengeTeam, myTeam]);
+  }, [challengeTeam, matchActionTeam]);
 
   const toMinutes = (value?: string | null) => {
     if (!value || !value.includes(":")) return null;
@@ -154,13 +209,13 @@ const TimesPage = () => {
   });
 
   const { data: myTeamMatches = [] } = useQuery<any[]>({
-    queryKey: ["my_team_matches", (myTeam as any)?.id],
-    enabled: !!(myTeam as any)?.id,
+    queryKey: ["my_team_matches", (matchActionTeam as any)?.id],
+    enabled: !!(matchActionTeam as any)?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from("matches")
         .select("match_date,status,home_team_id,away_team_id")
-        .or(`home_team_id.eq.${(myTeam as any).id},away_team_id.eq.${(myTeam as any).id}`)
+        .or(`home_team_id.eq.${(matchActionTeam as any).id},away_team_id.eq.${(matchActionTeam as any).id}`)
         .eq("status", "confirmed");
       return data || [];
     },
@@ -290,7 +345,8 @@ const TimesPage = () => {
   };
 
   const handleConfirmChallenge = async () => {
-    if (!myTeam || !challengeTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
@@ -314,18 +370,18 @@ const TimesPage = () => {
       return;
     }
     const fallbackLocation = locationChoice === "own"
-      ? (teamAddress(myTeam) || "Campo do mandante")
+      ? (teamAddress(adminTeam) || "Campo do mandante")
       : (teamAddress(challengeTeam) || "Campo do adversário");
     const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
     const homeIsOwn = locationChoice ? locationChoice === "own" : true;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: homeIsOwn ? myTeam.id : challengeTeam.id,
-      away_team_id: homeIsOwn ? challengeTeam.id : myTeam.id,
+      home_team_id: homeIsOwn ? adminTeam.id : challengeTeam.id,
+      away_team_id: homeIsOwn ? challengeTeam.id : adminTeam.id,
       match_date,
       location,
       status: "open",
-      format: challengeTeam.format || (myTeam as any).format || "8x8",
+      format: challengeTeam.format || adminTeam.format || "8x8",
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
@@ -334,7 +390,8 @@ const TimesPage = () => {
   };
 
   const handleCreateNewMatch = async () => {
-    if (!myTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
@@ -345,17 +402,17 @@ const TimesPage = () => {
       return;
     }
     const fallbackLoc = newMatchLocationChoice === "own"
-      ? (teamAddress(myTeam) || "Meu campo")
+      ? (teamAddress(adminTeam) || "Meu campo")
       : "Campo do adversário";
     const location = hasCustom ? newMatchLocation.trim() : fallbackLoc;
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: myTeam.id,
+      home_team_id: adminTeam.id,
       away_team_id: null,
       match_date,
       location,
       status: "confirmed",
-      format: (myTeam as any).format || "8x8",
+      format: adminTeam.format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
@@ -379,12 +436,14 @@ const TimesPage = () => {
             <Badge variant="secondary">{filteredTeams.length} times</Badge>
           </div>
 
-          <Button
-            onClick={() => setNewMatchOpen(true)}
-            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
-          >
-            Desafio/Adversário sem cadastro
-          </Button>
+          {canLaunchChallenges && (
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              Desafio/Adversário sem cadastro
+            </Button>
+          )}
 
           <div className="space-y-3">
             {/* 1 - Nome do Time com autocomplete (linha inteira) */}
@@ -583,18 +642,19 @@ const TimesPage = () => {
                   ? team.play_days.map((d: string) => DIAS_SEMANA.find((x) => x.value === d)?.label || d).join(", ")
                   : "Dias não informados";
                 const isOwnTeam = myTeam?.id === team.id;
+                const canChallengeTeam = canLaunchChallenges && !isOwnTeam;
 
                 return (
                   <div
                     key={team.id}
-                    role={isOwnTeam ? undefined : "button"}
-                    tabIndex={isOwnTeam ? -1 : 0}
-                    onClick={() => { if (!isOwnTeam) setChallengeTeam(team); }}
+                    role={canChallengeTeam ? "button" : undefined}
+                    tabIndex={canChallengeTeam ? 0 : -1}
+                    onClick={() => { if (canChallengeTeam) setChallengeTeam(team); }}
                     onKeyDown={(e) => {
-                      if (isOwnTeam) return;
+                      if (!canChallengeTeam) return;
                       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChallengeTeam(team); }
                     }}
-                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${isOwnTeam ? "opacity-80" : "cursor-pointer hover:border-primary/50"}`}
+                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${canChallengeTeam ? "cursor-pointer hover:border-primary/50" : "opacity-80"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
@@ -637,7 +697,7 @@ const TimesPage = () => {
                       </button>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    {!isOwnTeam ? (
+                    {canChallengeTeam ? (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setChallengeTeam(team); }}
@@ -645,9 +705,9 @@ const TimesPage = () => {
                       >
                         Toque para desafiar →
                       </button>
-                    ) : (
+                    ) : isOwnTeam ? (
                       <p className="mt-3 text-center text-[10px] font-semibold text-muted-foreground">Este é seu time</p>
-                    )}
+                    ) : null}
                   </div>
                 );
 
@@ -671,7 +731,7 @@ const TimesPage = () => {
             setLocationChoice("away"); setChallengeLocation("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-            const myHasField = (myTeam as any)?.has_field === true;
+            const myHasField = (matchActionTeam as any)?.has_field === true;
             const initialChoice: "own" | "away" = myHasField ? "own" : "away";
             setLocationChoice(initialChoice);
             setChallengeLocation("");
@@ -817,7 +877,7 @@ const TimesPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {teamAddress(myTeam) || "Endereço não cadastrado"}
+                        {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
                       </div>
                     </div>
                   </label>
@@ -860,8 +920,8 @@ const TimesPage = () => {
         open={newMatchOpen}
         onOpenChange={(open) => {
           setNewMatchOpen(open);
-          if (open && myTeam) {
-            const t = myTeam as any;
+          if (open && matchActionTeam) {
+            const t = matchActionTeam as any;
             if (t.play_time_start) {
               setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
@@ -887,7 +947,7 @@ const TimesPage = () => {
                 <CalIcon size={14} /> Data do jogo
               </Label>
               {(() => {
-                const myPlayDays: string[] = Array.isArray((myTeam as any)?.play_days) ? (myTeam as any).play_days : [];
+                const myPlayDays: string[] = Array.isArray((matchActionTeam as any)?.play_days) ? (matchActionTeam as any).play_days : [];
                 const allowedDow = new Set(myPlayDays.map((d) => DAY_INDEX[d]).filter((n) => n !== undefined));
                 const today = new Date(); today.setHours(0, 0, 0, 0);
                 const selected = newMatchDate ? new Date(newMatchDate + "T12:00:00") : undefined;
@@ -958,15 +1018,15 @@ const TimesPage = () => {
             </div>
             <div>
               <Label htmlFor="nm-time" className="flex items-center gap-1">
-                <Clock size={14} /> Horário {(myTeam as any)?.play_time_start ? "(fixo)" : ""}
+                <Clock size={14} /> Horário {(matchActionTeam as any)?.play_time_start ? "(fixo)" : ""}
               </Label>
               <Input
                 id="nm-time"
                 type="time"
                 value={newMatchTime}
-                readOnly={!!(myTeam as any)?.play_time_start}
+                readOnly={!!(matchActionTeam as any)?.play_time_start}
                 onChange={(e) => setNewMatchTime(e.target.value)}
-                className={(myTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+                className={(matchActionTeam as any)?.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
               />
             </div>
             <div>
@@ -985,7 +1045,7 @@ const TimesPage = () => {
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {teamAddress(myTeam) || "Endereço não cadastrado"}
+                      {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
                     </div>
                   </div>
                 </label>

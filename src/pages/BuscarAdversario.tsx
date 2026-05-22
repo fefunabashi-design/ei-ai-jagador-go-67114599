@@ -16,7 +16,7 @@ import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { MultiSelect, toMultiOptions as toOptions } from "@/components/MultiSelect";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam, useCreateMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyAdminTeams, useCreateMatch } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf, CITIES_BY_UF } from "@/lib/brCities";
 
@@ -48,7 +48,13 @@ const BuscarAdversarioPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: myTeam } = useMyTeam();
+  const { data: myAdminTeams = [] } = useMyAdminTeams();
   const createMatch = useCreateMatch();
+  const matchActionTeam = useMemo(
+    () => myAdminTeams.find((team: any) => team.id === (myTeam as any)?.id) || myAdminTeams[0] || null,
+    [myAdminTeams, myTeam]
+  );
+  const canLaunchChallenges = !!matchActionTeam;
 
   // Filtros (iguais à tela de Times Cadastrados)
   const [nameQuery, setNameQuery] = useState("");
@@ -114,7 +120,8 @@ const BuscarAdversarioPage = () => {
   };
 
   const handleConfirmChallenge = async () => {
-    if (!myTeam || !challengeTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam || !challengeTeam) return;
     if (!challengeDate) { toast({ title: "Informe a data", variant: "destructive" }); return; }
     if (!challengeTime) { toast({ title: "Informe o horário", variant: "destructive" }); return; }
     if (Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0) {
@@ -128,17 +135,17 @@ const BuscarAdversarioPage = () => {
       }
     }
     const fallbackLocation = locationChoice === "own"
-      ? ((myTeam as any).field_address || (myTeam as any).field_name || "Campo do mandante")
+      ? (adminTeam.field_address || adminTeam.field_name || "Campo do mandante")
       : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: locationChoice === "own" ? myTeam.id : challengeTeam.id,
-      away_team_id: locationChoice === "own" ? challengeTeam.id : myTeam.id,
+      home_team_id: locationChoice === "own" ? adminTeam.id : challengeTeam.id,
+      away_team_id: locationChoice === "own" ? challengeTeam.id : adminTeam.id,
       match_date,
       location,
       status: "open",
-      format: challengeTeam.format || (myTeam as any).format || "8x8",
+      format: challengeTeam.format || adminTeam.format || "8x8",
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
@@ -147,19 +154,20 @@ const BuscarAdversarioPage = () => {
   };
 
   const handleCreateNewMatch = async () => {
-    if (!myTeam) return;
+    const adminTeam = matchActionTeam as any;
+    if (!adminTeam) return;
     if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: myTeam.id,
+      home_team_id: adminTeam.id,
       away_team_id: null,
       match_date,
       location: newMatchLocation.trim(),
       status: "confirmed",
-      format: (myTeam as any).format || "8x8",
+      format: adminTeam.format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
@@ -271,12 +279,14 @@ const BuscarAdversarioPage = () => {
             <Badge variant="secondary">{filteredOpponentTeams.length} times</Badge>
           </div>
 
-          <Button
-            onClick={() => setNewMatchOpen(true)}
-            className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
-          >
-            Desafio/Adversário sem cadastro
-          </Button>
+          {canLaunchChallenges && (
+            <Button
+              onClick={() => setNewMatchOpen(true)}
+              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
+            >
+              Desafio/Adversário sem cadastro
+            </Button>
+          )}
 
           <div className="space-y-3">
             {/* Nome do Time com autocomplete (linha inteira) */}
@@ -443,8 +453,9 @@ const BuscarAdversarioPage = () => {
                   <button
                     key={team.id}
                     type="button"
-                    onClick={() => setChallengeTeam(team)}
-                    className="w-full text-left rounded-xl border border-border bg-background p-3 hover:border-primary/50 transition-colors"
+                    disabled={!canLaunchChallenges}
+                    onClick={() => { if (canLaunchChallenges) setChallengeTeam(team); }}
+                    className={`w-full text-left rounded-xl border border-border bg-background p-3 transition-colors ${canLaunchChallenges ? "hover:border-primary/50" : "opacity-80"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -462,7 +473,7 @@ const BuscarAdversarioPage = () => {
                       </div>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>
+                    {canLaunchChallenges && <p className="mt-1 text-[10px] font-semibold text-primary">Toque para desafiar →</p>}
                   </button>
                 );
               })
@@ -563,7 +574,7 @@ const BuscarAdversarioPage = () => {
                     const choice = v as "own" | "away";
                     setLocationChoice(choice);
                     const addr = choice === "own"
-                      ? ((myTeam as any)?.field_address || (myTeam as any)?.field_name || "")
+                      ? ((matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "")
                       : (challengeTeam.field_address || challengeTeam.field_name || "");
                     setChallengeLocation(addr);
                   }}
@@ -576,7 +587,7 @@ const BuscarAdversarioPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                        {(matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "Endereço não cadastrado"}
                       </div>
                     </div>
                   </label>
@@ -616,8 +627,8 @@ const BuscarAdversarioPage = () => {
         open={newMatchOpen}
         onOpenChange={(open) => {
           setNewMatchOpen(open);
-          if (open && myTeam) {
-            const t = myTeam as any;
+          if (open && matchActionTeam) {
+            const t = matchActionTeam as any;
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
             if (!newMatchLocation && (t.field_address || t.field_name)) {
               setNewMatchLocation(t.field_address || t.field_name);
@@ -650,7 +661,7 @@ const BuscarAdversarioPage = () => {
                   const choice = v as "own" | "away";
                   setNewMatchLocationChoice(choice);
                   if (choice === "own") {
-                    const t = myTeam as any;
+                    const t = matchActionTeam as any;
                     setNewMatchLocation(t?.field_address || t?.field_name || "");
                   } else {
                     setNewMatchLocation("");
@@ -663,7 +674,7 @@ const BuscarAdversarioPage = () => {
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {(myTeam as any)?.field_address || (myTeam as any)?.field_name || "Endereço não cadastrado"}
+                      {(matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "Endereço não cadastrado"}
                     </div>
                   </div>
                 </label>
