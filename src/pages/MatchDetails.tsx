@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import BottomNav from "@/components/BottomNav";
-import PlayerSummons from "@/components/PlayerSummons";
+import MatchConfirmationList from "@/components/MatchConfirmationList";
 import { useMatches, useMyTeam, useUpdateMatch } from "@/hooks/useSupabaseData";
 
 const MatchDetails = () => {
