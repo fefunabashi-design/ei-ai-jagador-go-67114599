@@ -66,7 +66,11 @@ const MatchDetails = () => {
 
   const handleReschedule = async () => {
     if (!newDate) return;
-    await updateMatch.mutateAsync({ id: match.id, match_date: new Date(newDate).toISOString() });
+    await updateMatch.mutateAsync({
+      id: match.id,
+      match_date: new Date(newDate).toISOString(),
+      status: "open",
+    });
     setRescheduleOpen(false);
     setNewDate("");
   };
