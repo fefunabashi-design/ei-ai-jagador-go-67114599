@@ -1390,9 +1390,13 @@ export type Database = {
           addr_numero: string | null
           addr_rua: string | null
           addr_uf: string | null
+          admin_name: string | null
+          admin_phone: string | null
           categoria: string | null
+          coach_name: string | null
           created_at: string | null
           estilo: string | null
+          field_address: string | null
           field_name: string | null
           format: string | null
           foundation_date: string | null
@@ -1404,6 +1408,7 @@ export type Database = {
           logo_url: string | null
           name: string | null
           owner_id: string | null
+          phone: string | null
           play_days: string[] | null
           play_time_end: string | null
           play_time_start: string | null
@@ -1420,9 +1425,13 @@ export type Database = {
           addr_numero?: string | null
           addr_rua?: string | null
           addr_uf?: string | null
+          admin_name?: string | null
+          admin_phone?: string | null
           categoria?: string | null
+          coach_name?: string | null
           created_at?: string | null
           estilo?: string | null
+          field_address?: string | null
           field_name?: string | null
           format?: string | null
           foundation_date?: string | null
@@ -1434,6 +1443,7 @@ export type Database = {
           logo_url?: string | null
           name?: string | null
           owner_id?: string | null
+          phone?: string | null
           play_days?: string[] | null
           play_time_end?: string | null
           play_time_start?: string | null
@@ -1450,9 +1460,13 @@ export type Database = {
           addr_numero?: string | null
           addr_rua?: string | null
           addr_uf?: string | null
+          admin_name?: string | null
+          admin_phone?: string | null
           categoria?: string | null
+          coach_name?: string | null
           created_at?: string | null
           estilo?: string | null
+          field_address?: string | null
           field_name?: string | null
           format?: string | null
           foundation_date?: string | null
@@ -1464,6 +1478,7 @@ export type Database = {
           logo_url?: string | null
           name?: string | null
           owner_id?: string | null
+          phone?: string | null
           play_days?: string[] | null
           play_time_end?: string | null
           play_time_start?: string | null
