@@ -82,7 +82,7 @@ const MatchDetails = () => {
       icon: ListChecks,
       label: "Confirmações",
       description: "Ver quem confirmou presença",
-      onClick: () => navigate(`/agenda?matchId=${match.id}&view=summons`),
+      onClick: () => setConfirmOpen(true),
     },
     {
       icon: Users,
