@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import BottomNav from "@/components/BottomNav";
+import MatchConfirmationList from "@/components/MatchConfirmationList";
 
 import { useMatches, useMyTeam, useUpdateMatch } from "@/hooks/useSupabaseData";
 
@@ -38,6 +39,7 @@ const MatchDetails = () => {
   
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
 
   if (!match) {
@@ -80,7 +82,7 @@ const MatchDetails = () => {
       icon: ListChecks,
       label: "Confirmações",
       description: "Ver quem confirmou presença",
-      onClick: () => navigate(`/agenda?matchId=${match.id}&view=summons`),
+      onClick: () => setConfirmOpen(true),
     },
     {
       icon: Users,
@@ -180,6 +182,18 @@ const MatchDetails = () => {
         </div>
       </div>
 
+      {/* Confirmações */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
+          </DialogHeader>
+          <MatchConfirmationList
+            matchId={match.id}
+            teamId={myIsHome ? homeTeam?.id : awayTeam?.id}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Reagendar */}
       <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
