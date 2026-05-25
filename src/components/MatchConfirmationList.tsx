@@ -151,7 +151,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
             </div>
           )}
         </div>
-      ) : null}
+      </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-secondary/40 rounded-2xl p-3 border border-success/20">
