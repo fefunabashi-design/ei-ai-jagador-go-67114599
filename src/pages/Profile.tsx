@@ -67,6 +67,19 @@ const ProfilePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved]);
 
+  // Intercept browser/Android back button to close the dialog first
+  useEffect(() => {
+    if (!editOpen) return;
+    window.history.pushState({ dialog: "editProfile" }, "");
+    const onPopState = () => {
+      setEditOpen(false);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [editOpen]);
+
   useEffect(() => {
     if (!editOpen || cityOptions.length > 0) return;
     fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
