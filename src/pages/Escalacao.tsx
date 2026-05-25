@@ -256,7 +256,7 @@ export default function EscalacaoPage() {
       )}
 
       {/* Campo + Sidebar */}
-      <div className="relative grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto flex-1 min-h-0 w-full">
+      <div className="relative grid grid-cols-[1fr_120px] md:grid-cols-[1fr_240px] gap-2 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto flex-1 min-h-0 w-full">
 
         {/* Campo SVG */}
         <div className="min-w-0 bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur flex flex-col min-h-0">
