@@ -241,7 +241,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
         </p>
         <div className="grid grid-cols-3 gap-2">
           <Button
-            onClick={() => handleMine("confirmed")}
+            onClick={() => { setGuestOpen(false); setPickReason(false); handleMine("confirmed"); }}
             disabled={createSummon.isPending || !myPlayerId}
             className={cn(
               "h-11 text-xs font-semibold border px-2",
@@ -255,6 +255,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
           <Button
             variant="outline"
             onClick={() => {
+              setGuestOpen(false);
               if (myStatus !== "declined") handleMine("declined", null);
               setPickReason((v) => !v || myStatus !== "declined");
             }}
@@ -269,7 +270,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setGuestOpen((v) => !v)}
+            onClick={() => { setPickReason(false); setGuestOpen((v) => !v); }}
             className={cn(
               "h-11 text-xs font-semibold px-2",
               guestOpen && "bg-primary text-primary-foreground border-primary hover:bg-primary/90",
@@ -278,6 +279,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
             <UserPlus size={14} className="mr-1" /> Convidado
           </Button>
         </div>
+
 
         {(pickReason || (myStatus === "declined" && !mySummon?.absence_reason)) && (
           <div className="mt-3">
