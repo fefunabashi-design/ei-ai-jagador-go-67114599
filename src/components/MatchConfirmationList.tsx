@@ -334,30 +334,36 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {/* Jogadores - roster completo */}
-        <div className="bg-secondary/40 rounded-2xl p-3 border border-border/40">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Users size={14} className="text-foreground" />
-            <p className="text-xs font-bold text-foreground">
-              Jogadores <span className="text-muted-foreground font-semibold">({players.length})</span>
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            {players.length === 0 && (
-              <p className="text-[11px] text-muted-foreground py-2">Sem jogadores</p>
-            )}
-            {players.map((p) => (
-              <div key={p.id} className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                  {getInitials(p.name || "")}
+      {/* Pendentes - lista vertical entre os botões e as colunas */}
+      {(() => {
+        const pendingList = players.filter((p) => {
+          const s = summonByPlayer[p.id]?.status;
+          return s !== "confirmed" && s !== "declined";
+        });
+        if (pendingList.length === 0) return null;
+        return (
+          <div className="bg-secondary/40 rounded-2xl p-3 border border-border/40">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Users size={14} className="text-foreground" />
+              <p className="text-xs font-bold text-foreground">
+                Aguardando confirmação <span className="text-muted-foreground font-semibold">({pendingList.length})</span>
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {pendingList.map((p) => (
+                <div key={p.id} className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                    {getInitials(p.name || "")}
+                  </div>
+                  <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
                 </div>
-                <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        );
+      })()}
 
+      <div className="grid grid-cols-2 gap-2">
         {/* Confirmados (jogadores + convidados) */}
         <div className="bg-secondary/40 rounded-2xl p-3 border border-success/20">
           <div className="flex items-center gap-1.5 mb-2">
@@ -434,6 +440,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
           </div>
         </div>
       </div>
+
     </div>
   );
 };
