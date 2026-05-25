@@ -35,7 +35,7 @@ const MatchDetails = () => {
 
   const match = useMemo(() => matches.find((m: any) => m.id === matchId), [matches, matchId]);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
