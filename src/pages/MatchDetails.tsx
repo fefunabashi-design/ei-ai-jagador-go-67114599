@@ -88,7 +88,7 @@ const MatchDetails = () => {
       icon: Users,
       label: "Escalação do time",
       description: "Montar e visualizar a escalação",
-      onClick: () => navigate(`/agenda?matchId=${match.id}`),
+      onClick: () => navigate(`/agenda?matchId=${match.id}&view=lineup`),
     },
     {
       icon: Shield,
