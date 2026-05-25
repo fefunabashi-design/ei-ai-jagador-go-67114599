@@ -25,17 +25,69 @@ const REASONS = [
 
 const reasonOf = (r?: string | null) => REASONS.find((x) => x.id === r);
 
+const normalizeText = (value?: string | null) =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+const onlyDigits = (value?: string | null) => (value || "").replace(/\D/g, "");
+
+const findMyPlayer = (rows: any[], uid?: string, email?: string | null, profile?: any) => {
+  const linked = rows.find((p: any) => p.user_id === uid);
+  if (linked) return linked;
+
+  const authEmail = normalizeText(email);
+  const profilePhone = onlyDigits(profile?.phone);
+  const profileFirst = normalizeText(profile?.display_name);
+  const profileLast = normalizeText(profile?.last_name);
+  const profileNickname = normalizeText(profile?.nickname);
+  const profileFull = normalizeText([profile?.display_name, profile?.last_name].filter(Boolean).join(" "));
+
+  let best: any = null;
+  let bestScore = 0;
+
+  for (const player of rows) {
+    let score = 0;
+    const playerEmail = normalizeText(player.email);
+    const playerPhone = onlyDigits(player.phone);
+    const playerName = normalizeText(player.name);
+    const playerLast = normalizeText(player.last_name);
+    const playerDisplay = normalizeText(player.display_name);
+    const playerNickname = normalizeText(player.nickname);
+    const playerFull = normalizeText([player.name, player.last_name].filter(Boolean).join(" "));
+
+    if (authEmail && playerEmail === authEmail) score += 30;
+    if (profilePhone && playerPhone === profilePhone) score += 25;
+    if (profileNickname && (playerNickname === profileNickname || playerDisplay === profileNickname)) score += 25;
+    if (profileFirst && (playerName === profileFirst || playerDisplay === profileFirst)) score += 15;
+    if (profileLast && playerLast === profileLast) score += 10;
+    if (profileFull && playerFull === profileFull) score += 25;
+
+    if (score > bestScore) {
+      best = player;
+      bestScore = score;
+    }
+  }
+
+  return bestScore >= 30 ? best : null;
+};
+
 const MatchConfirmationList = ({ matchId, teamId }: Props) => {
   const { data: summons = [] } = useMatchSummons(matchId);
   const createSummon = useCreateSummons();
   const [players, setPlayers] = useState<any[]>([]);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [lookupDone, setLookupDone] = useState(false);
   const [pickReason, setPickReason] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      if (!teamId) return;
+      setLookupDone(false);
+      setMyPlayerId(null);
+      if (!teamId) { setLookupDone(true); return; }
       const { data = [] } = await supabase
         .from("players")
         .select("*")
@@ -46,9 +98,16 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth?.user?.id;
       if (uid) {
-        const mine = (data || []).find((p: any) => p.user_id === uid);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name,last_name,nickname,phone")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (!alive) return;
+        const mine = findMyPlayer(data || [], uid, auth?.user?.email, profile);
         setMyPlayerId(mine?.id || null);
       }
+      setLookupDone(true);
     })();
     return () => { alive = false; };
   }, [teamId]);
@@ -84,7 +143,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
   return (
     <div className="space-y-4">
       <div className="bg-secondary/60 rounded-2xl p-3 border border-border/50">
-        {!myPlayerId && (
+        {lookupDone && !myPlayerId && (
           <p className="text-[11px] text-warning mb-2">
             Seu perfil não está vinculado a um jogador deste time.
           </p>
