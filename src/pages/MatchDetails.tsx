@@ -39,6 +39,7 @@ const MatchDetails = () => {
   
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
 
   if (!match) {
