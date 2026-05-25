@@ -189,7 +189,10 @@ const ProfilePage = () => {
       {/* Top bar com voltar */}
       <div className="px-5 pt-4 pb-2 flex items-center gap-3">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (window.history.length > 1) navigate(-1);
+            else navigate("/");
+          }}
           aria-label="Voltar"
           className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center"
         >
