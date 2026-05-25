@@ -30,7 +30,7 @@ type ProfileRow = {
 
 type SummonRow = {
   player_id: string;
-  status?: "confirmed" | "declined" | "pending" | string | null;
+  status?: "confirmed" | "declined" | "pending" | null;
   absence_reason?: string | null;
 };
 
