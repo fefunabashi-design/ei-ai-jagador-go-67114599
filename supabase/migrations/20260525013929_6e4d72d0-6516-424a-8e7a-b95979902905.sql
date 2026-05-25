@@ -1,0 +1,1 @@
+ALTER TABLE public.match_summons ADD COLUMN IF NOT EXISTS absence_reason text;

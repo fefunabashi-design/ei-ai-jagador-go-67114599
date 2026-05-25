@@ -335,6 +335,7 @@ export type Database = {
       }
       match_summons: {
         Row: {
+          absence_reason: string | null
           created_at: string
           id: string
           match_id: string
@@ -344,6 +345,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          absence_reason?: string | null
           created_at?: string
           id?: string
           match_id: string
@@ -353,6 +355,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          absence_reason?: string | null
           created_at?: string
           id?: string
           match_id?: string
