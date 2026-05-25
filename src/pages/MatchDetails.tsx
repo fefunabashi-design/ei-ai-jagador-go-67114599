@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import BottomNav from "@/components/BottomNav";
-import MatchConfirmationList from "@/components/MatchConfirmationList";
+
 import { useMatches, useMyTeam, useUpdateMatch } from "@/hooks/useSupabaseData";
 
 const MatchDetails = () => {
@@ -35,7 +35,7 @@ const MatchDetails = () => {
 
   const match = useMemo(() => matches.find((m: any) => m.id === matchId), [matches, matchId]);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [newDate, setNewDate] = useState("");
@@ -80,7 +80,7 @@ const MatchDetails = () => {
       icon: ListChecks,
       label: "Confirmações",
       description: "Ver quem confirmou presença",
-      onClick: () => setConfirmOpen(true),
+      onClick: () => navigate(`/agenda?matchId=${match.id}&view=summons`),
     },
     {
       icon: Users,
@@ -180,15 +180,6 @@ const MatchDetails = () => {
         </div>
       </div>
 
-      {/* Confirmações */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="bg-card border-border max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
-          </DialogHeader>
-          <MatchConfirmationList matchId={match.id} teamId={(match as any).home_team_id || homeTeam?.id} />
-        </DialogContent>
-      </Dialog>
 
       {/* Reagendar */}
       <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
