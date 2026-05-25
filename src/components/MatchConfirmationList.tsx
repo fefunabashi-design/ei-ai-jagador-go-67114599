@@ -28,6 +28,12 @@ type ProfileRow = {
   phone?: string | null;
 } | null;
 
+type SummonRow = {
+  player_id: string;
+  status?: "confirmed" | "declined" | "pending" | string | null;
+  absence_reason?: string | null;
+};
+
 const getInitials = (name: string) => {
   const parts = (name || "").trim().split(/\s+/);
   if (!parts[0]) return "?";
@@ -131,16 +137,10 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
   }, [teamId]);
 
   const summonByPlayer = useMemo(() => {
-    const m: Record<string, any> = {};
-    for (const s of summons) m[s.player_id] = s;
+    const m: Record<string, SummonRow> = {};
+    for (const s of summons as SummonRow[]) m[s.player_id] = s;
     return m;
   }, [summons]);
-
-  const playerById = useMemo(() => {
-    const m: Record<string, any> = {};
-    for (const p of players) m[p.id] = p;
-    return m;
-  }, [players]);
 
   const mySummon = myPlayerId ? summonByPlayer[myPlayerId] : null;
   const myStatus: "confirmed" | "declined" | "pending" = mySummon?.status || "pending";
