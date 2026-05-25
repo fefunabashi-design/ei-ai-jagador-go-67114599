@@ -180,15 +180,6 @@ const MatchDetails = () => {
         </div>
       </div>
 
-      {/* Confirmações */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="bg-card border-border max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
-          </DialogHeader>
-          <MatchConfirmationList matchId={match.id} teamId={(match as any).home_team_id || homeTeam?.id} />
-        </DialogContent>
-      </Dialog>
 
       {/* Reagendar */}
       <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
