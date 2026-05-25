@@ -83,8 +83,12 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
 
   return (
     <div className="space-y-4">
-      {myPlayerId ? (
-        <div className="bg-secondary/60 rounded-2xl p-3 border border-border/50">
+      <div className="bg-secondary/60 rounded-2xl p-3 border border-border/50">
+        {!myPlayerId && (
+          <p className="text-[11px] text-warning mb-2">
+            Seu perfil não está vinculado a um jogador deste time.
+          </p>
+        )}
           <p className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
             Minha presença
           </p>
@@ -147,7 +151,8 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
             </div>
           )}
         </div>
-      ) : null}
+
+
 
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-secondary/40 rounded-2xl p-3 border border-success/20">
