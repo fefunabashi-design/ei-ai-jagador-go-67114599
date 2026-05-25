@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import BottomNav from "@/components/BottomNav";
-import PlayerSummons from "@/components/PlayerSummons";
+import MatchConfirmationList from "@/components/MatchConfirmationList";
 import { useMatches, useMyTeam, useUpdateMatch } from "@/hooks/useSupabaseData";
 
 const MatchDetails = () => {
@@ -186,7 +186,7 @@ const MatchDetails = () => {
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
           </DialogHeader>
-          <PlayerSummons />
+          <MatchConfirmationList matchId={match.id} teamId={(match as any).home_team_id || homeTeam?.id} />
         </DialogContent>
       </Dialog>
 

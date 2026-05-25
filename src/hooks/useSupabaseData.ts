@@ -491,20 +491,20 @@ export const useMatchSummons = (matchId?: string) => {
 export const useCreateSummons = () => {
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
-  // payload: { matchId, playerId, status }
-  const mutate = async (payload: { matchId: string; playerId: string; status: "pending" | "confirmed" | "declined" }) => {
+  const mutate = async (payload: { matchId: string; playerId: string; status: "pending" | "confirmed" | "declined"; absenceReason?: string | null }) => {
     setIsPending(true);
     try {
+      const reason = payload.status === "declined" ? (payload.absenceReason ?? null) : null;
       const { data: existing } = await supabase.from("match_summons")
         .select("id").eq("match_id", payload.matchId).eq("player_id", payload.playerId).maybeSingle();
       if (existing) {
         const { error } = await supabase.from("match_summons")
-          .update({ status: payload.status, responded_at: new Date().toISOString() })
+          .update({ status: payload.status, absence_reason: reason, responded_at: new Date().toISOString() })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("match_summons")
-          .insert({ match_id: payload.matchId, player_id: payload.playerId, status: payload.status });
+          .insert({ match_id: payload.matchId, player_id: payload.playerId, status: payload.status, absence_reason: reason });
         if (error) throw error;
       }
       emitChange();
