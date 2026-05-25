@@ -10,6 +10,24 @@ interface Props {
   teamId?: string;
 }
 
+type PlayerRow = {
+  id: string;
+  user_id?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+  nickname?: string | null;
+};
+
+type ProfileRow = {
+  display_name?: string | null;
+  last_name?: string | null;
+  nickname?: string | null;
+  phone?: string | null;
+} | null;
+
 const getInitials = (name: string) => {
   const parts = (name || "").trim().split(/\s+/);
   if (!parts[0]) return "?";
@@ -34,8 +52,8 @@ const normalizeText = (value?: string | null) =>
 
 const onlyDigits = (value?: string | null) => (value || "").replace(/\D/g, "");
 
-const findMyPlayer = (rows: any[], uid?: string, email?: string | null, profile?: any) => {
-  const linked = rows.find((p: any) => p.user_id === uid);
+const findMyPlayer = (rows: PlayerRow[], uid?: string, email?: string | null, profile?: ProfileRow) => {
+  const linked = rows.find((p) => p.user_id === uid);
   if (linked) return linked;
 
   const authEmail = normalizeText(email);
@@ -45,7 +63,7 @@ const findMyPlayer = (rows: any[], uid?: string, email?: string | null, profile?
   const profileNickname = normalizeText(profile?.nickname);
   const profileFull = normalizeText([profile?.display_name, profile?.last_name].filter(Boolean).join(" "));
 
-  let best: any = null;
+  let best: PlayerRow | null = null;
   let bestScore = 0;
 
   for (const player of rows) {
@@ -77,7 +95,7 @@ const findMyPlayer = (rows: any[], uid?: string, email?: string | null, profile?
 const MatchConfirmationList = ({ matchId, teamId }: Props) => {
   const { data: summons = [] } = useMatchSummons(matchId);
   const createSummon = useCreateSummons();
-  const [players, setPlayers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [lookupDone, setLookupDone] = useState(false);
   const [pickReason, setPickReason] = useState(false);
@@ -104,7 +122,7 @@ const MatchConfirmationList = ({ matchId, teamId }: Props) => {
           .eq("user_id", uid)
           .maybeSingle();
         if (!alive) return;
-        const mine = findMyPlayer(data || [], uid, auth?.user?.email, profile);
+        const mine = findMyPlayer((data || []) as PlayerRow[], uid, auth?.user?.email, profile as ProfileRow);
         setMyPlayerId(mine?.id || null);
       }
       setLookupDone(true);
