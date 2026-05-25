@@ -75,6 +75,7 @@ const AgendaPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusMatchId = searchParams.get("matchId");
+  const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
   const [filter, setFilter] = useState<FilterType>(focusMatchId ? "upcoming" : "upcoming");
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
