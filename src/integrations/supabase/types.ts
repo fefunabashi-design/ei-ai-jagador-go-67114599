@@ -193,6 +193,33 @@ export type Database = {
           },
         ]
       }
+      match_guests: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          inviter_name: string | null
+          match_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          inviter_name?: string | null
+          match_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          inviter_name?: string | null
+          match_id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       match_lineups: {
         Row: {
           created_at: string
