@@ -180,9 +180,9 @@ const AgendaPage = () => {
     const t = setTimeout(() => {
       const el = matchRefs.current[focusMatchId];
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      if (focusView === "summons") {
+      if (focusView === "summons" || focusView === "lineup" || focusView === "field") {
         const m = matches.find((x: any) => x.id === focusMatchId);
-        if (m) openDetails(m, "summons");
+        if (m) openDetails(m, focusView);
       }
       const t2 = setTimeout(() => {
         setHighlightedMatchId(null);
