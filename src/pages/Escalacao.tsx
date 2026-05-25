@@ -256,7 +256,7 @@ export default function EscalacaoPage() {
       )}
 
       {/* Campo + Sidebar */}
-      <div className="relative grid grid-cols-1 md:grid-cols-[1fr_240px] gap-3 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto flex-1 min-h-0 w-full">
+      <div className="relative grid grid-cols-[1fr_120px] md:grid-cols-[1fr_240px] gap-2 md:gap-4 px-3 md:px-6 max-w-6xl mx-auto flex-1 min-h-0 w-full">
 
         {/* Campo SVG */}
         <div className="min-w-0 bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur flex flex-col min-h-0">
@@ -391,43 +391,13 @@ export default function EscalacaoPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur md:flex md:flex-col min-h-0">
+        <div className="bg-gradient-to-b from-card to-card/80 border border-white/10 rounded-2xl p-2 md:p-3 shadow-[0_16px_40px_-30px_hsl(var(--primary))] backdrop-blur flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Confirmados</p>
+            <p className="text-[10px] font-bold text-success uppercase tracking-wider">Confirmados</p>
             <span className="text-[10px] text-muted-foreground font-semibold">{available.length}</span>
           </div>
 
-          {/* Mobile: lista horizontal */}
-          <div className="md:hidden overflow-x-auto">
-            <div className="flex gap-2 pb-1">
-              {available.length===0 && <p className="text-[10px] text-muted-foreground py-2">Todos escalados</p>}
-              {available.map(p=>{
-                const isSel=sel?.id===p.id&&sel.from==="list";
-                return (
-                  <button
-                    key={p.id}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = "move";
-                      setDraggingPlayer({ id: p.id, name: p.name });
-                    }}
-                    onDragEnd={() => setDraggingPlayer(null)}
-                    onClick={()=>doSelect({id:p.id,name:p.name,from:"list"})}
-                    className={`min-w-[110px] rounded-xl px-2 py-2 flex items-center gap-2 transition-all ${
-                      isSel?"bg-yellow-400/25 border border-yellow-400 shadow-[0_8px_20px_-16px_#facc15]":"bg-background/60 border border-border/80 hover:border-primary/30"}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                      isSel?"bg-yellow-400 text-black":"bg-primary/15 text-primary"}`}>
-                      {p.name.slice(0,1).toUpperCase()}
-                    </div>
-                    <span className="text-[10px] font-semibold text-foreground truncate">{p.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Desktop: lista vertical */}
-          <div className="hidden md:block overflow-y-auto space-y-1 flex-1 min-h-0 pr-1">
+          <div className="overflow-y-auto space-y-1 flex-1 min-h-0 pr-1">
             {available.length===0 && <p className="text-[10px] text-muted-foreground text-center py-2 leading-tight">Todos escalados</p>}
             {available.map(p=>{
               const isSel=sel?.id===p.id&&sel.from==="list";
@@ -441,13 +411,13 @@ export default function EscalacaoPage() {
                   }}
                   onDragEnd={() => setDraggingPlayer(null)}
                   onClick={()=>doSelect({id:p.id,name:p.name,from:"list"})}
-                  className={`w-full rounded-lg px-2 py-1.5 flex items-center gap-2 transition-all ${
+                  className={`w-full rounded-lg px-1.5 py-1.5 flex items-center gap-1.5 transition-all ${
                     isSel?"bg-yellow-400/25 border border-yellow-400 shadow-[0_8px_20px_-16px_#facc15]":"bg-background/60 border border-border/80 hover:border-primary/30"}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                  <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] font-bold shrink-0 ${
                     isSel?"bg-yellow-400 text-black":"bg-primary/15 text-primary"}`}>
                     {p.name.slice(0,1).toUpperCase()}
                   </div>
-                  <span className="text-xs font-semibold text-foreground leading-tight truncate">{p.name}</span>
+                  <span className="text-[10px] md:text-xs font-semibold text-foreground leading-tight truncate text-left">{p.name}</span>
                 </button>
               );
             })}
