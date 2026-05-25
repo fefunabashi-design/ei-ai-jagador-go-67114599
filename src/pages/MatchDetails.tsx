@@ -186,7 +186,7 @@ const MatchDetails = () => {
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
           </DialogHeader>
-          <PlayerSummons />
+          <MatchConfirmationList matchId={match.id} teamId={(match as any).home_team_id || homeTeam?.id} />
         </DialogContent>
       </Dialog>
 
