@@ -132,7 +132,8 @@ const OpponentDetails = () => {
                 <div className="space-y-3 text-sm">
                   <InfoRow label="Nome do time" value={opponent.name} />
                   <InfoRow label="Subcategoria" value={opponent.sub_categoria} />
-                  <InfoRow icon={MapPin} label="Endereço do campo / sede" value={fullAddress} />
+                  <InfoRow label={opponent.has_field ? "Nome do campo" : "Nome da sede"} value={opponent.field_name} />
+                  <InfoRow icon={MapPin} label={opponent.has_field ? "Endereço do campo" : "Endereço da sede"} value={fullAddress} />
                   <InfoRow icon={Phone} label="Telefone do campo" value={opponent.phone} />
                   <InfoRow icon={UserCog} label="Nome do técnico" value={opponent.coach_name} />
                   <InfoRow icon={User} label="Admin do app" value={opponent.admin_name} />

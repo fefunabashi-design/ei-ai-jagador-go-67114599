@@ -392,6 +392,8 @@ const TeamPage = () => {
     );
     if (teamForm.has_field === "com") {
       req.push(["Nome da Arena", teamForm.field_name.trim(), "tf-field_name"]);
+    } else if (teamForm.has_field === "sem") {
+      req.push(["Nome da Sede", teamForm.field_name.trim(), "tf-field_name"]);
     }
     const missing = req.find(([, v]) => !v);
     if (missing) {
@@ -1335,18 +1337,18 @@ const TeamFormDialog = ({
                     onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
                   />
                 </div>
-                {hasField && (
-                  <div>
-                    <Label htmlFor="tf-field_name">Nome da Arena *</Label>
-                    <Input
-                      id="tf-field_name"
-                      value={form.field_name}
-                      onChange={(e) => setField("field_name", e.target.value)}
-                      placeholder="Ex: Arena do time"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor="tf-field_name">
+                    {hasField ? "Nome da Arena *" : "Nome da Sede *"}
+                  </Label>
+                  <Input
+                    id="tf-field_name"
+                    value={form.field_name}
+                    onChange={(e) => setField("field_name", e.target.value)}
+                    placeholder={hasField ? "Ex: Arena do time" : "Ex: Sede do time"}
+                    className="bg-secondary border-border"
+                  />
+                </div>
                 <p className="text-sm font-semibold text-foreground">
                   {hasField ? `Endereço da ${termoCap}` : "Endereço da Sede"}
                 </p>
