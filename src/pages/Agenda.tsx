@@ -86,6 +86,18 @@ const AgendaPage = () => {
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
+  const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const awayId = (selectedMatch as any)?.away_team?.id;
+      if (!awayId || detailView !== "details") { setOpponentPlayers([]); return; }
+      const { data: pls } = await supabase.from("players").select("*").eq("team_id", awayId);
+      if (!cancelled) setOpponentPlayers(pls || []);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, detailView]);
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
@@ -668,7 +680,7 @@ const AgendaPage = () => {
                   { label: "Local", value: selectedMatch.location },
                   { label: "Data", value: new Date(selectedMatch.match_date).toLocaleDateString("pt-BR", { dateStyle: "long" }) },
                   { label: "Hora", value: new Date(selectedMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) },
-                  { label: "Formato", value: selectedMatch.format },
+                  { label: "Desafiador", value: (selectedMatch.home_team as any)?.name },
                   { label: "Mandante", value: (selectedMatch.home_team as any)?.name },
                   { label: "Visitante", value: (selectedMatch.away_team as any)?.name || "Aguardando" },
                 ].map((item) => (
@@ -678,6 +690,59 @@ const AgendaPage = () => {
                   </div>
                 ))}
               </div>
+
+              {(() => {
+                const opp: any = (selectedMatch as any).away_team;
+                if (!opp) return null;
+                const addressParts = [
+                  opp.field_address,
+                  [opp.addr_rua, opp.addr_numero].filter(Boolean).join(", "),
+                  opp.addr_bairro,
+                  [opp.addr_cidade, opp.addr_uf].filter(Boolean).join(" - "),
+                  opp.addr_cep,
+                ].filter((s) => s && String(s).trim().length > 0);
+                const fullAddress = addressParts.join(" · ");
+                const Row = ({ label, value }: any) => (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{label}</p>
+                    <p className="text-foreground text-sm">{value && String(value).trim().length ? value : "Não informado"}</p>
+                  </div>
+                );
+                return (
+                  <div className="mt-4 pt-4 border-t border-border space-y-4">
+                    <h3 className="font-display text-lg text-foreground">ADVERSÁRIO</h3>
+                    <div className="space-y-3">
+                      <Row label="Nome do time" value={opp.name} />
+                      <Row label="Subcategoria" value={opp.sub_categoria} />
+                      <Row label={opp.has_field ? "Nome do campo" : "Nome da sede"} value={opp.field_name} />
+                      <Row label={opp.has_field ? "Endereço do campo" : "Endereço da sede"} value={fullAddress} />
+                      <Row label="Telefone do campo" value={opp.phone} />
+                      <Row label="Nome do técnico" value={opp.coach_name} />
+                      <Row label="Admin do app" value={opp.admin_name} />
+                      <Row label="Celular do admin" value={opp.admin_phone} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                        Jogadores ({opponentPlayers.length})
+                      </p>
+                      {opponentPlayers.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {opponentPlayers.map((p: any) => {
+                            const display = p.nickname?.trim() || p.name || "Jogador";
+                            return (
+                              <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2">
+                                {display}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {selectedMatch.status === "completed" && (
                 <div className="mt-4 pt-4 border-t border-border">
