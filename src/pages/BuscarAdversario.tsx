@@ -728,6 +728,8 @@ const BuscarAdversarioPage = () => {
                       </div>
                     </label>
                   </RadioGroup>
+                  <Label htmlFor="nm-loc">Endereço do local</Label>
+                  <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
                 </div>
               );
             })()}
