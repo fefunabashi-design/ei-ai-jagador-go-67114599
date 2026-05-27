@@ -120,7 +120,7 @@ const ChatPage = () => {
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)}>
+          <button onClick={() => matchId ? navigate(`/match/${matchId}`) : navigate(-1)}>
             <ArrowLeft size={20} className="text-muted-foreground" />
           </button>
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
