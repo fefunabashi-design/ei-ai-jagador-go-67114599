@@ -223,11 +223,13 @@ const AgendaPage = () => {
 
   const openEdit = (match: any) => {
     setSelectedMatch(match);
-    setEditLocation(match.location);
+    const teamFieldName = (match.home_team as any)?.field_name;
+    setEditLocation(teamFieldName || match.location);
     setEditDate(match.match_date.slice(0, 16));
     setEditFormat(match.format);
     setEditOpen(true);
   };
+
 
   const handleCreateMatch = (e: React.FormEvent) => {
     e.preventDefault();
