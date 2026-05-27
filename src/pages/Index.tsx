@@ -29,7 +29,7 @@ const getInitials = (name: string) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { data: profile } = useProfile();
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
@@ -192,6 +192,14 @@ const Index = () => {
 
 
 
+  if (profileLoading || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
 
@@ -351,9 +359,9 @@ const Index = () => {
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col items-center gap-1 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                      {myTeam?.logo_url ? (
-                        <img src={myTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
+                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                      {homeTeam?.logo_url ? (
+                        <img src={homeTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
                       ) : (
                         <Shield size={28} className="text-primary" />
                       )}
