@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
+  Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
   Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,15 +19,27 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
+  useSendChatMessage,
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+
+const BR_HOLIDAYS_2026: string[] = [
+  "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
+  "2026-05-01","2026-09-07","2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25",
+];
+
 
 const statusStyles: Record<string, string> = {
   open: "bg-warning/10 text-warning",
