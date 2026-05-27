@@ -664,18 +664,115 @@ const AgendaPage = () => {
             </div>
             <div>
               <Label>Data e Hora</Label>
-              <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="bg-secondary border-border" required />
+              {(() => {
+                const dateValue = editDate ? new Date(editDate) : undefined;
+                const timeValue = editDate ? editDate.slice(11, 16) : "";
+                const matchDateSet = new Set(
+                  myMatches
+                    .filter((m: any) => m.id !== selectedMatch?.id)
+                    .map((m: any) => new Date(m.match_date).toDateString()),
+                );
+                const holidaySet = new Set(BR_HOLIDAYS_2026.map((s) => new Date(s + "T12:00:00").toDateString()));
+                const isAvailableDay = (d: Date) => availableDays.includes(d.getDay());
+                const modifiers = {
+                  hasMatch: (d: Date) => matchDateSet.has(d.toDateString()),
+                  holiday: (d: Date) => holidaySet.has(d.toDateString()),
+                  available: (d: Date) => isAvailableDay(d) && !matchDateSet.has(d.toDateString()) && !holidaySet.has(d.toDateString()),
+                };
+                const modifiersClassNames = {
+                  hasMatch: "bg-neutral-700 text-white hover:bg-neutral-700",
+                  holiday: "bg-red-500/80 text-white hover:bg-red-500",
+                  available: "bg-neutral-300 text-neutral-900 hover:bg-neutral-300 dark:bg-neutral-400 dark:text-neutral-900",
+                };
+                return (
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn("flex-1 justify-start text-left font-normal bg-secondary border-border", !dateValue && "text-muted-foreground")}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateValue ? formatDate(dateValue, "PPP", { locale: ptBR }) : "Selecione a data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateValue}
+                          onSelect={(d) => {
+                            if (!d) return;
+                            const time = timeValue || "20:00";
+                            const yyyy = d.getFullYear();
+                            const mm = String(d.getMonth() + 1).padStart(2, "0");
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            setEditDate(`${yyyy}-${mm}-${dd}T${time}`);
+                          }}
+                          modifiers={modifiers}
+                          modifiersClassNames={modifiersClassNames}
+                          locale={ptBR}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                        <div className="border-t border-border p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-neutral-700" />
+                            <span className="text-foreground">Jogo agendado</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-neutral-300 dark:bg-neutral-400" />
+                            <span className="text-foreground">Disponível</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-red-500/80" />
+                            <span className="text-foreground">Feriado</span>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      type="time"
+                      value={timeValue}
+                      onChange={(e) => {
+                        const t = e.target.value;
+                        const base = dateValue ?? new Date();
+                        const yyyy = base.getFullYear();
+                        const mm = String(base.getMonth() + 1).padStart(2, "0");
+                        const dd = String(base.getDate()).padStart(2, "0");
+                        setEditDate(`${yyyy}-${mm}-${dd}T${t || "20:00"}`);
+                      }}
+                      className="w-28 bg-secondary border-border"
+                      required
+                    />
+                  </div>
+                );
+              })()}
             </div>
-            <div>
-              <Label>Formato</Label>
-              <Select value={editFormat} onValueChange={setEditFormat}>
-                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5x5">5x5</SelectItem>
-                  <SelectItem value="8x8">8x8</SelectItem>
-                  <SelectItem value="11x11">11x11</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="pt-2 border-t border-border">
+              <Label>Chat da partida</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  value={editChatMessage}
+                  onChange={(e) => setEditChatMessage(e.target.value)}
+                  placeholder="Digite uma mensagem..."
+                  className="bg-secondary border-border"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!editChatMessage.trim() || !selectedMatch}
+                  onClick={async () => {
+                    if (!selectedMatch || !editChatMessage.trim()) return;
+                    await sendChatMessage.mutateAsync({ matchId: selectedMatch.id, message: editChatMessage.trim() });
+                    setEditChatMessage("");
+                    setEditOpen(false);
+                    navigate(`/chat/${selectedMatch.id}`);
+                  }}
+                >
+                  <Send size={16} />
+                </Button>
+              </div>
             </div>
             <Button type="submit" disabled={updateMatch.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar Alterações
@@ -683,6 +780,7 @@ const AgendaPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
 
       {/* Details / Lineup (Field) / Summons Dialog */}
       <Dialog open={!!detailView} onOpenChange={() => setDetailView(null)}>
