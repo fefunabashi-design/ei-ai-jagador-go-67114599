@@ -553,7 +553,7 @@ const AgendaPage = () => {
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-1"><CalendarIcon size={11} /> {dateStr}</span>
                       <span className="flex items-center gap-1"><Clock size={11} /> {timeStr}</span>
-                      <span className="flex items-center gap-1"><MapPin size={11} /> {match.location}</span>
+                      <span className="flex items-center gap-1"><MapPin size={11} /> {(match.home_team as any)?.field_name || match.location}</span>
                     </div>
 
                     {/* Summon counters */}
