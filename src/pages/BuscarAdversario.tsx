@@ -135,8 +135,8 @@ const BuscarAdversarioPage = () => {
       }
     }
     const fallbackLocation = locationChoice === "own"
-      ? (adminTeam.field_address || adminTeam.field_name || "Campo do mandante")
-      : (challengeTeam.field_address || challengeTeam.field_name || "Campo do adversário");
+      ? (adminTeam.field_name || adminTeam.field_address || "Campo do mandante")
+      : (challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
     const location = challengeLocation.trim() || fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
