@@ -29,7 +29,7 @@ const getInitials = (name: string) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { data: profile } = useProfile();
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: myTeam } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
