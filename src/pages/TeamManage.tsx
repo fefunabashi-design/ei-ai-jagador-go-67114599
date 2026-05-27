@@ -1337,18 +1337,18 @@ const TeamFormDialog = ({
                     onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
                   />
                 </div>
-                {hasField && (
-                  <div>
-                    <Label htmlFor="tf-field_name">Nome da Arena *</Label>
-                    <Input
-                      id="tf-field_name"
-                      value={form.field_name}
-                      onChange={(e) => setField("field_name", e.target.value)}
-                      placeholder="Ex: Arena do time"
-                      className="bg-secondary border-border"
-                    />
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor="tf-field_name">
+                    {hasField ? "Nome da Arena *" : "Nome da Sede *"}
+                  </Label>
+                  <Input
+                    id="tf-field_name"
+                    value={form.field_name}
+                    onChange={(e) => setField("field_name", e.target.value)}
+                    placeholder={hasField ? "Ex: Arena do time" : "Ex: Sede do time"}
+                    className="bg-secondary border-border"
+                  />
+                </div>
                 <p className="text-sm font-semibold text-foreground">
                   {hasField ? `Endereço da ${termoCap}` : "Endereço da Sede"}
                 </p>
