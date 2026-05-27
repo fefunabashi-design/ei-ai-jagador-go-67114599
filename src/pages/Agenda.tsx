@@ -710,37 +710,42 @@ const AgendaPage = () => {
                   </div>
                 );
                 return (
-                  <div className="mt-4 pt-4 border-t border-border space-y-4">
-                    <h3 className="font-display text-lg text-foreground">ADVERSÁRIO</h3>
-                    <div className="space-y-3">
-                      <Row label="Nome do time" value={opp.name} />
-                      <Row label="Subcategoria" value={opp.sub_categoria} />
-                      <Row label={opp.has_field ? "Nome do campo" : "Nome da sede"} value={opp.field_name} />
-                      <Row label={opp.has_field ? "Endereço do campo" : "Endereço da sede"} value={fullAddress} />
-                      <Row label="Telefone do campo" value={opp.phone} />
-                      <Row label="Nome do técnico" value={opp.coach_name} />
-                      <Row label="Admin do app" value={opp.admin_name} />
-                      <Row label="Celular do admin" value={opp.admin_phone} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                        Jogadores ({opponentPlayers.length})
-                      </p>
-                      {opponentPlayers.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
-                      ) : (
-                        <ul className="space-y-1.5">
-                          {opponentPlayers.map((p: any) => {
-                            const display = p.nickname?.trim() || p.name || "Jogador";
-                            return (
-                              <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2">
-                                {display}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <h3 className="font-display text-lg text-foreground mb-3">ADVERSÁRIO</h3>
+                    <Tabs defaultValue="team" className="w-full">
+                      <TabsList className="w-full bg-secondary">
+                        <TabsTrigger value="team" className="flex-1 text-xs">Dados do Time</TabsTrigger>
+                        <TabsTrigger value="players" className="flex-1 text-xs">
+                          Jogadores ({opponentPlayers.length})
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="team" className="mt-4 space-y-3">
+                        <Row label="Nome do time" value={opp.name} />
+                        <Row label="Subcategoria" value={opp.sub_categoria} />
+                        <Row label={opp.has_field ? "Nome do campo" : "Nome da sede"} value={opp.field_name} />
+                        <Row label={opp.has_field ? "Endereço do campo" : "Endereço da sede"} value={fullAddress} />
+                        <Row label="Telefone do campo" value={opp.phone} />
+                        <Row label="Nome do técnico" value={opp.coach_name} />
+                        <Row label="Admin do app" value={opp.admin_name} />
+                        <Row label="Celular do admin" value={opp.admin_phone} />
+                      </TabsContent>
+                      <TabsContent value="players" className="mt-4">
+                        {opponentPlayers.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhum jogador cadastrado neste time.</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {opponentPlayers.map((p: any) => {
+                              const display = p.nickname?.trim() || p.name || "Jogador";
+                              return (
+                                <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2">
+                                  {display}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 );
               })()}
