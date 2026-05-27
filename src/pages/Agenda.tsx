@@ -425,7 +425,7 @@ const AgendaPage = () => {
                   : ""
               }`}
             >
-              <Calendar size={14} className="mr-1" /> Calendário
+              <CalendarIcon size={14} className="mr-1" /> Calendário
             </Button>
           </div>
         </div>
@@ -546,7 +546,7 @@ const AgendaPage = () => {
 
                     {/* Info row */}
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Calendar size={11} /> {dateStr}</span>
+                      <span className="flex items-center gap-1"><CalendarIcon size={11} /> {dateStr}</span>
                       <span className="flex items-center gap-1"><Clock size={11} /> {timeStr}</span>
                       <span className="flex items-center gap-1"><MapPin size={11} /> {match.location}</span>
                     </div>
