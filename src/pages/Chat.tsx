@@ -179,22 +179,6 @@ const ChatPage = () => {
             </Button>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            onClick={() => navigate(`/opponent-details?matchId=${matchId}`)}
-            variant="outline"
-            className="border-primary/40 text-primary font-semibold h-10"
-          >
-            <Eye size={14} className="mr-1" /> ADVERSÁRIO
-          </Button>
-          <Button
-            onClick={() => setListOpen(true)}
-            variant="outline"
-            className="border-primary/40 text-primary font-semibold h-10"
-          >
-            <ListChecks size={14} className="mr-1" /> CONFIRMAÇÕES ({confirmedRoster.length})
-          </Button>
-        </div>
       </div>
 
       {/* Messages */}
