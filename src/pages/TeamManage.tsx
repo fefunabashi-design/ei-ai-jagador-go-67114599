@@ -392,6 +392,8 @@ const TeamPage = () => {
     );
     if (teamForm.has_field === "com") {
       req.push(["Nome da Arena", teamForm.field_name.trim(), "tf-field_name"]);
+    } else if (teamForm.has_field === "sem") {
+      req.push(["Nome da Sede", teamForm.field_name.trim(), "tf-field_name"]);
     }
     const missing = req.find(([, v]) => !v);
     if (missing) {
