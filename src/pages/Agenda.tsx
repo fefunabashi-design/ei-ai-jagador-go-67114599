@@ -18,6 +18,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
