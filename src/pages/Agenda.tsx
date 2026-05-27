@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Calendar, Clock, MapPin, Users, Eye, Pencil, UserCheck,
+  Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
   Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,15 +19,27 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
+  useSendChatMessage,
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+
+const BR_HOLIDAYS_2026: string[] = [
+  "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
+  "2026-05-01","2026-09-07","2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25",
+];
+
 
 const statusStyles: Record<string, string> = {
   open: "bg-warning/10 text-warning",
@@ -87,6 +99,9 @@ const AgendaPage = () => {
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
+  const [editChatMessage, setEditChatMessage] = useState("");
+  const sendChatMessage = useSendChatMessage();
+
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -211,11 +226,13 @@ const AgendaPage = () => {
 
   const openEdit = (match: any) => {
     setSelectedMatch(match);
-    setEditLocation(match.location);
+    const teamFieldName = (match.home_team as any)?.field_name;
+    setEditLocation(teamFieldName || match.location);
     setEditDate(match.match_date.slice(0, 16));
     setEditFormat(match.format);
     setEditOpen(true);
   };
+
 
   const handleCreateMatch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,7 +430,7 @@ const AgendaPage = () => {
                   : ""
               }`}
             >
-              <Calendar size={14} className="mr-1" /> Calendário
+              <CalendarIcon size={14} className="mr-1" /> Calendário
             </Button>
           </div>
         </div>
@@ -534,7 +551,7 @@ const AgendaPage = () => {
 
                     {/* Info row */}
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Calendar size={11} /> {dateStr}</span>
+                      <span className="flex items-center gap-1"><CalendarIcon size={11} /> {dateStr}</span>
                       <span className="flex items-center gap-1"><Clock size={11} /> {timeStr}</span>
                       <span className="flex items-center gap-1"><MapPin size={11} /> {match.location}</span>
                     </div>
@@ -647,18 +664,115 @@ const AgendaPage = () => {
             </div>
             <div>
               <Label>Data e Hora</Label>
-              <Input type="datetime-local" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="bg-secondary border-border" required />
+              {(() => {
+                const dateValue = editDate ? new Date(editDate) : undefined;
+                const timeValue = editDate ? editDate.slice(11, 16) : "";
+                const matchDateSet = new Set(
+                  myMatches
+                    .filter((m: any) => m.id !== selectedMatch?.id)
+                    .map((m: any) => new Date(m.match_date).toDateString()),
+                );
+                const holidaySet = new Set(BR_HOLIDAYS_2026.map((s) => new Date(s + "T12:00:00").toDateString()));
+                const isAvailableDay = (d: Date) => availableDays.includes(d.getDay());
+                const modifiers = {
+                  hasMatch: (d: Date) => matchDateSet.has(d.toDateString()),
+                  holiday: (d: Date) => holidaySet.has(d.toDateString()),
+                  available: (d: Date) => isAvailableDay(d) && !matchDateSet.has(d.toDateString()) && !holidaySet.has(d.toDateString()),
+                };
+                const modifiersClassNames = {
+                  hasMatch: "bg-neutral-700 text-white hover:bg-neutral-700",
+                  holiday: "bg-red-500/80 text-white hover:bg-red-500",
+                  available: "bg-neutral-300 text-neutral-900 hover:bg-neutral-300 dark:bg-neutral-400 dark:text-neutral-900",
+                };
+                return (
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn("flex-1 justify-start text-left font-normal bg-secondary border-border", !dateValue && "text-muted-foreground")}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateValue ? formatDate(dateValue, "PPP", { locale: ptBR }) : "Selecione a data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dateValue}
+                          onSelect={(d) => {
+                            if (!d) return;
+                            const time = timeValue || "20:00";
+                            const yyyy = d.getFullYear();
+                            const mm = String(d.getMonth() + 1).padStart(2, "0");
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            setEditDate(`${yyyy}-${mm}-${dd}T${time}`);
+                          }}
+                          modifiers={modifiers}
+                          modifiersClassNames={modifiersClassNames}
+                          locale={ptBR}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                        <div className="border-t border-border p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-neutral-700" />
+                            <span className="text-foreground">Jogo agendado</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-neutral-300 dark:bg-neutral-400" />
+                            <span className="text-foreground">Disponível</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="inline-block w-3 h-3 rounded bg-red-500/80" />
+                            <span className="text-foreground">Feriado</span>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      type="time"
+                      value={timeValue}
+                      onChange={(e) => {
+                        const t = e.target.value;
+                        const base = dateValue ?? new Date();
+                        const yyyy = base.getFullYear();
+                        const mm = String(base.getMonth() + 1).padStart(2, "0");
+                        const dd = String(base.getDate()).padStart(2, "0");
+                        setEditDate(`${yyyy}-${mm}-${dd}T${t || "20:00"}`);
+                      }}
+                      className="w-28 bg-secondary border-border"
+                      required
+                    />
+                  </div>
+                );
+              })()}
             </div>
-            <div>
-              <Label>Formato</Label>
-              <Select value={editFormat} onValueChange={setEditFormat}>
-                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5x5">5x5</SelectItem>
-                  <SelectItem value="8x8">8x8</SelectItem>
-                  <SelectItem value="11x11">11x11</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="pt-2 border-t border-border">
+              <Label>Chat da partida</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  value={editChatMessage}
+                  onChange={(e) => setEditChatMessage(e.target.value)}
+                  placeholder="Digite uma mensagem..."
+                  className="bg-secondary border-border"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!editChatMessage.trim() || !selectedMatch}
+                  onClick={async () => {
+                    if (!selectedMatch || !editChatMessage.trim()) return;
+                    await sendChatMessage.mutateAsync({ matchId: selectedMatch.id, message: editChatMessage.trim() });
+                    setEditChatMessage("");
+                    setEditOpen(false);
+                    navigate(`/chat/${selectedMatch.id}`);
+                  }}
+                >
+                  <Send size={16} />
+                </Button>
+              </div>
             </div>
             <Button type="submit" disabled={updateMatch.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar Alterações
@@ -666,6 +780,7 @@ const AgendaPage = () => {
           </form>
         </DialogContent>
       </Dialog>
+
 
       {/* Details / Lineup (Field) / Summons Dialog */}
       <Dialog open={!!detailView} onOpenChange={() => setDetailView(null)}>
