@@ -662,9 +662,13 @@ const BuscarAdversarioPage = () => {
           setNewMatchOpen(open);
           if (open && matchActionTeam) {
             const t = matchActionTeam as any;
+            const myHasField = t.has_field !== false && !!(t.field_name || t.field_address);
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
-            if (!newMatchLocation && (t.field_address || t.field_name)) {
-              setNewMatchLocation(t.field_address || t.field_name);
+            if (myHasField) {
+              setNewMatchLocationChoice("own");
+              if (!newMatchLocation) setNewMatchLocation(t.field_name || t.field_address || "");
+            } else {
+              setNewMatchLocationChoice("away");
             }
           }
         }}>
