@@ -107,6 +107,24 @@ const BuscarAdversarioPage = () => {
     }
   }, [selectedCities, selectedRegions.length]);
 
+  // Quando abre o desafio, escolher automaticamente o local com base em quem tem campo
+  useEffect(() => {
+    if (!challengeTeam) return;
+    const mine = matchActionTeam as any;
+    const opp = challengeTeam as any;
+    const myHasField = mine?.has_field !== false && !!(mine?.field_name || mine?.field_address);
+    const oppHasField = opp?.has_field !== false && !!(opp?.field_name || opp?.field_address);
+    let choice: "own" | "away" = "away";
+    if (myHasField && !oppHasField) choice = "own";
+    else if (!myHasField && oppHasField) choice = "away";
+    setLocationChoice(choice);
+    const name = choice === "own"
+      ? (mine?.field_name || mine?.field_address || "")
+      : (opp?.field_name || opp?.field_address || "");
+    setChallengeLocation(name);
+  }, [challengeTeam, matchActionTeam]);
+
+
 
 
   const opponentReady = (t: any) =>
