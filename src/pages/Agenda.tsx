@@ -86,6 +86,18 @@ const AgendaPage = () => {
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
+  const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const awayId = (selectedMatch as any)?.away_team?.id;
+      if (!awayId || detailView !== "details") { setOpponentPlayers([]); return; }
+      const { data: pls } = await supabase.from("players").select("*").eq("team_id", awayId);
+      if (!cancelled) setOpponentPlayers(pls || []);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, detailView]);
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
