@@ -566,50 +566,65 @@ const BuscarAdversarioPage = () => {
                 />
               </div>
 
-              <div>
-                <Label className="mb-2 block">Local</Label>
-                <RadioGroup
-                  value={locationChoice}
-                  onValueChange={(v) => {
-                    const choice = v as "own" | "away";
-                    setLocationChoice(choice);
-                    const addr = choice === "own"
-                      ? ((matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "")
-                      : (challengeTeam.field_address || challengeTeam.field_name || "");
-                    setChallengeLocation(addr);
-                  }}
-                  className="space-y-2"
-                >
-                  <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                    <RadioGroupItem id="loc-own" value="own" className="mt-1" />
-                    <div className="text-sm">
-                      <div className="font-semibold flex items-center gap-1">
-                        <Building2 size={14} /> Meu campo
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {(matchActionTeam as any)?.field_address || (matchActionTeam as any)?.field_name || "Endereço não cadastrado"}
-                      </div>
-                    </div>
-                  </label>
-                  <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                    <RadioGroupItem id="loc-away" value="away" className="mt-1" />
-                    <div className="text-sm">
-                      <div className="font-semibold flex items-center gap-1">
-                        <Building2 size={14} /> Campo do adversário
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {challengeTeam.field_address || challengeTeam.field_name || "—"}
-                      </div>
-                    </div>
-                  </label>
-                </RadioGroup>
-                <Input
-                  className="mt-2"
-                  value={challengeLocation}
-                  onChange={(e) => setChallengeLocation(e.target.value)}
-                  placeholder="Endereço do local da partida"
-                />
-              </div>
+              {(() => {
+                const mine = matchActionTeam as any;
+                const opp = challengeTeam as any;
+                const myHasField = mine?.has_field !== false && !!(mine?.field_name || mine?.field_address);
+                const oppHasField = opp?.has_field !== false && !!(opp?.field_name || opp?.field_address);
+                return (
+                  <div>
+                    <Label className="mb-2 block">Local</Label>
+                    <RadioGroup
+                      value={locationChoice}
+                      onValueChange={(v) => {
+                        const choice = v as "own" | "away";
+                        setLocationChoice(choice);
+                        const name = choice === "own"
+                          ? (mine?.field_name || mine?.field_address || "")
+                          : (opp?.field_name || opp?.field_address || "");
+                        setChallengeLocation(name);
+                      }}
+                      className="space-y-2"
+                    >
+                      {myHasField && (
+                        <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                          <RadioGroupItem id="loc-own" value="own" className="mt-1" />
+                          <div className="text-sm">
+                            <div className="font-semibold flex items-center gap-1">
+                              <Building2 size={14} /> Meu campo
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {mine?.field_name || mine?.field_address}
+                            </div>
+                          </div>
+                        </label>
+                      )}
+                      {oppHasField && (
+                        <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                          <RadioGroupItem id="loc-away" value="away" className="mt-1" />
+                          <div className="text-sm">
+                            <div className="font-semibold flex items-center gap-1">
+                              <Building2 size={14} /> Campo do adversário
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {opp?.field_name || opp?.field_address || "—"}
+                            </div>
+                          </div>
+                        </label>
+                      )}
+                      {!myHasField && !oppHasField && (
+                        <p className="text-xs text-muted-foreground">Nenhum dos times tem campo cadastrado. Informe o endereço abaixo.</p>
+                      )}
+                    </RadioGroup>
+                    <Input
+                      className="mt-2"
+                      value={challengeLocation}
+                      onChange={(e) => setChallengeLocation(e.target.value)}
+                      placeholder="Endereço do local da partida"
+                    />
+                  </div>
+                );
+              })()}
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setChallengeTeam(null)}>Cancelar</Button>
