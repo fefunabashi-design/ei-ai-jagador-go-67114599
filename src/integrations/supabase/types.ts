@@ -820,6 +820,7 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           city: string | null
+          cpf: string | null
           created_at: string
           display_name: string | null
           gender: string | null
@@ -842,6 +843,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string | null
           gender?: string | null
@@ -864,6 +866,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           city?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string | null
           gender?: string | null
