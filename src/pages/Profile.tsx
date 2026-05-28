@@ -422,9 +422,29 @@ const ProfilePage = () => {
                 required
               />
             </div>
-            <div>
-              <Label>Data de Nascimento *</Label>
-              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Data de Nascimento *</Label>
+                <Input
+                  inputMode="numeric"
+                  value={editBirthDate}
+                  onChange={(e) => setEditBirthDate(formatBirthDate(e.target.value))}
+                  placeholder="dd/mm/aaaa"
+                  className="bg-secondary border-border"
+                  required
+                />
+              </div>
+              <div>
+                <Label>CPF *</Label>
+                <Input
+                  inputMode="numeric"
+                  value={editCpf}
+                  onChange={(e) => setEditCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  className="bg-secondary border-border"
+                  required
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
