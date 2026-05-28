@@ -532,6 +532,32 @@ const ProfilePage = () => {
                 className="bg-secondary border-border"
               />
             </div>
+            <div>
+              <Label>Cor do app</Label>
+              <p className="text-[11px] text-muted-foreground mb-1">Define a cor dos botões no seu app.</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={editPrimaryColor}
+                  onChange={(e) => setEditPrimaryColor(e.target.value)}
+                  className="h-10 w-14 rounded-md border border-border bg-secondary cursor-pointer"
+                  aria-label="Selecionar cor"
+                />
+                <Input
+                  value={editPrimaryColor}
+                  onChange={(e) => setEditPrimaryColor(e.target.value)}
+                  placeholder="#bfc4cb"
+                  className="bg-secondary border-border flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditPrimaryColor("#bfc4cb")}
+                  className="text-xs text-muted-foreground underline"
+                >
+                  Padrão
+                </button>
+              </div>
+            </div>
             <Button type="submit" disabled={updateProfile.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar
             </Button>
