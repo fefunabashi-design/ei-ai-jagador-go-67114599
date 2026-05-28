@@ -107,12 +107,12 @@ const AuthPage = () => {
         navigate("/dashboard");
       } else {
         await checkEmailStatus();
-        const fullName = `${name.trim()} ${lastName.trim()}`.trim();
+        const fullName = name.trim();
         const { error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
-            data: { full_name: fullName, first_name: name.trim(), last_name: lastName.trim() },
+            data: { full_name: fullName, first_name: name.trim() },
             emailRedirectTo: window.location.origin,
           },
         });
