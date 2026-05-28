@@ -57,6 +57,7 @@ const ProfilePage = () => {
   const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
   const [cityOptions, setCityOptions] = useState<string[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
 
@@ -163,6 +164,7 @@ const ProfilePage = () => {
     setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
+    setEditPrimaryColor((profile as any)?.primary_color || "#bfc4cb");
     setEditOpen(true);
   };
 
@@ -216,7 +218,11 @@ const ProfilePage = () => {
       cpf: (editCpf || "").replace(/\D/g, "") || null,
       city: editCity.trim(),
       region: editRegion || undefined,
+      primary_color: editPrimaryColor || null,
     } as any);
+    // Apply immediately so the UI reflects the new color without reload
+    const { applyPrimaryColor } = await import("@/lib/applyPrimaryColor");
+    applyPrimaryColor(editPrimaryColor || null);
     setEditOpen(false);
     if (requireComplete || isIncomplete) {
       // Clear location.state so a future remount doesn't auto-reopen
@@ -525,6 +531,32 @@ const ProfilePage = () => {
                 required
                 className="bg-secondary border-border"
               />
+            </div>
+            <div>
+              <Label>Cor do app</Label>
+              <p className="text-[11px] text-muted-foreground mb-1">Define a cor dos botões no seu app.</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={editPrimaryColor}
+                  onChange={(e) => setEditPrimaryColor(e.target.value)}
+                  className="h-10 w-14 rounded-md border border-border bg-secondary cursor-pointer"
+                  aria-label="Selecionar cor"
+                />
+                <Input
+                  value={editPrimaryColor}
+                  onChange={(e) => setEditPrimaryColor(e.target.value)}
+                  placeholder="#bfc4cb"
+                  className="bg-secondary border-border flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditPrimaryColor("#bfc4cb")}
+                  className="text-xs text-muted-foreground underline"
+                >
+                  Padrão
+                </button>
+              </div>
             </div>
             <Button type="submit" disabled={updateProfile.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar
