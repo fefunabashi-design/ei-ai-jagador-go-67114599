@@ -80,11 +80,24 @@ const AuthPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
+    const raw = identifier.trim();
+    const isCpf = looksLikeCpf(raw);
+    let loginEmail = "";
+    let cpfDigits = "";
 
-    if (!isValidEmail(normalizedEmail)) {
-      toast({ title: "E-mail inválido", description: "Informe um e-mail válido.", variant: "destructive" });
-      return;
+    if (isCpf) {
+      if (!isValidCpf(raw)) {
+        toast({ title: "CPF inválido", description: "Confira os 11 dígitos do CPF.", variant: "destructive" });
+        return;
+      }
+      cpfDigits = onlyDigits(raw);
+    } else {
+      const normalizedEmail = raw.toLowerCase();
+      if (!isValidEmail(normalizedEmail)) {
+        toast({ title: "E-mail inválido", description: "Informe um e-mail ou CPF válido.", variant: "destructive" });
+        return;
+      }
+      loginEmail = normalizedEmail;
     }
 
     if (!isLogin) {
@@ -105,46 +118,81 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const checkEmailStatus = async () => {
+      const checkEmailStatus = async (e: string) => {
         const { data } = await supabase.functions.invoke("check-email-status", {
-          body: { email: normalizedEmail },
+          body: { email: e },
         });
         return data as { exists?: boolean; deactivated?: boolean; cleaned?: boolean } | null;
       };
 
       if (isLogin) {
-        const status = await checkEmailStatus();
+        // Se CPF, descobre o e-mail real cadastrado
+        if (isCpf) {
+          const { data: lookup, error: lkErr } = await supabase.functions.invoke("lookup-email-by-cpf", {
+            body: { cpf: cpfDigits },
+          });
+          if (lkErr || !lookup?.email) {
+            toast({ title: "CPF não encontrado", description: "Nenhuma conta com esse CPF.", variant: "destructive" });
+            return;
+          }
+          loginEmail = lookup.email as string;
+        }
+
+        const status = await checkEmailStatus(loginEmail);
         if (status?.deactivated || status?.cleaned) {
           toast({
             title: "Conta desativada",
-            description: "Este e-mail já foi utilizado. Crie uma nova conta com uma nova senha.",
+            description: "Este cadastro já foi utilizado. Crie uma nova conta com uma nova senha.",
             variant: "destructive",
           });
           setIsLogin(false);
           return;
         }
 
-        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-        if (error) {
-          throw error;
-        }
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        if (error) throw error;
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
         navigate("/dashboard");
       } else {
-        await checkEmailStatus();
+        // Cadastro: se for e-mail real, valida MX/descartável
+        let signupEmail = loginEmail;
+        if (isCpf) {
+          signupEmail = cpfToSyntheticEmail(cpfDigits);
+        } else {
+          const { data: v } = await supabase.functions.invoke("validate-email", {
+            body: { email: loginEmail },
+          });
+          if (v && v.valid === false) {
+            const reasons: Record<string, string> = {
+              format: "Formato de e-mail inválido.",
+              disposable: "E-mails descartáveis não são permitidos.",
+              no_mx: "Este domínio de e-mail não recebe mensagens.",
+            };
+            toast({ title: "E-mail inválido", description: reasons[v.reason] || "Use um e-mail válido.", variant: "destructive" });
+            return;
+          }
+        }
+
+        await checkEmailStatus(signupEmail);
         const fullName = name.trim();
         const { error } = await supabase.auth.signUp({
-          email: normalizedEmail,
+          email: signupEmail,
           password,
           options: {
-            data: { full_name: fullName, first_name: name.trim() },
+            data: {
+              full_name: fullName,
+              first_name: fullName,
+              ...(cpfDigits ? { cpf: cpfDigits } : {}),
+            },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
         toast({
           title: "Cadastro realizado! 🎉",
-          description: "Verifique seu e-mail para confirmar a conta.",
+          description: isCpf
+            ? "Conta criada. Você já pode entrar com seu CPF."
+            : "Verifique seu e-mail para confirmar a conta.",
         });
       }
     } catch (error: unknown) {
