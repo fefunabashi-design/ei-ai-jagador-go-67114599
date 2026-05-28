@@ -171,8 +171,13 @@ const ProfilePage = () => {
       toast({ title: "Celular é obrigatório", variant: "destructive" });
       return;
     }
-    if (!editBirthDate) {
-      toast({ title: "Data de Nascimento é obrigatória", variant: "destructive" });
+    const isoBirth = brToIso(editBirthDate);
+    if (!editBirthDate || !isoBirth) {
+      toast({ title: "Data de Nascimento é obrigatória", description: "Use o formato dd/mm/aaaa.", variant: "destructive" });
+      return;
+    }
+    if (!editCpf.trim() || editCpf.replace(/\D/g, "").length !== 11) {
+      toast({ title: "CPF é obrigatório", description: "Informe um CPF válido (11 dígitos).", variant: "destructive" });
       return;
     }
     if (!editCity.trim()) {
@@ -191,7 +196,8 @@ const ProfilePage = () => {
       nickname: editNickname.trim() || undefined,
       gender: genderValue,
       phone: editPhone,
-      birth_date: editBirthDate,
+      birth_date: isoBirth,
+      cpf: editCpf,
       city: editCity.trim(),
       region: editRegion || undefined,
     } as any);
