@@ -129,6 +129,21 @@ const ProfilePage = () => {
     return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
   };
 
+  const isValidCpf = (value: string) => {
+    const d = value.replace(/\D/g, "");
+    if (d.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(d)) return false;
+    const calc = (len: number) => {
+      let sum = 0;
+      for (let i = 0; i < len; i++) sum += parseInt(d[i], 10) * (len + 1 - i);
+      const r = (sum * 10) % 11;
+      return r === 10 ? 0 : r;
+    };
+    return calc(9) === parseInt(d[9], 10) && calc(10) === parseInt(d[10], 10);
+  };
+
+
+
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
     setEditLastName((profile as any)?.last_name || "");
@@ -177,8 +192,8 @@ const ProfilePage = () => {
       toast({ title: "Data de Nascimento é obrigatória", description: "Use o formato dd/mm/aaaa.", variant: "destructive" });
       return;
     }
-    if (!editCpf.trim() || editCpf.replace(/\D/g, "").length !== 11) {
-      toast({ title: "CPF é obrigatório", description: "Informe um CPF válido (11 dígitos).", variant: "destructive" });
+    if (!editCpf.trim() || !isValidCpf(editCpf)) {
+      toast({ title: "CPF inválido", description: "Informe um CPF válido (com dígitos verificadores corretos).", variant: "destructive" });
       return;
     }
     if (!editCity.trim()) {
