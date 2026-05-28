@@ -831,6 +831,7 @@ export type Database = {
           last_name: string | null
           nickname: string | null
           phone: string | null
+          primary_color: string | null
           region: string | null
           role: string
           subscription_expires_at: string | null
@@ -854,6 +855,7 @@ export type Database = {
           last_name?: string | null
           nickname?: string | null
           phone?: string | null
+          primary_color?: string | null
           region?: string | null
           role?: string
           subscription_expires_at?: string | null
@@ -877,6 +879,7 @@ export type Database = {
           last_name?: string | null
           nickname?: string | null
           phone?: string | null
+          primary_color?: string | null
           region?: string | null
           role?: string
           subscription_expires_at?: string | null
