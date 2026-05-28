@@ -261,7 +261,7 @@ const AuthPage = () => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isLogin ? "••••••••" : "Mín. 8, 1 maiúscula e 1 número"}
+                placeholder={isLogin ? "••••••••" : "Mín. 8 caracteres, com 1 Maiuscula e 1 Num."}
                 className="pl-9 pr-10 bg-card border-border"
                 required
                 minLength={isLogin ? 6 : 8}
