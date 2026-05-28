@@ -1497,6 +1497,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_match_realtime: {
+        Args: { _match_id: string }
+        Returns: boolean
+      }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_team_member: {
