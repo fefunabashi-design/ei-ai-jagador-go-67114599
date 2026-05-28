@@ -41,6 +41,7 @@ const ProfilePage = () => {
     (profile as any)?.last_name,
     profile?.phone,
     profile?.birth_date,
+    (profile as any)?.cpf,
     (profile as any)?.city,
   ].some((v) => !v || String(v).trim() === "");
 
@@ -52,6 +53,7 @@ const ProfilePage = () => {
   const [editGenderOther, setEditGenderOther] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
+  const [editCpf, setEditCpf] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -99,6 +101,34 @@ const ProfilePage = () => {
     navigate("/auth", { replace: true });
   };
 
+  const isoToBr = (iso?: string | null) => {
+    if (!iso) return "";
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return "";
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  };
+
+  const brToIso = (br: string) => {
+    const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!m) return null;
+    return `${m[3]}-${m[2]}-${m[1]}`;
+  };
+
+  const formatBirthDate = (value: string) => {
+    const d = value.replace(/\D/g, "").slice(0, 8);
+    if (d.length <= 2) return d;
+    if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
+    return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+  };
+
+  const formatCpf = (value: string) => {
+    const d = value.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  };
+
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
     setEditLastName((profile as any)?.last_name || "");
@@ -113,7 +143,8 @@ const ProfilePage = () => {
       setEditGenderOther("");
     }
     setEditPhone(profile?.phone || "");
-    setEditBirthDate(profile?.birth_date || "");
+    setEditBirthDate(isoToBr(profile?.birth_date));
+    setEditCpf((profile as any)?.cpf || "");
     setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
@@ -141,8 +172,13 @@ const ProfilePage = () => {
       toast({ title: "Celular é obrigatório", variant: "destructive" });
       return;
     }
-    if (!editBirthDate) {
-      toast({ title: "Data de Nascimento é obrigatória", variant: "destructive" });
+    const isoBirth = brToIso(editBirthDate);
+    if (!editBirthDate || !isoBirth) {
+      toast({ title: "Data de Nascimento é obrigatória", description: "Use o formato dd/mm/aaaa.", variant: "destructive" });
+      return;
+    }
+    if (!editCpf.trim() || editCpf.replace(/\D/g, "").length !== 11) {
+      toast({ title: "CPF é obrigatório", description: "Informe um CPF válido (11 dígitos).", variant: "destructive" });
       return;
     }
     if (!editCity.trim()) {
@@ -161,7 +197,8 @@ const ProfilePage = () => {
       nickname: editNickname.trim() || undefined,
       gender: genderValue,
       phone: editPhone,
-      birth_date: editBirthDate,
+      birth_date: isoBirth,
+      cpf: editCpf,
       city: editCity.trim(),
       region: editRegion || undefined,
     } as any);
@@ -278,7 +315,8 @@ const ProfilePage = () => {
                 { label: "Nome Social", value: profile?.nickname },
                 { label: "Gênero", value: (profile as any)?.gender },
                 { label: "Celular", value: profile?.phone },
-                { label: "Data de Nascimento", value: profile?.birth_date },
+                { label: "Data de Nascimento", value: isoToBr(profile?.birth_date) },
+                { label: "CPF", value: (profile as any)?.cpf },
                 { label: "Cidade", value: (profile as any)?.city },
                 { label: "Região", value: profile?.region },
                 { label: "E-mail", value: (profile as any)?.email || user?.email },
@@ -384,9 +422,29 @@ const ProfilePage = () => {
                 required
               />
             </div>
-            <div>
-              <Label>Data de Nascimento *</Label>
-              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className="bg-secondary border-border" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Data de Nascimento *</Label>
+                <Input
+                  inputMode="numeric"
+                  value={editBirthDate}
+                  onChange={(e) => setEditBirthDate(formatBirthDate(e.target.value))}
+                  placeholder="dd/mm/aaaa"
+                  className="bg-secondary border-border"
+                  required
+                />
+              </div>
+              <div>
+                <Label>CPF *</Label>
+                <Input
+                  inputMode="numeric"
+                  value={editCpf}
+                  onChange={(e) => setEditCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  className="bg-secondary border-border"
+                  required
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">

@@ -16,10 +16,8 @@ const AuthPage = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -63,8 +61,8 @@ const AuthPage = () => {
     }
 
     if (!isLogin) {
-      if (!name.trim() || !lastName.trim()) {
-        toast({ title: "Dados incompletos", description: "Informe nome e sobrenome.", variant: "destructive" });
+      if (!name.trim()) {
+        toast({ title: "Dados incompletos", description: "Informe seu nome.", variant: "destructive" });
         return;
       }
       if (!isStrongPassword(password)) {
@@ -73,10 +71,6 @@ const AuthPage = () => {
           description: "Use no mínimo 8 caracteres, com 1 letra maiúscula e 1 número.",
           variant: "destructive",
         });
-        return;
-      }
-      if (password !== confirmPassword) {
-        toast({ title: "Senhas não conferem", description: "Digite a mesma senha nos dois campos.", variant: "destructive" });
         return;
       }
     }
@@ -111,12 +105,12 @@ const AuthPage = () => {
         navigate("/dashboard");
       } else {
         await checkEmailStatus();
-        const fullName = `${name.trim()} ${lastName.trim()}`.trim();
+        const fullName = name.trim();
         const { error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
-            data: { full_name: fullName, first_name: name.trim(), last_name: lastName.trim() },
+            data: { full_name: fullName, first_name: name.trim() },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -238,19 +232,6 @@ const AuthPage = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">Sobrenome</Label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Seu sobrenome"
-                      className="pl-9 bg-card border-border"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -278,7 +259,7 @@ const AuthPage = () => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isLogin ? "••••••••" : "Mín. 8, 1 maiúscula e 1 número"}
+                placeholder={isLogin ? "••••••••" : "Mín. 8 caracteres, com 1 Maiuscula e 1 Num."}
                 className="pl-9 pr-10 bg-card border-border"
                 required
                 minLength={isLogin ? 6 : 8}
@@ -293,31 +274,6 @@ const AuthPage = () => {
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {!isLogin && (
-              <motion.div
-                key="confirm-password"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Label className="text-xs text-muted-foreground mb-1.5 block">Confirme a senha</Label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repita a senha"
-                    className="pl-9 bg-card border-border"
-                    required={!isLogin}
-                    minLength={8}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {isLogin && (
             <div className="text-right">
