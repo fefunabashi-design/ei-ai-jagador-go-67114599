@@ -63,8 +63,8 @@ const AuthPage = () => {
     }
 
     if (!isLogin) {
-      if (!name.trim() || !lastName.trim()) {
-        toast({ title: "Dados incompletos", description: "Informe nome e sobrenome.", variant: "destructive" });
+      if (!name.trim()) {
+        toast({ title: "Dados incompletos", description: "Informe seu nome.", variant: "destructive" });
         return;
       }
       if (!isStrongPassword(password)) {
@@ -73,10 +73,6 @@ const AuthPage = () => {
           description: "Use no mínimo 8 caracteres, com 1 letra maiúscula e 1 número.",
           variant: "destructive",
         });
-        return;
-      }
-      if (password !== confirmPassword) {
-        toast({ title: "Senhas não conferem", description: "Digite a mesma senha nos dois campos.", variant: "destructive" });
         return;
       }
     }
