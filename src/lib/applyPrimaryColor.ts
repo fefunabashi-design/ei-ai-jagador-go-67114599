@@ -46,17 +46,30 @@ const DEFAULTS = {
 
 export const applyPrimaryColor = (hex: string | null | undefined) => {
   const root = document.documentElement;
+  const props = [
+    "--primary",
+    "--primary-foreground",
+    "--ring",
+    "--gradient-primary",
+    "--sidebar-primary",
+    "--sidebar-primary-foreground",
+    "--sidebar-ring",
+    "--shadow-glow",
+  ];
   if (!hex) {
-    root.style.removeProperty("--primary");
-    root.style.removeProperty("--primary-foreground");
-    root.style.removeProperty("--ring");
-    root.style.removeProperty("--gradient-primary");
+    props.forEach((p) => root.style.removeProperty(p));
     return;
   }
   const hsl = hexToHslString(hex);
   if (!hsl) return;
+  const fg = foregroundFor(hex);
   root.style.setProperty("--primary", hsl);
-  root.style.setProperty("--primary-foreground", foregroundFor(hex));
+  root.style.setProperty("--primary-foreground", fg);
   root.style.setProperty("--ring", hsl);
   root.style.setProperty("--gradient-primary", `linear-gradient(135deg, hsl(${hsl}), hsl(${hsl}))`);
+  root.style.setProperty("--sidebar-primary", hsl);
+  root.style.setProperty("--sidebar-primary-foreground", fg);
+  root.style.setProperty("--sidebar-ring", hsl);
+  root.style.setProperty("--shadow-glow", `0 4px 20px -4px hsl(${hsl} / 0.35)`);
 };
+
