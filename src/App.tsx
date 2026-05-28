@@ -7,6 +7,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useStatsData } from "@/lib/stats";
+import UserThemeLoader from "@/components/UserThemeLoader";
 
 // Lazy-load all route pages so the initial bundle stays small and
 // switching between menus doesn't pay for code that wasn't visited yet.
@@ -144,6 +145,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <StatsLoader />
+        <UserThemeLoader />
         <BrowserRouter>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
