@@ -52,9 +52,9 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
-    --gradient-primary: linear-gradient(135deg, hsl(162, 70%, 60%), hsl(172, 75%, 70%));
+    --gradient-primary: linear-gradient(135deg, hsl(210, 10%, 28%), hsl(210, 8%, 45%));
     --gradient-dark: linear-gradient(180deg, hsl(210, 30%, 96%), hsl(210, 30%, 92%));
-    --shadow-glow: 0 4px 20px -4px hsl(162 70% 60% / 0.3);
+    --shadow-glow: 0 4px 20px -4px hsl(210 10% 28% / 0.3);
     --font-display: 'Nunito', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
