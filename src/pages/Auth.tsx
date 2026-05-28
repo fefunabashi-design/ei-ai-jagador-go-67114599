@@ -276,31 +276,6 @@ const AuthPage = () => {
             </div>
           </div>
 
-          <AnimatePresence mode="wait">
-            {!isLogin && (
-              <motion.div
-                key="confirm-password"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Label className="text-xs text-muted-foreground mb-1.5 block">Confirme a senha</Label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repita a senha"
-                    className="pl-9 bg-card border-border"
-                    required={!isLogin}
-                    minLength={8}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {isLogin && (
             <div className="text-right">
