@@ -30,7 +30,7 @@ const getInitials = (name: string) => {
 const Index = () => {
   const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: myTeam } = useMyTeam();
+  const { data: myTeam, isLoading: teamLoading } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
