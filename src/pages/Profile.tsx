@@ -52,6 +52,7 @@ const ProfilePage = () => {
   const [editGenderOther, setEditGenderOther] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
+  const [editCpf, setEditCpf] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
