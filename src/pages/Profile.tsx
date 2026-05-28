@@ -192,8 +192,8 @@ const ProfilePage = () => {
       toast({ title: "Data de Nascimento é obrigatória", description: "Use o formato dd/mm/aaaa.", variant: "destructive" });
       return;
     }
-    if (!editCpf.trim() || editCpf.replace(/\D/g, "").length !== 11) {
-      toast({ title: "CPF é obrigatório", description: "Informe um CPF válido (11 dígitos).", variant: "destructive" });
+    if (!editCpf.trim() || !isValidCpf(editCpf)) {
+      toast({ title: "CPF inválido", description: "Informe um CPF válido (com dígitos verificadores corretos).", variant: "destructive" });
       return;
     }
     if (!editCity.trim()) {
