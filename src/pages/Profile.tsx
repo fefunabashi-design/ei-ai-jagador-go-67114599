@@ -57,6 +57,7 @@ const ProfilePage = () => {
   const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
   const [cityOptions, setCityOptions] = useState<string[]>([]);
   const [cityOpen, setCityOpen] = useState(false);
 
@@ -163,6 +164,7 @@ const ProfilePage = () => {
     setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
+    setEditPrimaryColor((profile as any)?.primary_color || "#bfc4cb");
     setEditOpen(true);
   };
 
@@ -216,7 +218,11 @@ const ProfilePage = () => {
       cpf: (editCpf || "").replace(/\D/g, "") || null,
       city: editCity.trim(),
       region: editRegion || undefined,
+      primary_color: editPrimaryColor || null,
     } as any);
+    // Apply immediately so the UI reflects the new color without reload
+    const { applyPrimaryColor } = await import("@/lib/applyPrimaryColor");
+    applyPrimaryColor(editPrimaryColor || null);
     setEditOpen(false);
     if (requireComplete || isIncomplete) {
       // Clear location.state so a future remount doesn't auto-reopen
