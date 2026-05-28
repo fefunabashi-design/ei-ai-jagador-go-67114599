@@ -140,6 +140,9 @@ const ProfilePage = () => {
       return r === 10 ? 0 : r;
     };
     return calc(9) === parseInt(d[9], 10) && calc(10) === parseInt(d[10], 10);
+  };
+
+
 
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
