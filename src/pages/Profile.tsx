@@ -540,21 +540,15 @@ const ProfilePage = () => {
                   type="color"
                   value={editPrimaryColor}
                   onChange={(e) => setEditPrimaryColor(e.target.value)}
-                  className="h-10 w-14 rounded-md border border-border bg-secondary cursor-pointer"
+                  className="h-10 w-16 rounded-md border border-border bg-secondary cursor-pointer"
                   aria-label="Selecionar cor"
-                />
-                <Input
-                  value={editPrimaryColor}
-                  onChange={(e) => setEditPrimaryColor(e.target.value)}
-                  placeholder="#bfc4cb"
-                  className="bg-secondary border-border flex-1"
                 />
                 <button
                   type="button"
                   onClick={() => setEditPrimaryColor("#bfc4cb")}
                   className="text-xs text-muted-foreground underline"
                 >
-                  Padrão
+                  Restaurar padrão
                 </button>
               </div>
             </div>
