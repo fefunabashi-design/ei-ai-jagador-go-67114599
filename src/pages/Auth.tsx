@@ -312,14 +312,24 @@ const AuthPage = () => {
           </AnimatePresence>
 
           <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">E-mail</Label>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">E-mail ou CPF</Label>
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                type="text"
+                inputMode="email"
+                value={identifier}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  // Se o usuário começou a digitar só dígitos, aplica máscara de CPF
+                  const digits = onlyDigits(v);
+                  if (!v.includes("@") && digits.length > 0 && digits.length <= 11 && /^[\d.\-\s]*$/.test(v)) {
+                    setIdentifier(formatCpf(v));
+                  } else {
+                    setIdentifier(v);
+                  }
+                }}
+                placeholder="seu@email.com ou CPF"
                 className="pl-9 bg-card border-border"
                 required
               />
