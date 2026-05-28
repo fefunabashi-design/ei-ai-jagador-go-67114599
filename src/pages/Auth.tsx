@@ -364,7 +364,7 @@ const AuthPage = () => {
             <div className="text-right">
               <button
                 type="button"
-                onClick={() => { setShowForgotPassword(true); setResetEmail(email); }}
+                onClick={() => { setShowForgotPassword(true); setResetEmail(identifier.includes("@") ? identifier : ""); }}
                 className="text-xs text-primary hover:underline"
               >
                 Esqueceu a senha?
