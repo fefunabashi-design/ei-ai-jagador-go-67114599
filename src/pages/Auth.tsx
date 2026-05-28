@@ -234,19 +234,6 @@ const AuthPage = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">Sobrenome</Label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Seu sobrenome"
-                      className="pl-9 bg-card border-border"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
