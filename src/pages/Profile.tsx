@@ -100,6 +100,34 @@ const ProfilePage = () => {
     navigate("/auth", { replace: true });
   };
 
+  const isoToBr = (iso?: string | null) => {
+    if (!iso) return "";
+    const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return "";
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  };
+
+  const brToIso = (br: string) => {
+    const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!m) return null;
+    return `${m[3]}-${m[2]}-${m[1]}`;
+  };
+
+  const formatBirthDate = (value: string) => {
+    const d = value.replace(/\D/g, "").slice(0, 8);
+    if (d.length <= 2) return d;
+    if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`;
+    return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+  };
+
+  const formatCpf = (value: string) => {
+    const d = value.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  };
+
   const openEditProfile = () => {
     setEditName(profile?.display_name || "");
     setEditLastName((profile as any)?.last_name || "");
@@ -114,7 +142,8 @@ const ProfilePage = () => {
       setEditGenderOther("");
     }
     setEditPhone(profile?.phone || "");
-    setEditBirthDate(profile?.birth_date || "");
+    setEditBirthDate(isoToBr(profile?.birth_date));
+    setEditCpf((profile as any)?.cpf || "");
     setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
     setEditEmail((profile as any)?.email || user?.email || "");
