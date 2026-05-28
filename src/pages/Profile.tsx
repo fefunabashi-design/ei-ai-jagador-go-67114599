@@ -41,6 +41,7 @@ const ProfilePage = () => {
     (profile as any)?.last_name,
     profile?.phone,
     profile?.birth_date,
+    (profile as any)?.cpf,
     (profile as any)?.city,
   ].some((v) => !v || String(v).trim() === "");
 
