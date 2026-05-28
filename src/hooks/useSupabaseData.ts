@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -35,14 +35,27 @@ const getUserId = async (): Promise<string | null> => {
 export const useProfile = () => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const reqIdRef = useRef(0);
+  const pendingRef = useRef<Promise<void> | null>(null);
 
   const load = useCallback(async () => {
-    const uid = await getUserId();
-    if (!uid) { setData(null); setIsLoading(false); return; }
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: p } = await supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle();
-    setData({ ...(p || {}), user_id: uid, email: user?.email });
-    setIsLoading(false);
+    if (pendingRef.current) return pendingRef.current;
+    const myId = ++reqIdRef.current;
+    setIsLoading(true);
+    const run = (async () => {
+      const uid = await getUserId();
+      if (myId !== reqIdRef.current) return;
+      if (!uid) { setData(null); setIsLoading(false); return; }
+      const [{ data: { user } }, { data: p }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
+      ]);
+      if (myId !== reqIdRef.current) return;
+      setData({ ...(p || {}), user_id: uid, email: user?.email });
+      setIsLoading(false);
+    })();
+    pendingRef.current = run.finally(() => { pendingRef.current = null; });
+    return pendingRef.current;
   }, []);
 
   useEffect(() => {
@@ -55,6 +68,7 @@ export const useProfile = () => {
 
   return { data, isLoading };
 };
+
 
 export const useUpdateProfile = () => {
   const { toast } = useToast();

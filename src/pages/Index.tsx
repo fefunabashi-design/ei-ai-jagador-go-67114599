@@ -30,7 +30,7 @@ const getInitials = (name: string) => {
 const Index = () => {
   const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: myTeam } = useMyTeam();
+  const { data: myTeam, isLoading: teamLoading } = useMyTeam();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
@@ -192,7 +192,7 @@ const Index = () => {
 
 
 
-  if (profileLoading || !profile) {
+  if (profileLoading || !profile || teamLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
