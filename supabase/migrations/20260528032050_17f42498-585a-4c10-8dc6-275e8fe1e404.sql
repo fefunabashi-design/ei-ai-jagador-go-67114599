@@ -1,0 +1,1 @@
+UPDATE public.profiles SET cpf = regexp_replace(cpf, '\D', '', 'g') WHERE cpf IS NOT NULL AND cpf ~ '\D';

@@ -213,7 +213,7 @@ const ProfilePage = () => {
       gender: genderValue,
       phone: editPhone,
       birth_date: isoBirth,
-      cpf: editCpf,
+      cpf: (editCpf || "").replace(/\D/g, "") || null,
       city: editCity.trim(),
       region: editRegion || undefined,
     } as any);
