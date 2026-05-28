@@ -243,7 +243,7 @@ const AuthPage = () => {
           <div className="w-20 h-20 rounded-2xl bg-gradient-primary flex items-center justify-center mb-4 shadow-glow">
             <img src={logo} alt="E Ai Jogador" width={48} height={48} />
           </div>
-          <h1 className="text-4xl text-foreground tracking-wider">E AÍ JOGADOR</h1>
+          <h1 className="text-4xl text-foreground tracking-wider">E AÍ JOGADOR(A)</h1>
           <p className="text-sm text-muted-foreground mt-1">O app da pelada brasileira</p>
         </motion.div>
 
