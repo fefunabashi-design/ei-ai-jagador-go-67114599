@@ -542,6 +542,7 @@ export type Database = {
         Row: {
           ano: number
           id: string
+          mes: number | null
           team_id: string
           updated_at: string
           valor_mensal: number
@@ -549,6 +550,7 @@ export type Database = {
         Insert: {
           ano: number
           id?: string
+          mes?: number | null
           team_id: string
           updated_at?: string
           valor_mensal?: number
@@ -556,6 +558,7 @@ export type Database = {
         Update: {
           ano?: number
           id?: string
+          mes?: number | null
           team_id?: string
           updated_at?: string
           valor_mensal?: number
