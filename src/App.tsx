@@ -68,26 +68,26 @@ const clearAuthStorage = () => {
   queryClient.clear();
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+type AuthStatus = "loading" | "anon" | "incomplete" | "deactivated" | "ok";
+type AuthCtxValue = { status: AuthStatus; session: Session | null; stuck: boolean };
+const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, stuck: false });
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [profileCheck, setProfileCheck] = useState<"loading" | "ok" | "incomplete" | "deactivated">("loading");
+  const [status, setStatus] = useState<AuthStatus>("loading");
   const [stuck, setStuck] = useState(false);
-  const location = useLocation();
 
   useEffect(() => {
     let alive = true;
-    let profileRequestId = 0;
-    setStuck(false);
-
-    const stuckTimer = window.setTimeout(() => {
-      if (alive) setStuck(true);
-    }, 8000);
+    let requestId = 0;
+    let stuckTimer = window.setTimeout(() => { if (alive) setStuck(true); }, 8000);
 
     const checkProfile = async (s: Session | null) => {
-      const requestId = ++profileRequestId;
-      if (!s) { if (alive) setProfileCheck("ok"); return; }
-      if (alive) setProfileCheck("loading");
-
+      const id = ++requestId;
+      if (!s) {
+        if (alive) { setStatus("anon"); setStuck(false); window.clearTimeout(stuckTimer); }
+        return;
+      }
       const result = await withTimeout(
         supabase
           .from("profiles")
@@ -95,28 +95,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           .eq("user_id", s.user.id)
           .maybeSingle()
       ).catch(() => null);
+      if (!alive || id !== requestId) return;
 
-      if (!alive || requestId !== profileRequestId) return;
-      const p = result?.data;
+      // Network/timeout failure: keep the user where they are instead of forcing
+      // a redirect to /profile that would break navigation.
+      if (!result) {
+        setStatus((prev) => (prev === "loading" ? "ok" : prev));
+        setStuck(false);
+        window.clearTimeout(stuckTimer);
+        return;
+      }
+
+      const p = result.data;
       if (p && (p as any).is_active === false) {
         await supabase.auth.signOut();
-        if (alive) setProfileCheck("deactivated");
+        if (alive) setStatus("deactivated");
         return;
       }
       const incomplete = !p || REQUIRED_PROFILE_FIELDS.some((f) => {
         const v = (p as any)?.[f];
         return v === null || v === undefined || String(v).trim() === "";
       });
-      setProfileCheck(incomplete ? "incomplete" : "ok");
+      setStatus(incomplete ? "incomplete" : "ok");
       setStuck(false);
       window.clearTimeout(stuckTimer);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (_event === "SIGNED_OUT") {
-        clearAuthStorage();
-      }
+      if (_event === "SIGNED_OUT") clearAuthStorage();
       window.setTimeout(() => void checkProfile(s), 0);
     });
     withTimeout(supabase.auth.getSession()).then((result) => {
@@ -126,6 +133,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       void checkProfile(s);
     });
     const onDataChange = () => {
+      // Only re-check the profile on data changes if we currently consider it
+      // incomplete — avoids extra network calls on every mutation.
+      if (status !== "incomplete") return;
       withTimeout(supabase.auth.getSession()).then((result) => {
         const s = result?.data.session ?? null;
         void checkProfile(s);
@@ -138,14 +148,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
       window.removeEventListener("supabase-data-change", onDataChange);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (session === undefined || profileCheck === "loading") {
+  return (
+    <AuthCtx.Provider value={{ status, session: session ?? null, stuck }}>
+      {children}
+    </AuthCtx.Provider>
+  );
+};
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { status, stuck } = useContext(AuthCtx);
+  const location = useLocation();
+
+  if (status === "loading") {
     if (stuck) return <AuthStuckScreen />;
     return <RouteFallback />;
   }
-  if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
-  if (profileCheck === "incomplete" && location.pathname !== "/profile") {
+  if (status === "anon" || status === "deactivated") {
+    return <Navigate to="/auth" replace state={{ from: location }} />;
+  }
+  if (status === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
   return <>{children}</>;
