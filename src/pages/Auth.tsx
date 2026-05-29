@@ -408,6 +408,19 @@ const AuthPage = () => {
             </div>
           )}
 
+          {authError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p>{authError}</p>
+              <button
+                type="button"
+                onClick={() => setAuthError("")}
+                className="mt-1 text-xs font-semibold underline underline-offset-2"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={loading}
