@@ -145,14 +145,31 @@ const MensalidadesPage = () => {
     return true;
   });
 
-  const handleSaveValor = () => {
+  const handleRequestSaveValor = () => {
     const val = parseFloat(valorInput.replace(",", "."));
     if (isNaN(val) || val < 0) {
       toast({ title: "Valor inválido", variant: "destructive" });
       return;
     }
+    if (val === valorMensal) {
+      setEditingValor(false);
+      return;
+    }
+    setConfirmValor(val);
+  };
+
+  const handleConfirmSaveValor = async () => {
+    if (confirmValor == null) return;
+    const val = confirmValor;
     setValorInput(val.toFixed(2).replace(".", ","));
-    upsertConfig.mutate(val);
+    await upsertConfig.mutate(val);
+    setConfirmValor(null);
+    setEditingValor(false);
+  };
+
+  const handleCancelEditValor = () => {
+    setValorInput(valorMensal ? valorMensal.toFixed(2).replace(".", ",") : "");
+    setEditingValor(false);
   };
 
   return (
