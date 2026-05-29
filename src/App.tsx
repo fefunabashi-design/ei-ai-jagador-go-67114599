@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -68,26 +68,26 @@ const clearAuthStorage = () => {
   queryClient.clear();
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+type AuthStatus = "loading" | "anon" | "incomplete" | "deactivated" | "ok";
+type AuthCtxValue = { status: AuthStatus; session: Session | null; stuck: boolean };
+const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, stuck: false });
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [profileCheck, setProfileCheck] = useState<"loading" | "ok" | "incomplete" | "deactivated">("loading");
+  const [status, setStatus] = useState<AuthStatus>("loading");
   const [stuck, setStuck] = useState(false);
-  const location = useLocation();
 
   useEffect(() => {
     let alive = true;
-    let profileRequestId = 0;
-    setStuck(false);
-
-    const stuckTimer = window.setTimeout(() => {
-      if (alive) setStuck(true);
-    }, 8000);
+    let requestId = 0;
+    let stuckTimer = window.setTimeout(() => { if (alive) setStuck(true); }, 8000);
 
     const checkProfile = async (s: Session | null) => {
-      const requestId = ++profileRequestId;
-      if (!s) { if (alive) setProfileCheck("ok"); return; }
-      if (alive) setProfileCheck("loading");
-
+      const id = ++requestId;
+      if (!s) {
+        if (alive) { setStatus("anon"); setStuck(false); window.clearTimeout(stuckTimer); }
+        return;
+      }
       const result = await withTimeout(
         supabase
           .from("profiles")
@@ -95,28 +95,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           .eq("user_id", s.user.id)
           .maybeSingle()
       ).catch(() => null);
+      if (!alive || id !== requestId) return;
 
-      if (!alive || requestId !== profileRequestId) return;
-      const p = result?.data;
+      // Network/timeout failure: keep the user where they are instead of forcing
+      // a redirect to /profile that would break navigation.
+      if (!result) {
+        setStatus((prev) => (prev === "loading" ? "ok" : prev));
+        setStuck(false);
+        window.clearTimeout(stuckTimer);
+        return;
+      }
+
+      const p = result.data;
       if (p && (p as any).is_active === false) {
         await supabase.auth.signOut();
-        if (alive) setProfileCheck("deactivated");
+        if (alive) setStatus("deactivated");
         return;
       }
       const incomplete = !p || REQUIRED_PROFILE_FIELDS.some((f) => {
         const v = (p as any)?.[f];
         return v === null || v === undefined || String(v).trim() === "";
       });
-      setProfileCheck(incomplete ? "incomplete" : "ok");
+      setStatus(incomplete ? "incomplete" : "ok");
       setStuck(false);
       window.clearTimeout(stuckTimer);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (_event === "SIGNED_OUT") {
-        clearAuthStorage();
-      }
+      if (_event === "SIGNED_OUT") clearAuthStorage();
       window.setTimeout(() => void checkProfile(s), 0);
     });
     withTimeout(supabase.auth.getSession()).then((result) => {
@@ -126,6 +133,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       void checkProfile(s);
     });
     const onDataChange = () => {
+      // Only re-check the profile on data changes if we currently consider it
+      // incomplete — avoids extra network calls on every mutation.
+      if (status !== "incomplete") return;
       withTimeout(supabase.auth.getSession()).then((result) => {
         const s = result?.data.session ?? null;
         void checkProfile(s);
@@ -138,14 +148,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
       window.removeEventListener("supabase-data-change", onDataChange);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (session === undefined || profileCheck === "loading") {
+  return (
+    <AuthCtx.Provider value={{ status, session: session ?? null, stuck }}>
+      {children}
+    </AuthCtx.Provider>
+  );
+};
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { status, stuck } = useContext(AuthCtx);
+  const location = useLocation();
+
+  if (status === "loading") {
     if (stuck) return <AuthStuckScreen />;
     return <RouteFallback />;
   }
-  if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
-  if (profileCheck === "incomplete" && location.pathname !== "/profile") {
+  if (status === "anon" || status === "deactivated") {
+    return <Navigate to="/auth" replace state={{ from: location }} />;
+  }
+  if (status === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
   return <>{children}</>;
@@ -218,40 +242,42 @@ const App = () => {
         <StatsLoader />
         <UserThemeLoader />
         <BrowserRouter>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
-              <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
-              <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-              <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
-              <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
-              <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-              <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
-              <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
-              <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
-              <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
-              <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
-              <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
-              <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
-              <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
-              <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
-              <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
-              <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
-              <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AuthProvider>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
+                <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
+                <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+                <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
+                <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
+                <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
+                <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+                <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
+                <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
+                <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
+                <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
+                <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
+                <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
+                <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
+                <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
+                <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
+                <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
