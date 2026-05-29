@@ -14,6 +14,7 @@ import logo from "@/assets/logo.png";
 const SYNTHETIC_EMAIL_DOMAIN = "cpf.eaijogador.app";
 const AUTH_ACTION_TIMEOUT_MS = 10000;
 const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const AUTH_TOKEN_URL = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/token?grant_type=password`;
 const PUBLIC_AUTH_HEADERS = {
   "Content-Type": "application/json",
   apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
@@ -86,6 +87,38 @@ const formatCpf = (v: string) => {
     .replace(/\.(\d{3})(\d)/, ".$1-$2");
 };
 const cpfToSyntheticEmail = (cpf: string) => `${onlyDigits(cpf)}@${SYNTHETIC_EMAIL_DOMAIN}`;
+
+const signInWithPasswordFetch = async (email: string, password: string) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), AUTH_ACTION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(AUTH_TOKEN_URL, {
+      method: "POST",
+      headers: {
+        ...PUBLIC_AUTH_HEADERS,
+        "x-client-info": "eaijogador-auth-fetch",
+      },
+      body: JSON.stringify({ email, password, gotrue_meta_security: {} }),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.msg || data?.error_description || data?.error || "Erro ao entrar.");
+    if (!data?.access_token || !data?.refresh_token) throw new Error("Sessão inválida. Tente novamente.");
+    const { error } = await withAuthTimeout(
+      supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token }),
+      "O login foi aceito, mas a sessão demorou para iniciar. Tente novamente."
+    );
+    if (error) throw error;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("O login demorou mais do que o esperado. Tente novamente.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -204,13 +237,9 @@ const AuthPage = () => {
           loginEmail = lookup.email as string;
         }
 
-        const { error } = await withAuthTimeout(
-          supabase.auth.signInWithPassword({ email: loginEmail, password }),
-          "O login demorou mais do que o esperado. Tente novamente."
-        );
-        if (error) throw error;
+        await signInWithPasswordFetch(loginEmail, password);
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
         // Cadastro: se for e-mail real, valida MX/descartável
         let signupEmail = loginEmail;
