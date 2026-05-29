@@ -106,10 +106,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  if (session === undefined || profileCheck === "loading") {
-    console.log("[ProtectedRoute] loading", { session, profileCheck });
-    return <RouteFallback />;
-  }
+  if (session === undefined || profileCheck === "loading") return <RouteFallback />;
   if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
   if (profileCheck === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
