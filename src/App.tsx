@@ -71,11 +71,17 @@ const clearAuthStorage = () => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [profileCheck, setProfileCheck] = useState<"loading" | "ok" | "incomplete" | "deactivated">("loading");
+  const [stuck, setStuck] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     let alive = true;
     let profileRequestId = 0;
+    setStuck(false);
+
+    const stuckTimer = window.setTimeout(() => {
+      if (alive) setStuck(true);
+    }, 8000);
 
     const checkProfile = async (s: Session | null) => {
       const requestId = ++profileRequestId;
@@ -102,6 +108,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         return v === null || v === undefined || String(v).trim() === "";
       });
       setProfileCheck(incomplete ? "incomplete" : "ok");
+      setStuck(false);
+      window.clearTimeout(stuckTimer);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
@@ -126,18 +134,56 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener("supabase-data-change", onDataChange);
     return () => {
       alive = false;
+      window.clearTimeout(stuckTimer);
       subscription.unsubscribe();
       window.removeEventListener("supabase-data-change", onDataChange);
     };
   }, []);
 
-  if (session === undefined || profileCheck === "loading") return <RouteFallback />;
+  if (session === undefined || profileCheck === "loading") {
+    if (stuck) return <AuthStuckScreen />;
+    return <RouteFallback />;
+  }
   if (!session) return <Navigate to="/auth" replace state={{ from: location }} />;
   if (profileCheck === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
   return <>{children}</>;
 };
+
+const AuthStuckScreen = () => {
+  const handleRetry = () => window.location.reload();
+  const handleSignOut = async () => {
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    clearAuthStorage();
+    window.location.href = "/auth";
+  };
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+        <h1 className="text-lg font-semibold text-foreground">Não foi possível verificar sua sessão</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A verificação de autenticação demorou mais do que o esperado. Verifique sua conexão e tente novamente.
+        </p>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={handleRetry}
+            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+          >
+            Tentar novamente
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition"
+          >
+            Ir para login
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const StatsLoader = () => {
   const [hasSession, setHasSession] = useState(false);
