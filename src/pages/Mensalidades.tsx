@@ -41,21 +41,22 @@ const MensalidadesPage = () => {
   const { data: players = [], isLoading: playersLoading } = usePlayers(myTeam?.id);
   const [filter, setFilter] = useState<"all" | "ok" | "late">("all");
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  // null = "Ano todo" (default for the year), 1..12 = specific month
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [valorInput, setValorInput] = useState("");
   const [confirmAction, setConfirmAction] = useState<{ playerId: string; mes: number; isPaid: boolean; playerName: string } | null>(null);
 
   const playerIds = players.map((p) => p.id);
   const { data: mensalidades = [] } = useMensalidades(playerIds, selectedYear);
-  const { data: config } = useMensalidadeConfig(myTeam?.id, selectedYear);
+  const { data: config } = useMensalidadeConfig(myTeam?.id, selectedYear, selectedMonth);
   const upsertConfigMut = useUpsertMensalidadeConfig();
   const upsertMensalidadeMut = useUpsertMensalidade();
   const mensalidadesLoading = false;
   const configLoading = false;
 
-  // Sync valorInput when config data changes or year changes
   useEffect(() => {
     setValorInput(config?.valor_mensal ? Number(config.valor_mensal).toFixed(2).replace(".", ",") : "");
-  }, [config, selectedYear]);
+  }, [config, selectedYear, selectedMonth]);
 
   const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
 
@@ -63,8 +64,14 @@ const MensalidadesPage = () => {
     mutate: async (valor: number) => {
       if (!myTeam?.id) return;
       try {
-        await upsertConfigMut.mutateAsync({ ano: selectedYear, valor_mensal: valor, team_id: myTeam.id });
-        toast({ title: `Valor salvo para ${selectedYear}! ✅` });
+        await upsertConfigMut.mutateAsync({
+          ano: selectedYear,
+          mes: selectedMonth,
+          valor_mensal: valor,
+          team_id: myTeam.id,
+        });
+        const scope = selectedMonth ? `${MONTH_LABELS[selectedMonth - 1]}/${selectedYear}` : `${selectedYear}`;
+        toast({ title: `Valor salvo para ${scope}! ✅` });
       } catch (e: any) { toast({ title: "Erro", description: e?.message, variant: "destructive" }); }
     },
   };
@@ -99,7 +106,13 @@ const MensalidadesPage = () => {
     return count;
   };
 
+  // Inadimplência considera o mês selecionado, se houver
   const isInadimplente = (playerId: string) => {
+    if (selectedMonth != null) {
+      // Mês futuro do ano atual ainda não é cobrável
+      if (selectedYear === currentYear && selectedMonth > currentMonth) return false;
+      return !isMonthPaid(playerId, selectedMonth);
+    }
     if (selectedYear < currentYear) {
       return unpaidMonthsUntilNow(playerId) > 0;
     }
@@ -111,10 +124,17 @@ const MensalidadesPage = () => {
 
   const emDiaCount = players.filter((p) => !isInadimplente(p.id)).length;
   const inadimplenteCount = players.filter((p) => isInadimplente(p.id)).length;
-  const totalArrecadado = players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
+
+  // Arrecadação: por mês selecionado ou total do ano
+  const totalArrecadado = selectedMonth != null
+    ? players.reduce((acc, p) => acc + (isMonthPaid(p.id, selectedMonth) ? valorMensal : 0), 0)
+    : players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
+
   const monthsUntilNow = selectedYear === currentYear ? currentMonth - 1 : 12;
-  const totalExpected = players.length * monthsUntilNow * valorMensal;
-  const aArrecadar = totalExpected - totalArrecadado;
+  const totalExpected = selectedMonth != null
+    ? (selectedYear === currentYear && selectedMonth > currentMonth ? 0 : players.length * valorMensal)
+    : players.length * monthsUntilNow * valorMensal;
+  const aArrecadar = Math.max(0, totalExpected - totalArrecadado);
 
   const filteredPlayers = players.filter((p) => {
     if (filter === "ok") return !isInadimplente(p.id);
