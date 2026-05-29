@@ -478,6 +478,26 @@ const MensalidadesPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={confirmValor != null} onOpenChange={(o) => !o && setConfirmValor(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Salvar valor da mensalidade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmValor != null && (
+                <>
+                  Confirmar novo valor de {formatCurrency(confirmValor)} para{" "}
+                  {selectedMonth ? `${MONTH_LABELS[selectedMonth - 1]}/${selectedYear}` : `o ano de ${selectedYear}`}?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSaveValor}>Salvar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <BottomNav />
     </div>
   );
