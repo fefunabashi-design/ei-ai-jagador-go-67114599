@@ -52,6 +52,14 @@ const queryClient = new QueryClient({
 });
 
 const REQUIRED_PROFILE_FIELDS = ["display_name", "last_name", "phone", "birth_date", "city"];
+const PROFILE_CHECK_TIMEOUT_MS = 4000;
+
+const withTimeout = <T,>(promise: PromiseLike<T>, ms = PROFILE_CHECK_TIMEOUT_MS): Promise<T | null> => {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
+  ]);
+};
 
 const clearAuthStorage = () => {
   Object.keys(localStorage)
@@ -66,16 +74,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    let alive = true;
+    let profileRequestId = 0;
+
     const checkProfile = async (s: Session | null) => {
-      if (!s) { setProfileCheck("ok"); return; }
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("display_name,last_name,phone,birth_date,city,is_active")
-        .eq("user_id", s.user.id)
-        .maybeSingle();
+      const requestId = ++profileRequestId;
+      if (!s) { if (alive) setProfileCheck("ok"); return; }
+      if (alive) setProfileCheck("loading");
+
+      const result = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("display_name,last_name,phone,birth_date,city,is_active")
+          .eq("user_id", s.user.id)
+          .maybeSingle()
+      ).catch(() => null);
+
+      if (!alive || requestId !== profileRequestId) return;
+      const p = result?.data;
       if (p && (p as any).is_active === false) {
         await supabase.auth.signOut();
-        setProfileCheck("deactivated");
+        if (alive) setProfileCheck("deactivated");
         return;
       }
       const incomplete = !p || REQUIRED_PROFILE_FIELDS.some((f) => {
@@ -90,17 +109,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       if (_event === "SIGNED_OUT") {
         clearAuthStorage();
       }
-      checkProfile(s);
+      window.setTimeout(() => void checkProfile(s), 0);
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    withTimeout(supabase.auth.getSession()).then((result) => {
+      const s = result?.data.session ?? null;
+      if (!alive) return;
       setSession(s);
-      checkProfile(s);
+      void checkProfile(s);
     });
     const onDataChange = () => {
-      supabase.auth.getSession().then(({ data: { session: s } }) => checkProfile(s));
+      withTimeout(supabase.auth.getSession()).then((result) => {
+        const s = result?.data.session ?? null;
+        void checkProfile(s);
+      });
     };
     window.addEventListener("supabase-data-change", onDataChange);
     return () => {
+      alive = false;
       subscription.unsubscribe();
       window.removeEventListener("supabase-data-change", onDataChange);
     };
