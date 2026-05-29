@@ -11,6 +11,21 @@ import { lovable } from "@/integrations/lovable/index";
 import logo from "@/assets/logo.png";
 
 const SYNTHETIC_EMAIL_DOMAIN = "cpf.eaijogador.app";
+const AUTH_ACTION_TIMEOUT_MS = 10000;
+
+const withAuthTimeout = async <T,>(promise: PromiseLike<T>, message = "A autenticação demorou mais do que o esperado. Tente novamente.") => {
+  let timeoutId: number | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<never>((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error(message)), AUTH_ACTION_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "");
 const looksLikeCpf = (s: string) => onlyDigits(s).length === 11 && !s.includes("@");
@@ -46,6 +61,7 @@ const AuthPage = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,11 +73,14 @@ const AuthPage = () => {
   useEffect(() => {
     const goIfActive = async (session: any) => {
       if (!session) return;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_active")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
+        const { data: profile } = await withAuthTimeout(
+          supabase
+            .from("profiles")
+            .select("is_active")
+            .eq("user_id", session.user.id)
+            .maybeSingle(),
+          "Não foi possível verificar sua sessão. Tente novamente."
+        );
       if (profile?.is_active === false) {
         await supabase.auth.signOut();
         Object.keys(localStorage)
@@ -116,21 +135,28 @@ const AuthPage = () => {
     }
 
     setLoading(true);
+    setAuthError("");
 
     try {
       const checkEmailStatus = async (e: string) => {
-        const { data } = await supabase.functions.invoke("check-email-status", {
-          body: { email: e },
-        });
+        const { data } = await withAuthTimeout(
+          supabase.functions.invoke("check-email-status", {
+            body: { email: e },
+          }),
+          "A verificação da conta demorou mais do que o esperado. Tente novamente."
+        );
         return data as { exists?: boolean; deactivated?: boolean; cleaned?: boolean } | null;
       };
 
       if (isLogin) {
         // Se CPF, descobre o e-mail real cadastrado
         if (isCpf) {
-          const { data: lookup, error: lkErr } = await supabase.functions.invoke("lookup-email-by-cpf", {
-            body: { cpf: cpfDigits },
-          });
+          const { data: lookup, error: lkErr } = await withAuthTimeout(
+            supabase.functions.invoke("lookup-email-by-cpf", {
+              body: { cpf: cpfDigits },
+            }),
+            "A busca pelo CPF demorou mais do que o esperado. Tente novamente."
+          );
           if (lkErr || !lookup?.email) {
             toast({ title: "CPF não encontrado", description: "Nenhuma conta com esse CPF.", variant: "destructive" });
             return;
@@ -149,7 +175,10 @@ const AuthPage = () => {
           return;
         }
 
-        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        const { error } = await withAuthTimeout(
+          supabase.auth.signInWithPassword({ email: loginEmail, password }),
+          "O login demorou mais do que o esperado. Tente novamente."
+        );
         if (error) throw error;
         toast({ title: "Bem-vindo de volta! ⚽", description: "Login efetuado com sucesso." });
         navigate("/dashboard");
@@ -159,9 +188,12 @@ const AuthPage = () => {
         if (isCpf) {
           signupEmail = cpfToSyntheticEmail(cpfDigits);
         } else {
-          const { data: v } = await supabase.functions.invoke("validate-email", {
-            body: { email: loginEmail },
-          });
+          const { data: v } = await withAuthTimeout(
+            supabase.functions.invoke("validate-email", {
+              body: { email: loginEmail },
+            }),
+            "A validação do e-mail demorou mais do que o esperado. Tente novamente."
+          );
           if (v && v.valid === false) {
             const reasons: Record<string, string> = {
               format: "Formato de e-mail inválido.",
@@ -175,18 +207,21 @@ const AuthPage = () => {
 
         await checkEmailStatus(signupEmail);
         const fullName = name.trim();
-        const { error } = await supabase.auth.signUp({
-          email: signupEmail,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              first_name: fullName,
-              ...(cpfDigits ? { cpf: cpfDigits } : {}),
+        const { error } = await withAuthTimeout(
+          supabase.auth.signUp({
+            email: signupEmail,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                first_name: fullName,
+                ...(cpfDigits ? { cpf: cpfDigits } : {}),
+              },
+              emailRedirectTo: window.location.origin,
             },
-            emailRedirectTo: window.location.origin,
-          },
-        });
+          }),
+          "O cadastro demorou mais do que o esperado. Tente novamente."
+        );
         if (error) throw error;
         toast({
           title: "Cadastro realizado! 🎉",
@@ -206,6 +241,7 @@ const AuthPage = () => {
         "Unable to validate email address: invalid format": "Formato de e-mail inválido.",
       };
       const message = friendlyMessages[rawMessage] || rawMessage;
+      setAuthError(message);
       toast({ title: "Erro", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
@@ -368,6 +404,19 @@ const AuthPage = () => {
                 className="text-xs text-primary hover:underline"
               >
                 Esqueceu a senha?
+              </button>
+            </div>
+          )}
+
+          {authError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p>{authError}</p>
+              <button
+                type="button"
+                onClick={() => setAuthError("")}
+                className="mt-1 text-xs font-semibold underline underline-offset-2"
+              >
+                Tentar novamente
               </button>
             </div>
           )}
