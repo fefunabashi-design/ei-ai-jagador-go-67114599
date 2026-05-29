@@ -12,6 +12,12 @@ import logo from "@/assets/logo.png";
 
 const SYNTHETIC_EMAIL_DOMAIN = "cpf.eaijogador.app";
 const AUTH_ACTION_TIMEOUT_MS = 10000;
+const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const PUBLIC_AUTH_HEADERS = {
+  "Content-Type": "application/json",
+  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+};
 
 const withAuthTimeout = async <T,>(promise: PromiseLike<T>, message = "A autenticação demorou mais do que o esperado. Tente novamente.") => {
   let timeoutId: number | undefined;
@@ -24,6 +30,34 @@ const withAuthTimeout = async <T,>(promise: PromiseLike<T>, message = "A autenti
     ]);
   } finally {
     if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
+
+const invokePublicFunction = async <T,>(name: string, body: unknown, message: string) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), AUTH_ACTION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${FUNCTIONS_URL}/${name}`, {
+      method: "POST",
+      headers: PUBLIC_AUTH_HEADERS,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => null) as T | null;
+
+    return {
+      data,
+      error: response.ok ? null : new Error((data as any)?.error || message),
+      status: response.status,
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(message);
+    }
+    throw new Error("Não foi possível conectar ao login. Verifique sua conexão e tente novamente.");
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 };
 
