@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import type { Session } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 
 const SYNTHETIC_EMAIL_DOMAIN = "cpf.eaijogador.app";
@@ -48,7 +49,7 @@ const invokePublicFunction = async <T,>(name: string, body: unknown, message: st
 
     return {
       data,
-      error: response.ok ? null : new Error((data as any)?.error || message),
+      error: response.ok ? null : new Error((data as { error?: string } | null)?.error || message),
       status: response.status,
     };
   } catch (error) {
@@ -107,7 +108,7 @@ const AuthPage = () => {
   useEffect(() => {
     let alive = true;
 
-    const goIfActive = async (session: any) => {
+    const goIfActive = async (session: Session | null) => {
       if (!session) return;
       const result = await withAuthTimeout(
           supabase
