@@ -227,14 +227,57 @@ const MensalidadesPage = () => {
               </div>
               <div className="flex-[1.4] min-w-0">
                 <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">VALOR (R$)</label>
-                <Input
-                  className="h-9 text-sm"
-                  placeholder="0,00"
-                  value={valorInput}
-                  onChange={(e) => setValorInput(e.target.value)}
-                  onBlur={handleSaveValor}
-                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                />
+                <div className="flex gap-1">
+                  <Input
+                    ref={valorInputRef}
+                    className="h-9 text-sm"
+                    placeholder="0,00"
+                    value={valorInput}
+                    disabled={!editingValor}
+                    onChange={(e) => setValorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRequestSaveValor();
+                      if (e.key === "Escape") handleCancelEditValor();
+                    }}
+                  />
+                  {!editingValor ? (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => {
+                        setEditingValor(true);
+                        setTimeout(() => valorInputRef.current?.focus(), 0);
+                      }}
+                      aria-label="Editar valor"
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 bg-primary text-primary-foreground"
+                        onClick={handleRequestSaveValor}
+                        aria-label="Salvar valor"
+                      >
+                        <Check size={14} />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9 shrink-0"
+                        onClick={handleCancelEditValor}
+                        aria-label="Cancelar edição"
+                      >
+                        <X size={14} />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             {selectedMonth != null && (
