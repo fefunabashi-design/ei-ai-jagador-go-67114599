@@ -242,40 +242,42 @@ const App = () => {
         <StatsLoader />
         <UserThemeLoader />
         <BrowserRouter>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
-              <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
-              <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-              <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
-              <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
-              <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-              <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
-              <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
-              <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
-              <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
-              <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
-              <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
-              <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
-              <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
-              <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
-              <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
-              <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
-              <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AuthProvider>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
+                <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
+                <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+                <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
+                <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
+                <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
+                <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+                <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
+                <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
+                <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
+                <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
+                <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
+                <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
+                <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
+                <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
+                <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
+                <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
