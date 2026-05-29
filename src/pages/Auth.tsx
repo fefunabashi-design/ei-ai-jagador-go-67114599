@@ -179,26 +179,25 @@ const AuthPage = () => {
 
     try {
       const checkEmailStatus = async (e: string) => {
-        const { data } = await withAuthTimeout(
-          supabase.functions.invoke("check-email-status", {
-            body: { email: e },
-          }),
+        const { data } = await invokePublicFunction<{ exists?: boolean; deactivated?: boolean; cleaned?: boolean }>(
+          "check-email-status",
+          { email: e },
           "A verificação da conta demorou mais do que o esperado. Tente novamente."
         );
-        return data as { exists?: boolean; deactivated?: boolean; cleaned?: boolean } | null;
+        return data;
       };
 
       if (isLogin) {
         // Se CPF, descobre o e-mail real cadastrado
         if (isCpf) {
-          const { data: lookup, error: lkErr } = await withAuthTimeout(
-            supabase.functions.invoke("lookup-email-by-cpf", {
-              body: { cpf: cpfDigits },
-            }),
+          const { data: lookup, error: lkErr } = await invokePublicFunction<{ email?: string; error?: string }>(
+            "lookup-email-by-cpf",
+            { cpf: cpfDigits },
             "A busca pelo CPF demorou mais do que o esperado. Tente novamente."
           );
           if (lkErr || !lookup?.email) {
             toast({ title: "CPF não encontrado", description: "Nenhuma conta com esse CPF.", variant: "destructive" });
+            setAuthError("CPF não encontrado. Confira os números ou entre com seu e-mail.");
             return;
           }
           loginEmail = lookup.email as string;
@@ -228,10 +227,9 @@ const AuthPage = () => {
         if (isCpf) {
           signupEmail = cpfToSyntheticEmail(cpfDigits);
         } else {
-          const { data: v } = await withAuthTimeout(
-            supabase.functions.invoke("validate-email", {
-              body: { email: loginEmail },
-            }),
+          const { data: v } = await invokePublicFunction<{ valid?: boolean; reason?: string }>(
+            "validate-email",
+            { email: loginEmail },
             "A validação do e-mail demorou mais do que o esperado. Tente novamente."
           );
           if (v && v.valid === false) {
