@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.uniq_mensalidade_config_team_ano;
