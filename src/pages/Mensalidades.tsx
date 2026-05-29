@@ -173,9 +173,9 @@ const MensalidadesPage = () => {
           </div>
         ) : (
           <>
-            {/* Year selector + Valor config */}
+            {/* Year + Month + Valor config */}
             <div className="flex gap-2 items-end">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">ANO</label>
                 <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
                   <SelectTrigger className="h-9 text-sm">
@@ -188,20 +188,40 @@ const MensalidadesPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex-[2]">
-                <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">VALOR MENSAL (R$)</label>
-                <div className="flex gap-1.5">
-                  <Input
-                    className="h-9 text-sm"
-                    placeholder="0,00"
-                    value={valorInput}
-                    onChange={(e) => setValorInput(e.target.value)}
-                    onBlur={handleSaveValor}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveValor()}
-                  />
-                </div>
+              <div className="flex-1 min-w-0">
+                <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">MÊS</label>
+                <Select
+                  value={selectedMonth == null ? "all" : String(selectedMonth)}
+                  onValueChange={(v) => setSelectedMonth(v === "all" ? null : Number(v))}
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Ano todo</SelectItem>
+                    {MONTH_LABELS.map((label, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-[1.4] min-w-0">
+                <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">VALOR (R$)</label>
+                <Input
+                  className="h-9 text-sm"
+                  placeholder="0,00"
+                  value={valorInput}
+                  onChange={(e) => setValorInput(e.target.value)}
+                  onBlur={handleSaveValor}
+                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                />
               </div>
             </div>
+            {selectedMonth != null && (
+              <p className="text-[10px] text-muted-foreground -mt-2">
+                Valor específico de {MONTH_LABELS[selectedMonth - 1]}/{selectedYear}. Se não definido, usa o valor padrão do ano.
+              </p>
+            )}
 
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-2">
