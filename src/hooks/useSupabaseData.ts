@@ -697,27 +697,37 @@ export const useUpsertMensalidade = () => {
   return { mutate, mutateAsync: mutate };
 };
 
-export const useMensalidadeConfig = (teamId: string | undefined, ano: number) => {
+export const useMensalidadeConfig = (teamId: string | undefined, ano: number, mes: number | null = null) => {
   const [data, setData] = useState<any | null>(null);
   useEffect(() => {
     if (!teamId) { setData(null); return; }
     let alive = true;
     const load = async () => {
-      const { data: row } = await supabase
-        .from("mensalidade_config").select("*").eq("team_id", teamId).eq("ano", ano).maybeSingle();
-      if (alive) setData(row || null);
+      if (mes != null) {
+        const { data: row } = await supabase
+          .from("mensalidade_config").select("*")
+          .eq("team_id", teamId).eq("ano", ano).eq("mes", mes).maybeSingle();
+        if (row) { if (alive) setData(row); return; }
+      }
+      const { data: fallback } = await supabase
+        .from("mensalidade_config").select("*")
+        .eq("team_id", teamId).eq("ano", ano).is("mes", null).maybeSingle();
+      if (alive) setData(fallback || null);
     };
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
     return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
-  }, [teamId, ano]);
+  }, [teamId, ano, mes]);
   return { data };
 };
 
 export const useUpsertMensalidadeConfig = () => {
-  const mutate = async (payload: { team_id: string; ano: number; valor_mensal: number }) => {
-    const { error } = await supabase.from("mensalidade_config").upsert(payload, { onConflict: "team_id,ano" });
+  const mutate = async (payload: { team_id: string; ano: number; valor_mensal: number; mes?: number | null }) => {
+    const row = { team_id: payload.team_id, ano: payload.ano, valor_mensal: payload.valor_mensal, mes: payload.mes ?? null };
+    const { error } = await supabase
+      .from("mensalidade_config")
+      .upsert(row, { onConflict: "team_id,ano,mes" });
     if (error) throw error;
     emitChange();
   };
