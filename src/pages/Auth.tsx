@@ -204,17 +204,6 @@ const AuthPage = () => {
           loginEmail = lookup.email as string;
         }
 
-        const status = await checkEmailStatus(loginEmail);
-        if (status?.deactivated || status?.cleaned) {
-          toast({
-            title: "Conta desativada",
-            description: "Este cadastro já foi utilizado. Crie uma nova conta com uma nova senha.",
-            variant: "destructive",
-          });
-          setIsLogin(false);
-          return;
-        }
-
         const { error } = await withAuthTimeout(
           supabase.auth.signInWithPassword({ email: loginEmail, password }),
           "O login demorou mais do que o esperado. Tente novamente."
