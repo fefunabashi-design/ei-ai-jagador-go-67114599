@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, Users, DollarSign } from "lucide-react";
+import { ArrowLeft, Check, Users, DollarSign, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,9 @@ const MensalidadesPage = () => {
   // null = "Ano todo" (default for the year), 1..12 = specific month
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [valorInput, setValorInput] = useState("");
+  const [editingValor, setEditingValor] = useState(false);
+  const [confirmValor, setConfirmValor] = useState<number | null>(null);
+  const valorInputRef = useRef<HTMLInputElement>(null);
   const [confirmAction, setConfirmAction] = useState<{ playerId: string; mes: number; isPaid: boolean; playerName: string } | null>(null);
 
   const playerIds = players.map((p) => p.id);
@@ -142,14 +145,31 @@ const MensalidadesPage = () => {
     return true;
   });
 
-  const handleSaveValor = () => {
+  const handleRequestSaveValor = () => {
     const val = parseFloat(valorInput.replace(",", "."));
     if (isNaN(val) || val < 0) {
       toast({ title: "Valor inválido", variant: "destructive" });
       return;
     }
+    if (val === valorMensal) {
+      setEditingValor(false);
+      return;
+    }
+    setConfirmValor(val);
+  };
+
+  const handleConfirmSaveValor = async () => {
+    if (confirmValor == null) return;
+    const val = confirmValor;
     setValorInput(val.toFixed(2).replace(".", ","));
-    upsertConfig.mutate(val);
+    await upsertConfig.mutate(val);
+    setConfirmValor(null);
+    setEditingValor(false);
+  };
+
+  const handleCancelEditValor = () => {
+    setValorInput(valorMensal ? valorMensal.toFixed(2).replace(".", ",") : "");
+    setEditingValor(false);
   };
 
   return (
@@ -207,14 +227,57 @@ const MensalidadesPage = () => {
               </div>
               <div className="flex-[1.4] min-w-0">
                 <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">VALOR (R$)</label>
-                <Input
-                  className="h-9 text-sm"
-                  placeholder="0,00"
-                  value={valorInput}
-                  onChange={(e) => setValorInput(e.target.value)}
-                  onBlur={handleSaveValor}
-                  onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                />
+                <div className="flex gap-1">
+                  <Input
+                    ref={valorInputRef}
+                    className="h-9 text-sm"
+                    placeholder="0,00"
+                    value={valorInput}
+                    disabled={!editingValor}
+                    onChange={(e) => setValorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRequestSaveValor();
+                      if (e.key === "Escape") handleCancelEditValor();
+                    }}
+                  />
+                  {!editingValor ? (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className="h-9 w-9 shrink-0"
+                      onClick={() => {
+                        setEditingValor(true);
+                        setTimeout(() => valorInputRef.current?.focus(), 0);
+                      }}
+                      aria-label="Editar valor"
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 bg-primary text-primary-foreground"
+                        onClick={handleRequestSaveValor}
+                        aria-label="Salvar valor"
+                      >
+                        <Check size={14} />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9 shrink-0"
+                        onClick={handleCancelEditValor}
+                        aria-label="Cancelar edição"
+                      >
+                        <X size={14} />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             {selectedMonth != null && (
@@ -411,6 +474,26 @@ const MensalidadesPage = () => {
             >
               {confirmAction?.isPaid ? "Cancelar pagamento" : "Confirmar"}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmValor != null} onOpenChange={(o) => !o && setConfirmValor(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Salvar valor da mensalidade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmValor != null && (
+                <>
+                  Confirmar novo valor de {formatCurrency(confirmValor)} para{" "}
+                  {selectedMonth ? `${MONTH_LABELS[selectedMonth - 1]}/${selectedYear}` : `o ano de ${selectedYear}`}?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSaveValor}>Salvar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

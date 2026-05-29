@@ -708,11 +708,18 @@ export const useMensalidadeConfig = (teamId: string | undefined, ano: number, me
           .from("mensalidade_config").select("*")
           .eq("team_id", teamId).eq("ano", ano).eq("mes", mes).maybeSingle();
         if (row) { if (alive) setData(row); return; }
+        const { data: fallback } = await supabase
+          .from("mensalidade_config").select("*")
+          .eq("team_id", teamId).eq("ano", ano).is("mes", null).maybeSingle();
+        if (alive) setData(fallback || null);
+        return;
       }
-      const { data: fallback } = await supabase
+      // "Ano todo": pega o mais recente cadastrado (qualquer mês ou padrão do ano)
+      const { data: rows } = await supabase
         .from("mensalidade_config").select("*")
-        .eq("team_id", teamId).eq("ano", ano).is("mes", null).maybeSingle();
-      if (alive) setData(fallback || null);
+        .eq("team_id", teamId).eq("ano", ano)
+        .order("updated_at", { ascending: false }).limit(1);
+      if (alive) setData((rows && rows[0]) || null);
     };
     load();
     const h = () => load();
