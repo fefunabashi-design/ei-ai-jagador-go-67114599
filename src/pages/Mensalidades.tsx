@@ -44,6 +44,9 @@ const MensalidadesPage = () => {
   // null = "Ano todo" (default for the year), 1..12 = specific month
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [valorInput, setValorInput] = useState("");
+  const [editingValor, setEditingValor] = useState(false);
+  const [confirmValor, setConfirmValor] = useState<number | null>(null);
+  const valorInputRef = useRef<HTMLInputElement>(null);
   const [confirmAction, setConfirmAction] = useState<{ playerId: string; mes: number; isPaid: boolean; playerName: string } | null>(null);
 
   const playerIds = players.map((p) => p.id);
