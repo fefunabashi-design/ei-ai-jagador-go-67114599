@@ -8,10 +8,17 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import type { Session } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 
 const SYNTHETIC_EMAIL_DOMAIN = "cpf.eaijogador.app";
 const AUTH_ACTION_TIMEOUT_MS = 10000;
+const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const PUBLIC_AUTH_HEADERS = {
+  "Content-Type": "application/json",
+  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+};
 
 const withAuthTimeout = async <T,>(promise: PromiseLike<T>, message = "A autenticação demorou mais do que o esperado. Tente novamente.") => {
   let timeoutId: number | undefined;
@@ -24,6 +31,34 @@ const withAuthTimeout = async <T,>(promise: PromiseLike<T>, message = "A autenti
     ]);
   } finally {
     if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
+
+const invokePublicFunction = async <T,>(name: string, body: unknown, message: string) => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), AUTH_ACTION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${FUNCTIONS_URL}/${name}`, {
+      method: "POST",
+      headers: PUBLIC_AUTH_HEADERS,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => null) as T | null;
+
+    return {
+      data,
+      error: response.ok ? null : new Error((data as { error?: string } | null)?.error || message),
+      status: response.status,
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(message);
+    }
+    throw new Error("Não foi possível conectar ao login. Verifique sua conexão e tente novamente.");
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 };
 
@@ -71,16 +106,20 @@ const AuthPage = () => {
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
   useEffect(() => {
-    const goIfActive = async (session: any) => {
+    let alive = true;
+
+    const goIfActive = async (session: Session | null) => {
       if (!session) return;
-        const { data: profile } = await withAuthTimeout(
+      const result = await withAuthTimeout(
           supabase
             .from("profiles")
             .select("is_active")
             .eq("user_id", session.user.id)
             .maybeSingle(),
           "Não foi possível verificar sua sessão. Tente novamente."
-        );
+        ).catch(() => null);
+      if (!alive) return;
+      const profile = result?.data;
       if (profile?.is_active === false) {
         await supabase.auth.signOut();
         Object.keys(localStorage)
@@ -90,11 +129,13 @@ const AuthPage = () => {
       }
       navigate("/dashboard", { replace: true });
     };
-    supabase.auth.getSession().then(({ data: { session } }) => goIfActive(session));
+    withAuthTimeout(supabase.auth.getSession(), "Não foi possível verificar sua sessão. Tente novamente.")
+      .then(({ data: { session } }) => goIfActive(session))
+      .catch(() => undefined);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void goIfActive(session);
+      window.setTimeout(() => void goIfActive(session), 0);
     });
-    return () => subscription.unsubscribe();
+    return () => { alive = false; subscription.unsubscribe(); };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,40 +180,28 @@ const AuthPage = () => {
 
     try {
       const checkEmailStatus = async (e: string) => {
-        const { data } = await withAuthTimeout(
-          supabase.functions.invoke("check-email-status", {
-            body: { email: e },
-          }),
+        const { data } = await invokePublicFunction<{ exists?: boolean; deactivated?: boolean; cleaned?: boolean }>(
+          "check-email-status",
+          { email: e },
           "A verificação da conta demorou mais do que o esperado. Tente novamente."
         );
-        return data as { exists?: boolean; deactivated?: boolean; cleaned?: boolean } | null;
+        return data;
       };
 
       if (isLogin) {
         // Se CPF, descobre o e-mail real cadastrado
         if (isCpf) {
-          const { data: lookup, error: lkErr } = await withAuthTimeout(
-            supabase.functions.invoke("lookup-email-by-cpf", {
-              body: { cpf: cpfDigits },
-            }),
+          const { data: lookup, error: lkErr } = await invokePublicFunction<{ email?: string; error?: string }>(
+            "lookup-email-by-cpf",
+            { cpf: cpfDigits },
             "A busca pelo CPF demorou mais do que o esperado. Tente novamente."
           );
           if (lkErr || !lookup?.email) {
             toast({ title: "CPF não encontrado", description: "Nenhuma conta com esse CPF.", variant: "destructive" });
+            setAuthError("CPF não encontrado. Confira os números ou entre com seu e-mail.");
             return;
           }
           loginEmail = lookup.email as string;
-        }
-
-        const status = await checkEmailStatus(loginEmail);
-        if (status?.deactivated || status?.cleaned) {
-          toast({
-            title: "Conta desativada",
-            description: "Este cadastro já foi utilizado. Crie uma nova conta com uma nova senha.",
-            variant: "destructive",
-          });
-          setIsLogin(false);
-          return;
         }
 
         const { error } = await withAuthTimeout(
@@ -188,10 +217,9 @@ const AuthPage = () => {
         if (isCpf) {
           signupEmail = cpfToSyntheticEmail(cpfDigits);
         } else {
-          const { data: v } = await withAuthTimeout(
-            supabase.functions.invoke("validate-email", {
-              body: { email: loginEmail },
-            }),
+          const { data: v } = await invokePublicFunction<{ valid?: boolean; reason?: string }>(
+            "validate-email",
+            { email: loginEmail },
             "A validação do e-mail demorou mais do que o esperado. Tente novamente."
           );
           if (v && v.valid === false) {
