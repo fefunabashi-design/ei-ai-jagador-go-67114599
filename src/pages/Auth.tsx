@@ -105,16 +105,20 @@ const AuthPage = () => {
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
   useEffect(() => {
+    let alive = true;
+
     const goIfActive = async (session: any) => {
       if (!session) return;
-        const { data: profile } = await withAuthTimeout(
+      const result = await withAuthTimeout(
           supabase
             .from("profiles")
             .select("is_active")
             .eq("user_id", session.user.id)
             .maybeSingle(),
           "Não foi possível verificar sua sessão. Tente novamente."
-        );
+        ).catch(() => null);
+      if (!alive) return;
+      const profile = result?.data;
       if (profile?.is_active === false) {
         await supabase.auth.signOut();
         Object.keys(localStorage)
@@ -124,11 +128,13 @@ const AuthPage = () => {
       }
       navigate("/dashboard", { replace: true });
     };
-    supabase.auth.getSession().then(({ data: { session } }) => goIfActive(session));
+    withAuthTimeout(supabase.auth.getSession(), "Não foi possível verificar sua sessão. Tente novamente.")
+      .then(({ data: { session } }) => goIfActive(session))
+      .catch(() => undefined);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void goIfActive(session);
+      window.setTimeout(() => void goIfActive(session), 0);
     });
-    return () => subscription.unsubscribe();
+    return () => { alive = false; subscription.unsubscribe(); };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
