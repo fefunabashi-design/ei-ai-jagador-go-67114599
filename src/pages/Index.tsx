@@ -141,54 +141,124 @@ const Index = () => {
   };
 
 
-  // Team season stats — completed matches where myTeam is home OR away
+  // Aggregate season stats across ALL teams the user belongs to
+  const myTeamIds = new Set((myTeams || []).map((t: any) => t.id));
+  const allMyMatches = matches.filter((m) => {
+    const homeTeam = m.home_team as any;
+    const awayTeam = m.away_team as any;
+    return (homeTeam?.id && myTeamIds.has(homeTeam.id)) || (awayTeam?.id && myTeamIds.has(awayTeam.id));
+  });
+  const completedAllMatches = allMyMatches.filter((m) => m.status === "completed");
+
+  // Backward-compatible (current active team) — used elsewhere on the page
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
     const awayTeam = m.away_team as any;
     return myTeam && (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id);
   });
-  const completedMatches = myMatches.filter((m) => m.status === "completed");
-  const jogosTemporada = completedMatches.length;
-  const golsTemporada = completedMatches.reduce((acc, m) => {
-    const homeTeam = m.home_team as any;
-    const isHome = homeTeam?.id === myTeam?.id;
-    return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
-  }, 0);
 
-  // Lembretes — mensalidades em atraso + vaquinhas (match_payments) pendentes
+  // Per-team breakdown for the 4 stat cards
+  const perTeamStats = (myTeams || []).map((t: any) => {
+    const teamMatches = completedAllMatches.filter((m) => {
+      const h = m.home_team as any; const a = m.away_team as any;
+      return h?.id === t.id || a?.id === t.id;
+    });
+    const jogos = teamMatches.length;
+    const gols = teamMatches.reduce((acc, m) => {
+      const h = m.home_team as any;
+      const isHome = h?.id === t.id;
+      return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
+    }, 0);
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols, campeonatos: 0 };
+  });
+
+  const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
+  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
+  const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
+
+  // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
   const [lembretes, setLembretes] = useState(0);
+  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, { mens: number; vaq: number }>>({});
   useEffect(() => {
-    if (!myTeam?.id) { setLembretes(0); return; }
+    const teamIds = Array.from(myTeamIds);
+    if (!teamIds.length) { setLembretes(0); setLembretesPerTeam({}); return; }
     let alive = true;
     (async () => {
-      const playerIds = players.map((p: any) => p.id);
       const now = new Date();
       const ano = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
-      let mensAtraso = 0;
-      if (playerIds.length) {
+
+      // Players of all teams
+      const { data: allPlayers = [] } = await supabase
+        .from("players").select("id, team_id").in("team_id", teamIds);
+      const playersByTeam = new Map<string, string[]>();
+      (allPlayers || []).forEach((p: any) => {
+        const arr = playersByTeam.get(p.team_id) || [];
+        arr.push(p.id);
+        playersByTeam.set(p.team_id, arr);
+      });
+      const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
+
+      const mensByPlayer = new Map<string, number>();
+      if (allPlayerIds.length) {
         const { data: mens = [] } = await supabase
           .from("mensalidades")
-          .select("id, pago, mes, ano")
-          .in("player_id", playerIds)
+          .select("id, pago, mes, ano, player_id")
+          .in("player_id", allPlayerIds)
           .eq("ano", ano)
           .lte("mes", mesAtual);
-        mensAtraso = (mens || []).filter((m: any) => !m.pago).length;
+        (mens || []).filter((m: any) => !m.pago).forEach((m: any) => {
+          mensByPlayer.set(m.player_id, (mensByPlayer.get(m.player_id) || 0) + 1);
+        });
       }
-      const matchIds = myMatches.map((m) => m.id);
-      let vaquinhaPend = 0;
+
+      const matchIds = allMyMatches.map((m) => m.id);
+      const matchToTeamSide = new Map<string, string[]>();
+      allMyMatches.forEach((m) => {
+        const tids: string[] = [];
+        const h = m.home_team as any; const a = m.away_team as any;
+        if (h?.id && myTeamIds.has(h.id)) tids.push(h.id);
+        if (a?.id && myTeamIds.has(a.id)) tids.push(a.id);
+        matchToTeamSide.set(m.id, tids);
+      });
+
+      const vaqByTeam = new Map<string, number>();
       if (matchIds.length) {
         const { data: pays = [] } = await supabase
           .from("match_payments")
-          .select("id, status")
+          .select("id, status, match_id")
           .in("match_id", matchIds)
           .eq("status", "pending");
-        vaquinhaPend = (pays || []).length;
+        (pays || []).forEach((p: any) => {
+          const tids = matchToTeamSide.get(p.match_id) || [];
+          tids.forEach((tid) => vaqByTeam.set(tid, (vaqByTeam.get(tid) || 0) + 1));
+        });
       }
-      if (alive) setLembretes(mensAtraso + vaquinhaPend);
+
+      const perTeam: Record<string, { mens: number; vaq: number }> = {};
+      teamIds.forEach((tid) => {
+        const pIds = playersByTeam.get(tid) || [];
+        const mens = pIds.reduce((acc, pid) => acc + (mensByPlayer.get(pid) || 0), 0);
+        const vaq = vaqByTeam.get(tid) || 0;
+        perTeam[tid] = { mens, vaq };
+      });
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens + v.vaq, 0);
+      if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
-  }, [myTeam?.id, players.length, myMatches.length]);
+  }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+
+  // Stat detail dialog
+  type StatKey = "jogos" | "gols" | "campeonatos" | "lembretes";
+  const [statDetail, setStatDetail] = useState<StatKey | null>(null);
+  const statDetailLabels: Record<StatKey, string> = {
+    jogos: "Jogos da temporada",
+    gols: "Gols da temporada",
+    campeonatos: "Campeonatos",
+    lembretes: "Lembretes",
+  };
+
+
 
 
 
