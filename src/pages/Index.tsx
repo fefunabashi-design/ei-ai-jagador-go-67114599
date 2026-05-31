@@ -391,25 +391,80 @@ const Index = () => {
       {/* Team Season Stats */}
       <div className="px-5 mt-3">
         <div className="grid grid-cols-4 gap-2">
-          {[
-            { value: jogosTemporada, label: "Jogos temporada" },
-            { value: golsTemporada, label: "Gols temporada" },
-            { value: 0, label: "Campeonatos" },
-            { value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
-          ].map((stat, i) => (
-            <motion.div
+          {([
+            { key: "jogos" as StatKey, value: jogosTemporada, label: "Jogos temporada" },
+            { key: "gols" as StatKey, value: golsTemporada, label: "Gols temporada" },
+            { key: "campeonatos" as StatKey, value: campeonatosTotal, label: "Campeonatos" },
+            { key: "lembretes" as StatKey, value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
+          ]).map((stat, i) => (
+            <motion.button
               key={stat.label}
+              type="button"
+              onClick={() => setStatDetail(stat.key)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`bg-card rounded-lg border p-1 text-center ${stat.highlight ? "border-destructive/50" : "border-border"}`}
+              className={`bg-card rounded-lg border p-1 text-center hover:border-primary/40 transition-colors ${stat.highlight ? "border-destructive/50" : "border-border"}`}
             >
               <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-foreground"}`}>{stat.value}</p>
               <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
       </div>
+
+      {/* Stat detail dialog — per-team breakdown */}
+      <Dialog open={statDetail !== null} onOpenChange={(o) => !o && setStatDetail(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              {statDetail ? statDetailLabels[statDetail] : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {perTeamStats.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Você ainda não está vinculado a nenhum time.
+              </p>
+            )}
+            {perTeamStats.map((s) => {
+              let value: number | string = 0;
+              let extra: string | null = null;
+              if (statDetail === "jogos") value = s.jogos;
+              else if (statDetail === "gols") value = s.gols;
+              else if (statDetail === "campeonatos") { value = 0; extra = "Em breve"; }
+              else if (statDetail === "lembretes") {
+                const lt = lembretesPerTeam[s.teamId] || { mens: 0, vaq: 0 };
+                value = lt.mens + lt.vaq;
+                extra = `${lt.mens} mensalidade(s) • ${lt.vaq} vaquinha(s)`;
+              }
+              return (
+                <div
+                  key={s.teamId}
+                  className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
+                >
+                  {s.logo ? (
+                    <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
+                  ) : (
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+                      <Shield size={14} className="text-primary" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                    {extra && <p className="text-[10px] text-muted-foreground">{extra}</p>}
+                  </div>
+                  <p className={`text-lg font-display ${statDetail === "lembretes" && Number(value) > 0 ? "text-destructive" : "text-foreground"}`}>
+                    {value}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {/* Next Match Card */}
