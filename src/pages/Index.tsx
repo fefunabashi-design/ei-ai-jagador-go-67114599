@@ -442,52 +442,146 @@ const Index = () => {
 
       {/* Stat detail dialog — per-team breakdown */}
       <Dialog open={statDetail !== null} onOpenChange={(o) => !o && setStatDetail(null)}>
-        <DialogContent className="bg-card border-border max-w-sm">
+        <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">
               {statDetail ? statDetailLabels[statDetail] : ""}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            {perTeamStats.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Você ainda não está vinculado a nenhum time.
+
+          {/* Campeonatos: ainda não existe esse recurso */}
+          {statDetail === "campeonatos" && (
+            <div className="py-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-foreground">Em breve 🏆</p>
+              <p className="text-xs text-muted-foreground">
+                Os campeonatos ainda não estão disponíveis na plataforma.
               </p>
-            )}
-            {perTeamStats.map((s) => {
-              let value: number | string = 0;
-              let extra: string | null = null;
-              if (statDetail === "jogos") value = s.jogos;
-              else if (statDetail === "gols") value = s.gols;
-              else if (statDetail === "campeonatos") { value = 0; extra = "Em breve"; }
-              else if (statDetail === "lembretes") {
-                const lt = lembretesPerTeam[s.teamId] || { mens: 0, vaq: 0 };
-                value = lt.mens + lt.vaq;
-                extra = `${lt.mens} mensalidade(s) • ${lt.vaq} vaquinha(s)`;
-              }
-              return (
-                <div
-                  key={s.teamId}
-                  className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
-                >
-                  {s.logo ? (
-                    <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
-                  ) : (
-                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                      <Shield size={14} className="text-primary" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{s.teamName}</p>
-                    {extra && <p className="text-[10px] text-muted-foreground">{extra}</p>}
+            </div>
+          )}
+
+          {/* Jogos / Gols: total por time */}
+          {(statDetail === "jogos" || statDetail === "gols") && (
+            <div className="space-y-2">
+              {perTeamStats.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Você ainda não está vinculado a nenhum time.
+                </p>
+              )}
+              {perTeamStats.map((s) => {
+                const value = statDetail === "jogos" ? s.jogos : s.gols;
+                return (
+                  <div
+                    key={s.teamId}
+                    className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
+                  >
+                    {s.logo ? (
+                      <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
+                    ) : (
+                      <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+                        <Shield size={14} className="text-primary" />
+                      </div>
+                    )}
+                    <p className="flex-1 min-w-0 text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                    <p className="text-lg font-display text-foreground">{value}</p>
                   </div>
-                  <p className={`text-lg font-display ${statDetail === "lembretes" && Number(value) > 0 ? "text-destructive" : "text-foreground"}`}>
-                    {value}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Lembretes: detalhe item a item */}
+          {statDetail === "lembretes" && (
+            <div className="space-y-3">
+              {perTeamStats.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Você ainda não está vinculado a nenhum time.
+                </p>
+              )}
+              {perTeamStats.map((s) => {
+                const lt = lembretesPerTeam[s.teamId] || { mens: [], vaq: [] };
+                const total = lt.mens.length + lt.vaq.length;
+
+                // Agrupa mensalidades por jogador
+                const mensByPlayer = new Map<string, { name: string; meses: number[] }>();
+                lt.mens.forEach((m) => {
+                  const e = mensByPlayer.get(m.playerId) || { name: m.playerName, meses: [] };
+                  e.meses.push(m.mes);
+                  mensByPlayer.set(m.playerId, e);
+                });
+
+                // Agrupa vaquinhas por partida
+                const vaqByMatch = new Map<string, { label: string; players: string[]; total: number }>();
+                lt.vaq.forEach((v) => {
+                  const e = vaqByMatch.get(v.matchId) || { label: v.label, players: [], total: 0 };
+                  e.players.push(v.playerName);
+                  e.total += v.amount;
+                  vaqByMatch.set(v.matchId, e);
+                });
+
+                return (
+                  <div key={s.teamId} className="rounded-lg border border-border bg-background p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      {s.logo ? (
+                        <img src={s.logo} alt="" className="h-7 w-7 object-contain rounded" />
+                      ) : (
+                        <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center">
+                          <Shield size={12} className="text-primary" />
+                        </div>
+                      )}
+                      <p className="flex-1 text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                      <span className={`text-sm font-display ${total > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {total}
+                      </span>
+                    </div>
+
+                    {total === 0 && (
+                      <p className="text-[11px] text-muted-foreground">Sem pendências 🎉</p>
+                    )}
+
+                    {mensByPlayer.size > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                          Mensalidades em atraso
+                        </p>
+                        {Array.from(mensByPlayer.values()).map((e, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => { setStatDetail(null); navigate("/mensalidades"); }}
+                            className="w-full flex items-start gap-2 text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                          >
+                            <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.name}</span>
+                            <span className="text-[10px] text-destructive font-medium">
+                              {e.meses.sort((a, b) => a - b).map((m) => MONTHS_SHORT[m - 1]).join(", ")}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {vaqByMatch.size > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                          Vaquinhas pendentes
+                        </p>
+                        {Array.from(vaqByMatch.entries()).map(([mid, e]) => (
+                          <button
+                            key={mid}
+                            onClick={() => { setStatDetail(null); navigate(`/match/${mid}`); }}
+                            className="w-full text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                          >
+                            <p className="text-xs font-semibold text-foreground truncate">{e.label}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {e.players.length} jogador(es) • R$ {e.total.toFixed(2).replace(".", ",")}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
