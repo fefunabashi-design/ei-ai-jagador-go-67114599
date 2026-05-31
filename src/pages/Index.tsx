@@ -177,8 +177,11 @@ const Index = () => {
   const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
+  type LembreteMens = { playerId: string; playerName: string; mes: number };
+  type LembreteVaq = { matchId: string; label: string; playerName: string; amount: number };
+  type LembreteTeam = { mens: LembreteMens[]; vaq: LembreteVaq[] };
   const [lembretes, setLembretes] = useState(0);
-  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, { mens: number; vaq: number }>>({});
+  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, LembreteTeam>>({});
   useEffect(() => {
     const teamIds = Array.from(myTeamIds);
     if (!teamIds.length) { setLembretes(0); setLembretesPerTeam({}); return; }
@@ -190,16 +193,19 @@ const Index = () => {
 
       // Players of all teams
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id").in("team_id", teamIds);
-      const playersByTeam = new Map<string, string[]>();
+        .from("players").select("id, team_id, name").in("team_id", teamIds);
+      const playersByTeam = new Map<string, { id: string; name: string }[]>();
+      const playerById = new Map<string, { id: string; name: string; team_id: string }>();
       (allPlayers || []).forEach((p: any) => {
         const arr = playersByTeam.get(p.team_id) || [];
-        arr.push(p.id);
+        arr.push({ id: p.id, name: p.name });
         playersByTeam.set(p.team_id, arr);
+        playerById.set(p.id, p);
       });
       const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
 
-      const mensByPlayer = new Map<string, number>();
+      const mensList: LembreteMens[] = [];
+      const mensByTeam = new Map<string, LembreteMens[]>();
       if (allPlayerIds.length) {
         const { data: mens = [] } = await supabase
           .from("mensalidades")
@@ -208,10 +214,18 @@ const Index = () => {
           .eq("ano", ano)
           .lte("mes", mesAtual);
         (mens || []).filter((m: any) => !m.pago).forEach((m: any) => {
-          mensByPlayer.set(m.player_id, (mensByPlayer.get(m.player_id) || 0) + 1);
+          const p = playerById.get(m.player_id);
+          if (!p) return;
+          const item = { playerId: m.player_id, playerName: p.name, mes: m.mes };
+          mensList.push(item);
+          const arr = mensByTeam.get(p.team_id) || [];
+          arr.push(item);
+          mensByTeam.set(p.team_id, arr);
         });
       }
 
+      const matchById = new Map<string, any>();
+      allMyMatches.forEach((m) => matchById.set(m.id, m));
       const matchIds = allMyMatches.map((m) => m.id);
       const matchToTeamSide = new Map<string, string[]>();
       allMyMatches.forEach((m) => {
@@ -222,31 +236,44 @@ const Index = () => {
         matchToTeamSide.set(m.id, tids);
       });
 
-      const vaqByTeam = new Map<string, number>();
+      const vaqByTeam = new Map<string, LembreteVaq[]>();
       if (matchIds.length) {
         const { data: pays = [] } = await supabase
           .from("match_payments")
-          .select("id, status, match_id")
+          .select("id, status, match_id, player_id, amount")
           .in("match_id", matchIds)
           .eq("status", "pending");
         (pays || []).forEach((p: any) => {
           const tids = matchToTeamSide.get(p.match_id) || [];
-          tids.forEach((tid) => vaqByTeam.set(tid, (vaqByTeam.get(tid) || 0) + 1));
+          const m = matchById.get(p.match_id);
+          const home = (m?.home_team as any)?.name || "Time";
+          const away = (m?.away_team as any)?.name || "Adversário";
+          const dt = m ? new Date(m.match_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+          const label = `${home} x ${away}${dt ? ` • ${dt}` : ""}`;
+          const playerName = playerById.get(p.player_id)?.name || "Jogador";
+          tids.forEach((tid) => {
+            const arr = vaqByTeam.get(tid) || [];
+            arr.push({ matchId: p.match_id, label, playerName, amount: Number(p.amount || 0) });
+            vaqByTeam.set(tid, arr);
+          });
         });
       }
 
-      const perTeam: Record<string, { mens: number; vaq: number }> = {};
+      const perTeam: Record<string, LembreteTeam> = {};
       teamIds.forEach((tid) => {
-        const pIds = playersByTeam.get(tid) || [];
-        const mens = pIds.reduce((acc, pid) => acc + (mensByPlayer.get(pid) || 0), 0);
-        const vaq = vaqByTeam.get(tid) || 0;
-        perTeam[tid] = { mens, vaq };
+        perTeam[tid] = {
+          mens: mensByTeam.get(tid) || [],
+          vaq: vaqByTeam.get(tid) || [],
+        };
       });
-      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens + v.vaq, 0);
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length + v.vaq.length, 0);
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
   }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+
+  const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
 
   // Stat detail dialog
   type StatKey = "jogos" | "gols" | "campeonatos" | "lembretes";
@@ -415,52 +442,146 @@ const Index = () => {
 
       {/* Stat detail dialog — per-team breakdown */}
       <Dialog open={statDetail !== null} onOpenChange={(o) => !o && setStatDetail(null)}>
-        <DialogContent className="bg-card border-border max-w-sm">
+        <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">
               {statDetail ? statDetailLabels[statDetail] : ""}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            {perTeamStats.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Você ainda não está vinculado a nenhum time.
+
+          {/* Campeonatos: ainda não existe esse recurso */}
+          {statDetail === "campeonatos" && (
+            <div className="py-8 text-center space-y-2">
+              <p className="text-sm font-semibold text-foreground">Em breve 🏆</p>
+              <p className="text-xs text-muted-foreground">
+                Os campeonatos ainda não estão disponíveis na plataforma.
               </p>
-            )}
-            {perTeamStats.map((s) => {
-              let value: number | string = 0;
-              let extra: string | null = null;
-              if (statDetail === "jogos") value = s.jogos;
-              else if (statDetail === "gols") value = s.gols;
-              else if (statDetail === "campeonatos") { value = 0; extra = "Em breve"; }
-              else if (statDetail === "lembretes") {
-                const lt = lembretesPerTeam[s.teamId] || { mens: 0, vaq: 0 };
-                value = lt.mens + lt.vaq;
-                extra = `${lt.mens} mensalidade(s) • ${lt.vaq} vaquinha(s)`;
-              }
-              return (
-                <div
-                  key={s.teamId}
-                  className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
-                >
-                  {s.logo ? (
-                    <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
-                  ) : (
-                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                      <Shield size={14} className="text-primary" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{s.teamName}</p>
-                    {extra && <p className="text-[10px] text-muted-foreground">{extra}</p>}
+            </div>
+          )}
+
+          {/* Jogos / Gols: total por time */}
+          {(statDetail === "jogos" || statDetail === "gols") && (
+            <div className="space-y-2">
+              {perTeamStats.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Você ainda não está vinculado a nenhum time.
+                </p>
+              )}
+              {perTeamStats.map((s) => {
+                const value = statDetail === "jogos" ? s.jogos : s.gols;
+                return (
+                  <div
+                    key={s.teamId}
+                    className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
+                  >
+                    {s.logo ? (
+                      <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
+                    ) : (
+                      <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+                        <Shield size={14} className="text-primary" />
+                      </div>
+                    )}
+                    <p className="flex-1 min-w-0 text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                    <p className="text-lg font-display text-foreground">{value}</p>
                   </div>
-                  <p className={`text-lg font-display ${statDetail === "lembretes" && Number(value) > 0 ? "text-destructive" : "text-foreground"}`}>
-                    {value}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Lembretes: detalhe item a item */}
+          {statDetail === "lembretes" && (
+            <div className="space-y-3">
+              {perTeamStats.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Você ainda não está vinculado a nenhum time.
+                </p>
+              )}
+              {perTeamStats.map((s) => {
+                const lt = lembretesPerTeam[s.teamId] || { mens: [], vaq: [] };
+                const total = lt.mens.length + lt.vaq.length;
+
+                // Agrupa mensalidades por jogador
+                const mensByPlayer = new Map<string, { name: string; meses: number[] }>();
+                lt.mens.forEach((m) => {
+                  const e = mensByPlayer.get(m.playerId) || { name: m.playerName, meses: [] };
+                  e.meses.push(m.mes);
+                  mensByPlayer.set(m.playerId, e);
+                });
+
+                // Agrupa vaquinhas por partida
+                const vaqByMatch = new Map<string, { label: string; players: string[]; total: number }>();
+                lt.vaq.forEach((v) => {
+                  const e = vaqByMatch.get(v.matchId) || { label: v.label, players: [], total: 0 };
+                  e.players.push(v.playerName);
+                  e.total += v.amount;
+                  vaqByMatch.set(v.matchId, e);
+                });
+
+                return (
+                  <div key={s.teamId} className="rounded-lg border border-border bg-background p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      {s.logo ? (
+                        <img src={s.logo} alt="" className="h-7 w-7 object-contain rounded" />
+                      ) : (
+                        <div className="h-7 w-7 rounded bg-primary/10 flex items-center justify-center">
+                          <Shield size={12} className="text-primary" />
+                        </div>
+                      )}
+                      <p className="flex-1 text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                      <span className={`text-sm font-display ${total > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {total}
+                      </span>
+                    </div>
+
+                    {total === 0 && (
+                      <p className="text-[11px] text-muted-foreground">Sem pendências 🎉</p>
+                    )}
+
+                    {mensByPlayer.size > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                          Mensalidades em atraso
+                        </p>
+                        {Array.from(mensByPlayer.values()).map((e, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => { setStatDetail(null); navigate("/mensalidades"); }}
+                            className="w-full flex items-start gap-2 text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                          >
+                            <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.name}</span>
+                            <span className="text-[10px] text-destructive font-medium">
+                              {e.meses.sort((a, b) => a - b).map((m) => MONTHS_SHORT[m - 1]).join(", ")}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {vaqByMatch.size > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                          Vaquinhas pendentes
+                        </p>
+                        {Array.from(vaqByMatch.entries()).map(([mid, e]) => (
+                          <button
+                            key={mid}
+                            onClick={() => { setStatDetail(null); navigate(`/match/${mid}`); }}
+                            className="w-full text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                          >
+                            <p className="text-xs font-semibold text-foreground truncate">{e.label}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {e.players.length} jogador(es) • R$ {e.total.toFixed(2).replace(".", ",")}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
