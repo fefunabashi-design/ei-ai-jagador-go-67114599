@@ -177,8 +177,11 @@ const Index = () => {
   const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
+  type LembreteMens = { playerId: string; playerName: string; mes: number };
+  type LembreteVaq = { matchId: string; label: string; playerName: string; amount: number };
+  type LembreteTeam = { mens: LembreteMens[]; vaq: LembreteVaq[] };
   const [lembretes, setLembretes] = useState(0);
-  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, { mens: number; vaq: number }>>({});
+  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, LembreteTeam>>({});
   useEffect(() => {
     const teamIds = Array.from(myTeamIds);
     if (!teamIds.length) { setLembretes(0); setLembretesPerTeam({}); return; }
@@ -190,16 +193,19 @@ const Index = () => {
 
       // Players of all teams
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id").in("team_id", teamIds);
-      const playersByTeam = new Map<string, string[]>();
+        .from("players").select("id, team_id, name").in("team_id", teamIds);
+      const playersByTeam = new Map<string, { id: string; name: string }[]>();
+      const playerById = new Map<string, { id: string; name: string; team_id: string }>();
       (allPlayers || []).forEach((p: any) => {
         const arr = playersByTeam.get(p.team_id) || [];
-        arr.push(p.id);
+        arr.push({ id: p.id, name: p.name });
         playersByTeam.set(p.team_id, arr);
+        playerById.set(p.id, p);
       });
       const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
 
-      const mensByPlayer = new Map<string, number>();
+      const mensList: LembreteMens[] = [];
+      const mensByTeam = new Map<string, LembreteMens[]>();
       if (allPlayerIds.length) {
         const { data: mens = [] } = await supabase
           .from("mensalidades")
@@ -208,10 +214,18 @@ const Index = () => {
           .eq("ano", ano)
           .lte("mes", mesAtual);
         (mens || []).filter((m: any) => !m.pago).forEach((m: any) => {
-          mensByPlayer.set(m.player_id, (mensByPlayer.get(m.player_id) || 0) + 1);
+          const p = playerById.get(m.player_id);
+          if (!p) return;
+          const item = { playerId: m.player_id, playerName: p.name, mes: m.mes };
+          mensList.push(item);
+          const arr = mensByTeam.get(p.team_id) || [];
+          arr.push(item);
+          mensByTeam.set(p.team_id, arr);
         });
       }
 
+      const matchById = new Map<string, any>();
+      allMyMatches.forEach((m) => matchById.set(m.id, m));
       const matchIds = allMyMatches.map((m) => m.id);
       const matchToTeamSide = new Map<string, string[]>();
       allMyMatches.forEach((m) => {
@@ -222,31 +236,44 @@ const Index = () => {
         matchToTeamSide.set(m.id, tids);
       });
 
-      const vaqByTeam = new Map<string, number>();
+      const vaqByTeam = new Map<string, LembreteVaq[]>();
       if (matchIds.length) {
         const { data: pays = [] } = await supabase
           .from("match_payments")
-          .select("id, status, match_id")
+          .select("id, status, match_id, player_id, amount")
           .in("match_id", matchIds)
           .eq("status", "pending");
         (pays || []).forEach((p: any) => {
           const tids = matchToTeamSide.get(p.match_id) || [];
-          tids.forEach((tid) => vaqByTeam.set(tid, (vaqByTeam.get(tid) || 0) + 1));
+          const m = matchById.get(p.match_id);
+          const home = (m?.home_team as any)?.name || "Time";
+          const away = (m?.away_team as any)?.name || "Adversário";
+          const dt = m ? new Date(m.match_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+          const label = `${home} x ${away}${dt ? ` • ${dt}` : ""}`;
+          const playerName = playerById.get(p.player_id)?.name || "Jogador";
+          tids.forEach((tid) => {
+            const arr = vaqByTeam.get(tid) || [];
+            arr.push({ matchId: p.match_id, label, playerName, amount: Number(p.amount || 0) });
+            vaqByTeam.set(tid, arr);
+          });
         });
       }
 
-      const perTeam: Record<string, { mens: number; vaq: number }> = {};
+      const perTeam: Record<string, LembreteTeam> = {};
       teamIds.forEach((tid) => {
-        const pIds = playersByTeam.get(tid) || [];
-        const mens = pIds.reduce((acc, pid) => acc + (mensByPlayer.get(pid) || 0), 0);
-        const vaq = vaqByTeam.get(tid) || 0;
-        perTeam[tid] = { mens, vaq };
+        perTeam[tid] = {
+          mens: mensByTeam.get(tid) || [],
+          vaq: vaqByTeam.get(tid) || [],
+        };
       });
-      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens + v.vaq, 0);
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length + v.vaq.length, 0);
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
   }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+
+  const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
 
   // Stat detail dialog
   type StatKey = "jogos" | "gols" | "campeonatos" | "lembretes";
