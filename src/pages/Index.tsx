@@ -12,7 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import PostFeed from "@/components/PostFeed";
 import AddPostDialog from "@/components/AddPostDialog";
 import { Plus } from "lucide-react";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
@@ -31,6 +31,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: myTeam, isLoading: teamLoading } = useMyTeam();
+  const { data: myTeams = [] } = useMyTeams();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
@@ -140,54 +141,124 @@ const Index = () => {
   };
 
 
-  // Team season stats — completed matches where myTeam is home OR away
+  // Aggregate season stats across ALL teams the user belongs to
+  const myTeamIds = new Set((myTeams || []).map((t: any) => t.id));
+  const allMyMatches = matches.filter((m) => {
+    const homeTeam = m.home_team as any;
+    const awayTeam = m.away_team as any;
+    return (homeTeam?.id && myTeamIds.has(homeTeam.id)) || (awayTeam?.id && myTeamIds.has(awayTeam.id));
+  });
+  const completedAllMatches = allMyMatches.filter((m) => m.status === "completed");
+
+  // Backward-compatible (current active team) — used elsewhere on the page
   const myMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
     const awayTeam = m.away_team as any;
     return myTeam && (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id);
   });
-  const completedMatches = myMatches.filter((m) => m.status === "completed");
-  const jogosTemporada = completedMatches.length;
-  const golsTemporada = completedMatches.reduce((acc, m) => {
-    const homeTeam = m.home_team as any;
-    const isHome = homeTeam?.id === myTeam?.id;
-    return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
-  }, 0);
 
-  // Lembretes — mensalidades em atraso + vaquinhas (match_payments) pendentes
+  // Per-team breakdown for the 4 stat cards
+  const perTeamStats = (myTeams || []).map((t: any) => {
+    const teamMatches = completedAllMatches.filter((m) => {
+      const h = m.home_team as any; const a = m.away_team as any;
+      return h?.id === t.id || a?.id === t.id;
+    });
+    const jogos = teamMatches.length;
+    const gols = teamMatches.reduce((acc, m) => {
+      const h = m.home_team as any;
+      const isHome = h?.id === t.id;
+      return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
+    }, 0);
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols, campeonatos: 0 };
+  });
+
+  const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
+  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
+  const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
+
+  // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
   const [lembretes, setLembretes] = useState(0);
+  const [lembretesPerTeam, setLembretesPerTeam] = useState<Record<string, { mens: number; vaq: number }>>({});
   useEffect(() => {
-    if (!myTeam?.id) { setLembretes(0); return; }
+    const teamIds = Array.from(myTeamIds);
+    if (!teamIds.length) { setLembretes(0); setLembretesPerTeam({}); return; }
     let alive = true;
     (async () => {
-      const playerIds = players.map((p: any) => p.id);
       const now = new Date();
       const ano = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
-      let mensAtraso = 0;
-      if (playerIds.length) {
+
+      // Players of all teams
+      const { data: allPlayers = [] } = await supabase
+        .from("players").select("id, team_id").in("team_id", teamIds);
+      const playersByTeam = new Map<string, string[]>();
+      (allPlayers || []).forEach((p: any) => {
+        const arr = playersByTeam.get(p.team_id) || [];
+        arr.push(p.id);
+        playersByTeam.set(p.team_id, arr);
+      });
+      const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
+
+      const mensByPlayer = new Map<string, number>();
+      if (allPlayerIds.length) {
         const { data: mens = [] } = await supabase
           .from("mensalidades")
-          .select("id, pago, mes, ano")
-          .in("player_id", playerIds)
+          .select("id, pago, mes, ano, player_id")
+          .in("player_id", allPlayerIds)
           .eq("ano", ano)
           .lte("mes", mesAtual);
-        mensAtraso = (mens || []).filter((m: any) => !m.pago).length;
+        (mens || []).filter((m: any) => !m.pago).forEach((m: any) => {
+          mensByPlayer.set(m.player_id, (mensByPlayer.get(m.player_id) || 0) + 1);
+        });
       }
-      const matchIds = myMatches.map((m) => m.id);
-      let vaquinhaPend = 0;
+
+      const matchIds = allMyMatches.map((m) => m.id);
+      const matchToTeamSide = new Map<string, string[]>();
+      allMyMatches.forEach((m) => {
+        const tids: string[] = [];
+        const h = m.home_team as any; const a = m.away_team as any;
+        if (h?.id && myTeamIds.has(h.id)) tids.push(h.id);
+        if (a?.id && myTeamIds.has(a.id)) tids.push(a.id);
+        matchToTeamSide.set(m.id, tids);
+      });
+
+      const vaqByTeam = new Map<string, number>();
       if (matchIds.length) {
         const { data: pays = [] } = await supabase
           .from("match_payments")
-          .select("id, status")
+          .select("id, status, match_id")
           .in("match_id", matchIds)
           .eq("status", "pending");
-        vaquinhaPend = (pays || []).length;
+        (pays || []).forEach((p: any) => {
+          const tids = matchToTeamSide.get(p.match_id) || [];
+          tids.forEach((tid) => vaqByTeam.set(tid, (vaqByTeam.get(tid) || 0) + 1));
+        });
       }
-      if (alive) setLembretes(mensAtraso + vaquinhaPend);
+
+      const perTeam: Record<string, { mens: number; vaq: number }> = {};
+      teamIds.forEach((tid) => {
+        const pIds = playersByTeam.get(tid) || [];
+        const mens = pIds.reduce((acc, pid) => acc + (mensByPlayer.get(pid) || 0), 0);
+        const vaq = vaqByTeam.get(tid) || 0;
+        perTeam[tid] = { mens, vaq };
+      });
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens + v.vaq, 0);
+      if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
-  }, [myTeam?.id, players.length, myMatches.length]);
+  }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+
+  // Stat detail dialog
+  type StatKey = "jogos" | "gols" | "campeonatos" | "lembretes";
+  const [statDetail, setStatDetail] = useState<StatKey | null>(null);
+  const statDetailLabels: Record<StatKey, string> = {
+    jogos: "Jogos da temporada",
+    gols: "Gols da temporada",
+    campeonatos: "Campeonatos",
+    lembretes: "Lembretes",
+  };
+
+
 
 
 
@@ -320,25 +391,80 @@ const Index = () => {
       {/* Team Season Stats */}
       <div className="px-5 mt-3">
         <div className="grid grid-cols-4 gap-2">
-          {[
-            { value: jogosTemporada, label: "Jogos temporada" },
-            { value: golsTemporada, label: "Gols temporada" },
-            { value: 0, label: "Campeonatos" },
-            { value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
-          ].map((stat, i) => (
-            <motion.div
+          {([
+            { key: "jogos" as StatKey, value: jogosTemporada, label: "Jogos temporada" },
+            { key: "gols" as StatKey, value: golsTemporada, label: "Gols temporada" },
+            { key: "campeonatos" as StatKey, value: campeonatosTotal, label: "Campeonatos" },
+            { key: "lembretes" as StatKey, value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
+          ]).map((stat, i) => (
+            <motion.button
               key={stat.label}
+              type="button"
+              onClick={() => setStatDetail(stat.key)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`bg-card rounded-lg border p-1 text-center ${stat.highlight ? "border-destructive/50" : "border-border"}`}
+              className={`bg-card rounded-lg border p-1 text-center hover:border-primary/40 transition-colors ${stat.highlight ? "border-destructive/50" : "border-border"}`}
             >
               <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-foreground"}`}>{stat.value}</p>
               <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
       </div>
+
+      {/* Stat detail dialog — per-team breakdown */}
+      <Dialog open={statDetail !== null} onOpenChange={(o) => !o && setStatDetail(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              {statDetail ? statDetailLabels[statDetail] : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {perTeamStats.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Você ainda não está vinculado a nenhum time.
+              </p>
+            )}
+            {perTeamStats.map((s) => {
+              let value: number | string = 0;
+              let extra: string | null = null;
+              if (statDetail === "jogos") value = s.jogos;
+              else if (statDetail === "gols") value = s.gols;
+              else if (statDetail === "campeonatos") { value = 0; extra = "Em breve"; }
+              else if (statDetail === "lembretes") {
+                const lt = lembretesPerTeam[s.teamId] || { mens: 0, vaq: 0 };
+                value = lt.mens + lt.vaq;
+                extra = `${lt.mens} mensalidade(s) • ${lt.vaq} vaquinha(s)`;
+              }
+              return (
+                <div
+                  key={s.teamId}
+                  className="flex items-center gap-3 p-2 rounded-lg border border-border bg-background"
+                >
+                  {s.logo ? (
+                    <img src={s.logo} alt="" className="h-8 w-8 object-contain rounded" />
+                  ) : (
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+                      <Shield size={14} className="text-primary" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{s.teamName}</p>
+                    {extra && <p className="text-[10px] text-muted-foreground">{extra}</p>}
+                  </div>
+                  <p className={`text-lg font-display ${statDetail === "lembretes" && Number(value) > 0 ? "text-destructive" : "text-foreground"}`}>
+                    {value}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {/* Next Match Card */}
