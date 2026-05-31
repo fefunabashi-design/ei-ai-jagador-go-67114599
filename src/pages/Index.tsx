@@ -31,6 +31,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: myTeam, isLoading: teamLoading } = useMyTeam();
+  const { data: myTeams = [] } = useMyTeams();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(undefined);
