@@ -12,7 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import PostFeed from "@/components/PostFeed";
 import AddPostDialog from "@/components/AddPostDialog";
 import { Plus } from "lucide-react";
-import { useMyTeam, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
 import NotaBadge from "@/components/NotaBadge";
