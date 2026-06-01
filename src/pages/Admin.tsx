@@ -445,7 +445,7 @@ const AdminPage = () => {
 
             <div className="grid grid-cols-2 gap-2">
               <Button
-                onClick={() => navigate(`/agenda?matchId=${nextMatch.id}`)}
+                onClick={() => navigate(`/escalacao?matchId=${nextMatch.id}`)}
                 className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
               >
                 <Pencil size={14} className="mr-1" /> ESCALAR TIME
