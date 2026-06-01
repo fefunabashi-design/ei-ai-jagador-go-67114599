@@ -353,7 +353,6 @@ const ProfilePage = () => {
           {/* Navigation */}
           <div className="space-y-1">
             {[
-              { label: "Meu Time", path: "/team" },
               { label: "Ranking", path: "/ranking" },
             ].map((item, i) => (
               <motion.button

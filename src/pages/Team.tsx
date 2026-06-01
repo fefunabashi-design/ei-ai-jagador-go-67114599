@@ -1,12 +1,11 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, Check, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
+import { ArrowLeft, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
-import { useMyTeams, useMyTeam, useSetActiveTeam, usePlayers } from "@/hooks/useSupabaseData";
-import { useToast } from "@/hooks/use-toast";
-import { getTeamStats, getPlayerStats } from "@/lib/stats";
+import { useMyTeams, usePlayers } from "@/hooks/useSupabaseData";
+import { getTeamStats } from "@/lib/stats";
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <div className="flex items-start gap-2.5 py-1.5">
@@ -107,24 +106,20 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
             </div>
           ) : (
             players.map((p: any) => {
-              const ps = getPlayerStats(p.id, team.id);
+              const isoToBr = (iso?: string | null) => {
+                if (!iso) return "";
+                const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+              };
               return (
-              <div key={p.id} className="flex items-center gap-3 p-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-display">
-                  {p.jersey_number || "-"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate flex items-center gap-2">
-                    <span className="truncate">{p.nickname || p.name} {p.last_name || ""}</span>
-                    <NotaBadge nota={ps.nota} played={ps.played} />
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {p.position || "Sem posição"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-muted-foreground">Gols</p>
-                  <p className="text-sm font-semibold text-foreground">{p.goals || 0}</p>
+              <div key={p.id} className="p-3">
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {p.name} {p.last_name || ""}
+                </p>
+                <div className="mt-1 grid grid-cols-1 gap-0.5 text-[11px] text-muted-foreground">
+                  {p.nickname && <p>Nome social: <span className="text-foreground">{p.nickname}</span></p>}
+                  {p.birth_date && <p>Nascimento: <span className="text-foreground">{isoToBr(p.birth_date)}</span></p>}
+                  {p.phone && <p>Celular: <span className="text-foreground">{p.phone}</span></p>}
                 </div>
               </div>
               );
@@ -143,10 +138,7 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
 
 const MyTeamsPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: myTeams = [] } = useMyTeams();
-  const { data: activeTeam } = useMyTeam();
-  const setActiveTeam = useSetActiveTeam();
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
 
   if (selectedTeam) {
@@ -154,10 +146,6 @@ const MyTeamsPage = () => {
   }
 
   const handleSelect = (team: any) => {
-    if (activeTeam?.id !== team.id) {
-      setActiveTeam(team.id);
-      toast({ title: `Time ativo: ${team.name}`, description: "As telas do app foram atualizadas." });
-    }
     setSelectedTeam(team);
   };
 
@@ -195,7 +183,6 @@ const MyTeamsPage = () => {
           </div>
         ) : (
           myTeams.map((team: any, i: number) => {
-            const isActive = activeTeam?.id === team.id;
             return (
               <motion.button
                 key={team.id}
@@ -203,11 +190,7 @@ const MyTeamsPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => handleSelect(team)}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-colors text-left ${
-                  isActive
-                    ? "bg-primary/10 border-primary/40"
-                    : "bg-card border-border hover:border-primary/30"
-                }`}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl border bg-card border-border hover:border-primary/30 transition-colors text-left"
               >
                 {team.logo_url ? (
                   <img
@@ -228,13 +211,7 @@ const MyTeamsPage = () => {
                     {team.categoria || "Sem categoria"} · {team.region || "Sem região"}
                   </p>
                 </div>
-                {isActive ? (
-                  <span className="flex items-center gap-1 text-[10px] font-semibold text-primary">
-                    <Check size={14} /> ATIVO
-                  </span>
-                ) : (
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                )}
+                <ChevronRight size={16} className="text-muted-foreground" />
               </motion.button>
             );
           })
