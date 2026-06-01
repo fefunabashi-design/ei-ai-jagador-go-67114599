@@ -273,8 +273,28 @@ const AdminPage = () => {
   const confirmReschedule = async () => {
     if (!rescheduleMatch || !rescheduleDate || !rescheduleTime) return;
     const match_date = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
-    await updateMatchMut.mutateAsync({ id: rescheduleMatch.id, match_date, location: rescheduleLocation });
-    toast({ title: "Reagendamento proposto!", description: "Aguardando confirmação do adversário." });
+    await updateMatchMut.mutateAsync({
+      id: rescheduleMatch.id,
+      match_date,
+      location: rescheduleLocation,
+      status: "open",
+    });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const novaData = new Date(match_date).toLocaleString("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+      const text = `🔁 Partida reagendada por ${teamName}.\nNova data: ${novaData}\nLocal: ${rescheduleLocation}\nAguardando confirmação do adversário.`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: rescheduleMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+    toast({ title: "Reagendamento enviado!", description: "Aguardando confirmação do adversário." });
     setRescheduleMatch(null);
   };
 
