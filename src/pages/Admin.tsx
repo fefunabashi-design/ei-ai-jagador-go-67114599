@@ -559,6 +559,13 @@ const AdminPage = () => {
                     <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
                   </button>
                   <button
+                    onClick={() => { setFinalizeMatch(nextMatch); setShowNextActions(false); }}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <Trophy size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Finalizar partida</span>
+                  </button>
+                  <button
                     onClick={() => { setCancelMatch(nextMatch); setCancelReason(""); }}
                     className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/30 hover:bg-destructive/10 text-left transition-colors"
                   >
