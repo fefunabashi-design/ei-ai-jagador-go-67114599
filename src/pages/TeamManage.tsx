@@ -473,21 +473,38 @@ const TeamPage = () => {
 
   const openNewPlayer = () => {
     setEditingPlayer(null);
-    setPlayerForm({
-      ...EMPTY_PLAYER_FORM,
-      name: (myProfile as any)?.display_name || "",
-      nickname: (myProfile as any)?.nickname || "",
-      phone: (myProfile as any)?.phone || "",
-      birth_date: (myProfile as any)?.birth_date || "",
-      email: (myProfile as any)?.email || "",
-    });
+    setPlayerForm({ ...EMPTY_PLAYER_FORM });
     setSelectedPositions([]);
     setPlayerDialogOpen(true);
+  };
+
+  const handleCpfLookup = async (rawCpf: string) => {
+    if (!isValidCpf(rawCpf)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("lookup-profile-by-cpf", {
+        body: { cpf: rawCpf.replace(/\D/g, "") },
+      });
+      if (error || !data?.found) return;
+      const p = data.profile || {};
+      setPlayerForm((prev) => ({
+        ...prev,
+        name: p.display_name || prev.name,
+        last_name: p.last_name || prev.last_name,
+        nickname: p.nickname || prev.nickname,
+        birth_date: p.birth_date || prev.birth_date,
+        phone: p.phone || prev.phone,
+        email: data.email || prev.email,
+      }));
+      toast({ title: "Dados encontrados", description: "Informações preenchidas a partir do cadastro." });
+    } catch {
+      // silent
+    }
   };
 
   const openEditPlayer = (player: any) => {
     setEditingPlayer(player);
     setPlayerForm({
+      cpf: "",
       name: player.name || "",
       last_name: player.last_name || "",
       nickname: player.nickname || "",
@@ -504,6 +521,7 @@ const TeamPage = () => {
     );
     setPlayerDialogOpen(true);
   };
+
 
   const togglePosition = (pos: string) => {
     setSelectedPositions((prev) =>
