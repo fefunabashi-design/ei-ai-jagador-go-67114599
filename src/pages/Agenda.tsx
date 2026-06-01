@@ -263,9 +263,36 @@ const AgendaPage = () => {
     setEditOpen(false);
   };
 
-  const handleCancelMatch = (matchId: string) => {
-    updateMatch.mutate({ id: matchId, status: "cancelled" });
+  const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
+  const [cancelMatch, setCancelMatch] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const handleConfirmCancelMatch = async () => {
+    if (!cancelMatch) return;
+    if (!cancelReason.trim()) {
+      toast({ title: "Informe o motivo do cancelamento", variant: "destructive" });
+      return;
+    }
+    await updateMatch.mutateAsync({ id: cancelMatch.id, status: "cancelled" });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const text = `⚠️ Partida cancelada por ${teamName}.\nMotivo: ${cancelReason.trim()}`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: cancelMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+    toast({
+      title: "Partida cancelada",
+      description: "O administrador do time adversário foi notificado no chat da partida.",
+    });
+    setCancelMatch(null);
+    setCancelReason("");
   };
+
 
   const handleDeleteMatch = (matchId: string) => {
     deleteMatch.mutate(matchId);
