@@ -89,36 +89,11 @@ const MatchDetails = () => {
       onClick: () => setConfirmOpen(true),
     },
     {
-      icon: Users,
-      label: "Escalação do time",
-      description: "Montar e visualizar a escalação",
-      onClick: () => navigate(`/escalacao?matchId=${match.id}`),
-    },
-    {
       icon: Shield,
       label: "Detalhar adversário",
       description: opponentTeam?.name ? `Saiba mais sobre ${opponentTeam.name}` : "Informações do adversário",
       onClick: () => navigate(`/opponent-details?matchId=${match.id}`),
       disabled: !opponentTeam,
-    },
-    {
-      icon: CalendarClock,
-      label: "Reagendar partida",
-      description: "Alterar a data ou horário",
-      onClick: () => {
-        const iso = matchDate.toISOString();
-        setNewDate(iso.slice(0, 16));
-        setRescheduleOpen(true);
-      },
-      adminOnly: true,
-    },
-    {
-      icon: XCircle,
-      label: "Cancelar partida",
-      description: "Encerrar este confronto",
-      onClick: () => setCancelOpen(true),
-      destructive: true,
-      adminOnly: true,
     },
   ];
 
