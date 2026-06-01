@@ -1180,6 +1180,34 @@ const AgendaPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Cancelar partida com motivo */}
+      <Dialog open={!!cancelMatch} onOpenChange={(open) => { if (!open) { setCancelMatch(null); setCancelReason(""); } }}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Cancelar partida</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Informe o motivo do cancelamento. O administrador do time adversário será notificado no chat da partida.
+            </p>
+            <Textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: Campo interditado pela chuva..."
+              className="bg-secondary border-border min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelMatch(null); setCancelReason(""); }}>
+              Voltar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancelMatch}>
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
