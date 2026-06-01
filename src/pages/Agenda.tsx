@@ -4,12 +4,14 @@ import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
   Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
+  ChevronDown, ChevronUp, CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -34,6 +36,7 @@ import {
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 const BR_HOLIDAYS_2026: string[] = [
   "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
@@ -260,9 +263,36 @@ const AgendaPage = () => {
     setEditOpen(false);
   };
 
-  const handleCancelMatch = (matchId: string) => {
-    updateMatch.mutate({ id: matchId, status: "cancelled" });
+  const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
+  const [cancelMatch, setCancelMatch] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const handleConfirmCancelMatch = async () => {
+    if (!cancelMatch) return;
+    if (!cancelReason.trim()) {
+      toast({ title: "Informe o motivo do cancelamento", variant: "destructive" });
+      return;
+    }
+    await updateMatch.mutateAsync({ id: cancelMatch.id, status: "cancelled" });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const text = `⚠️ Partida cancelada por ${teamName}.\nMotivo: ${cancelReason.trim()}`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: cancelMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+    toast({
+      title: "Partida cancelada",
+      description: "O administrador do time adversário foi notificado no chat da partida.",
+    });
+    setCancelMatch(null);
+    setCancelReason("");
   };
+
 
   const handleDeleteMatch = (matchId: string) => {
     deleteMatch.mutate(matchId);
@@ -585,12 +615,6 @@ const AgendaPage = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
-                        <Eye size={12} className="mr-1" /> Detalhes
-                      </Button>
-                      <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
-                        <Users size={12} className="mr-1" /> Elenco
-                      </Button>
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
@@ -599,12 +623,46 @@ const AgendaPage = () => {
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
-                      {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
-                        <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
-                          <XCircle size={12} className="mr-1" /> Cancelar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7 px-2.5 rounded-lg"
+                        onClick={() => setExpandedActionsId((cur) => (cur === match.id ? null : match.id))}
+                      >
+                        <Eye size={12} className="mr-1" /> Detalhes
+                        {expandedActionsId === match.id ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+                      </Button>
                     </div>
+
+                    {expandedActionsId === match.id && (
+                      <div className="mt-1 space-y-1.5">
+                        <button
+                          onClick={() => openDetails(match, "details")}
+                          className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                        >
+                          <Shield size={14} className="text-primary" />
+                          <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
+                        </button>
+                        {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
+                          <>
+                            <button
+                              onClick={() => openEdit(match)}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                            >
+                              <CalendarClock size={14} className="text-primary" />
+                              <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                            </button>
+                            <button
+                              onClick={() => { setCancelMatch(match); setCancelReason(""); }}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/30 hover:bg-destructive/10 text-left transition-colors"
+                            >
+                              <XCircle size={14} className="text-destructive" />
+                              <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );
@@ -1119,6 +1177,34 @@ const AgendaPage = () => {
               Confirmar Escalação
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancelar partida com motivo */}
+      <Dialog open={!!cancelMatch} onOpenChange={(open) => { if (!open) { setCancelMatch(null); setCancelReason(""); } }}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Cancelar partida</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Informe o motivo do cancelamento. O administrador do time adversário será notificado no chat da partida.
+            </p>
+            <Textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: Campo interditado pela chuva..."
+              className="bg-secondary border-border min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelMatch(null); setCancelReason(""); }}>
+              Voltar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancelMatch}>
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

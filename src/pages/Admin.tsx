@@ -450,8 +450,12 @@ const AdminPage = () => {
 
             <div className="flex items-center justify-between">
               <div className="text-center flex-1">
-                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1">
-                  <Shield size={20} className="text-foreground" />
+                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1 overflow-hidden">
+                  {(nextMatch.home_team as any)?.logo_url ? (
+                    <img src={(nextMatch.home_team as any).logo_url} alt={(nextMatch.home_team as any)?.name || ""} className="w-12 h-12 object-contain" />
+                  ) : (
+                    <Shield size={20} className="text-foreground" />
+                  )}
                 </div>
                 <p className="text-xs text-foreground font-semibold">{nextMatch.home_team?.name || "Meu Time"}</p>
               </div>
@@ -465,8 +469,12 @@ const AdminPage = () => {
                 </p>
               </div>
               <div className="text-center flex-1">
-                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1">
-                  <Shield size={20} className="text-foreground" />
+                <div className="w-12 h-12 mx-auto rounded-full bg-muted flex items-center justify-center mb-1 overflow-hidden">
+                  {(nextMatch.away_team as any)?.logo_url ? (
+                    <img src={(nextMatch.away_team as any).logo_url} alt={(nextMatch.away_team as any)?.name || ""} className="w-12 h-12 object-contain" />
+                  ) : (
+                    <Shield size={20} className="text-foreground" />
+                  )}
                 </div>
                 <p className="text-xs text-foreground font-semibold">{nextMatch.away_team?.name || "Adversário"}</p>
               </div>
