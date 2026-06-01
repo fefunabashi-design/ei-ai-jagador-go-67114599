@@ -635,7 +635,15 @@ const Index = () => {
                     })()}
                   </div>
                   <div className="flex flex-col items-center gap-2 px-3">
-                    <span className="text-xs font-bold text-muted-foreground">VS</span>
+                    {nextMatch.status === "completed" ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.home_score ?? 0}</span>
+                        <span className="text-xs text-muted-foreground">x</span>
+                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.away_score ?? 0}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">VS</span>
+                    )}
                     <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
                       <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
                       <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
