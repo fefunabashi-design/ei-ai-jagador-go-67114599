@@ -251,14 +251,35 @@ const AgendaPage = () => {
     setNewDate("");
   };
 
-  const handleUpdateMatch = (e: React.FormEvent) => {
+  const handleUpdateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMatch) return;
-    updateMatch.mutate({
+    await updateMatch.mutateAsync({
       id: selectedMatch.id,
       location: editLocation,
       match_date: new Date(editDate).toISOString(),
       format: editFormat,
+      status: "open",
+    });
+    // Notifica o adversário no chat e re-abre a partida para aceite
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const novaData = new Date(editDate).toLocaleString("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+      const text = `🔁 Partida reagendada por ${teamName}.\nNova data: ${novaData}\nLocal: ${editLocation}\nAguardando confirmação do adversário.`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: selectedMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+    toast({
+      title: "Reagendamento enviado!",
+      description: "Aguardando o adversário aceitar a nova data.",
     });
     setEditOpen(false);
   };
