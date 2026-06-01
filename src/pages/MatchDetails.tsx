@@ -1,46 +1,27 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MessageCircle, ListChecks, Users, Shield, CalendarClock, XCircle, MapPin, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ArrowLeft, MessageCircle, ListChecks, Shield, MapPin, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import BottomNav from "@/components/BottomNav";
 import MatchConfirmationList from "@/components/MatchConfirmationList";
 
-import { useMatches, useMyTeam, useUpdateMatch } from "@/hooks/useSupabaseData";
+import { useMatches, useMyTeam } from "@/hooks/useSupabaseData";
 
 const MatchDetails = () => {
   const { matchId = "" } = useParams();
   const navigate = useNavigate();
   const { data: matches = [] } = useMatches();
   const { data: myTeam } = useMyTeam();
-  const updateMatch = useUpdateMatch();
 
   const match = useMemo(() => matches.find((m: any) => m.id === matchId), [matches, matchId]);
 
-  
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [newDate, setNewDate] = useState("");
 
   if (!match) {
     return (
@@ -54,26 +35,8 @@ const MatchDetails = () => {
   const homeTeam = (match as any).home_team;
   const awayTeam = (match as any).away_team;
   const matchDate = new Date(match.match_date);
-  const isOwner = myTeam && (homeTeam?.owner_id === myTeam.owner_id || awayTeam?.owner_id === myTeam.owner_id);
   const myIsHome = myTeam && homeTeam?.id === myTeam.id;
   const opponentTeam = myIsHome ? awayTeam : homeTeam;
-
-  const handleCancel = async () => {
-    await updateMatch.mutateAsync({ id: match.id, status: "cancelled" });
-    setCancelOpen(false);
-    navigate("/dashboard");
-  };
-
-  const handleReschedule = async () => {
-    if (!newDate) return;
-    await updateMatch.mutateAsync({
-      id: match.id,
-      match_date: new Date(newDate).toISOString(),
-      status: "open",
-    });
-    setRescheduleOpen(false);
-    setNewDate("");
-  };
 
   const actions = [
     {
@@ -81,12 +44,14 @@ const MatchDetails = () => {
       label: "Chat da partida",
       description: "Conversar com o grupo",
       onClick: () => navigate(`/chat/${match.id}`),
+      disabled: false,
     },
     {
       icon: ListChecks,
       label: "Confirmações",
       description: "Ver quem confirmou presença",
       onClick: () => setConfirmOpen(true),
+      disabled: false,
     },
     {
       icon: Shield,
@@ -127,37 +92,25 @@ const MatchDetails = () => {
         </div>
 
         <div className="space-y-2">
-          {actions
-            .filter((a) => !a.adminOnly || isOwner)
-            .map((a, i) => (
-              <motion.button
-                key={a.label}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                onClick={a.onClick}
-                disabled={a.disabled}
-                className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  a.destructive
-                    ? "bg-destructive/5 border-destructive/30 hover:bg-destructive/10"
-                    : "bg-card border-border hover:border-primary/40"
-                }`}
-              >
-                <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    a.destructive ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"
-                  }`}
-                >
-                  <a.icon size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-semibold text-sm ${a.destructive ? "text-destructive" : "text-foreground"}`}>
-                    {a.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{a.description}</p>
-                </div>
-              </motion.button>
-            ))}
+          {actions.map((a, i) => (
+            <motion.button
+              key={a.label}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+              onClick={a.onClick}
+              disabled={a.disabled}
+              className="w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-card border-border hover:border-primary/40"
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/15 text-primary">
+                <a.icon size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-foreground">{a.label}</p>
+                <p className="text-xs text-muted-foreground truncate">{a.description}</p>
+              </div>
+            </motion.button>
+          ))}
         </div>
       </div>
 
@@ -173,57 +126,6 @@ const MatchDetails = () => {
           />
         </DialogContent>
       </Dialog>
-
-      {/* Reagendar */}
-      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">REAGENDAR PARTIDA</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Nova data e hora</Label>
-              <Input
-                type="datetime-local"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                className="bg-secondary border-border"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setRescheduleOpen(false)}>Cancelar</Button>
-            <Button
-              onClick={handleReschedule}
-              disabled={!newDate || updateMatch.isPending}
-              className="bg-gradient-primary text-primary-foreground border-0"
-            >
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Cancelar */}
-      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar esta partida?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A partida será marcada como cancelada. Você pode criar uma nova depois.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancel}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Cancelar partida
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <BottomNav />
     </div>
