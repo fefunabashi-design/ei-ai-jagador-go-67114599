@@ -159,6 +159,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
 };
 
 const EMPTY_PLAYER_FORM = {
+  cpf: "",
   name: "",
   last_name: "",
   nickname: "",
@@ -170,6 +171,7 @@ const EMPTY_PLAYER_FORM = {
   is_active: "true",
   observacoes: "",
 };
+
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
