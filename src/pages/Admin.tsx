@@ -302,6 +302,23 @@ const AdminPage = () => {
   const [showNextActions, setShowNextActions] = useState(false);
   const [cancelMatch, setCancelMatch] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+
+  // Auto-mark confirmed matches as "past" after 12h
+  useEffect(() => {
+    if (!myTeam) return;
+    const overdue = typedMatches.filter((m: any) => {
+      if (m.status !== "confirmed") return false;
+      if (m.home_team_id !== myTeam.id) return false;
+      return Date.now() - new Date(m.match_date).getTime() > 12 * 60 * 60 * 1000;
+    });
+    if (!overdue.length) return;
+    (async () => {
+      await Promise.all(overdue.map((m: any) => supabase.from("matches").update({ status: "past" }).eq("id", m.id)));
+      window.dispatchEvent(new CustomEvent("supabase-data-change"));
+    })();
+  }, [myTeam?.id, typedMatches.length]);
+
 
   const handleConfirmCancelMatch = async () => {
     if (!cancelMatch) return;
