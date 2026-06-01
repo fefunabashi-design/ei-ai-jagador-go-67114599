@@ -664,7 +664,6 @@ const AgendaPage = () => {
                       </div>
                     )}
                   </div>
-                  </div>
                 </motion.div>
               );
             })}
