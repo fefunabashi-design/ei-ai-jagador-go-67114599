@@ -493,12 +493,42 @@ const AdminPage = () => {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border text-[11px] font-semibold">
-              <button className="flex items-center gap-1 text-primary">
-                <UserPlus size={12} /> JOGADORES ADVERSÁRIOS
-              </button>
-              <button className="text-muted-foreground hover:text-foreground">REAGENDAR</button>
-              <button className="text-destructive">CANCELAR</button>
+            <div className="pt-2 border-t border-border">
+              <Button
+                onClick={() => setShowNextActions((v) => !v)}
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-[11px] font-semibold"
+              >
+                <Eye size={12} className="mr-1" /> DETALHES
+                {showNextActions ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+              </Button>
+
+              {showNextActions && (
+                <div className="mt-2 space-y-1.5">
+                  <button
+                    onClick={() => navigate(`/opponent-details?matchId=${nextMatch.id}`)}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <Shield size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
+                  </button>
+                  <button
+                    onClick={() => openReschedule(nextMatch)}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <CalendarClock size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                  </button>
+                  <button
+                    onClick={() => { setCancelMatch(nextMatch); setCancelReason(""); }}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/30 hover:bg-destructive/10 text-left transition-colors"
+                  >
+                    <XCircle size={14} className="text-destructive" />
+                    <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
