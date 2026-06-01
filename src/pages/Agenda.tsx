@@ -108,6 +108,8 @@ const AgendaPage = () => {
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
+  const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+  const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
   useEffect(() => {
     let cancelled = false;
