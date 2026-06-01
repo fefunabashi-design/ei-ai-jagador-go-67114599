@@ -29,6 +29,7 @@ import { ptBR } from "date-fns/locale";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
+import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
@@ -36,6 +37,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { Trophy } from "lucide-react";
 
 const BR_HOLIDAYS_2026: string[] = [
   "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
@@ -48,6 +50,7 @@ const statusStyles: Record<string, string> = {
   confirmed: "bg-success/10 text-success",
   completed: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
+  past: "bg-muted text-muted-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -55,6 +58,7 @@ const statusLabels: Record<string, string> = {
   confirmed: "Confirmado",
   completed: "Finalizado",
   cancelled: "Cancelado",
+  past: "Passada",
 };
 
 const summonStatusLabels: Record<string, string> = {
@@ -104,6 +108,8 @@ const AgendaPage = () => {
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
+  const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+  const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,6 +144,18 @@ const AgendaPage = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, selectedMatch?.status, detailView]);
+
+  // Load match events (goals/cards) when viewing details
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!selectedMatch || detailView !== "details") { setMatchEvents([]); return; }
+      const { data } = await supabase.from("match_events").select("*").eq("match_id", selectedMatch.id);
+      if (!cancelled) setMatchEvents(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, detailView, selectedMatch?.status]);
+
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
@@ -219,11 +237,32 @@ const AgendaPage = () => {
     const matchDate = new Date(m.match_date);
     switch (filter) {
       case "upcoming": return matchDate >= now && (m.status === "open" || m.status === "confirmed");
-      case "past": return matchDate < now || m.status === "completed";
+      case "past": return matchDate < now || m.status === "completed" || m.status === "past";
       case "open": case "confirmed": case "completed": case "cancelled": return m.status === filter;
       default: return true;
     }
   });
+
+  // Auto-mark confirmed matches as "past" after 12 hours without finalization (owner only)
+  useEffect(() => {
+    if (!myTeam) return;
+    const overdue = myMatches.filter((m: any) => {
+      if (m.status !== "confirmed") return false;
+      if (m.home_team_id !== myTeam.id) return false;
+      const ageMs = Date.now() - new Date(m.match_date).getTime();
+      return ageMs > 12 * 60 * 60 * 1000;
+    });
+    if (!overdue.length) return;
+    (async () => {
+      await Promise.all(
+        overdue.map((m: any) =>
+          supabase.from("matches").update({ status: "past" }).eq("id", m.id),
+        ),
+      );
+      window.dispatchEvent(new CustomEvent("supabase-data-change"));
+    })();
+  }, [myTeam?.id, myMatches.length]);
+
 
   useEffect(() => {
     if (!focusMatchId) return;
@@ -969,12 +1008,14 @@ const AgendaPage = () => {
                     </div>
                   </div>
                   {(() => {
-                    const evs: any[] = (selectedMatch as any).events || [];
+                    const evs: any[] = matchEvents;
                     const goals = evs.filter((e) => e.type === "goal" || e.type === "own_goal");
                     const yellows = evs.filter((e) => e.type === "yellow");
                     const reds = evs.filter((e) => e.type === "red");
-                    const nameOf = (pid: string) => {
-                      const p: any = players.find((pl) => pl.id === pid);
+                    const blues = evs.filter((e) => e.type === "blue");
+                    const nameOf = (e: any) => {
+                      if (e.player_name) return e.player_name;
+                      const p: any = players.find((pl) => pl.id === e.player_id) || opponentPlayers.find((pl: any) => pl.id === e.player_id);
                       return p?.nickname || p?.name || "Jogador";
                     };
                     return (
@@ -985,7 +1026,7 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {goals.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e.player_id)}
+                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -997,7 +1038,7 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {yellows.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">
-                                  🟨 {nameOf(e.player_id)}
+                                  🟨 {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -1009,7 +1050,19 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {reds.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">
-                                  🟥 {nameOf(e.player_id)}
+                                  🟥 {nameOf(e)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {blues.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões azuis</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {blues.map((e) => (
+                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                  🟦 {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -1022,6 +1075,15 @@ const AgendaPage = () => {
                     );
                   })()}
                 </div>
+              )}
+              {/* Finalizar partida — para partidas confirmadas ou passadas */}
+              {(selectedMatch.status === "confirmed" || selectedMatch.status === "past") && myTeam && (
+                <Button
+                  onClick={() => { setFinalizeMatch(selectedMatch); setDetailView(null); }}
+                  className="w-full mt-4 bg-gradient-primary text-primary-foreground border-0"
+                >
+                  <Trophy size={14} className="mr-1" /> Finalizar partida
+                </Button>
               )}
               <div className="flex gap-2 mt-4">
                 <Button
@@ -1238,6 +1300,15 @@ const AgendaPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {finalizeMatch && myTeam && (
+        <FinalizeMatchDialog
+          open={!!finalizeMatch}
+          onOpenChange={(o) => !o && setFinalizeMatch(null)}
+          match={finalizeMatch}
+          myTeamId={myTeam.id}
+        />
+      )}
 
       <BottomNav />
     </div>

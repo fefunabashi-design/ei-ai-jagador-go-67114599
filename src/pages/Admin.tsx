@@ -2,7 +2,8 @@ import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle, Trophy } from "lucide-react";
+import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 
@@ -301,6 +302,23 @@ const AdminPage = () => {
   const [showNextActions, setShowNextActions] = useState(false);
   const [cancelMatch, setCancelMatch] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+
+  // Auto-mark confirmed matches as "past" after 12h
+  useEffect(() => {
+    if (!myTeam) return;
+    const overdue = typedMatches.filter((m: any) => {
+      if (m.status !== "confirmed") return false;
+      if (m.home_team_id !== myTeam.id) return false;
+      return Date.now() - new Date(m.match_date).getTime() > 12 * 60 * 60 * 1000;
+    });
+    if (!overdue.length) return;
+    (async () => {
+      await Promise.all(overdue.map((m: any) => supabase.from("matches").update({ status: "past" }).eq("id", m.id)));
+      window.dispatchEvent(new CustomEvent("supabase-data-change"));
+    })();
+  }, [myTeam?.id, typedMatches.length]);
+
 
   const handleConfirmCancelMatch = async () => {
     if (!cancelMatch) return;
@@ -539,6 +557,13 @@ const AdminPage = () => {
                   >
                     <CalendarClock size={14} className="text-primary" />
                     <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                  </button>
+                  <button
+                    onClick={() => { setFinalizeMatch(nextMatch); setShowNextActions(false); }}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <Trophy size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Finalizar partida</span>
                   </button>
                   <button
                     onClick={() => { setCancelMatch(nextMatch); setCancelReason(""); }}
@@ -970,6 +995,15 @@ const AdminPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {finalizeMatch && myTeam && (
+        <FinalizeMatchDialog
+          open={!!finalizeMatch}
+          onOpenChange={(o) => !o && setFinalizeMatch(null)}
+          match={finalizeMatch}
+          myTeamId={myTeam.id}
+        />
+      )}
 
       <BottomNav />
     </div>
