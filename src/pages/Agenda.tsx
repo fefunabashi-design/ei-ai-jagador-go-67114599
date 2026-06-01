@@ -50,6 +50,7 @@ const statusStyles: Record<string, string> = {
   confirmed: "bg-success/10 text-success",
   completed: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
+  past: "bg-muted text-muted-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -57,6 +58,7 @@ const statusLabels: Record<string, string> = {
   confirmed: "Confirmado",
   completed: "Finalizado",
   cancelled: "Cancelado",
+  past: "Passada",
 };
 
 const summonStatusLabels: Record<string, string> = {
