@@ -486,16 +486,22 @@ export const useMatchSummons = (matchId?: string) => {
     window.addEventListener("supabase-data-change", h);
     window.addEventListener("mock-db-change", h);
 
-    // Realtime for live summons updates
-    const ch = supabase.channel(`summons-${matchId || "me"}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_summons" }, () => load())
-      .subscribe();
+    // Realtime for live summons updates — gated by match access
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`summons-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_summons", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
 
     return () => {
       alive = false;
       window.removeEventListener("supabase-data-change", h);
       window.removeEventListener("mock-db-change", h);
-      supabase.removeChannel(ch);
+      if (ch) supabase.removeChannel(ch);
     };
   }, [matchId]);
 
@@ -541,13 +547,19 @@ export const useMatchLineups = (matchId?: string) => {
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
-    const ch = supabase.channel(`lineups-${matchId || "x"}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_lineups" }, () => load())
-      .subscribe();
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`lineups-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_lineups", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
     return () => {
       alive = false;
       window.removeEventListener("supabase-data-change", h);
-      supabase.removeChannel(ch);
+      if (ch) supabase.removeChannel(ch);
     };
   }, [matchId]);
   return { data };
@@ -623,10 +635,16 @@ export const useMatchPayments = (matchId?: string) => {
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
-    const ch = supabase.channel(`payments-${matchId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_payments", filter: `match_id=eq.${matchId}` }, () => load())
-      .subscribe();
-    return () => { alive = false; window.removeEventListener("supabase-data-change", h); supabase.removeChannel(ch); };
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`payments-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_payments", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); if (ch) supabase.removeChannel(ch); };
   }, [matchId]);
   return { data };
 };
@@ -828,10 +846,16 @@ export const useChatMessages = (matchId?: string) => {
       setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
     };
     load();
-    const ch = supabase.channel(`chat-${matchId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`chat-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
+    return () => { alive = false; if (ch) supabase.removeChannel(ch); };
   }, [matchId]);
   return { data };
 };
