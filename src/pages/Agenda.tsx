@@ -145,6 +145,18 @@ const AgendaPage = () => {
     return () => { cancelled = true; };
   }, [selectedMatch?.id, selectedMatch?.status, detailView]);
 
+  // Load match events (goals/cards) when viewing details
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!selectedMatch || detailView !== "details") { setMatchEvents([]); return; }
+      const { data } = await supabase.from("match_events").select("*").eq("match_id", selectedMatch.id);
+      if (!cancelled) setMatchEvents(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, detailView, selectedMatch?.status]);
+
+
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
   const [newLocation, setNewLocation] = useState("");
