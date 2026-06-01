@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
+  XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
   ChevronDown, ChevronUp, CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,6 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
-  useSendChatMessage,
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -102,10 +101,9 @@ const AgendaPage = () => {
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
-  const [editChatMessage, setEditChatMessage] = useState("");
-  const sendChatMessage = useSendChatMessage();
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+  const [cancelReasonText, setCancelReasonText] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +115,29 @@ const AgendaPage = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCancelReasonText("");
+      if (!selectedMatch || selectedMatch.status !== "cancelled" || detailView !== "details") return;
+      const { data } = await supabase
+        .from("match_chat_messages")
+        .select("message")
+        .eq("match_id", selectedMatch.id)
+        .eq("message_type", "system")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (cancelled) return;
+      const msg = (data || []).find((m: any) => /cancelada/i.test(m.message || ""));
+      if (msg) {
+        const m = String(msg.message);
+        const idx = m.toLowerCase().indexOf("motivo:");
+        setCancelReasonText(idx >= 0 ? m.slice(idx + 7).trim() : m);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, selectedMatch?.status, detailView]);
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
@@ -251,14 +272,35 @@ const AgendaPage = () => {
     setNewDate("");
   };
 
-  const handleUpdateMatch = (e: React.FormEvent) => {
+  const handleUpdateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMatch) return;
-    updateMatch.mutate({
+    await updateMatch.mutateAsync({
       id: selectedMatch.id,
       location: editLocation,
       match_date: new Date(editDate).toISOString(),
       format: editFormat,
+      status: "open",
+    });
+    // Notifica o adversário no chat e re-abre a partida para aceite
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const novaData = new Date(editDate).toLocaleString("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+      const text = `🔁 Partida reagendada por ${teamName}.\nNova data: ${novaData}\nLocal: ${editLocation}\nAguardando confirmação do adversário.`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: selectedMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+    toast({
+      title: "Reagendamento enviado!",
+      description: "Aguardando o adversário aceitar a nova data.",
     });
     setEditOpen(false);
   };
@@ -807,31 +849,6 @@ const AgendaPage = () => {
                 );
               })()}
             </div>
-            <div className="pt-2 border-t border-border">
-              <Label>Chat da partida</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  value={editChatMessage}
-                  onChange={(e) => setEditChatMessage(e.target.value)}
-                  placeholder="Digite uma mensagem..."
-                  className="bg-secondary border-border"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!editChatMessage.trim() || !selectedMatch}
-                  onClick={async () => {
-                    if (!selectedMatch || !editChatMessage.trim()) return;
-                    await sendChatMessage.mutateAsync({ matchId: selectedMatch.id, message: editChatMessage.trim() });
-                    setEditChatMessage("");
-                    setEditOpen(false);
-                    navigate(`/chat/${selectedMatch.id}`);
-                  }}
-                >
-                  <Send size={16} />
-                </Button>
-              </div>
-            </div>
             <Button type="submit" disabled={updateMatch.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar Alterações
             </Button>
@@ -864,6 +881,20 @@ const AgendaPage = () => {
                   </div>
                 ))}
               </div>
+
+              {selectedMatch.status === "cancelled" && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Observações do cancelamento
+                  </p>
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                    <p className="text-sm text-foreground whitespace-pre-line">
+                      {cancelReasonText || "Sem observações registradas."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
 
               {(() => {
                 const opp: any = (selectedMatch as any).away_team;
