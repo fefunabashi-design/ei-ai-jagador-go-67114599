@@ -32,7 +32,6 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
-  useSendChatMessage,
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
