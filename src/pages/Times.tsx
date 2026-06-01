@@ -713,17 +713,26 @@ const TimesPage = () => {
                       </button>
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
-                    {canChallengeTeam ? (
+                    <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); setChallengeTeam(team); }}
-                        className="mt-3 flex h-9 w-full items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/opponent-details?teamId=${team.id}`); }}
+                        className="flex h-9 flex-1 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-foreground transition-colors hover:bg-secondary/80"
                       >
-                        Toque para desafiar →
+                        Detalhes
                       </button>
-                    ) : isOwnTeam ? (
-                      <p className="mt-3 text-center text-[10px] font-semibold text-muted-foreground">Este é seu time</p>
-                    ) : null}
+                      {canChallengeTeam ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setChallengeTeam(team); }}
+                          className="flex h-9 flex-1 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                        >
+                          Toque para desafiar →
+                        </button>
+                      ) : isOwnTeam ? (
+                        <p className="flex-1 text-center text-[10px] font-semibold text-muted-foreground">Este é seu time</p>
+                      ) : null}
+                    </div>
                   </div>
                 );
 
