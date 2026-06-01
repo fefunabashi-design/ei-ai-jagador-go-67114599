@@ -61,25 +61,43 @@ const TimesPage = () => {
   );
   const canLaunchChallenges = !!matchActionTeam;
 
-  // Filtros
-  const [nameQuery, setNameQuery] = useState("");
+  // Filtros — persistidos em sessionStorage para sobreviver navegação (ex: voltar de "Detalhes")
+  const FILTERS_KEY = "times_filters_v1";
+  const savedFilters = (() => {
+    try { return JSON.parse(sessionStorage.getItem(FILTERS_KEY) || "{}"); }
+    catch { return {}; }
+  })();
+  const [nameQuery, setNameQuery] = useState<string>(savedFilters.nameQuery || "");
   const [showNameSuggest, setShowNameSuggest] = useState(false);
-  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
-  const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [selectedModalidades, setSelectedModalidades] = useState<string[]>([]);
-  const [selectedCategorias, setSelectedCategorias] = useState<string[]>([]);
-  const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>([]);
-  const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">("tanto");
-  const [nivelChoice, setNivelChoice] = useState<string>("todas");
-  const [timeFrom, setTimeFrom] = useState("");
-  const [timeTo, setTimeTo] = useState("");
-  const [defaultsApplied, setDefaultsApplied] = useState(false);
+  const [selectedUFs, setSelectedUFs] = useState<string[]>(savedFilters.selectedUFs || []);
+  const [selectedCities, setSelectedCities] = useState<string[]>(savedFilters.selectedCities || []);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(savedFilters.selectedRegions || []);
+  const [selectedModalidades, setSelectedModalidades] = useState<string[]>(savedFilters.selectedModalidades || []);
+  const [selectedCategorias, setSelectedCategorias] = useState<string[]>(savedFilters.selectedCategorias || []);
+  const [selectedSubCategorias, setSelectedSubCategorias] = useState<string[]>(savedFilters.selectedSubCategorias || []);
+  const [selectedGeneros, setSelectedGeneros] = useState<string[]>(savedFilters.selectedGeneros || []);
+  const [selectedDays, setSelectedDays] = useState<string[]>(savedFilters.selectedDays || []);
+  const [fieldChoice, setFieldChoice] = useState<"sim" | "nao" | "tanto">(savedFilters.fieldChoice || "tanto");
+  const [nivelChoice, setNivelChoice] = useState<string>(savedFilters.nivelChoice || "todas");
+  const [timeFrom, setTimeFrom] = useState<string>(savedFilters.timeFrom || "");
+  const [timeTo, setTimeTo] = useState<string>(savedFilters.timeTo || "");
+  const [defaultsApplied, setDefaultsApplied] = useState<boolean>(!!savedFilters.defaultsApplied);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(!!savedFilters.onlyFavorites);
+
+  // Salvar filtros sempre que mudarem
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({
+        nameQuery, selectedUFs, selectedCities, selectedRegions, selectedModalidades,
+        selectedCategorias, selectedSubCategorias, selectedGeneros, selectedDays,
+        fieldChoice, nivelChoice, timeFrom, timeTo, defaultsApplied, onlyFavorites,
+      }));
+    } catch { /* ignore */ }
+  }, [nameQuery, selectedUFs, selectedCities, selectedRegions, selectedModalidades,
+      selectedCategorias, selectedSubCategorias, selectedGeneros, selectedDays,
+      fieldChoice, nivelChoice, timeFrom, timeTo, defaultsApplied, onlyFavorites]);
 
   // Desafio
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);

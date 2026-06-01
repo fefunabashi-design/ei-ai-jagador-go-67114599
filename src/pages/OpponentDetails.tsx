@@ -90,7 +90,15 @@ const OpponentDetails = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="px-5 pt-12 pb-4">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+        <button
+          onClick={() => {
+            // Quando veio da lista de times (link direto via teamId), volta para /times
+            // preservando os filtros salvos. Caso contrário, usa o histórico.
+            if (teamIdParam) navigate("/times");
+            else navigate(-1);
+          }}
+          className="flex items-center gap-1 text-xs text-muted-foreground mb-2"
+        >
           <ArrowLeft size={14} /> Voltar
         </button>
         <h1 className="text-3xl text-foreground font-display">DETALHAR TIME</h1>
