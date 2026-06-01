@@ -36,6 +36,7 @@ import {
 } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 const BR_HOLIDAYS_2026: string[] = [
   "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
