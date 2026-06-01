@@ -102,8 +102,6 @@ const AgendaPage = () => {
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editFormat, setEditFormat] = useState("8x8");
-  const [editChatMessage, setEditChatMessage] = useState("");
-  const sendChatMessage = useSendChatMessage();
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
