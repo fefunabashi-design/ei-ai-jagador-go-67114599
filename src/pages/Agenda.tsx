@@ -615,12 +615,6 @@ const AgendaPage = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => openDetails(match, "details")}>
-                        <Eye size={12} className="mr-1" /> Detalhes
-                      </Button>
-                      <Button size="sm" className="text-xs h-7 px-2.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" onClick={() => openDetails(match, "summons")}>
-                        <Users size={12} className="mr-1" /> Elenco
-                      </Button>
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
@@ -629,12 +623,47 @@ const AgendaPage = () => {
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
-                      {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
-                        <Button size="sm" variant="ghost" className="text-xs h-7 px-2.5 rounded-lg text-destructive hover:text-destructive" onClick={() => handleCancelMatch(match.id)}>
-                          <XCircle size={12} className="mr-1" /> Cancelar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7 px-2.5 rounded-lg"
+                        onClick={() => setExpandedActionsId((cur) => (cur === match.id ? null : match.id))}
+                      >
+                        <Eye size={12} className="mr-1" /> Detalhes
+                        {expandedActionsId === match.id ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+                      </Button>
                     </div>
+
+                    {expandedActionsId === match.id && (
+                      <div className="mt-1 space-y-1.5">
+                        <button
+                          onClick={() => openDetails(match, "details")}
+                          className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                        >
+                          <Shield size={14} className="text-primary" />
+                          <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
+                        </button>
+                        {isOwner && match.status !== "cancelled" && match.status !== "completed" && (
+                          <>
+                            <button
+                              onClick={() => openEdit(match)}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                            >
+                              <CalendarClock size={14} className="text-primary" />
+                              <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                            </button>
+                            <button
+                              onClick={() => { setCancelMatch(match); setCancelReason(""); }}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/30 hover:bg-destructive/10 text-left transition-colors"
+                            >
+                              <XCircle size={14} className="text-destructive" />
+                              <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   </div>
                 </motion.div>
               );
