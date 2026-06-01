@@ -29,6 +29,7 @@ import { ptBR } from "date-fns/locale";
 import BottomNav from "@/components/BottomNav";
 import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
+import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
@@ -36,6 +37,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { Trophy } from "lucide-react";
 
 const BR_HOLIDAYS_2026: string[] = [
   "2026-01-01","2026-02-23","2026-02-24","2026-04-03","2026-04-05","2026-04-21",
