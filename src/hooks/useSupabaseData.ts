@@ -846,10 +846,16 @@ export const useChatMessages = (matchId?: string) => {
       setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
     };
     load();
-    const ch = supabase.channel(`chat-${matchId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`chat-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
+    return () => { alive = false; if (ch) supabase.removeChannel(ch); };
   }, [matchId]);
   return { data };
 };
