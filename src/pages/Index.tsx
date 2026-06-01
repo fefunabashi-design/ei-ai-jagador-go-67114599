@@ -451,13 +451,6 @@ const Index = () => {
                 Editar
               </button>
             </div>
-            {myTeam?.logo_url && (
-              <img
-                src={myTeam.logo_url}
-                alt="Logo do time"
-                className="h-[72px] w-[120px] object-contain shrink-0"
-              />
-            )}
           </div>
         </div>
       </div>
