@@ -828,31 +828,6 @@ const AgendaPage = () => {
                 );
               })()}
             </div>
-            <div className="pt-2 border-t border-border">
-              <Label>Chat da partida</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  value={editChatMessage}
-                  onChange={(e) => setEditChatMessage(e.target.value)}
-                  placeholder="Digite uma mensagem..."
-                  className="bg-secondary border-border"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!editChatMessage.trim() || !selectedMatch}
-                  onClick={async () => {
-                    if (!selectedMatch || !editChatMessage.trim()) return;
-                    await sendChatMessage.mutateAsync({ matchId: selectedMatch.id, message: editChatMessage.trim() });
-                    setEditChatMessage("");
-                    setEditOpen(false);
-                    navigate(`/chat/${selectedMatch.id}`);
-                  }}
-                >
-                  <Send size={16} />
-                </Button>
-              </div>
-            </div>
             <Button type="submit" disabled={updateMatch.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar Alterações
             </Button>
