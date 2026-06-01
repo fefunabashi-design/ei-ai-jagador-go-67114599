@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
-  Send, XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
+  XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
   ChevronDown, ChevronUp, CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
