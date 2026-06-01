@@ -164,16 +164,31 @@ const Index = () => {
       return h?.id === t.id || a?.id === t.id;
     });
     const jogos = teamMatches.length;
-    const gols = teamMatches.reduce((acc, m) => {
-      const h = m.home_team as any;
-      const isHome = h?.id === t.id;
-      return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
-    }, 0);
-    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols, campeonatos: 0 };
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: 0, campeonatos: 0 };
   });
 
+  // Gols temporada — apenas gols nominalmente atribuídos ao usuário na finalização das partidas
+  const [golsTemporada, setGolsTemporada] = useState(0);
+  useEffect(() => {
+    const uid = profile?.user_id;
+    if (!uid) { setGolsTemporada(0); return; }
+    let alive = true;
+    (async () => {
+      const { data: myPlayers = [] } = await supabase
+        .from("players").select("id").eq("user_id", uid);
+      const ids = (myPlayers || []).map((p: any) => p.id);
+      if (!ids.length) { if (alive) setGolsTemporada(0); return; }
+      const { count } = await supabase
+        .from("match_events")
+        .select("id", { count: "exact", head: true })
+        .eq("type", "goal")
+        .in("player_id", ids);
+      if (alive) setGolsTemporada(count || 0);
+    })();
+    return () => { alive = false; };
+  }, [profile?.user_id, completedAllMatches.length]);
+
   const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
-  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
   const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
