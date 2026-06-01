@@ -237,11 +237,32 @@ const AgendaPage = () => {
     const matchDate = new Date(m.match_date);
     switch (filter) {
       case "upcoming": return matchDate >= now && (m.status === "open" || m.status === "confirmed");
-      case "past": return matchDate < now || m.status === "completed";
+      case "past": return matchDate < now || m.status === "completed" || m.status === "past";
       case "open": case "confirmed": case "completed": case "cancelled": return m.status === filter;
       default: return true;
     }
   });
+
+  // Auto-mark confirmed matches as "past" after 12 hours without finalization (owner only)
+  useEffect(() => {
+    if (!myTeam) return;
+    const overdue = myMatches.filter((m: any) => {
+      if (m.status !== "confirmed") return false;
+      if (m.home_team_id !== myTeam.id) return false;
+      const ageMs = Date.now() - new Date(m.match_date).getTime();
+      return ageMs > 12 * 60 * 60 * 1000;
+    });
+    if (!overdue.length) return;
+    (async () => {
+      await Promise.all(
+        overdue.map((m: any) =>
+          supabase.from("matches").update({ status: "past" }).eq("id", m.id),
+        ),
+      );
+      window.dispatchEvent(new CustomEvent("supabase-data-change"));
+    })();
+  }, [myTeam?.id, myMatches.length]);
+
 
   useEffect(() => {
     if (!focusMatchId) return;
