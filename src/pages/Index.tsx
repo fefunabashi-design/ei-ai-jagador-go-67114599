@@ -67,26 +67,59 @@ const Index = () => {
   const playerName = profile?.nickname?.trim() || profile?.display_name?.split(" ")[0] || "Craque";
   const firstName = playerName;
 
-  // Next upcoming match — also keeps finalized matches visible for 24h
+  // Cards visíveis na tela inicial: próximos jogos + finalizados nas últimas 24h
   const DAY_MS = 24 * 60 * 60 * 1000;
-  const nextMatch = matches
+  const relevantMatches = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
       const awayTeam = m.away_team as any;
       if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
       const md = new Date(m.match_date).getTime();
-      if (m.status === "completed") {
-        return now.getTime() - md <= DAY_MS;
-      }
+      if (m.status === "completed") return now.getTime() - md <= DAY_MS;
       return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
     })
     .sort((a, b) => {
-      // upcoming first by date asc; completed (recent) shown if no upcoming
       const aCompleted = a.status === "completed" ? 1 : 0;
       const bCompleted = b.status === "completed" ? 1 : 0;
       if (aCompleted !== bCompleted) return aCompleted - bCompleted;
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
-    })[0];
+    });
+  const nextMatch = relevantMatches.find((m) => m.status !== "completed") || relevantMatches[0];
+
+  // Carrega eventos + jogadores dos dois times para cada partida finalizada exibida
+  const [matchExtras, setMatchExtras] = useState<Record<string, { events: any[]; playerMap: Map<string, any> }>>({});
+  const completedIdsKey = relevantMatches.filter((m) => m.status === "completed").map((m) => m.id).join(",");
+  useEffect(() => {
+    const completed = relevantMatches.filter((m) => m.status === "completed");
+    if (!completed.length) { setMatchExtras({}); return; }
+    let alive = true;
+    (async () => {
+      const ids = completed.map((m) => m.id);
+      const teamIds = Array.from(new Set(
+        completed.flatMap((m) => [(m.home_team as any)?.id, (m.away_team as any)?.id].filter(Boolean))
+      ));
+      const [evRes, plRes] = await Promise.all([
+        supabase.from("match_events").select("*").in("match_id", ids),
+        teamIds.length
+          ? supabase.from("players").select("id, name, nickname, team_id").in("team_id", teamIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const playerMap = new Map<string, any>();
+      ((plRes as any).data || []).forEach((p: any) => playerMap.set(p.id, p));
+      const extras: Record<string, { events: any[]; playerMap: Map<string, any> }> = {};
+      completed.forEach((m) => {
+        extras[m.id] = {
+          events: ((evRes as any).data || []).filter((e: any) => e.match_id === m.id),
+          playerMap,
+        };
+      });
+      if (alive) setMatchExtras(extras);
+    })();
+    return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedIdsKey]);
+
+  const [detailsMatchId, setDetailsMatchId] = useState<string | null>(null);
 
   // Player stats
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
@@ -603,182 +636,233 @@ const Index = () => {
 
 
 
-      {/* Next Match Card */}
-      {nextMatch && (() => {
-        const homeTeam = nextMatch.home_team as any;
-        const awayTeam = nextMatch.away_team as any;
-        const matchDate = new Date(nextMatch.match_date);
-        const dayLabel = matchDate.toLocaleDateString("pt-BR", { weekday: "short" });
-        const timeLabel = matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      {/* Match cards carousel — próximos jogos + finalizados (24h) */}
+      {relevantMatches.length > 0 && (
+        <div className="mt-4">
+          <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-5 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
+            {relevantMatches.map((m) => {
+              const homeTeam = m.home_team as any;
+              const awayTeam = m.away_team as any;
+              const matchDate = new Date(m.match_date);
+              const extras = matchExtras[m.id];
+              const goals = (extras?.events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
+              const shareText = m.status === "completed"
+                ? `🏁 ${homeTeam?.name || "Mandante"} ${m.home_score ?? 0} x ${m.away_score ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
+                : `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${m.location}`;
 
-        return (
-          <div className="px-5 mt-4">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-2xl border border-border overflow-hidden"
-            >
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col items-center gap-1 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                      {homeTeam?.logo_url ? (
-                        <img src={homeTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
-                      ) : (
-                        <Shield size={28} className="text-primary" />
-                      )}
-                    </div>
-                    <p className="font-display text-foreground text-sm text-center">{homeTeam?.name?.toUpperCase()}</p>
-                    {(() => {
-                      const s = homeTeam?.id ? getTeamStats(homeTeam.id) : { nota: 0, played: 0 };
-                      return <NotaBadge nota={s.nota} played={s.played} />;
-                    })()}
-                  </div>
-                  <div className="flex flex-col items-center gap-2 px-3">
-                    {nextMatch.status === "completed" ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.home_score ?? 0}</span>
-                        <span className="text-xs text-muted-foreground">x</span>
-                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.away_score ?? 0}</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs font-bold text-muted-foreground">VS</span>
-                    )}
-                    <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
-                      <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
-                      <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
-                      <p className="mt-2 flex items-center justify-center gap-1"><MapPin size={10} /> {(homeTeam as any)?.field_name || nextMatch.location}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                      {awayTeam?.logo_url ? (
-                        <img src={awayTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
-                      ) : (
-                        <Shield size={28} className="text-muted-foreground" />
-                      )}
-                    </div>
-                    <p className="font-display text-foreground text-sm text-center">{awayTeam?.name?.toUpperCase() || "???"}</p>
-                    {(() => {
-                      const s = awayTeam?.id ? getTeamStats(awayTeam.id) : { nota: 0, played: 0 };
-                      return <NotaBadge nota={s.nota} played={s.played} />;
-                    })()}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-                  <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                    nextMatch.status === "completed" ? "bg-muted text-muted-foreground" :
-                    nextMatch.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                  }`}>
-                    {nextMatch.status === "completed" ? "🏁 Finalizado" : nextMatch.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
-                  </span>
-                </div>
+              const handleResenha = async () => {
+                try {
+                  toast({ title: "Gerando imagem da partida..." });
+                  const blob = await generateMatchShareImage({
+                    homeName: homeTeam?.name,
+                    awayName: awayTeam?.name,
+                    homeLogoUrl: homeTeam?.logo_url,
+                    awayLogoUrl: awayTeam?.logo_url,
+                    matchDate,
+                    location: (homeTeam as any)?.field_name || m.location,
+                  });
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) throw new Error("Sessão expirada. Faça login novamente.");
+                  const path = `${user.id}/match-share/${m.id}-${Date.now()}.png`;
+                  const { error: upErr } = await supabase.storage.from("post-media").upload(path, blob, {
+                    contentType: "image/png", upsert: true,
+                  });
+                  if (upErr) throw upErr;
+                  const { data: pub } = supabase.storage.from("post-media").getPublicUrl(path);
+                  await createResenhaPost.mutateAsync({
+                    photo_url: pub.publicUrl,
+                    caption: shareText,
+                    match_id: m.id,
+                    match_label: `${homeTeam?.name || "Time"} vs ${awayTeam?.name || "Adversário"}`,
+                    team_id: myTeam?.id || null,
+                  });
+                  toast({ title: "Publicado na Resenha da Várzea! 🎉" });
+                  navigate("/resenha");
+                } catch (e: any) {
+                  toast({ title: "Erro ao publicar", description: e?.message, variant: "destructive" });
+                }
+              };
 
-                {nextMatch.status !== "completed" && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-[10px] h-6 px-2 rounded-md"
-                      onClick={() => navigate(`/match/${nextMatch.id}`)}
-                    >
-                      <MessageCircle size={10} className="mr-1" /> Detalhes
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
-                          <Share2 size={10} className="mr-1" /> Compartilhar
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="snap-center shrink-0 w-[calc(100vw-2.5rem)] max-w-[420px] bg-card rounded-2xl border border-border overflow-hidden"
+                >
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col items-center gap-1 flex-1">
+                        <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                          {homeTeam?.logo_url ? (
+                            <img src={homeTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
+                          ) : (
+                            <Shield size={28} className="text-primary" />
+                          )}
+                        </div>
+                        <p className="font-display text-foreground text-sm text-center">{homeTeam?.name?.toUpperCase()}</p>
                         {(() => {
-                          const shareText = `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${nextMatch.location}`;
-                          return (
-                            <>
-                              <DropdownMenuItem onClick={() => {
-                                window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
-                              }}>
-                                <MessageCircle size={14} className="mr-2" /> WhatsApp
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={async () => {
-                                try {
-                                  await navigator.clipboard.writeText(shareText);
-                                  toast({ title: "Texto copiado!", description: "Abra o Instagram e cole na sua publicação." });
-                                } catch {
-                                  toast({ title: "Não foi possível copiar", variant: "destructive" });
-                                }
-                                window.open("https://www.instagram.com/", "_blank");
-                              }}>
-                                <Instagram size={14} className="mr-2" /> Instagram
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={async () => {
-                                try {
-                                  toast({ title: "Gerando imagem da partida..." });
-                                  const blob = await generateMatchShareImage({
-                                    homeName: homeTeam?.name,
-                                    awayName: awayTeam?.name,
-                                    homeLogoUrl: homeTeam?.logo_url,
-                                    awayLogoUrl: awayTeam?.logo_url,
-                                    matchDate,
-                                    location: (homeTeam as any)?.field_name || nextMatch.location,
-                                  });
-                                  const { data: { user } } = await supabase.auth.getUser();
-                                  if (!user) throw new Error("Sessão expirada. Faça login novamente.");
-                                  const path = `${user.id}/match-share/${nextMatch.id}-${Date.now()}.png`;
-                                  const { error: upErr } = await supabase.storage.from("post-media").upload(path, blob, {
-                                    contentType: "image/png",
-                                    upsert: true,
-                                  });
-                                  if (upErr) throw upErr;
-                                  const { data: pub } = supabase.storage.from("post-media").getPublicUrl(path);
-                                  await createResenhaPost.mutateAsync({
-                                    photo_url: pub.publicUrl,
-                                    caption: shareText,
-                                    match_id: nextMatch.id,
-                                    match_label: `${homeTeam?.name || "Time"} vs ${awayTeam?.name || "Adversário"}`,
-                                    team_id: myTeam?.id || null,
-                                  });
-                                  toast({ title: "Publicado na Resenha da Várzea! 🎉" });
-                                  navigate("/resenha");
-                                } catch (e: any) {
-                                  toast({ title: "Erro ao publicar", description: e?.message, variant: "destructive" });
-                                }
-                              }}>
-                                <Users size={14} className="mr-2" /> Resenha da Várzea
-                              </DropdownMenuItem>
-                            </>
-                          );
+                          const s = homeTeam?.id ? getTeamStats(homeTeam.id) : { nota: 0, played: 0 };
+                          return <NotaBadge nota={s.nota} played={s.played} />;
                         })()}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
-
-                {nextMatch.status === "completed" && (() => {
-                  const evs = ((nextMatch as any).events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
-                  if (!evs.length) return null;
-                  return (
-                    <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5 justify-center">
-                      {evs.map((e: any) => {
-                        const p = players.find((pl: any) => pl.id === e.player_id);
-                        const name = p?.nickname || p?.name || e.player_name || "Jogador";
-                        return (
-                          <span key={e.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                            {e.type === "own_goal" ? "🥅" : "⚽"} {name}
-                          </span>
-                        );
-                      })}
+                      </div>
+                      <div className="flex flex-col items-center gap-2 px-3">
+                        {m.status === "completed" ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-display text-foreground leading-none">{m.home_score ?? 0}</span>
+                            <span className="text-xs text-muted-foreground">x</span>
+                            <span className="text-2xl font-display text-foreground leading-none">{m.away_score ?? 0}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-bold text-muted-foreground">VS</span>
+                        )}
+                        <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
+                          <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
+                          <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+                          <p className="mt-2 flex items-center justify-center gap-1"><MapPin size={10} /> {(homeTeam as any)?.field_name || m.location}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 flex-1">
+                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                          {awayTeam?.logo_url ? (
+                            <img src={awayTeam.logo_url} alt="" loading="eager" className="w-14 h-14 rounded-lg object-contain bg-card" />
+                          ) : (
+                            <Shield size={28} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="font-display text-foreground text-sm text-center">{awayTeam?.name?.toUpperCase() || "???"}</p>
+                        {(() => {
+                          const s = awayTeam?.id ? getTeamStats(awayTeam.id) : { nota: 0, played: 0 };
+                          return <NotaBadge nota={s.nota} played={s.played} />;
+                        })()}
+                      </div>
                     </div>
-                  );
-                })()}
-              </div>
-            </motion.div>
+                    <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
+                      <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                        m.status === "completed" ? "bg-muted text-muted-foreground" :
+                        m.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                      }`}>
+                        {m.status === "completed" ? "🏁 Finalizado" : m.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                      </span>
+                    </div>
 
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-[10px] h-6 px-2 rounded-md"
+                        onClick={() => m.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
+                      >
+                        <MessageCircle size={10} className="mr-1" /> Detalhes
+                      </Button>
 
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
+                            <Share2 size={10} className="mr-1" /> Compartilhar
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank")}>
+                            <MessageCircle size={14} className="mr-2" /> WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(shareText);
+                              toast({ title: "Texto copiado!", description: "Abra o Instagram e cole na sua publicação." });
+                            } catch {
+                              toast({ title: "Não foi possível copiar", variant: "destructive" });
+                            }
+                            window.open("https://www.instagram.com/", "_blank");
+                          }}>
+                            <Instagram size={14} className="mr-2" /> Instagram
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleResenha}>
+                            <Users size={14} className="mr-2" /> Resenha da Várzea
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {m.status === "completed" && goals.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5 justify-center">
+                        {goals.map((e: any) => {
+                          const p = extras?.playerMap.get(e.player_id);
+                          const name = p?.nickname || p?.name || e.player_name || "Jogador";
+                          return (
+                            <span key={e.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                              {e.type === "own_goal" ? "🥅" : "⚽"} {name}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-        );
-      })()}
+          {relevantMatches.length > 1 && (
+            <p className="px-5 text-[10px] text-muted-foreground text-center">← arraste para ver mais partidas →</p>
+          )}
+        </div>
+      )}
+
+      {/* Detalhes da partida finalizada */}
+      <Dialog open={detailsMatchId !== null} onOpenChange={(o) => !o && setDetailsMatchId(null)}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[80vh] overflow-y-auto">
+          {(() => {
+            const m = relevantMatches.find((x) => x.id === detailsMatchId);
+            if (!m) return null;
+            const homeTeam = m.home_team as any;
+            const awayTeam = m.away_team as any;
+            const extras = matchExtras[m.id];
+            const evs = extras?.events || [];
+            const goals = evs.filter((e: any) => e.type === "goal" || e.type === "own_goal");
+            const yellow = evs.filter((e: any) => e.type === "yellow_card");
+            const red = evs.filter((e: any) => e.type === "red_card");
+            const blue = evs.filter((e: any) => e.type === "blue_card");
+            const labelFor = (e: any) => {
+              const p = extras?.playerMap.get(e.player_id);
+              return p?.nickname || p?.name || e.player_name || "Jogador";
+            };
+            const renderList = (title: string, list: any[], emoji: string) => (
+              <div>
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-1">{title} ({list.length})</p>
+                {list.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {list.map((e: any) => (
+                      <li key={e.id} className="text-xs text-foreground bg-background border border-border rounded-md px-2 py-1 flex items-center justify-between">
+                        <span>{emoji} {labelFor(e)}</span>
+                        {e.minute != null && <span className="text-[10px] text-muted-foreground">{e.minute}'</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-center">
+                    {homeTeam?.name} {m.home_score ?? 0} x {m.away_score ?? 0} {awayTeam?.name}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  {renderList("Gols", goals, "⚽")}
+                  {renderList("Cartões amarelos", yellow, "🟨")}
+                  {renderList("Cartões vermelhos", red, "🟥")}
+                  {renderList("Cartões azuis", blue, "🟦")}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Scheduled matches list moved to /agenda */}
 
