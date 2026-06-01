@@ -996,6 +996,15 @@ const AdminPage = () => {
         </DialogContent>
       </Dialog>
 
+      {finalizeMatch && myTeam && (
+        <FinalizeMatchDialog
+          open={!!finalizeMatch}
+          onOpenChange={(o) => !o && setFinalizeMatch(null)}
+          match={finalizeMatch}
+          myTeamId={myTeam.id}
+        />
+      )}
+
       <BottomNav />
     </div>
   );
