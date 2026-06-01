@@ -1026,7 +1026,7 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {goals.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e.player_id)}
+                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -1038,7 +1038,7 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {yellows.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">
-                                  🟨 {nameOf(e.player_id)}
+                                  🟨 {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -1050,7 +1050,19 @@ const AgendaPage = () => {
                             <div className="flex flex-wrap gap-1.5">
                               {reds.map((e) => (
                                 <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">
-                                  🟥 {nameOf(e.player_id)}
+                                  🟥 {nameOf(e)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {blues.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões azuis</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {blues.map((e) => (
+                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                  🟦 {nameOf(e)}
                                 </span>
                               ))}
                             </div>
@@ -1063,6 +1075,15 @@ const AgendaPage = () => {
                     );
                   })()}
                 </div>
+              )}
+              {/* Finalizar partida — para partidas confirmadas ou passadas */}
+              {(selectedMatch.status === "confirmed" || selectedMatch.status === "past") && myTeam && (
+                <Button
+                  onClick={() => { setFinalizeMatch(selectedMatch); setDetailView(null); }}
+                  className="w-full mt-4 bg-gradient-primary text-primary-foreground border-0"
+                >
+                  <Trophy size={14} className="mr-1" /> Finalizar partida
+                </Button>
               )}
               <div className="flex gap-2 mt-4">
                 <Button
