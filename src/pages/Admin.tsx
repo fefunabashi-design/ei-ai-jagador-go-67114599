@@ -2,7 +2,8 @@ import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -277,6 +278,39 @@ const AdminPage = () => {
     setRescheduleMatch(null);
   };
 
+  const [showNextActions, setShowNextActions] = useState(false);
+  const [cancelMatch, setCancelMatch] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  const handleConfirmCancelMatch = async () => {
+    if (!cancelMatch) return;
+    if (!cancelReason.trim()) {
+      toast({ title: "Informe o motivo do cancelamento", variant: "destructive" });
+      return;
+    }
+    await updateMatchMut.mutateAsync({ id: cancelMatch.id, status: "cancelled" });
+
+    // Posta mensagem de sistema no chat da partida (visível para ambos os times)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const teamName = (myTeam as any)?.name || "Adversário";
+      const text = `⚠️ Partida cancelada por ${teamName}.\nMotivo: ${cancelReason.trim()}`;
+      await supabase.from("match_chat_messages").insert({
+        match_id: cancelMatch.id,
+        user_id: user.id,
+        message: text,
+        message_type: "system",
+      });
+    }
+
+    toast({
+      title: "Partida cancelada",
+      description: "O administrador do time adversário foi notificado no chat da partida.",
+    });
+    setCancelMatch(null);
+    setCancelReason("");
+  };
+
   const handleDecline = async (matchId: string) => {
     await deleteMatchMut.mutateAsync(matchId);
     toast({ title: "Pedido recusado." });
@@ -459,12 +493,42 @@ const AdminPage = () => {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border text-[11px] font-semibold">
-              <button className="flex items-center gap-1 text-primary">
-                <UserPlus size={12} /> JOGADORES ADVERSÁRIOS
-              </button>
-              <button className="text-muted-foreground hover:text-foreground">REAGENDAR</button>
-              <button className="text-destructive">CANCELAR</button>
+            <div className="pt-2 border-t border-border">
+              <Button
+                onClick={() => setShowNextActions((v) => !v)}
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-[11px] font-semibold"
+              >
+                <Eye size={12} className="mr-1" /> DETALHES
+                {showNextActions ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+              </Button>
+
+              {showNextActions && (
+                <div className="mt-2 space-y-1.5">
+                  <button
+                    onClick={() => navigate(`/opponent-details?matchId=${nextMatch.id}`)}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <Shield size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
+                  </button>
+                  <button
+                    onClick={() => openReschedule(nextMatch)}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                  >
+                    <CalendarClock size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                  </button>
+                  <button
+                    onClick={() => { setCancelMatch(nextMatch); setCancelReason(""); }}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/30 hover:bg-destructive/10 text-left transition-colors"
+                  >
+                    <XCircle size={14} className="text-destructive" />
+                    <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -852,6 +916,38 @@ const AdminPage = () => {
               })
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancelar partida com motivo */}
+      <Dialog open={!!cancelMatch} onOpenChange={(open) => { if (!open) { setCancelMatch(null); setCancelReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancelar partida</DialogTitle>
+            <DialogDescription>
+              Informe o motivo do cancelamento. Ao confirmar, o administrador do time adversário será notificado no chat da partida.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason">Motivo</Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex: campo indisponível, falta de jogadores..."
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelMatch(null); setCancelReason(""); }}>Voltar</Button>
+            <Button
+              onClick={handleConfirmCancelMatch}
+              disabled={updateMatchMut.isPending || !cancelReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
