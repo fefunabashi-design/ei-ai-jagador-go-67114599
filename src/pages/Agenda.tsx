@@ -630,27 +630,33 @@ const AgendaPage = () => {
 
                   <div className="p-4 space-y-3">
                     {/* Teams */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
                           {homeTeam?.logo_url ? (
                             <img src={homeTeam.logo_url} alt="" loading="eager" className="w-9 h-9 object-contain" />
                           ) : (
                             <Shield size={16} className="text-primary" />
                           )}
                         </div>
-                        <span className="font-display text-foreground">{homeTeam?.name?.toUpperCase() || "???"}</span>
+                        <span className="font-display text-foreground truncate">{homeTeam?.name?.toUpperCase() || "???"}</span>
+                        {match.status === "completed" && (
+                          <span className="ml-1 inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-primary/15 text-primary font-display text-lg leading-none">
+                            {match.home_score ?? 0}
+                          </span>
+                        )}
                       </div>
-                      {match.status === "completed" ? (
-                        <span className="text-sm font-display text-foreground font-bold px-3">
-                          {match.home_score ?? 0} <span className="text-xs text-muted-foreground mx-1">VS</span> {match.away_score ?? 0}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground font-bold px-3">VS</span>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <span className="font-display text-foreground">{awayTeam?.name?.toUpperCase() || "???"}</span>
-                        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      <span className="text-xs text-muted-foreground font-bold px-1 shrink-0">
+                        {match.status === "completed" ? "–" : "VS"}
+                      </span>
+                      <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                        {match.status === "completed" && (
+                          <span className="mr-1 inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-muted text-foreground font-display text-lg leading-none">
+                            {match.away_score ?? 0}
+                          </span>
+                        )}
+                        <span className="font-display text-foreground truncate">{awayTeam?.name?.toUpperCase() || "???"}</span>
+                        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
                           {awayTeam?.logo_url ? (
                             <img src={awayTeam.logo_url} alt="" loading="eager" className="w-9 h-9 object-contain" />
                           ) : (
