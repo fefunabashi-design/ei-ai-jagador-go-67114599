@@ -14,6 +14,7 @@ const OpponentDetails = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const matchId = params.get("matchId") || "";
+  const teamIdParam = params.get("teamId") || "";
 
   const [match, setMatch] = useState<any>(null);
   const [opponent, setOpponent] = useState<any>(null);
@@ -24,22 +25,28 @@ const OpponentDetails = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!matchId) return;
-      const { data: m } = await supabase
-        .from("matches")
-        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
-        .eq("id", matchId).maybeSingle();
-      if (cancelled) return;
-      setMatch(m);
-      const home = (m as any)?.home_team;
-      const away = (m as any)?.away_team;
-      let opp = null;
-      if (myTeam && home?.id === myTeam.id) opp = away;
-      else if (myTeam && away?.id === myTeam.id) opp = home;
-      else opp = away || home;
+      let opp: any = null;
+      if (teamIdParam) {
+        const { data: full } = await supabase.from("public_teams").select("*").eq("id", teamIdParam).maybeSingle();
+        opp = full;
+      } else if (matchId) {
+        const { data: m } = await supabase
+          .from("matches")
+          .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+          .eq("id", matchId).maybeSingle();
+        if (cancelled) return;
+        setMatch(m);
+        const home = (m as any)?.home_team;
+        const away = (m as any)?.away_team;
+        if (myTeam && home?.id === myTeam.id) opp = away;
+        else if (myTeam && away?.id === myTeam.id) opp = home;
+        else opp = away || home;
+        if (opp?.id) {
+          const { data: full } = await supabase.from("public_teams").select("*").eq("id", opp.id).maybeSingle();
+          if (full) opp = full;
+        }
+      }
       if (opp?.id) {
-        const { data: full } = await supabase.from("public_teams").select("*").eq("id", opp.id).maybeSingle();
-        if (full) opp = full;
         const { data: pls } = await supabase.from("players").select("*").eq("team_id", opp.id);
         if (!cancelled) setOpponentPlayers(pls || []);
         const userIds = (pls || []).map((p: any) => p.user_id).filter(Boolean);
@@ -58,7 +65,7 @@ const OpponentDetails = () => {
       if (!cancelled) setOpponent(opp);
     })();
     return () => { cancelled = true; };
-  }, [matchId, myTeam?.id]);
+  }, [matchId, teamIdParam, myTeam?.id]);
 
   const activePlayers = opponentPlayers;
 
