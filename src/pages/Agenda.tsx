@@ -1008,12 +1008,14 @@ const AgendaPage = () => {
                     </div>
                   </div>
                   {(() => {
-                    const evs: any[] = (selectedMatch as any).events || [];
+                    const evs: any[] = matchEvents;
                     const goals = evs.filter((e) => e.type === "goal" || e.type === "own_goal");
                     const yellows = evs.filter((e) => e.type === "yellow");
                     const reds = evs.filter((e) => e.type === "red");
-                    const nameOf = (pid: string) => {
-                      const p: any = players.find((pl) => pl.id === pid);
+                    const blues = evs.filter((e) => e.type === "blue");
+                    const nameOf = (e: any) => {
+                      if (e.player_name) return e.player_name;
+                      const p: any = players.find((pl) => pl.id === e.player_id) || opponentPlayers.find((pl: any) => pl.id === e.player_id);
                       return p?.nickname || p?.name || "Jogador";
                     };
                     return (
