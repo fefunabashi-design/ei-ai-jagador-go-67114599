@@ -2,7 +2,8 @@ import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
