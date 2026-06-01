@@ -159,6 +159,7 @@ const EMPTY_TEAM_FORM: TeamForm = {
 };
 
 const EMPTY_PLAYER_FORM = {
+  cpf: "",
   name: "",
   last_name: "",
   nickname: "",
@@ -170,6 +171,7 @@ const EMPTY_PLAYER_FORM = {
   is_active: "true",
   observacoes: "",
 };
+
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -471,21 +473,38 @@ const TeamPage = () => {
 
   const openNewPlayer = () => {
     setEditingPlayer(null);
-    setPlayerForm({
-      ...EMPTY_PLAYER_FORM,
-      name: (myProfile as any)?.display_name || "",
-      nickname: (myProfile as any)?.nickname || "",
-      phone: (myProfile as any)?.phone || "",
-      birth_date: (myProfile as any)?.birth_date || "",
-      email: (myProfile as any)?.email || "",
-    });
+    setPlayerForm({ ...EMPTY_PLAYER_FORM });
     setSelectedPositions([]);
     setPlayerDialogOpen(true);
+  };
+
+  const handleCpfLookup = async (rawCpf: string) => {
+    if (!isValidCpf(rawCpf)) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("lookup-profile-by-cpf", {
+        body: { cpf: rawCpf.replace(/\D/g, "") },
+      });
+      if (error || !data?.found) return;
+      const p = data.profile || {};
+      setPlayerForm((prev) => ({
+        ...prev,
+        name: p.display_name || prev.name,
+        last_name: p.last_name || prev.last_name,
+        nickname: p.nickname || prev.nickname,
+        birth_date: p.birth_date || prev.birth_date,
+        phone: p.phone || prev.phone,
+        email: data.email || prev.email,
+      }));
+      toast({ title: "Dados encontrados", description: "Informações preenchidas a partir do cadastro." });
+    } catch {
+      // silent
+    }
   };
 
   const openEditPlayer = (player: any) => {
     setEditingPlayer(player);
     setPlayerForm({
+      cpf: "",
       name: player.name || "",
       last_name: player.last_name || "",
       nickname: player.nickname || "",
@@ -502,6 +521,7 @@ const TeamPage = () => {
     );
     setPlayerDialogOpen(true);
   };
+
 
   const togglePosition = (pos: string) => {
     setSelectedPositions((prev) =>
@@ -870,7 +890,27 @@ const TeamPage = () => {
           </DialogHeader>
 
           <form onSubmit={handleSavePlayer} className="space-y-4">
+            <div>
+              <Label>CPF *</Label>
+              <Input
+                value={playerForm.cpf}
+                onChange={(e) => {
+                  const formatted = formatCpf(e.target.value);
+                  setPF("cpf", formatted);
+                  if (isValidCpf(formatted)) handleCpfLookup(formatted);
+                }}
+                onBlur={(e) => handleCpfLookup(e.target.value)}
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+                className="bg-secondary border-border"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Ao informar um CPF válido, buscamos os dados já cadastrados no app.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
+
               <div>
                 <Label>Nome *</Label>
                 <Input
