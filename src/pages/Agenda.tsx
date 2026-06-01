@@ -106,6 +106,7 @@ const AgendaPage = () => {
   const sendChatMessage = useSendChatMessage();
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+  const [cancelReasonText, setCancelReasonText] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +118,29 @@ const AgendaPage = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCancelReasonText("");
+      if (!selectedMatch || selectedMatch.status !== "cancelled" || detailView !== "details") return;
+      const { data } = await supabase
+        .from("match_chat_messages")
+        .select("message")
+        .eq("match_id", selectedMatch.id)
+        .eq("message_type", "system")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (cancelled) return;
+      const msg = (data || []).find((m: any) => /cancelada/i.test(m.message || ""));
+      if (msg) {
+        const m = String(msg.message);
+        const idx = m.toLowerCase().indexOf("motivo:");
+        setCancelReasonText(idx >= 0 ? m.slice(idx + 7).trim() : m);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedMatch?.id, selectedMatch?.status, detailView]);
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
