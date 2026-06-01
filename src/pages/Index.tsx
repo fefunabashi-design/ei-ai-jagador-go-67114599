@@ -67,26 +67,59 @@ const Index = () => {
   const playerName = profile?.nickname?.trim() || profile?.display_name?.split(" ")[0] || "Craque";
   const firstName = playerName;
 
-  // Next upcoming match — also keeps finalized matches visible for 24h
+  // Cards visíveis na tela inicial: próximos jogos + finalizados nas últimas 24h
   const DAY_MS = 24 * 60 * 60 * 1000;
-  const nextMatch = matches
+  const relevantMatches = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
       const awayTeam = m.away_team as any;
       if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
       const md = new Date(m.match_date).getTime();
-      if (m.status === "completed") {
-        return now.getTime() - md <= DAY_MS;
-      }
+      if (m.status === "completed") return now.getTime() - md <= DAY_MS;
       return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
     })
     .sort((a, b) => {
-      // upcoming first by date asc; completed (recent) shown if no upcoming
       const aCompleted = a.status === "completed" ? 1 : 0;
       const bCompleted = b.status === "completed" ? 1 : 0;
       if (aCompleted !== bCompleted) return aCompleted - bCompleted;
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
-    })[0];
+    });
+  const nextMatch = relevantMatches.find((m) => m.status !== "completed") || relevantMatches[0];
+
+  // Carrega eventos + jogadores dos dois times para cada partida finalizada exibida
+  const [matchExtras, setMatchExtras] = useState<Record<string, { events: any[]; playerMap: Map<string, any> }>>({});
+  const completedIdsKey = relevantMatches.filter((m) => m.status === "completed").map((m) => m.id).join(",");
+  useEffect(() => {
+    const completed = relevantMatches.filter((m) => m.status === "completed");
+    if (!completed.length) { setMatchExtras({}); return; }
+    let alive = true;
+    (async () => {
+      const ids = completed.map((m) => m.id);
+      const teamIds = Array.from(new Set(
+        completed.flatMap((m) => [(m.home_team as any)?.id, (m.away_team as any)?.id].filter(Boolean))
+      ));
+      const [evRes, plRes] = await Promise.all([
+        supabase.from("match_events").select("*").in("match_id", ids),
+        teamIds.length
+          ? supabase.from("players").select("id, name, nickname, team_id").in("team_id", teamIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const playerMap = new Map<string, any>();
+      ((plRes as any).data || []).forEach((p: any) => playerMap.set(p.id, p));
+      const extras: Record<string, { events: any[]; playerMap: Map<string, any> }> = {};
+      completed.forEach((m) => {
+        extras[m.id] = {
+          events: ((evRes as any).data || []).filter((e: any) => e.match_id === m.id),
+          playerMap,
+        };
+      });
+      if (alive) setMatchExtras(extras);
+    })();
+    return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedIdsKey]);
+
+  const [detailsMatchId, setDetailsMatchId] = useState<string | null>(null);
 
   // Player stats
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
