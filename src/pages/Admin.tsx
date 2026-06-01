@@ -919,6 +919,38 @@ const AdminPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Cancelar partida com motivo */}
+      <Dialog open={!!cancelMatch} onOpenChange={(open) => { if (!open) { setCancelMatch(null); setCancelReason(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancelar partida</DialogTitle>
+            <DialogDescription>
+              Informe o motivo do cancelamento. Ao confirmar, o administrador do time adversário será notificado no chat da partida.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason">Motivo</Label>
+            <Textarea
+              id="cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex: campo indisponível, falta de jogadores..."
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelMatch(null); setCancelReason(""); }}>Voltar</Button>
+            <Button
+              onClick={handleConfirmCancelMatch}
+              disabled={updateMatchMut.isPending || !cancelReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BottomNav />
     </div>
   );
