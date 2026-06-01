@@ -635,10 +635,16 @@ export const useMatchPayments = (matchId?: string) => {
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
-    const ch = supabase.channel(`payments-${matchId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "match_payments", filter: `match_id=eq.${matchId}` }, () => load())
-      .subscribe();
-    return () => { alive = false; window.removeEventListener("supabase-data-change", h); supabase.removeChannel(ch); };
+    let ch: any = null;
+    (async () => {
+      if (!matchId) return;
+      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
+      if (!alive || !allowed) return;
+      ch = supabase.channel(`payments-${matchId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "match_payments", filter: `match_id=eq.${matchId}` }, () => load())
+        .subscribe();
+    })();
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); if (ch) supabase.removeChannel(ch); };
   }, [matchId]);
   return { data };
 };
