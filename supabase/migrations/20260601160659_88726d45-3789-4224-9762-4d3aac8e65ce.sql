@@ -1,0 +1,2 @@
+ALTER TABLE public.match_events DROP CONSTRAINT IF EXISTS match_events_type_check;
+ALTER TABLE public.match_events ADD CONSTRAINT match_events_type_check CHECK (type = ANY (ARRAY['goal'::text,'own_goal'::text,'yellow'::text,'red'::text,'blue'::text,'yellow_card'::text,'red_card'::text]));
