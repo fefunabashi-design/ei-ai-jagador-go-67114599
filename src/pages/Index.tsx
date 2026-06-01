@@ -164,16 +164,31 @@ const Index = () => {
       return h?.id === t.id || a?.id === t.id;
     });
     const jogos = teamMatches.length;
-    const gols = teamMatches.reduce((acc, m) => {
-      const h = m.home_team as any;
-      const isHome = h?.id === t.id;
-      return acc + (isHome ? (m.home_score || 0) : (m.away_score || 0));
-    }, 0);
-    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols, campeonatos: 0 };
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: 0, campeonatos: 0 };
   });
 
+  // Gols temporada — apenas gols nominalmente atribuídos ao usuário na finalização das partidas
+  const [golsTemporada, setGolsTemporada] = useState(0);
+  useEffect(() => {
+    const uid = profile?.user_id;
+    if (!uid) { setGolsTemporada(0); return; }
+    let alive = true;
+    (async () => {
+      const { data: myPlayers = [] } = await supabase
+        .from("players").select("id").eq("user_id", uid);
+      const ids = (myPlayers || []).map((p: any) => p.id);
+      if (!ids.length) { if (alive) setGolsTemporada(0); return; }
+      const { count } = await supabase
+        .from("match_events")
+        .select("id", { count: "exact", head: true })
+        .eq("type", "goal")
+        .in("player_id", ids);
+      if (alive) setGolsTemporada(count || 0);
+    })();
+    return () => { alive = false; };
+  }, [profile?.user_id, completedAllMatches.length]);
+
   const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
-  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
   const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
@@ -620,7 +635,15 @@ const Index = () => {
                     })()}
                   </div>
                   <div className="flex flex-col items-center gap-2 px-3">
-                    <span className="text-xs font-bold text-muted-foreground">VS</span>
+                    {nextMatch.status === "completed" ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.home_score ?? 0}</span>
+                        <span className="text-xs text-muted-foreground">x</span>
+                        <span className="text-2xl font-display text-foreground leading-none">{nextMatch.away_score ?? 0}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">VS</span>
+                    )}
                     <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
                       <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
                       <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
@@ -732,32 +755,23 @@ const Index = () => {
                   </div>
                 )}
 
-                {nextMatch.status === "completed" && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                      <span className="text-2xl font-display text-foreground">{nextMatch.home_score ?? 0}</span>
-                      <span className="text-xs text-muted-foreground">x</span>
-                      <span className="text-2xl font-display text-foreground">{nextMatch.away_score ?? 0}</span>
+                {nextMatch.status === "completed" && (() => {
+                  const evs = ((nextMatch as any).events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
+                  if (!evs.length) return null;
+                  return (
+                    <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5 justify-center">
+                      {evs.map((e: any) => {
+                        const p = players.find((pl: any) => pl.id === e.player_id);
+                        const name = p?.nickname || p?.name || e.player_name || "Jogador";
+                        return (
+                          <span key={e.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                            {e.type === "own_goal" ? "🥅" : "⚽"} {name}
+                          </span>
+                        );
+                      })}
                     </div>
-                    {(() => {
-                      const evs = ((nextMatch as any).events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
-                      if (!evs.length) return null;
-                      return (
-                        <div className="flex flex-wrap gap-1.5 justify-center">
-                          {evs.map((e: any) => {
-                            const p = players.find((pl: any) => pl.id === e.player_id);
-                            const name = p?.nickname || p?.name || "Jogador";
-                            return (
-                              <span key={e.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                                {e.type === "own_goal" ? "🥅" : "⚽"} {name}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </motion.div>
 
