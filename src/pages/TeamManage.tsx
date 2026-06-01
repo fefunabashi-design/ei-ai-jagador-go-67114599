@@ -890,7 +890,27 @@ const TeamPage = () => {
           </DialogHeader>
 
           <form onSubmit={handleSavePlayer} className="space-y-4">
+            <div>
+              <Label>CPF *</Label>
+              <Input
+                value={playerForm.cpf}
+                onChange={(e) => {
+                  const formatted = formatCpf(e.target.value);
+                  setPF("cpf", formatted);
+                  if (isValidCpf(formatted)) handleCpfLookup(formatted);
+                }}
+                onBlur={(e) => handleCpfLookup(e.target.value)}
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+                className="bg-secondary border-border"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Ao informar um CPF válido, buscamos os dados já cadastrados no app.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
+
               <div>
                 <Label>Nome *</Label>
                 <Input
