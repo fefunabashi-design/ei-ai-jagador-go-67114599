@@ -885,6 +885,20 @@ const AgendaPage = () => {
                 ))}
               </div>
 
+              {selectedMatch.status === "cancelled" && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Observações do cancelamento
+                  </p>
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                    <p className="text-sm text-foreground whitespace-pre-line">
+                      {cancelReasonText || "Sem observações registradas."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+
               {(() => {
                 const opp: any = (selectedMatch as any).away_team;
                 if (!opp) return null;
