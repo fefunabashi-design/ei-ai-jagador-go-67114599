@@ -84,41 +84,29 @@ const createListHook = <T,>(fetcher: () => Promise<T[]>) => (): { data: T[]; isL
 };
 
 // =================== PROFILE ===================
+// =================== PROFILE ===================
+// Cached via React Query — same `{ data, isLoading }` shape as before.
+// Refetch é disparado pelo bridge global em App.tsx ao receber `supabase-data-change`.
 export const useProfile = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const reqIdRef = useRef(0);
-  const pendingRef = useRef<Promise<void> | null>(null);
-
-  const load = useCallback(async () => {
-    if (pendingRef.current) return pendingRef.current;
-    const myId = ++reqIdRef.current;
-    setIsLoading(true);
-    const run = (async () => {
+  const query = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
       const uid = await getUserId();
-      if (myId !== reqIdRef.current) return;
-      if (!uid) { setData(null); setIsLoading(false); return; }
+      if (!uid) return null;
       const [{ data: { user } }, { data: p }] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
       ]);
-      if (myId !== reqIdRef.current) return;
-      setData({ ...(p || {}), user_id: uid, email: user?.email });
-      setIsLoading(false);
-    })();
-    pendingRef.current = run.finally(() => { pendingRef.current = null; });
-    return pendingRef.current;
-  }, []);
-
+      return { ...(p || {}), user_id: uid, email: user?.email };
+    },
+    staleTime: 60_000,
+  });
   useEffect(() => {
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    const h = () => load();
-    window.addEventListener("supabase-data-change", h);
-    return () => { sub.subscription.unsubscribe(); window.removeEventListener("supabase-data-change", h); };
-  }, [load]);
-
-  return { data, isLoading };
+    const { data: sub } = supabase.auth.onAuthStateChange(() => { query.refetch(); });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return { data: query.data ?? null, isLoading: query.isLoading };
 };
 
 
