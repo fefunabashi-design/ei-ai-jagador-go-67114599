@@ -51,7 +51,6 @@ const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  useProfile();
   const { isSuperAdmin } = useAdminAccess();
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
