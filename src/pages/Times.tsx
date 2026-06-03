@@ -1055,6 +1055,7 @@ const TimesPage = () => {
         </div>
       </div>
 
+
       {/* Dialog Desafio */}
       <Dialog
         open={!!challengeTeam}
