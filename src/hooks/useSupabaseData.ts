@@ -121,90 +121,60 @@ export const useProfile = () => {
 };
 
 
-export const useUpdateProfile = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (updates: Record<string, unknown>) => {
-    setIsPending(true);
-    try {
-      const uid = await getUserId();
-      if (!uid) throw new Error("Não autenticado");
-      const allowed: Record<string, unknown> = {};
-      ["display_name","last_name","nickname","phone","birth_date","cpf","city","region","avatar_url","role","is_pro","is_active","gender"].forEach(k => {
-        if (k in updates) allowed[k] = (updates as any)[k];
-      });
-      if (Object.keys(allowed).length) {
-        await supabase.from("profiles").update(allowed).eq("user_id", uid);
-      }
-      emitChange();
-      toast({ title: "Perfil atualizado!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar perfil", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useUpdateProfile = createMutationHook<Record<string, unknown>>({
+  run: async (updates) => {
+    const uid = await getUserId();
+    if (!uid) throw new Error("Não autenticado");
+    const allowed: Record<string, unknown> = {};
+    ["display_name","last_name","nickname","phone","birth_date","cpf","city","region","avatar_url","role","is_pro","is_active","gender"].forEach(k => {
+      if (k in updates) allowed[k] = (updates as any)[k];
+    });
+    if (Object.keys(allowed).length) {
+      await supabase.from("profiles").update(allowed).eq("user_id", uid);
+    }
+  },
+  success: "Perfil atualizado!",
+  error: "Erro ao atualizar perfil",
+});
 
-export const useUploadAvatar = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (file: File) => {
-    setIsPending(true);
-    try {
-      const uid = await getUserId();
-      if (!uid) throw new Error("Não autenticado");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${uid}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("user_id", uid);
-      emitChange();
-      toast({ title: "Foto atualizada!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar foto", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useUploadAvatar = createMutationHook<File>({
+  run: async (file) => {
+    const uid = await getUserId();
+    if (!uid) throw new Error("Não autenticado");
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${uid}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("user_id", uid);
+  },
+  success: "Foto atualizada!",
+  error: "Erro ao atualizar foto",
+});
 
 // =================== TEAMS ===================
-export const useMyTeams = () => {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export const useMyTeams = createListHook<any>(async () => {
+  const uid = await getUserId();
+  if (!uid) return [];
+  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
+  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
+  const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
+  let playerTeams: any[] = [];
+  if (playerTeamIds.length) {
+    const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
+    playerTeams = pt || [];
+  }
+  const map = new Map<string, any>();
+  [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
+  return Array.from(map.values());
+});
 
-  useSubscribe(async () => {
-    const uid = await getUserId();
-    if (!uid) { setData([]); setIsLoading(false); return; }
-    // teams owned
-    const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-    // teams where user is a player
-    const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-    const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
-    let playerTeams: any[] = [];
-    if (playerTeamIds.length) {
-      const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
-      playerTeams = pt || [];
-    }
-    const map = new Map<string, any>();
-    [...(owned || []), ...playerTeams].forEach(t => map.set(t.id, t));
-    setData(Array.from(map.values()));
-    setIsLoading(false);
-  });
-
-  return { data, isLoading };
-};
-
-export const useMyAdminTeams = () => {
-  const [data, setData] = useState<any[]>([]);
-  useSubscribe(async () => {
-    const uid = await getUserId();
-    if (!uid) { setData([]); return; }
-    const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-    setData(owned || []);
-  });
-  return { data, isLoading: false };
-};
+export const useMyAdminTeams = createListHook<any>(async () => {
+  const uid = await getUserId();
+  if (!uid) return [];
+  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
+  return owned || [];
+});
 
 export const useMyTeam = () => {
   const { data: teams = [], isLoading } = useMyTeams();
@@ -243,85 +213,53 @@ const cleanTeamPayload = (raw: Record<string, any>) => {
   return out;
 };
 
-export const useCreateTeam = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any>) => {
-    setIsPending(true);
-    try {
-      const uid = await getUserId();
-      if (!uid) throw new Error("Faça login para criar um time");
-      const payload = { ...cleanTeamPayload(data), owner_id: uid, name: data.name };
-      const { data: created, error } = await supabase.from("teams").insert(payload).select().single();
-      if (error) throw error;
-      localStorage.setItem(ACTIVE_TEAM_KEY, created.id);
-      emitChange();
-      toast({ title: "Time cadastrado com sucesso!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao cadastrar time", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useCreateTeam = createMutationHook<Record<string, any>>({
+  run: async (data) => {
+    const uid = await getUserId();
+    if (!uid) throw new Error("Faça login para criar um time");
+    const payload = { ...cleanTeamPayload(data), owner_id: uid, name: data.name };
+    const { data: created, error } = await supabase.from("teams").insert(payload).select().single();
+    if (error) throw error;
+    localStorage.setItem(ACTIVE_TEAM_KEY, created.id);
+  },
+  success: "Time cadastrado com sucesso!",
+  error: "Erro ao cadastrar time",
+});
 
-export const useUpdateTeam = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any> & { id: string }) => {
-    setIsPending(true);
-    try {
-      const { id, ...rest } = data;
-      const { error } = await supabase.from("teams").update(cleanTeamPayload(rest)).eq("id", id);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Dados do time atualizados!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar time", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useUpdateTeam = createMutationHook<Record<string, any> & { id: string }>({
+  run: async (data) => {
+    const { id, ...rest } = data;
+    const { error } = await supabase.from("teams").update(cleanTeamPayload(rest)).eq("id", id);
+    if (error) throw error;
+  },
+  success: "Dados do time atualizados!",
+  error: "Erro ao atualizar time",
+});
 
-export const useDeleteTeam = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (id: string) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("teams").delete().eq("id", id);
-      if (error) throw error;
-      if (localStorage.getItem(ACTIVE_TEAM_KEY) === id) localStorage.removeItem(ACTIVE_TEAM_KEY);
-      emitChange();
-      toast({ title: "Time excluído com sucesso!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao excluir time", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useDeleteTeam = createMutationHook<string>({
+  run: async (id) => {
+    const { error } = await supabase.from("teams").delete().eq("id", id);
+    if (error) throw error;
+    if (localStorage.getItem(ACTIVE_TEAM_KEY) === id) localStorage.removeItem(ACTIVE_TEAM_KEY);
+  },
+  success: "Time excluído com sucesso!",
+  error: "Erro ao excluir time",
+});
 
-export const useUploadTeamLogo = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async ({ teamId, file }: { teamId: string; file: File }) => {
-    setIsPending(true);
-    try {
-      const uid = await getUserId();
-      if (!uid) throw new Error("Não autenticado");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${teamId}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("team-logos").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("team-logos").getPublicUrl(path);
-      await supabase.from("teams").update({ logo_url: pub.publicUrl }).eq("id", teamId);
-      emitChange();
-      toast({ title: "Escudo atualizado!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar escudo", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useUploadTeamLogo = createMutationHook<{ teamId: string; file: File }>({
+  run: async ({ teamId, file }) => {
+    const uid = await getUserId();
+    if (!uid) throw new Error("Não autenticado");
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${teamId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("team-logos").upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from("team-logos").getPublicUrl(path);
+    await supabase.from("teams").update({ logo_url: pub.publicUrl }).eq("id", teamId);
+  },
+  success: "Escudo atualizado!",
+  error: "Erro ao atualizar escudo",
+});
 
 // =================== PLAYERS ===================
 export const usePlayers = (teamId?: string) => {
@@ -353,83 +291,53 @@ const cleanPlayerPayload = (raw: Record<string, any>) => {
   return out;
 };
 
-export const useCreatePlayer = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any>) => {
-    setIsPending(true);
-    try {
-      if (!data.team_id) throw new Error("Selecione um time");
-      const { error } = await supabase.from("players").insert(cleanPlayerPayload(data) as any);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Jogador adicionado com sucesso!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao adicionar jogador", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useCreatePlayer = createMutationHook<Record<string, any>>({
+  run: async (data) => {
+    if (!data.team_id) throw new Error("Selecione um time");
+    const { error } = await supabase.from("players").insert(cleanPlayerPayload(data) as any);
+    if (error) throw error;
+  },
+  success: "Jogador adicionado com sucesso!",
+  error: "Erro ao adicionar jogador",
+});
 
-export const useUpdatePlayer = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any> & { id: string }) => {
-    setIsPending(true);
-    try {
-      const { id, ...rest } = data;
-      const { error } = await supabase.from("players").update(cleanPlayerPayload(rest)).eq("id", id);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Jogador atualizado com sucesso!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar jogador", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useUpdatePlayer = createMutationHook<Record<string, any> & { id: string }>({
+  run: async (data) => {
+    const { id, ...rest } = data;
+    const { error } = await supabase.from("players").update(cleanPlayerPayload(rest)).eq("id", id);
+    if (error) throw error;
+  },
+  success: "Jogador atualizado com sucesso!",
+  error: "Erro ao atualizar jogador",
+});
 
-export const useDeletePlayer = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async ({ id }: { id: string; teamId?: string }) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("players").delete().eq("id", id);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Jogador removido com sucesso!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao remover jogador", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, isPending, isLoading: isPending };
-};
+export const useDeletePlayer = createMutationHook<{ id: string; teamId?: string }>({
+  run: async ({ id }) => {
+    const { error } = await supabase.from("players").delete().eq("id", id);
+    if (error) throw error;
+  },
+  success: "Jogador removido com sucesso!",
+  error: "Erro ao remover jogador",
+});
 
 // =================== MATCHES ===================
-export const useMatches = () => {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useSubscribe(async () => {
-    const uid = await getUserId();
-    if (!uid) { setData([]); setIsLoading(false); return; }
-    // teams the user belongs to (owner or player)
-    const { data: owned = [] } = await supabase.from("teams").select("id").eq("owner_id", uid);
-    const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-    const teamIds = Array.from(new Set([...(owned || []).map((t: any) => t.id), ...(playerLinks || []).map((p: any) => p.team_id)]));
-    if (!teamIds.length) { setData([]); setIsLoading(false); return; }
-    const { data: rows = [] } = await supabase
-      .from("matches")
-      .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
-      .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-      .order("match_date", { ascending: true });
-    setData(rows || []);
-    setIsLoading(false);
-  });
-
-  return { data, isLoading };
-};
+export const useMatches = createListHook<any>(async () => {
+  const uid = await getUserId();
+  if (!uid) return [];
+  const { data: owned = [] } = await supabase.from("teams").select("id").eq("owner_id", uid);
+  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
+  const teamIds = Array.from(new Set([
+    ...(owned || []).map((t: any) => t.id),
+    ...(playerLinks || []).map((p: any) => p.team_id),
+  ]));
+  if (!teamIds.length) return [];
+  const { data: rows = [] } = await supabase
+    .from("matches")
+    .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+    .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+    .order("match_date", { ascending: true });
+  return rows || [];
+});
 
 const cleanMatchPayload = (raw: Record<string, any>) => {
   const allowed = ["home_team_id","away_team_id","match_date","location","format","status","compatibility","home_score","away_score"];
@@ -438,77 +346,46 @@ const cleanMatchPayload = (raw: Record<string, any>) => {
   return out;
 };
 
-export const useCreateMatch = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any>) => {
-    setIsPending(true);
-    try {
-      if (!data.home_team_id) throw new Error("Selecione o time mandante");
-      const { error } = await supabase.from("matches").insert(cleanMatchPayload(data) as any);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Partida criada!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao criar partida", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useCreateMatch = createMutationHook<Record<string, any>>({
+  run: async (data) => {
+    if (!data.home_team_id) throw new Error("Selecione o time mandante");
+    const { error } = await supabase.from("matches").insert(cleanMatchPayload(data) as any);
+    if (error) throw error;
+  },
+  success: "Partida criada!",
+  error: "Erro ao criar partida",
+});
 
-export const useUpdateMatch = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (data: Record<string, any> & { id: string }) => {
-    setIsPending(true);
-    try {
-      const { id, ...rest } = data;
-      const { error } = await supabase.from("matches").update(cleanMatchPayload(rest)).eq("id", id);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Partida atualizada!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao atualizar partida", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useUpdateMatch = createMutationHook<Record<string, any> & { id: string }>({
+  run: async (data) => {
+    const { id, ...rest } = data;
+    const { error } = await supabase.from("matches").update(cleanMatchPayload(rest)).eq("id", id);
+    if (error) throw error;
+  },
+  success: "Partida atualizada!",
+  error: "Erro ao atualizar partida",
+});
 
-export const useDeleteMatch = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (id: string) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("matches").delete().eq("id", id);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Partida excluída!" });
-    } catch (e: any) {
-      toast({ title: "Erro ao excluir partida", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useDeleteMatch = createMutationHook<string>({
+  run: async (id) => {
+    const { error } = await supabase.from("matches").delete().eq("id", id);
+    if (error) throw error;
+  },
+  success: "Partida excluída!",
+  error: "Erro ao excluir partida",
+});
 
-export const useAcceptMatch = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (params: { matchId: string; awayTeamId: string }) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("matches")
-        .update({ away_team_id: params.awayTeamId, status: "confirmed" })
-        .eq("id", params.matchId);
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Match confirmado!", description: "Partida agendada na sua agenda." });
-    } catch (e: any) {
-      toast({ title: "Erro ao aceitar match", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useAcceptMatch = createMutationHook<{ matchId: string; awayTeamId: string }>({
+  run: async ({ matchId, awayTeamId }) => {
+    const { error } = await supabase.from("matches")
+      .update({ away_team_id: awayTeamId, status: "confirmed" })
+      .eq("id", matchId);
+    if (error) throw error;
+  },
+  success: "Match confirmado!",
+  successDescription: "Partida agendada na sua agenda.",
+  error: "Erro ao aceitar match",
+});
 
 // =================== SUMMONS / LINEUPS ===================
 export const useMatchSummons = (matchId?: string) => {
@@ -559,32 +436,24 @@ export const useMatchSummons = (matchId?: string) => {
   return { data, isLoading };
 };
 
-export const useCreateSummons = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (payload: { matchId: string; playerId: string; status: "pending" | "confirmed" | "declined"; absenceReason?: string | null }) => {
-    setIsPending(true);
-    try {
-      const reason = payload.status === "declined" ? (payload.absenceReason ?? null) : null;
-      const { data: existing } = await supabase.from("match_summons")
-        .select("id").eq("match_id", payload.matchId).eq("player_id", payload.playerId).maybeSingle();
-      if (existing) {
-        const { error } = await supabase.from("match_summons")
-          .update({ status: payload.status, absence_reason: reason, responded_at: new Date().toISOString() })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("match_summons")
-          .insert({ match_id: payload.matchId, player_id: payload.playerId, status: payload.status, absence_reason: reason });
-        if (error) throw error;
-      }
-      emitChange();
-    } catch (e: any) {
-      toast({ title: "Erro ao confirmar presença", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useCreateSummons = createMutationHook<{ matchId: string; playerId: string; status: "pending" | "confirmed" | "declined"; absenceReason?: string | null }>({
+  run: async (payload) => {
+    const reason = payload.status === "declined" ? (payload.absenceReason ?? null) : null;
+    const { data: existing } = await supabase.from("match_summons")
+      .select("id").eq("match_id", payload.matchId).eq("player_id", payload.playerId).maybeSingle();
+    if (existing) {
+      const { error } = await supabase.from("match_summons")
+        .update({ status: payload.status, absence_reason: reason, responded_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("match_summons")
+        .insert({ match_id: payload.matchId, player_id: payload.playerId, status: payload.status, absence_reason: reason });
+      if (error) throw error;
+    }
+  },
+  error: "Erro ao confirmar presença",
+});
 
 export const useMatchLineups = (matchId?: string) => {
   const [data, setData] = useState<any[]>([]);
@@ -640,37 +509,21 @@ export const useSaveLineup = () => {
   return { mutate, isPending };
 };
 
-export const useCreateLineup = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (payload: { match_id: string; player_id: string; position?: string }) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("match_lineups").insert(payload);
-      if (error) throw error;
-      emitChange();
-    } catch (e: any) {
-      toast({ title: "Erro ao escalar jogador", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useCreateLineup = createMutationHook<{ match_id: string; player_id: string; position?: string }>({
+  run: async (payload) => {
+    const { error } = await supabase.from("match_lineups").insert(payload);
+    if (error) throw error;
+  },
+  error: "Erro ao escalar jogador",
+});
 
-export const useDeleteLineup = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async (id: string) => {
-    setIsPending(true);
-    try {
-      const { error } = await supabase.from("match_lineups").delete().eq("id", id);
-      if (error) throw error;
-      emitChange();
-    } catch (e: any) {
-      toast({ title: "Erro ao remover escalação", description: e?.message, variant: "destructive" });
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
-};
+export const useDeleteLineup = createMutationHook<string>({
+  run: async (id) => {
+    const { error } = await supabase.from("match_lineups").delete().eq("id", id);
+    if (error) throw error;
+  },
+  error: "Erro ao remover escalação",
+});
 
 // =================== PAYMENTS ===================
 export const useMatchPayments = (matchId?: string) => {
@@ -700,24 +553,16 @@ export const useMatchPayments = (matchId?: string) => {
   return { data };
 };
 
-export const useCreateMatchPayments = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutate = async ({ matchId, playerIds, amount }: { matchId: string; playerIds: string[]; amount: number }) => {
-    setIsPending(true);
-    try {
-      if (!playerIds.length) throw new Error("Nenhum jogador confirmado");
-      const rows = playerIds.map((pid) => ({ match_id: matchId, player_id: pid, amount, status: "pending" }));
-      const { error } = await supabase.from("match_payments").upsert(rows, { onConflict: "match_id,player_id" });
-      if (error) throw error;
-      emitChange();
-    } catch (e: any) {
-      toast({ title: "Erro ao criar vaquinha", description: e?.message, variant: "destructive" });
-      throw e;
-    } finally { setIsPending(false); }
-  };
-  return { mutate, mutateAsync: mutate, isPending };
-};
+export const useCreateMatchPayments = createMutationHook<{ matchId: string; playerIds: string[]; amount: number }>({
+  run: async ({ matchId, playerIds, amount }) => {
+    if (!playerIds.length) throw new Error("Nenhum jogador confirmado");
+    const rows = playerIds.map((pid) => ({ match_id: matchId, player_id: pid, amount, status: "pending" }));
+    const { error } = await supabase.from("match_payments").upsert(rows, { onConflict: "match_id,player_id" });
+    if (error) throw error;
+  },
+  error: "Erro ao criar vaquinha",
+  rethrow: true,
+});
 
 export const useDeleteMatchPayment = () => {
   const mutate = async (id: string) => {
@@ -966,34 +811,26 @@ export const usePhotoEvents = (teamId?: string) => {
   return { data: events };
 };
 
-export const useCreatePhotoPost = () => {
-  const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
-  const mutateAsync = async (payload: any) => {
-    setIsPending(true);
-    try {
-      const userId = await getUserId();
-      if (!userId) throw new Error("Usuário não autenticado");
-      const { error } = await supabase.from("photo_posts").insert({
-        team_id: payload.team_id,
-        event_type: payload.event_type || "partida",
-        event_id: payload.event_id || payload.match_id || crypto.randomUUID(),
-        event_title: payload.event_title || payload.title || "Evento",
-        photo_url: payload.photo_url,
-        comment: payload.comment || null,
-        match_id: payload.match_id || null,
-        author_id: userId,
-      });
-      if (error) throw error;
-      emitChange();
-      toast({ title: "Foto publicada com sucesso! 📸" });
-    } catch (e: any) {
-      toast({ title: "Erro ao publicar foto", description: e?.message, variant: "destructive" });
-      throw e;
-    } finally { setIsPending(false); }
-  };
-  return { mutate: (p: any) => { void mutateAsync(p); }, mutateAsync, isPending, isLoading: isPending };
-};
+export const useCreatePhotoPost = createMutationHook<any>({
+  run: async (payload) => {
+    const userId = await getUserId();
+    if (!userId) throw new Error("Usuário não autenticado");
+    const { error } = await supabase.from("photo_posts").insert({
+      team_id: payload.team_id,
+      event_type: payload.event_type || "partida",
+      event_id: payload.event_id || payload.match_id || crypto.randomUUID(),
+      event_title: payload.event_title || payload.title || "Evento",
+      photo_url: payload.photo_url,
+      comment: payload.comment || null,
+      match_id: payload.match_id || null,
+      author_id: userId,
+    });
+    if (error) throw error;
+  },
+  success: "Foto publicada com sucesso! 📸",
+  error: "Erro ao publicar foto",
+  rethrow: true,
+});
 
 export const useResenhaPosts = () => {
   const [data, setData] = useState<any[]>([]);
