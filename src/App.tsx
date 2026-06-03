@@ -211,20 +211,8 @@ const AuthStuckScreen = () => {
 
 
 const StatsLoader = () => {
-  const [hasSession, setHasSession] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (alive) setHasSession(Boolean(session));
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasSession(Boolean(session));
-    });
-    return () => { alive = false; subscription.unsubscribe(); };
-  }, []);
-
-  useStatsData(hasSession);
+  const { session } = useContext(AuthCtx);
+  useStatsData(Boolean(session));
   return null;
 };
 
