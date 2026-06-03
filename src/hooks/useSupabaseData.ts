@@ -142,28 +142,46 @@ export const useUploadAvatar = createMutationHook<File>({
 });
 
 // =================== TEAMS ===================
-export const useMyTeams = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-  const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
-  let playerTeams: any[] = [];
-  if (playerTeamIds.length) {
-    const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
-    playerTeams = pt || [];
-  }
-  const map = new Map<string, any>();
-  [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
-  return Array.from(map.values());
-});
+// Compartilhado entre todas as páginas: 1 única query cobre "my-teams" (owned + jogador-vinculado).
+// Os demais hooks derivam desse cache, eliminando 2-3 refetches duplicados por página.
+export const useMyTeams = () => {
+  const query = useQuery({
+    queryKey: ["my-teams"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const [{ data: owned = [] }, { data: playerLinks = [] }] = await Promise.all([
+        supabase.from("teams").select("*").eq("owner_id", uid),
+        supabase.from("players").select("team_id").eq("user_id", uid),
+      ]);
+      const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
+      let playerTeams: any[] = [];
+      if (playerTeamIds.length) {
+        const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
+        playerTeams = pt || [];
+      }
+      const map = new Map<string, any>();
+      [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
+      return Array.from(map.values());
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
-export const useMyAdminTeams = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-  return owned || [];
-});
+export const useMyAdminTeams = () => {
+  const query = useQuery({
+    queryKey: ["my-admin-teams"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
+      return owned || [];
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
 export const useMyTeam = () => {
   const { data: teams = [], isLoading } = useMyTeams();
@@ -172,8 +190,8 @@ export const useMyTeam = () => {
   useEffect(() => {
     const h = () => setActiveId(localStorage.getItem(ACTIVE_TEAM_KEY));
     window.addEventListener("storage", h);
-    window.addEventListener("supabase-data-change", h);
-    return () => { window.removeEventListener("storage", h); window.removeEventListener("supabase-data-change", h); };
+    window.addEventListener("active-team-change", h);
+    return () => { window.removeEventListener("storage", h); window.removeEventListener("active-team-change", h); };
   }, []);
 
   const active = teams.find((t: any) => t.id === activeId) || teams[0] || null;
@@ -183,6 +201,7 @@ export const useMyTeam = () => {
 export const useSetActiveTeam = () => {
   return (teamId: string) => {
     localStorage.setItem(ACTIVE_TEAM_KEY, teamId);
+    window.dispatchEvent(new CustomEvent("active-team-change"));
     emitChange();
   };
 };
