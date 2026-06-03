@@ -271,24 +271,19 @@ export const useUploadTeamLogo = createMutationHook<{ teamId: string; file: File
 
 // =================== PLAYERS ===================
 export const usePlayers = (teamId?: string) => {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      if (!teamId) { setData([]); setIsLoading(false); return; }
-      const { data: rows = [] } = await supabase.from("players").select("*").eq("team_id", teamId).order("created_at", { ascending: true });
-      if (alive) { setData(rows || []); setIsLoading(false); }
-    };
-    load();
-    const h = () => load();
-    window.addEventListener("supabase-data-change", h);
-    window.addEventListener("mock-db-change", h);
-    return () => { alive = false; window.removeEventListener("supabase-data-change", h); window.removeEventListener("mock-db-change", h); };
-  }, [teamId]);
-
-  return { data, isLoading };
+  const query = useQuery({
+    queryKey: ["players", teamId ?? null],
+    queryFn: async () => {
+      if (!teamId) return [] as any[];
+      const { data: rows = [] } = await supabase
+        .from("players").select("*").eq("team_id", teamId)
+        .order("created_at", { ascending: true });
+      return rows || [];
+    },
+    enabled: !!teamId,
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
 };
 
 const cleanPlayerPayload = (raw: Record<string, any>) => {
