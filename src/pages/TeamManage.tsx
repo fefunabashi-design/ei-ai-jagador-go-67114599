@@ -297,7 +297,8 @@ const TeamPage = () => {
       // Só abre o diálogo automaticamente se NÃO houver time cadastrado
       if (!team && !isOwnerOfAny) {
         setIsEditingTeam(false);
-        setTeamForm({ ...EMPTY_TEAM_FORM });
+        const profCpf = (myProfile as any)?.cpf ? formatCpf((myProfile as any).cpf) : "";
+        setTeamForm({ ...EMPTY_TEAM_FORM, admin_cpf: profCpf });
         setTeamDialogOpen(true);
       }
       setAutoOpened(true);
@@ -346,7 +347,7 @@ const TeamPage = () => {
       admin_name: (team as any).admin_name || "",
       admin_phone: (team as any).admin_phone || "",
       admin_email: (team as any).admin_email || "",
-      admin_cpf: (team as any).admin_cpf || "",
+      admin_cpf: (team as any).admin_cpf ? formatCpf((team as any).admin_cpf) : ((myProfile as any)?.cpf ? formatCpf((myProfile as any).cpf) : ""),
       sub1_name: (team as any).sub1_name || "",
       sub1_phone: (team as any).sub1_phone || "",
       sub1_email: (team as any).sub1_email || "",
@@ -389,8 +390,9 @@ const TeamPage = () => {
       ["Cidade", teamForm.addr_cidade.trim(), "tf-addr_cidade"],
       ["UF", teamForm.addr_uf.trim(), "tf-addr_uf"],
       ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
-      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
+      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"),
       ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
+      ["CPF do Admin", teamForm.admin_cpf.trim(), "tf-admin_cpf"],
     );
     if (teamForm.has_field === "com") {
       req.push(["Nome da Arena", teamForm.field_name.trim(), "tf-field_name"]);
@@ -457,7 +459,8 @@ const TeamPage = () => {
 
   const openNewTeam = () => {
     setIsEditingTeam(false);
-    setTeamForm({ ...EMPTY_TEAM_FORM });
+    const profCpf = (myProfile as any)?.cpf ? formatCpf((myProfile as any).cpf) : "";
+    setTeamForm({ ...EMPTY_TEAM_FORM, admin_cpf: profCpf });
     setTeamDialogOpen(true);
   };
 
