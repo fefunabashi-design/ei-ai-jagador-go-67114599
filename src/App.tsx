@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-route
 import { useEffect, useState, lazy, Suspense, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useStatsData } from "@/lib/stats";
@@ -238,7 +237,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
+
         <StatsLoader />
         <UserThemeLoader />
         <BrowserRouter>
