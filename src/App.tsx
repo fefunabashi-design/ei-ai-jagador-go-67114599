@@ -50,6 +50,18 @@ const queryClient = new QueryClient({
   },
 });
 
+// Bridge: traduz o evento global `supabase-data-change` (emitido por mutations
+// no useSupabaseData) em invalidações pontuais nas queries do React Query,
+// evitando que cada hook se reinscreva e refaça fetch redundante.
+const INVALIDATE_KEYS = ["profile", "my-teams", "my-admin-teams", "matches", "players"];
+const invalidateAll = () => {
+  INVALIDATE_KEYS.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+};
+if (typeof window !== "undefined") {
+  window.addEventListener("supabase-data-change", invalidateAll);
+  window.addEventListener("mock-db-change", invalidateAll);
+}
+
 const REQUIRED_PROFILE_FIELDS = ["display_name", "last_name", "phone", "birth_date", "city"];
 const PROFILE_CHECK_TIMEOUT_MS = 4000;
 
