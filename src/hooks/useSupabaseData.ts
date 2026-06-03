@@ -324,23 +324,32 @@ export const useDeletePlayer = createMutationHook<{ id: string; teamId?: string 
 });
 
 // =================== MATCHES ===================
-export const useMatches = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("id").eq("owner_id", uid);
-  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-  const teamIds = Array.from(new Set([
-    ...(owned || []).map((t: any) => t.id),
-    ...(playerLinks || []).map((p: any) => p.team_id),
-  ]));
-  if (!teamIds.length) return [];
-  const { data: rows = [] } = await supabase
-    .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
-    .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-    .order("match_date", { ascending: true });
-  return rows || [];
-});
+export const useMatches = () => {
+  const query = useQuery({
+    queryKey: ["matches"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const [{ data: owned = [] }, { data: playerLinks = [] }] = await Promise.all([
+        supabase.from("teams").select("id").eq("owner_id", uid),
+        supabase.from("players").select("team_id").eq("user_id", uid),
+      ]);
+      const teamIds = Array.from(new Set([
+        ...(owned || []).map((t: any) => t.id),
+        ...(playerLinks || []).map((p: any) => p.team_id),
+      ]));
+      if (!teamIds.length) return [];
+      const { data: rows = [] } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+        .order("match_date", { ascending: true });
+      return rows || [];
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
 const cleanMatchPayload = (raw: Record<string, any>) => {
   const allowed = ["home_team_id","away_team_id","match_date","location","format","status","compatibility","home_score","away_score"];
