@@ -353,9 +353,10 @@ const ProfilePage = () => {
                 { label: "Celular", value: profile?.phone },
                 { label: "Data de Nascimento", value: isoToBr(profile?.birth_date) },
                 { label: "CPF", value: (profile as any)?.cpf },
+                { label: "Estado", value: (profile as any)?.state },
                 { label: "Cidade", value: (profile as any)?.city },
                 { label: "Região", value: profile?.region },
-                { label: "E-mail", value: (profile as any)?.email || user?.email },
+                { label: "E-mail", value: cleanSyntheticEmail((profile as any)?.email || user?.email) },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="text-muted-foreground">{item.label}</span>
@@ -365,24 +366,6 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="space-y-1">
-            {[
-              { label: "Ranking", path: "/ranking" },
-            ].map((item, i) => (
-              <motion.button
-                key={item.label}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + i * 0.03 }}
-                onClick={() => navigate(item.path)}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
-              >
-                <span className="text-sm text-foreground">{item.label}</span>
-                <ChevronRight size={16} className="text-muted-foreground" />
-              </motion.button>
-            ))}
-          </div>
 
           {/* Logout */}
           <Button
@@ -482,89 +465,91 @@ const ProfilePage = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <Label>Cidade *</Label>
-                <Input
-                  value={editCity}
-                  onChange={(e) => {
-                    setEditCity(e.target.value);
-                    setCityOpen(true);
-                  }}
-                  onFocus={() => setCityOpen(true)}
-                  onBlur={() => setTimeout(() => setCityOpen(false), 150)}
-                  placeholder="Digite sua cidade"
-                  className="bg-secondary border-border"
-                  autoComplete="off"
-                />
-                {cityOpen && editCity.trim().length > 0 && (() => {
-                  const matches = cityOptions
-                    .filter((c) => startsWithNorm(c, editCity))
-                    .slice(0, 8);
-                  if (matches.length === 0) return null;
-                  return (
-                    <ul className="absolute z-50 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-56 overflow-y-auto">
-                      {matches.map((c) => (
-                        <li
-                          key={c}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setEditCity(c);
-                            setCityOpen(false);
-                          }}
-                          className="px-3 py-2 text-sm text-foreground hover:bg-secondary cursor-pointer"
-                        >
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                })()}
-              </div>
               <div>
-                <Label>Região</Label>
-                <Select value={editRegion} onValueChange={setEditRegion}>
+                <Label>Estado *</Label>
+                <Select value={editState} onValueChange={(v) => { setEditState(v); setEditCity(""); }}>
                   <SelectTrigger className="bg-secondary border-border">
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder="UF" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Z/Sul">Z/Sul</SelectItem>
-                    <SelectItem value="Z/Oeste">Z/Oeste</SelectItem>
-                    <SelectItem value="Z/Norte">Z/Norte</SelectItem>
-                    <SelectItem value="Z/Leste">Z/Leste</SelectItem>
+                    {UF_LIST.map((uf) => (
+                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Cidade *</Label>
+                <Select value={editCity} onValueChange={setEditCity} disabled={!editState}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder={editState ? "Selecione" : "Escolha o Estado"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCitiesForUf(editState).map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label>E-mail *</Label>
+              <Label>Região</Label>
+              <Select
+                value={editRegion}
+                onValueChange={setEditRegion}
+                disabled={!(editState === "SP" && editCity === "São Paulo")}
+              >
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={editState === "SP" && editCity === "São Paulo" ? "Selecione" : "Disponível apenas para São Paulo - SP"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Z/Sul">Z/Sul</SelectItem>
+                  <SelectItem value="Z/Oeste">Z/Oeste</SelectItem>
+                  <SelectItem value="Z/Norte">Z/Norte</SelectItem>
+                  <SelectItem value="Z/Leste">Z/Leste</SelectItem>
+                  <SelectItem value="Centro">Centro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>E-mail</Label>
               <Input
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
+                placeholder="seu@email.com (opcional)"
                 className="bg-secondary border-border"
               />
             </div>
             <div>
               <Label>Cor do app</Label>
               <p className="text-[11px] text-muted-foreground mb-1">Define a cor dos botões no seu app.</p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={editPrimaryColor}
-                  onChange={(e) => setEditPrimaryColor(e.target.value)}
-                  className="h-10 w-16 rounded-md border border-border bg-secondary cursor-pointer"
-                  aria-label="Selecionar cor"
-                />
-                <button
-                  type="button"
-                  onClick={() => setEditPrimaryColor("#bfc4cb")}
-                  className="text-xs text-muted-foreground underline"
-                >
-                  Restaurar padrão
-                </button>
-              </div>
+              <Select value={editPrimaryColor} onValueChange={setEditPrimaryColor}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Selecione uma cor">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-4 h-4 rounded-full border border-border"
+                        style={{ backgroundColor: editPrimaryColor }}
+                      />
+                      <span>{COLOR_PRESETS.find((c) => c.value.toLowerCase() === editPrimaryColor.toLowerCase())?.label || "Personalizada"}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {COLOR_PRESETS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-block w-4 h-4 rounded-full border border-border"
+                          style={{ backgroundColor: c.value }}
+                        />
+                        <span>{c.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" disabled={updateProfile.isPending} className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold">
               Salvar
