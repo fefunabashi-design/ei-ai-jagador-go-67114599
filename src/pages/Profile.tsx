@@ -169,10 +169,11 @@ const ProfilePage = () => {
     }
     setEditPhone(profile?.phone || "");
     setEditBirthDate(isoToBr(profile?.birth_date));
-    setEditCpf((profile as any)?.cpf || "");
+    setEditCpf((profile as any)?.cpf ? formatCpf((profile as any).cpf) : "");
+    setEditState((profile as any)?.state || "");
     setEditCity((profile as any)?.city || "");
     setEditRegion(profile?.region || "");
-    setEditEmail((profile as any)?.email || user?.email || "");
+    setEditEmail(cleanSyntheticEmail((profile as any)?.email || user?.email || ""));
     setEditPrimaryColor((profile as any)?.primary_color || "#bfc4cb");
     setEditOpen(true);
   };
@@ -211,10 +212,13 @@ const ProfilePage = () => {
       toast({ title: "Cidade é obrigatória", variant: "destructive" });
       return;
     }
-    if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
-      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido.", variant: "destructive" });
+    const emailTrimmed = editEmail.trim();
+    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      toast({ title: "E-mail inválido", description: "Informe um e-mail válido ou deixe em branco.", variant: "destructive" });
       return;
     }
+    const finalEmail = emailTrimmed && !emailTrimmed.toLowerCase().endsWith(SYNTHETIC_EMAIL_SUFFIX) ? emailTrimmed : null;
+    const isSpSp = editState === "SP" && editCity === "São Paulo";
     setJustSaved(true);
     const genderValue = editGender === "Outro" ? editGenderOther.trim() || undefined : editGender || undefined;
     await updateProfile.mutate({
@@ -225,8 +229,10 @@ const ProfilePage = () => {
       phone: editPhone,
       birth_date: isoBirth,
       cpf: (editCpf || "").replace(/\D/g, "") || null,
+      state: editState || null,
       city: editCity.trim(),
-      region: editRegion || undefined,
+      region: isSpSp ? (editRegion || null) : null,
+      email: finalEmail,
       primary_color: editPrimaryColor || null,
     } as any);
     // Apply immediately so the UI reflects the new color without reload
