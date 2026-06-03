@@ -1,97 +1,78 @@
-# Acelerar páginas Inicial, Times, Agenda e Admin
+# Redesenho dos Filtros da tela Times (estilo Mercado Livre)
 
-## Diagnóstico
+## Objetivo
+Substituir o card grandão com todos os filtros expandidos por uma barra de **chips horizontais roláveis** no topo + um **painel "Filtros"** completo (Sheet) com categorias à esquerda e opções à direita, mantendo **todos os campos e regras de filtro atuais**. Nenhuma lógica de filtragem (`filteredTeams`, defaults, persistência em `localStorage`, hierarquias Estado→Cidade e Categoria→Subcategoria) muda.
 
-Após inspecionar `src/pages/Index.tsx`, `Times.tsx`, `Agenda.tsx`, `Admin.tsx`, `src/hooks/useSupabaseData.ts` e `src/lib/stats.ts`, identifiquei 5 causas que se somam e fazem essas páginas demorarem a aparecer:
+## Referências
+- Imagem 1: barra horizontal de chips (Categorias, Marca, Cor, Filtros) + atalhos rápidos ("Chegará em 3h", "Chegará hoje").
+- Imagem 2: painel completo com lista vertical de grupos à esquerda, opções com toggle à direita, rodapé com "Limpar filtros" + "Ver N resultados".
 
-1. **Cascata de requisições em série na inicialização**
-   - `useMyTeam()` é construído sobre `useMyTeams()`, que faz 3 queries sequenciais: `teams (owner)` → `players (links)` → `teams in (...)`.
-   - Em seguida `usePlayers(myTeam?.id)` só dispara *depois* que `myTeam` chega.
-   - `useMatches()` repete `teams (owner)` + `players (links)` **de novo** antes de buscar `matches` com join duplo (home_team + away_team). Cada página refaz 2-3x a mesma informação.
+## Estrutura nova (`src/pages/Times.tsx`)
 
-2. **Render bloqueado pelo `isLoading`**
-   - Todos os hooks de lista iniciam com `isLoading: true`. As páginas (especialmente Index, Agenda, Admin) usam essas flags para mostrar spinner em tela cheia em vez de pintar o esqueleto da UI primeiro. O usuário só vê algo depois que TODAS as queries terminam.
-
-3. **Verificação de perfil duplicada**
-   - `AuthProvider` já busca `profiles` no boot. `useProfile()` é chamado de novo no Index (e como side-effect no Admin), refazendo o mesmo SELECT.
-
-4. **Invalidationes globais via `emitChange`**
-   - Qualquer mutação dispara o evento `supabase-data-change`, que **refaz todos os hooks de lista montados** (myTeams, matches, players, photoEvents, etc.). Em telas com 4-5 hooks ativos isso multiplica o tráfego e mantém spinners piscando.
-
-5. **`useStatsData` em série**
-   - O hook global de notas faz `matches (completed)` e só depois `match_lineups in (...)`, com `staleTime: 60s`. Embora rode no App, ele compete pela conexão durante o boot.
-
-## Estratégia (sem mudar funcionalidade)
-
-Aplicar **render progressivo + cache compartilhado**, focado nas 4 páginas reclamadas. Nenhuma regra de negócio muda.
-
-### 1. Consolidar o "contexto do usuário" em um único hook cacheado
-
-Criar `useUserContext()` em `src/hooks/useUserContext.ts` usando React Query (já temos `QueryClient` no App):
-
-- Uma única busca paralela (Promise.all) para: `teams owned`, `players links → team_ids`, e os `teams` correspondentes.
-- Retorna `{ uid, ownedTeamIds, memberTeamIds, allTeams, isLoading }`.
-- `staleTime: 30s`, chave `['user-context', uid]`.
-- `useMyTeams`, `useMyAdminTeams`, `useMyTeam` e a parte inicial de `useMatches` passam a derivar desse cache em vez de cada um fazer suas próprias 2-3 queries.
-- Mantém o evento `supabase-data-change`: o hook escuta uma vez e chama `queryClient.invalidateQueries(['user-context'])`. Assim a granularidade do refetch é controlada — não vai mais refazer tudo a cada mutação.
-
-### 2. Migrar `useMatches`, `useMyTeams`, `useMyAdminTeams`, `usePlayers` para React Query
-
-- Substituir as factories internas `createListHook` por `useQuery`, usando `staleTime: 30-60s` e `keepPreviousData: true`.
-- Benefício imediato: na segunda visita à página os dados já vêm do cache → render quase instantâneo, fetch acontece em background.
-- O dispatcher `supabase-data-change` é traduzido uma única vez para `invalidateQueries` com as chaves certas.
-- Assinaturas dos hooks ficam idênticas (`{ data, isLoading }`), nenhum consumidor muda.
-
-### 3. Render progressivo (não bloquear na carga)
-
-Nas 4 páginas:
-
-- Pintar header, abas e estrutura imediatamente; usar Skeletons só nas áreas de dados (lista de partidas, grid de jogadores, cards de times).
-- Trocar checagens do tipo `if (isLoading) return <Spinner/>` por renderização condicional dentro de cada bloco.
-- Em **Index**: remover dependência de `profileLoading`/`teamLoading` para o layout — o cabeçalho usa fallback ("Craque") e o card "próximo jogo" mostra skeleton enquanto `matches` carrega.
-- Em **Admin**: remover a chamada redundante a `useProfile()` (linha 54) — o `AuthProvider` já garante perfil; usar `useAuthContext()` se precisar de algum campo, ou ler do cache do React Query.
-
-### 4. Dedup de perfil
-
-- Expor `profile` (com is_active etc.) pelo `AuthCtx` em `App.tsx`, escrito uma vez no `checkProfile`.
-- `useProfile` passa a ler do cache do React Query semeado pelo AuthProvider (`queryClient.setQueryData(['profile', uid], data)`), eliminando o segundo SELECT.
-
-### 5. Quick wins adicionais
-
-- `useStatsData`: já tem `staleTime: 60s`, mas o `queryKey` dos lineups inclui `matchIds.join(",")` — em listas grandes isso invalida com qualquer mudança. Usar `matchIds.length + ":" + maxUpdatedAt` ou uma chave estável (`['stats-lineups']`) e invalidar manualmente.
-- `useMyTeam`: remover o `addEventListener('supabase-data-change')` interno (refetch em toda mutação) — basta reagir ao cache de `useMyTeams` mais o `localStorage` (evento `storage`).
-- Em `Index`, `myTeams` é importado mas só usado para um seletor opcional; deixar em `enabled: settingsOpen` para não buscar no load.
-
-## Detalhes técnicos (resumo dos arquivos tocados)
+### 1. Barra sticky no topo (substitui o card de filtros)
+Logo abaixo do header "TIMES CADASTRADOS":
 
 ```text
-src/hooks/useUserContext.ts        (novo)  — fonte única para uid + times
-src/hooks/useSupabaseData.ts       — useMyTeams/useMyAdminTeams/useMyTeam/
-                                     useMatches/usePlayers/useProfile reescritos
-                                     com React Query; createListHook removido.
-                                     emitChange → invalidateQueries seletivo.
-src/App.tsx                        — AuthProvider semeia ['profile', uid] no cache;
-                                     AuthCtx expõe profile.
-src/pages/Index.tsx                — remove gate de loading global,
-                                     usa skeletons locais; myTeams lazy.
-src/pages/Times.tsx                — skeletons locais; remove dependência de
-                                     isLoading global.
-src/pages/Agenda.tsx               — idem; mantém isLoading só para a lista.
-src/pages/Admin.tsx                — remove useProfile() duplicado; skeletons.
-src/lib/stats.ts                   — queryKey estável; sem refetch em cascata.
+[ Filtros (3) ▾ ] [ Estado: SP ✕ ] [ Cidade ▾ ] [ Categoria ▾ ] [ Modalidade ▾ ] [ Gênero ▾ ] [ Nível ▾ ] [ ♥ Favoritos ] ...
 ```
 
-Nada de UI muda visualmente além da troca "spinner full → skeleton + conteúdo aparecendo em partes". Nenhum endpoint, RLS, schema ou regra de negócio é alterado.
+- Container `sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border` para acompanhar o scroll.
+- Linha 1: campo de busca por nome (mantido, com autocomplete já existente).
+- Linha 2: scroll horizontal (`overflow-x-auto no-scrollbar flex gap-2`) com:
+  - **Botão "Filtros (N)"** sempre primeiro, fixo visualmente com `sticky left-0`, destacado em primary outline, exibindo o total de filtros ativos.
+  - **Chips de atalho** para cada filtro: Estado, Cidade, Região (se aplicável), Modalidade, Gênero, Categoria, Subcategoria, Nível, Campo, Dia, Horário, Favoritos.
+  - Cada chip mostra:
+    - Rótulo + valor selecionado abreviado (ex.: "Estado: SP", "Categoria: Adulto +1", "Favoritos ●").
+    - Quando inativo: outline neutro. Quando ativo: fundo `primary/15`, borda `primary/40`, texto `primary`, com um `✕` no fim que limpa só aquele filtro (preserva os demais).
+  - Chip "Favoritos" funciona como toggle direto (não abre popover).
 
-## Critérios de validação
+### 2. Popover por chip (acesso rápido)
+Cada chip (exceto Favoritos) abre um `Popover` ancorado, contendo apenas o controle daquele filtro (reaproveita `MultiSelect`, `Select` de Nível/Campo, range de horário, etc.). Fecha ao clicar fora. Esse é o atalho "1 clique" para mexer num filtro sem abrir o painel grande.
 
-- Build TypeScript ok, sem mudar assinaturas exportadas dos hooks.
-- Navegar Inicial → Times → Agenda → Admin: cabeçalho aparece em <300ms, dados preenchem progressivamente; segunda visita praticamente instantânea (cache React Query).
-- Mutações (criar/editar/excluir time, jogador, partida) continuam refletindo nas listas (via `invalidateQueries`).
-- Nenhuma regressão em login/logout, troca de time ativo, ou em telas não listadas.
+### 3. Painel "Filtros" completo (`Sheet` lateral / bottom em mobile)
+Acionado pelo botão "Filtros (N)". Usa o componente `Sheet` do shadcn:
+
+- **Header**: título "Filtros" + botão fechar.
+- **Body**: layout 2 colunas (em mobile: lista vertical no topo vira menu de scroll, com âncoras):
+  - **Coluna esquerda** (`w-32 shrink-0 border-r border-border`): lista vertical de grupos clicáveis, item ativo com `bg-muted text-foreground font-semibold`, demais `text-muted-foreground`. Grupos:
+    1. Localização (Estado, Cidade, Região)
+    2. Modalidade
+    3. Gênero
+    4. Categoria (+ Subcategoria condicional)
+    5. Nível
+    6. Time com Campo
+    7. Dia da Semana
+    8. Horário
+    9. Favoritos
+  - **Coluna direita** (`flex-1 overflow-y-auto p-4 space-y-4`): renderiza só os controles do grupo selecionado, com toggles/checkboxes/inputs estilizados como na referência (linha por opção, label à esquerda, switch/check à direita quando booleano; quando lista de múltipla escolha, chips clicáveis).
+- **Footer fixo** (`sticky bottom-0 border-t bg-background px-4 py-3 flex items-center gap-3`):
+  - Botão `ghost` "Limpar filtros" (reseta todos os states para defaults, mesma lógica de hoje).
+  - Botão primary "Ver N resultados" (mostra `filteredTeams.length` em tempo real e fecha o sheet).
+
+### 4. Contagem de resultados
+- O badge `{filteredTeams.length} times` sai do card e passa a aparecer:
+  - dentro do botão "Ver N resultados" no painel,
+  - num pequeno texto `N times encontrados` logo acima da lista de cards.
+
+### 5. Lista de times (inalterada)
+A lista de cards de times segue idêntica em estrutura e ações — só ganha mais respiro vertical porque os filtros já não ocupam tela inteira.
+
+## Estado e lógica
+Sem mudanças nos `useState` existentes nem em `filteredTeams`. Apenas adiciono:
+- `const [filtersOpen, setFiltersOpen] = useState(false)` para o Sheet.
+- `const [activeGroup, setActiveGroup] = useState<GroupKey>("localizacao")` para o grupo selecionado dentro do Sheet.
+- Função `activeFiltersCount()` que conta quantos filtros estão fora do default (para o badge do botão "Filtros").
+- Função `clearOne(key)` para o `✕` dos chips ativos e `clearAll()` para "Limpar filtros".
+
+## Componentes shadcn usados (já existem)
+`Sheet`, `Popover`, `Button`, `Badge`, `Input`, `Select`, `MultiSelect` (já no projeto), `Switch` (existe), `Separator`.
+
+## Mobile-first
+- Largura `1038px` atual: barra de chips em uma linha rolando horizontal.
+- Em mobile (<480px): o painel "Filtros" abre como `Sheet side="bottom"` ocupando 90vh; o layout 2 colunas vira lista única scrollável com âncoras (mesma ordem de grupos).
 
 ## Fora do escopo
-
-- Refatorar páginas Chat/Funds/Mensalidades/Caixa (não foram citadas).
-- Mexer em edge functions, RLS, schema.
-- Mudar visual/UX além da substituição spinner → skeleton.
+- Mudar os campos de filtro disponíveis.
+- Mudar regras de prioridade/persistência ou defaults baseados no time do usuário.
+- Tocar na seção de "Desafio sem cadastro" (mantém botão acima da lista de cards).
+- Outras telas (Inicial, Agenda, Admin).
