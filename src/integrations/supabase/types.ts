@@ -826,6 +826,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           gender: string | null
           id: string
           is_active: boolean
@@ -851,6 +852,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           gender?: string | null
           id?: string
           is_active?: boolean
@@ -876,6 +878,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           gender?: string | null
           id?: string
           is_active?: boolean
