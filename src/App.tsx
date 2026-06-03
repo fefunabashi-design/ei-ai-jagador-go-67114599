@@ -80,8 +80,13 @@ const clearAuthStorage = () => {
 };
 
 type AuthStatus = "loading" | "anon" | "incomplete" | "deactivated" | "ok";
-type AuthCtxValue = { status: AuthStatus; session: Session | null; stuck: boolean };
-const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, stuck: false });
+type AuthCtxValue = {
+  status: AuthStatus;
+  session: Session | null;
+  sessionReady: boolean;
+  stuck: boolean;
+};
+const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, sessionReady: false, stuck: false });
 export const useAuthContext = () => useContext(AuthCtx);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -92,7 +97,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let alive = true;
     let requestId = 0;
-    let stuckTimer = window.setTimeout(() => { if (alive) setStuck(true); }, 8000);
+    // Stuck timer só dispara enquanto a SESSÃO ainda não foi resolvida; a
+    // verificação de profile roda em segundo plano e nunca trava a UI.
+    let stuckTimer = window.setTimeout(() => { if (alive && session === undefined) setStuck(true); }, 8000);
 
     const checkProfile = async (s: Session | null) => {
       const id = ++requestId;
@@ -165,27 +172,38 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const sessionReady = session !== undefined;
   return (
-    <AuthCtx.Provider value={{ status, session: session ?? null, stuck }}>
+    <AuthCtx.Provider value={{ status, session: session ?? null, sessionReady, stuck }}>
       {children}
     </AuthCtx.Provider>
   );
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { status, stuck } = useContext(AuthCtx);
+  const { status, sessionReady, session, stuck } = useContext(AuthCtx);
   const location = useLocation();
 
-  if (status === "loading") {
+  // Enquanto não sabemos se há sessão, só mostramos fallback se a verificação
+  // travar (>8s) — caso contrário, esperar a sessão é mais rápido que o
+  // próprio redirect, então mantemos o spinner mínimo.
+  if (!sessionReady) {
     if (stuck) return <AuthStuckScreen />;
     return <RouteFallback />;
   }
-  if (status === "anon" || status === "deactivated") {
+
+  // Sem sessão → login.
+  if (!session || status === "anon" || status === "deactivated") {
     return <Navigate to="/auth" replace state={{ from: location }} />;
   }
+
+  // Perfil ainda em verificação: renderiza a página imediatamente. As páginas
+  // mostram skeletons enquanto seus próprios dados chegam. Se a verificação
+  // concluir como "incomplete", o efeito abaixo redireciona para /profile.
   if (status === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
+
   return <>{children}</>;
 };
 

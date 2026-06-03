@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Crown, Check, ShieldCheck, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -136,7 +136,11 @@ export const AdminGate = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState<"intro" | "plan">("intro");
 
-  if (loading) return <div className="p-6"><Skeleton className="h-40 w-full rounded-xl" /></div>;
+  // Carrega permissões em segundo plano: enquanto não sabemos o status,
+  // já renderizamos o conteúdo do Admin (as próprias páginas mostram
+  // skeletons enquanto seus dados chegam). Só bloqueamos com a tela de
+  // upsell quando temos certeza de que o usuário não tem acesso.
+  if (loading) return <>{children}</>;
 
   const startTrial = async () => {
     const { data, error } = await supabase.functions.invoke("start-trial");
