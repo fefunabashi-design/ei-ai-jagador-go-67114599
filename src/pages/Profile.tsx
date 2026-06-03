@@ -22,7 +22,7 @@ import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { startsWithNorm } from "@/lib/normalize";
-import { CITIES_BY_UF, getCitiesForUf } from "@/lib/brCities";
+import { getCitiesForUf } from "@/lib/brCities";
 
 const UF_LIST = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
 
@@ -327,7 +327,7 @@ const ProfilePage = () => {
           <h1 className="text-3xl text-foreground font-display">
             {(profile?.nickname || profile?.display_name || "SEM NOME").toUpperCase()}
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">{(profile as any)?.email || user?.email || ""}</p>
+          <p className="text-xs text-muted-foreground mt-1">{cleanSyntheticEmail((profile as any)?.email || user?.email || "")}</p>
           {profile?.is_pro && (
             <span className="mt-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">PRO</span>
           )}
