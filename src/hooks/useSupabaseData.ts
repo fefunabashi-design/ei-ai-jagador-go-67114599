@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -83,41 +84,29 @@ const createListHook = <T,>(fetcher: () => Promise<T[]>) => (): { data: T[]; isL
 };
 
 // =================== PROFILE ===================
+// =================== PROFILE ===================
+// Cached via React Query — same `{ data, isLoading }` shape as before.
+// Refetch é disparado pelo bridge global em App.tsx ao receber `supabase-data-change`.
 export const useProfile = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const reqIdRef = useRef(0);
-  const pendingRef = useRef<Promise<void> | null>(null);
-
-  const load = useCallback(async () => {
-    if (pendingRef.current) return pendingRef.current;
-    const myId = ++reqIdRef.current;
-    setIsLoading(true);
-    const run = (async () => {
+  const query = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
       const uid = await getUserId();
-      if (myId !== reqIdRef.current) return;
-      if (!uid) { setData(null); setIsLoading(false); return; }
+      if (!uid) return null;
       const [{ data: { user } }, { data: p }] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
       ]);
-      if (myId !== reqIdRef.current) return;
-      setData({ ...(p || {}), user_id: uid, email: user?.email });
-      setIsLoading(false);
-    })();
-    pendingRef.current = run.finally(() => { pendingRef.current = null; });
-    return pendingRef.current;
-  }, []);
-
+      return { ...(p || {}), user_id: uid, email: user?.email };
+    },
+    staleTime: 60_000,
+  });
   useEffect(() => {
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    const h = () => load();
-    window.addEventListener("supabase-data-change", h);
-    return () => { sub.subscription.unsubscribe(); window.removeEventListener("supabase-data-change", h); };
-  }, [load]);
-
-  return { data, isLoading };
+    const { data: sub } = supabase.auth.onAuthStateChange(() => { query.refetch(); });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return { data: query.data ?? null, isLoading: query.isLoading };
 };
 
 
@@ -153,28 +142,46 @@ export const useUploadAvatar = createMutationHook<File>({
 });
 
 // =================== TEAMS ===================
-export const useMyTeams = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-  const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
-  let playerTeams: any[] = [];
-  if (playerTeamIds.length) {
-    const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
-    playerTeams = pt || [];
-  }
-  const map = new Map<string, any>();
-  [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
-  return Array.from(map.values());
-});
+// Compartilhado entre todas as páginas: 1 única query cobre "my-teams" (owned + jogador-vinculado).
+// Os demais hooks derivam desse cache, eliminando 2-3 refetches duplicados por página.
+export const useMyTeams = () => {
+  const query = useQuery({
+    queryKey: ["my-teams"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const [{ data: owned = [] }, { data: playerLinks = [] }] = await Promise.all([
+        supabase.from("teams").select("*").eq("owner_id", uid),
+        supabase.from("players").select("team_id").eq("user_id", uid),
+      ]);
+      const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
+      let playerTeams: any[] = [];
+      if (playerTeamIds.length) {
+        const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
+        playerTeams = pt || [];
+      }
+      const map = new Map<string, any>();
+      [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
+      return Array.from(map.values());
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
-export const useMyAdminTeams = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
-  return owned || [];
-});
+export const useMyAdminTeams = () => {
+  const query = useQuery({
+    queryKey: ["my-admin-teams"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const { data: owned = [] } = await supabase.from("teams").select("*").eq("owner_id", uid);
+      return owned || [];
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
 export const useMyTeam = () => {
   const { data: teams = [], isLoading } = useMyTeams();
@@ -183,8 +190,8 @@ export const useMyTeam = () => {
   useEffect(() => {
     const h = () => setActiveId(localStorage.getItem(ACTIVE_TEAM_KEY));
     window.addEventListener("storage", h);
-    window.addEventListener("supabase-data-change", h);
-    return () => { window.removeEventListener("storage", h); window.removeEventListener("supabase-data-change", h); };
+    window.addEventListener("active-team-change", h);
+    return () => { window.removeEventListener("storage", h); window.removeEventListener("active-team-change", h); };
   }, []);
 
   const active = teams.find((t: any) => t.id === activeId) || teams[0] || null;
@@ -194,6 +201,7 @@ export const useMyTeam = () => {
 export const useSetActiveTeam = () => {
   return (teamId: string) => {
     localStorage.setItem(ACTIVE_TEAM_KEY, teamId);
+    window.dispatchEvent(new CustomEvent("active-team-change"));
     emitChange();
   };
 };
@@ -263,24 +271,19 @@ export const useUploadTeamLogo = createMutationHook<{ teamId: string; file: File
 
 // =================== PLAYERS ===================
 export const usePlayers = (teamId?: string) => {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      if (!teamId) { setData([]); setIsLoading(false); return; }
-      const { data: rows = [] } = await supabase.from("players").select("*").eq("team_id", teamId).order("created_at", { ascending: true });
-      if (alive) { setData(rows || []); setIsLoading(false); }
-    };
-    load();
-    const h = () => load();
-    window.addEventListener("supabase-data-change", h);
-    window.addEventListener("mock-db-change", h);
-    return () => { alive = false; window.removeEventListener("supabase-data-change", h); window.removeEventListener("mock-db-change", h); };
-  }, [teamId]);
-
-  return { data, isLoading };
+  const query = useQuery({
+    queryKey: ["players", teamId ?? null],
+    queryFn: async () => {
+      if (!teamId) return [] as any[];
+      const { data: rows = [] } = await supabase
+        .from("players").select("*").eq("team_id", teamId)
+        .order("created_at", { ascending: true });
+      return rows || [];
+    },
+    enabled: !!teamId,
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
 };
 
 const cleanPlayerPayload = (raw: Record<string, any>) => {
@@ -321,23 +324,32 @@ export const useDeletePlayer = createMutationHook<{ id: string; teamId?: string 
 });
 
 // =================== MATCHES ===================
-export const useMatches = createListHook<any>(async () => {
-  const uid = await getUserId();
-  if (!uid) return [];
-  const { data: owned = [] } = await supabase.from("teams").select("id").eq("owner_id", uid);
-  const { data: playerLinks = [] } = await supabase.from("players").select("team_id").eq("user_id", uid);
-  const teamIds = Array.from(new Set([
-    ...(owned || []).map((t: any) => t.id),
-    ...(playerLinks || []).map((p: any) => p.team_id),
-  ]));
-  if (!teamIds.length) return [];
-  const { data: rows = [] } = await supabase
-    .from("matches")
-    .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
-    .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-    .order("match_date", { ascending: true });
-  return rows || [];
-});
+export const useMatches = () => {
+  const query = useQuery({
+    queryKey: ["matches"],
+    queryFn: async () => {
+      const uid = await getUserId();
+      if (!uid) return [] as any[];
+      const [{ data: owned = [] }, { data: playerLinks = [] }] = await Promise.all([
+        supabase.from("teams").select("id").eq("owner_id", uid),
+        supabase.from("players").select("team_id").eq("user_id", uid),
+      ]);
+      const teamIds = Array.from(new Set([
+        ...(owned || []).map((t: any) => t.id),
+        ...(playerLinks || []).map((p: any) => p.team_id),
+      ]));
+      if (!teamIds.length) return [];
+      const { data: rows = [] } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
+        .order("match_date", { ascending: true });
+      return rows || [];
+    },
+    staleTime: 30_000,
+  });
+  return { data: query.data ?? [], isLoading: query.isLoading };
+};
 
 const cleanMatchPayload = (raw: Record<string, any>) => {
   const allowed = ["home_team_id","away_team_id","match_date","location","format","status","compatibility","home_score","away_score"];

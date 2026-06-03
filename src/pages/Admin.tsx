@@ -18,7 +18,7 @@ import BottomNav from "@/components/BottomNav";
 import { AdminGate } from "@/components/AdminGate";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
-  useMyTeam, useMatches, usePlayers, useAcceptMatch, useProfile,
+  useMyTeam, useMatches, usePlayers, useAcceptMatch,
   useMyAdminTeams, useSetActiveTeam,
   useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
@@ -51,7 +51,6 @@ const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  useProfile();
   const { isSuperAdmin } = useAdminAccess();
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
