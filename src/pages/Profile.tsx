@@ -22,6 +22,28 @@ import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { startsWithNorm } from "@/lib/normalize";
+import { CITIES_BY_UF, getCitiesForUf } from "@/lib/brCities";
+
+const UF_LIST = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
+
+const SYNTHETIC_EMAIL_SUFFIX = "@cpf.eaijogador.app";
+const cleanSyntheticEmail = (e?: string | null) => {
+  if (!e) return "";
+  return String(e).toLowerCase().endsWith(SYNTHETIC_EMAIL_SUFFIX) ? "" : String(e);
+};
+
+const COLOR_PRESETS: { label: string; value: string }[] = [
+  { label: "Padrão", value: "#bfc4cb" },
+  { label: "Verde", value: "#10b981" },
+  { label: "Azul", value: "#3b82f6" },
+  { label: "Vermelho", value: "#ef4444" },
+  { label: "Amarelo", value: "#eab308" },
+  { label: "Laranja", value: "#f97316" },
+  { label: "Roxo", value: "#8b5cf6" },
+  { label: "Rosa", value: "#ec4899" },
+  { label: "Preto", value: "#111827" },
+  { label: "Cinza", value: "#6b7280" },
+];
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -54,12 +76,11 @@ const ProfilePage = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editCpf, setEditCpf] = useState("");
+  const [editState, setEditState] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
-  const [cityOptions, setCityOptions] = useState<string[]>([]);
-  const [cityOpen, setCityOpen] = useState(false);
 
   // Auto-open edit dialog on first login when profile is incomplete
   useEffect(() => {
@@ -83,18 +104,6 @@ const ProfilePage = () => {
     };
   }, [editOpen]);
 
-  useEffect(() => {
-    if (!editOpen || cityOptions.length > 0) return;
-    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
-      .then((r) => r.json())
-      .then((data: any[]) => {
-        const names = Array.from(
-          new Set(data.map((m) => `${m.nome} - ${m.microrregiao?.mesorregiao?.UF?.sigla || ""}`))
-        ).sort();
-        setCityOptions(names);
-      })
-      .catch(() => setCityOptions([]));
-  }, [editOpen, cityOptions.length]);
 
   const handleLogout = async () => {
     const { supabase } = await import("@/integrations/supabase/client");
