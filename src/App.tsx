@@ -227,11 +227,10 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-
-        <StatsLoader />
-        <UserThemeLoader />
         <BrowserRouter>
           <AuthProvider>
+            <StatsLoader />
+            <UserThemeLoader />
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
