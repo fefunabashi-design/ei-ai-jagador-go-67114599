@@ -837,6 +837,7 @@ export type Database = {
           primary_color: string | null
           region: string | null
           role: string
+          state: string | null
           subscription_expires_at: string | null
           subscription_status: string
           trial_started_at: string | null
@@ -861,6 +862,7 @@ export type Database = {
           primary_color?: string | null
           region?: string | null
           role?: string
+          state?: string | null
           subscription_expires_at?: string | null
           subscription_status?: string
           trial_started_at?: string | null
@@ -885,6 +887,7 @@ export type Database = {
           primary_color?: string | null
           region?: string | null
           role?: string
+          state?: string | null
           subscription_expires_at?: string | null
           subscription_status?: string
           trial_started_at?: string | null
