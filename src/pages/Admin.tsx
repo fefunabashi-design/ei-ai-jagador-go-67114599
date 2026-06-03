@@ -459,7 +459,7 @@ const AdminPage = () => {
                 <kpi.icon size={16} className={kpi.color} />
                 <span className="text-xl font-display text-foreground">{kpi.value}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground font-semibold">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground font-semibold">{kpi.label}</p>
               <p className="text-[9px] text-muted-foreground">{kpi.trend}</p>
             </motion.div>
           ))}
@@ -597,7 +597,7 @@ const AdminPage = () => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
+              <span className="text-xs text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
             </motion.button>
           ))}
           </div>
