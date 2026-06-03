@@ -597,7 +597,7 @@ const AdminPage = () => {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
+              <span className="text-xs text-muted-foreground font-medium text-center leading-tight">{action.label}</span>
             </motion.button>
           ))}
           </div>

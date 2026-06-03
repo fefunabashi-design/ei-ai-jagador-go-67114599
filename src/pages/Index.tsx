@@ -467,7 +467,7 @@ const Index = () => {
               className={`bg-card rounded-lg border p-1 text-center hover:border-primary/40 transition-colors ${stat.highlight ? "border-destructive/50" : "border-border"}`}
             >
               <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-foreground"}`}>{stat.value}</p>
-              <p className="text-[8px] text-muted-foreground font-semibold leading-tight">{stat.label}</p>
+              <p className="text-xs text-muted-foreground font-semibold leading-tight">{stat.label}</p>
             </motion.button>
           ))}
         </div>

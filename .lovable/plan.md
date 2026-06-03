@@ -1,37 +1,45 @@
 ## Objetivo
-Confirmar, no preview, que a cor primária selecionada em "Editar Usuário" é gravada em `profiles.primary_color` e refletida imediatamente na UI do perfil.
+Padronizar o tamanho da fonte dos botões das telas **Início** e **Admin** para o mesmo tamanho usado nos botões da tela **Agenda** (`text-xs` / 12px).
 
-## Pré-condições
-- Usuário logado no preview (rota atual `/team-manage`).
-- Coluna `profiles.primary_color` já existe (confirmado anteriormente).
-- `useUpdateProfile` inclui `primary_color` na allowlist (linha 118 de `useSupabaseData.ts`) — o trigger `prevent_profile_privilege_escalation` NÃO bloqueia este campo.
-- `Profile.tsx` chama `applyPrimaryColor(editPrimaryColor)` logo após salvar (linha 240).
-- `UserThemeLoader` relê `primary_color` ao montar e aplica via CSS vars.
+## Telas afetadas
+- `src/pages/Index.tsx` — 3 botões de estatísticas (Jogos da temporada, Gols da temporada, Lembretes)
+- `src/pages/Admin.tsx` — 5 botões de atalhos administrativos (Mensalidade, Desafios, Vaquinha, Meu Time, Saldo)
 
-## Passos de verificação (browser tool)
-1. Navegar para `/profile`.
-2. Abrir "Editar perfil", selecionar uma cor diferente da atual no Select de cores.
-3. Clicar "Salvar".
-4. Observar: header/badge/acentos do perfil mudam imediatamente (sem refresh).
-5. Recarregar a página (`navigate_to_sandbox` para `/profile`) e confirmar que a cor permanece (vinda do banco via `UserThemeLoader`).
-6. Consultar o banco com `supabase--read_query`:
-   ```sql
-   SELECT user_id, primary_color, updated_at
-   FROM public.profiles
-   WHERE user_id = auth.uid()  -- ou filtrar pelo usuário logado
-   ORDER BY updated_at DESC LIMIT 1;
-   ```
-   e confirmar que `primary_color` corresponde ao hex selecionado.
+## Referência
+Tela **Agenda** (`src/pages/Agenda.tsx`) usa `text-xs` (12px) nos botões de filtro e ações.
+
+## Alterações necessárias
+
+### `src/pages/Index.tsx`
+Localizar os 3 `motion.button` de estatísticas (linha ~456) e alterar o label de:
+```
+className="text-[8px] text-muted-foreground font-semibold leading-tight"
+```
+para:
+```
+className="text-xs text-muted-foreground font-semibold leading-tight"
+```
+
+### `src/pages/Admin.tsx`
+1. **Atalhos administrativos** (linha ~600): alterar o label de:
+```
+className="text-[10px] text-muted-foreground font-medium text-center leading-tight"
+```
+para:
+```
+className="text-xs text-muted-foreground font-medium text-center leading-tight"
+```
+
+2. **Cards superiores** (linha ~432): alterar o label de:
+```
+className="text-[10px] text-muted-foreground font-medium"
+```
+para:
+```
+className="text-xs text-muted-foreground font-medium"
+```
 
 ## Critérios de sucesso
-- Valor de `primary_color` no banco === hex selecionado no Select.
-- UI do perfil reflete a cor imediatamente após salvar (sem reload).
-- Após reload, a cor persiste (carregada pelo `UserThemeLoader`).
-
-## Em caso de falha
-- Se UI muda mas banco não grava → inspecionar resposta do `update` no Network/console e revisar allowlist/trigger.
-- Se banco grava mas UI não atualiza → revisar `applyPrimaryColor` e variáveis CSS consumidas pelos componentes do perfil.
-- Reportar achados ao usuário antes de qualquer correção.
-
-## Escopo
-Somente verificação — nenhuma alteração de código ou schema neste plano.
+- Botões da tela Início com fonte `text-xs` (12px) nos labels.
+- Botões da tela Admin com fonte `text-xs` (12px) nos labels.
+- Tamanho visualmente consistente com os botões da Agenda.
