@@ -1053,7 +1053,7 @@ const TimesPage = () => {
             )}
           </div>
         </div>
-      </div>
+
 
 
       {/* Dialog Desafio */}
