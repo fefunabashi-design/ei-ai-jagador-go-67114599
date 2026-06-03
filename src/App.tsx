@@ -70,6 +70,7 @@ const clearAuthStorage = () => {
 type AuthStatus = "loading" | "anon" | "incomplete" | "deactivated" | "ok";
 type AuthCtxValue = { status: AuthStatus; session: Session | null; stuck: boolean };
 const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, stuck: false });
+export const useAuthContext = () => useContext(AuthCtx);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
