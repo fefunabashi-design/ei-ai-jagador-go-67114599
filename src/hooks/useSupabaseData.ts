@@ -31,6 +31,57 @@ const getUserId = async (): Promise<string | null> => {
   return data.user?.id ?? null;
 };
 
+// ---------------------------------------------------------------------------
+// Internal factories — consolidam o boilerplate repetido em ~14 mutations e
+// em listas globais. NÃO mudam comportamento: assinaturas/efeitos colaterais
+// (emitChange, toasts) permanecem idênticos aos hooks originais.
+// ---------------------------------------------------------------------------
+type MutationResult<I> = {
+  mutate: (input: I) => Promise<void>;
+  mutateAsync: (input: I) => Promise<void>;
+  isPending: boolean;
+  isLoading: boolean;
+};
+
+const createMutationHook = <I,>(opts: {
+  run: (input: I) => Promise<void>;
+  success?: string;
+  successDescription?: string;
+  error: string;
+  rethrow?: boolean;
+}) => (): MutationResult<I> => {
+  const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  const mutate = async (input: I) => {
+    setIsPending(true);
+    try {
+      await opts.run(input);
+      emitChange();
+      if (opts.success) toast({ title: opts.success, description: opts.successDescription });
+    } catch (e: any) {
+      toast({ title: opts.error, description: e?.message, variant: "destructive" });
+      if (opts.rethrow) throw e;
+    } finally {
+      setIsPending(false);
+    }
+  };
+  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
+};
+
+const createListHook = <T,>(fetcher: () => Promise<T[]>) => (): { data: T[]; isLoading: boolean } => {
+  const [data, setData] = useState<T[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  useSubscribe(async () => {
+    try {
+      const rows = await fetcher();
+      setData(rows);
+    } finally {
+      setIsLoading(false);
+    }
+  });
+  return { data, isLoading };
+};
+
 // =================== PROFILE ===================
 export const useProfile = () => {
   const [data, setData] = useState<any>(null);
