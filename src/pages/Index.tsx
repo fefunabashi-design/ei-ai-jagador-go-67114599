@@ -9,9 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import PostFeed from "@/components/PostFeed";
-import AddPostDialog from "@/components/AddPostDialog";
-import { Plus } from "lucide-react";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
@@ -41,8 +38,6 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
-  const [addPostOpen, setAddPostOpen] = useState(false);
-  const [postRefresh, setPostRefresh] = useState(0);
   const { toast } = useToast();
 
   const handleDeactivate = async () => {
@@ -985,21 +980,6 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Feed da Comunidade */}
-      <section className="px-5 mt-6 space-y-3">
-        {profile?.user_id && (
-          <div className="flex justify-end">
-            <Button onClick={() => setAddPostOpen(true)} className="gap-1 h-6 px-2 text-[10px] rounded-md">
-              <Plus size={10} /> Adicionar Post
-            </Button>
-          </div>
-        )}
-        <PostFeed currentUserId={profile?.user_id} refreshSignal={postRefresh} />
-      </section>
-
-      {profile?.user_id && (
-        <AddPostDialog open={addPostOpen} onOpenChange={setAddPostOpen} userId={profile.user_id} onPublished={() => setPostRefresh((v) => v + 1)} />
-      )}
 
       <BottomNav />
     </div>
