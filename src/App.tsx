@@ -123,6 +123,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (_event === "SIGNED_OUT") clearAuthStorage();
+      // TOKEN_REFRESHED não muda o usuário; evita refetch desnecessário do profile.
+      if (_event === "TOKEN_REFRESHED") return;
       window.setTimeout(() => void checkProfile(s), 0);
     });
     withTimeout(supabase.auth.getSession()).then((result) => {
