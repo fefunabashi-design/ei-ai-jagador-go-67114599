@@ -472,25 +472,84 @@ const TimesPage = () => {
       </div>
 
       <div className="px-5 space-y-4">
-        <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] text-muted-foreground">Selecione uma ou mais opções por filtro</p>
-            <Badge variant="secondary">{filteredTeams.length} times</Badge>
-          </div>
+        {/* === Barra de filtros (chips horizontais) === */}
+        {(() => {
+          const activeCount =
+            (selectedUFs.length > 0 ? 1 : 0) +
+            (selectedCities.length > 0 ? 1 : 0) +
+            (selectedRegions.length > 0 ? 1 : 0) +
+            (selectedModalidades.length > 0 ? 1 : 0) +
+            (selectedGeneros.length > 0 ? 1 : 0) +
+            (selectedCategorias.length > 0 ? 1 : 0) +
+            (selectedSubCategorias.length > 0 ? 1 : 0) +
+            (nivelChoice !== "todas" ? 1 : 0) +
+            (fieldChoice !== "tanto" ? 1 : 0) +
+            (selectedDays.length > 0 ? 1 : 0) +
+            (timeFrom || timeTo ? 1 : 0) +
+            (onlyFavorites ? 1 : 0);
 
-          {canLaunchChallenges && (
-            <Button
-              onClick={() => setNewMatchOpen(true)}
-              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold"
-            >
-              Desafio/Adversário sem cadastro
-            </Button>
-          )}
+          const Chip = ({
+            id,
+            label,
+            value,
+            active,
+            onClear,
+            children,
+          }: {
+            id: string;
+            label: string;
+            value?: string;
+            active: boolean;
+            onClear?: () => void;
+            children: React.ReactNode;
+          }) => (
+            <Popover open={openChip === id} onOpenChange={(o) => setOpenChip(o ? id : null)}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    active
+                      ? "bg-primary/15 border-primary/40 text-primary"
+                      : "bg-background border-border text-foreground hover:bg-muted"
+                  )}
+                >
+                  <span>{active && value ? `${label}: ${value}` : label}</span>
+                  {active && onClear ? (
+                    <span
+                      role="button"
+                      tabIndex={-1}
+                      onClick={(e) => { e.stopPropagation(); onClear(); }}
+                      className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-primary/25"
+                    >
+                      <X size={11} />
+                    </span>
+                  ) : (
+                    <ChevronDown size={12} className="opacity-70" />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-64 p-3">
+                {children}
+              </PopoverContent>
+            </Popover>
+          );
 
-          <div className="space-y-3">
-            {/* 1 - Nome do Time com autocomplete (linha inteira) */}
-            <div className="relative">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nome do Time</p>
+          const summarize = (arr: string[]) =>
+            arr.length === 0 ? undefined : arr.length === 1 ? arr[0] : `${arr[0]} +${arr.length - 1}`;
+
+          return (
+            <div className="sticky top-0 z-20 -mx-5 px-5 py-3 bg-background/95 backdrop-blur border-b border-border space-y-3">
+              {canLaunchChallenges && (
+                <Button
+                  onClick={() => setNewMatchOpen(true)}
+                  className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold h-9"
+                >
+                  Desafio/Adversário sem cadastro
+                </Button>
+              )}
+
+              {/* Busca por nome (linha inteira) */}
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -498,180 +557,404 @@ const TimesPage = () => {
                   onChange={(e) => { setNameQuery(e.target.value); setShowNameSuggest(true); }}
                   onFocus={() => setShowNameSuggest(true)}
                   onBlur={() => setTimeout(() => setShowNameSuggest(false), 150)}
-                  placeholder="Digite as iniciais do time..."
-                  className="pl-8 bg-background border-border h-9 text-sm"
+                  placeholder="Buscar time pelo nome..."
+                  className="pl-8 bg-card border-border h-9 text-sm rounded-full"
                 />
-              </div>
-              {showNameSuggest && filteredNameSuggest.length > 0 && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-52 overflow-auto">
-                  {filteredNameSuggest.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onMouseDown={() => { setNameQuery(t.name); setShowNameSuggest(false); }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-accent hover:text-accent-foreground flex items-center justify-between"
-                    >
-                      <span>{t.name}</span>
-                      <span className="text-[10px] text-muted-foreground">{(t as any).addr_cidade}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Estado + Cidade + Região (3 colunas) */}
-            <div className="grid grid-cols-3 gap-2">
-              <MultiSelect
-                label="Estado"
-                options={toOptions(UFS)}
-                selected={selectedUFs}
-                onChange={(next) => {
-                  setSelectedUFs(next);
-                  if (next.length > 0) {
-                    const allowed = new Set<string>();
-                    next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
-                    setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
-                  }
-                }}
-                placeholder="Todos"
-              />
-              <MultiSelect
-                label="Cidade"
-                options={toOptions(cityOptions)}
-                selected={selectedCities}
-                onChange={setSelectedCities}
-                placeholder="Todas"
-              />
-              {regionEnabled ? (
-                <MultiSelect
-                  label="Região"
-                  options={toOptions(REGIOES)}
-                  selected={selectedRegions}
-                  onChange={setSelectedRegions}
-                  placeholder="Todas"
-                />
-              ) : (
-                <div className="min-w-0 opacity-60">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">Região</p>
-                  <div className="flex min-h-9 w-full items-center rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground">
-                    Todas
+                {showNameSuggest && filteredNameSuggest.length > 0 && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-52 overflow-auto">
+                    {filteredNameSuggest.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onMouseDown={() => { setNameQuery(t.name); setShowNameSuggest(false); }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-accent hover:text-accent-foreground flex items-center justify-between"
+                      >
+                        <span>{t.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{(t as any).addr_cidade}</span>
+                      </button>
+                    ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* Chips roláveis */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-primary/50 bg-primary/10 text-primary px-3 py-1.5 text-xs font-semibold sticky left-0 z-10"
+                >
+                  <SlidersHorizontal size={13} />
+                  Filtros{activeCount > 0 ? ` (${activeCount})` : ""}
+                </button>
+
+                <Chip
+                  id="estado" label="Estado" value={summarize(selectedUFs)}
+                  active={selectedUFs.length > 0}
+                  onClear={() => setSelectedUFs([])}
+                >
+                  <MultiSelect
+                    label="Estado" options={toOptions(UFS)} selected={selectedUFs}
+                    onChange={(next) => {
+                      setSelectedUFs(next);
+                      if (next.length > 0) {
+                        const allowed = new Set<string>();
+                        next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
+                        setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
+                      }
+                    }}
+                    placeholder="Todos"
+                  />
+                </Chip>
+
+                <Chip
+                  id="cidade" label="Cidade" value={summarize(selectedCities)}
+                  active={selectedCities.length > 0}
+                  onClear={() => setSelectedCities([])}
+                >
+                  <MultiSelect
+                    label="Cidade" options={toOptions(cityOptions)} selected={selectedCities}
+                    onChange={setSelectedCities} placeholder="Todas"
+                  />
+                </Chip>
+
+                {regionEnabled && (
+                  <Chip
+                    id="regiao" label="Região" value={summarize(selectedRegions)}
+                    active={selectedRegions.length > 0}
+                    onClear={() => setSelectedRegions([])}
+                  >
+                    <MultiSelect
+                      label="Região" options={toOptions(REGIOES)} selected={selectedRegions}
+                      onChange={setSelectedRegions} placeholder="Todas"
+                    />
+                  </Chip>
+                )}
+
+                <Chip
+                  id="modalidade" label="Modalidade" value={summarize(selectedModalidades)}
+                  active={selectedModalidades.length > 0}
+                  onClear={() => setSelectedModalidades([])}
+                >
+                  <MultiSelect
+                    label="Modalidade" options={toOptions(MODALIDADES)} selected={selectedModalidades}
+                    onChange={setSelectedModalidades} placeholder="Todas"
+                  />
+                </Chip>
+
+                <Chip
+                  id="categoria" label="Categoria" value={summarize(selectedCategorias)}
+                  active={selectedCategorias.length > 0}
+                  onClear={() => { setSelectedCategorias([]); setSelectedSubCategorias([]); }}
+                >
+                  <div className="space-y-2">
+                    <MultiSelect
+                      label="Categoria" options={toOptions(CATEGORIAS)} selected={selectedCategorias}
+                      onChange={(next) => {
+                        setSelectedCategorias(next);
+                        const allowed = new Set<string>();
+                        if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
+                        if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
+                        setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
+                      }}
+                      placeholder="Todas"
+                    />
+                    <MultiSelect
+                      label="Subcategoria" options={toOptions(subCategoriaOptions)} selected={selectedSubCategorias}
+                      onChange={setSelectedSubCategorias} placeholder="Todas"
+                    />
+                  </div>
+                </Chip>
+
+                <Chip
+                  id="genero" label="Gênero" value={summarize(selectedGeneros)}
+                  active={selectedGeneros.length > 0}
+                  onClear={() => setSelectedGeneros([])}
+                >
+                  <MultiSelect
+                    label="Gênero" options={toOptions(GENEROS)} selected={selectedGeneros}
+                    onChange={setSelectedGeneros} placeholder="Todos"
+                  />
+                </Chip>
+
+                <Chip
+                  id="nivel" label="Nível" value={nivelChoice !== "todas" ? `${nivelChoice}+` : undefined}
+                  active={nivelChoice !== "todas"}
+                  onClear={() => setNivelChoice("todas")}
+                >
+                  <Select value={nivelChoice} onValueChange={(v) => { setNivelChoice(v); setOpenChip(null); }}>
+                    <SelectTrigger className="h-9 bg-background border-border text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      <SelectItem value="5">5+</SelectItem>
+                      <SelectItem value="6">6+</SelectItem>
+                      <SelectItem value="7">7+</SelectItem>
+                      <SelectItem value="8">8+</SelectItem>
+                      <SelectItem value="9">9+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Chip>
+
+                <Chip
+                  id="campo" label="Com Campo"
+                  value={fieldChoice === "sim" ? "Sim" : fieldChoice === "nao" ? "Não" : undefined}
+                  active={fieldChoice !== "tanto"}
+                  onClear={() => setFieldChoice("tanto")}
+                >
+                  <Select value={fieldChoice} onValueChange={(v) => { setFieldChoice(v as any); setOpenChip(null); }}>
+                    <SelectTrigger className="h-9 bg-background border-border text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sim">Sim</SelectItem>
+                      <SelectItem value="nao">Não</SelectItem>
+                      <SelectItem value="tanto">Tanto Faz</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Chip>
+
+                <Chip
+                  id="dia" label="Dia"
+                  value={selectedDays.length === 0 ? undefined :
+                    selectedDays.length === 1
+                      ? (DIAS_SEMANA.find((x) => x.value === selectedDays[0])?.label || selectedDays[0])
+                      : `${selectedDays.length} dias`}
+                  active={selectedDays.length > 0}
+                  onClear={() => setSelectedDays([])}
+                >
+                  <MultiSelect
+                    label="Dia da Semana" options={DIAS_SEMANA} selected={selectedDays}
+                    onChange={setSelectedDays} placeholder="Todos"
+                  />
+                </Chip>
+
+                <Chip
+                  id="horario" label="Horário"
+                  value={timeFrom || timeTo ? `${timeFrom || "--"}–${timeTo || "--"}` : undefined}
+                  active={!!(timeFrom || timeTo)}
+                  onClear={() => { setTimeFrom(""); setTimeTo(""); }}
+                >
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                      <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                    </div>
+                  </div>
+                </Chip>
+
+                <button
+                  type="button"
+                  onClick={() => setOnlyFavorites((v) => !v)}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    onlyFavorites
+                      ? "bg-primary/15 border-primary/40 text-primary"
+                      : "bg-background border-border text-foreground hover:bg-muted"
+                  )}
+                  aria-pressed={onlyFavorites}
+                >
+                  <Heart size={12} className={onlyFavorites ? "fill-current" : ""} />
+                  Favoritos
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Painel "Filtros" completo */}
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col">
+            <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetTitle className="text-left">Filtros</SheetTitle>
+            </SheetHeader>
+
+            <div className="flex-1 min-h-0 flex">
+              {/* Coluna esquerda: grupos */}
+              <div className="w-32 shrink-0 border-r border-border overflow-y-auto bg-muted/30">
+                {([
+                  ["localizacao", "Localização"],
+                  ["modalidade", "Modalidade"],
+                  ["genero", "Gênero"],
+                  ["categoria", "Categoria"],
+                  ["nivel", "Nível"],
+                  ["campo", "Com Campo"],
+                  ["dia", "Dia"],
+                  ["horario", "Horário"],
+                  ["favoritos", "Favoritos"],
+                ] as [FilterGroup, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActiveGroup(key)}
+                    className={cn(
+                      "w-full text-left px-3 py-3 text-xs border-l-2 transition-colors",
+                      activeGroup === key
+                        ? "bg-background border-l-primary text-foreground font-semibold"
+                        : "border-l-transparent text-muted-foreground hover:bg-background/60"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Coluna direita: opções do grupo */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {activeGroup === "localizacao" && (
+                  <>
+                    <MultiSelect
+                      label="Estado" options={toOptions(UFS)} selected={selectedUFs}
+                      onChange={(next) => {
+                        setSelectedUFs(next);
+                        if (next.length > 0) {
+                          const allowed = new Set<string>();
+                          next.forEach((uf) => getCitiesForUf(uf).forEach((c) => allowed.add(c)));
+                          setSelectedCities((prev) => prev.filter((c) => allowed.has(c)));
+                        }
+                      }}
+                      placeholder="Todos"
+                    />
+                    <MultiSelect
+                      label="Cidade" options={toOptions(cityOptions)} selected={selectedCities}
+                      onChange={setSelectedCities} placeholder="Todas"
+                    />
+                    {regionEnabled ? (
+                      <MultiSelect
+                        label="Região" options={toOptions(REGIOES)} selected={selectedRegions}
+                        onChange={setSelectedRegions} placeholder="Todas"
+                      />
+                    ) : (
+                      <div className="opacity-60">
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Região</p>
+                        <div className="flex min-h-9 items-center rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground">
+                          Disponível apenas para São Paulo
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+                {activeGroup === "modalidade" && (
+                  <MultiSelect
+                    label="Modalidade" options={toOptions(MODALIDADES)} selected={selectedModalidades}
+                    onChange={setSelectedModalidades} placeholder="Todas"
+                  />
+                )}
+                {activeGroup === "genero" && (
+                  <MultiSelect
+                    label="Gênero" options={toOptions(GENEROS)} selected={selectedGeneros}
+                    onChange={setSelectedGeneros} placeholder="Todos"
+                  />
+                )}
+                {activeGroup === "categoria" && (
+                  <>
+                    <MultiSelect
+                      label="Categoria" options={toOptions(CATEGORIAS)} selected={selectedCategorias}
+                      onChange={(next) => {
+                        setSelectedCategorias(next);
+                        const allowed = new Set<string>();
+                        if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
+                        if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
+                        setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
+                      }}
+                      placeholder="Todas"
+                    />
+                    <MultiSelect
+                      label="Subcategoria" options={toOptions(subCategoriaOptions)} selected={selectedSubCategorias}
+                      onChange={setSelectedSubCategorias} placeholder="Todas"
+                    />
+                  </>
+                )}
+                {activeGroup === "nivel" && (
+                  <div>
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nível mínimo</p>
+                    <Select value={nivelChoice} onValueChange={setNivelChoice}>
+                      <SelectTrigger className="h-9 bg-background border-border text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas</SelectItem>
+                        <SelectItem value="5">5+</SelectItem>
+                        <SelectItem value="6">6+</SelectItem>
+                        <SelectItem value="7">7+</SelectItem>
+                        <SelectItem value="8">8+</SelectItem>
+                        <SelectItem value="9">9+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {activeGroup === "campo" && (
+                  <div>
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
+                    <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
+                      <SelectTrigger className="h-9 bg-background border-border text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                        <SelectItem value="tanto">Tanto Faz</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {activeGroup === "dia" && (
+                  <MultiSelect
+                    label="Dia da Semana" options={DIAS_SEMANA} selected={selectedDays}
+                    onChange={setSelectedDays} placeholder="Todos"
+                  />
+                )}
+                {activeGroup === "horario" && (
+                  <div>
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                      <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
+                    </div>
+                  </div>
+                )}
+                {activeGroup === "favoritos" && (
+                  <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <Heart size={14} className={onlyFavorites ? "text-red-500 fill-red-500" : "text-muted-foreground"} />
+                      <p className="text-xs font-semibold">Mostrar apenas favoritos</p>
+                    </div>
+                    <Switch checked={onlyFavorites} onCheckedChange={setOnlyFavorites} />
+                  </div>
+                )}
+              </div>
             </div>
 
-
-
-            {/* Modalidade + Gênero (2 colunas) */}
-            <div className="grid grid-cols-2 gap-2">
-              <MultiSelect
-                label="Modalidade"
-                options={toOptions(MODALIDADES)}
-                selected={selectedModalidades}
-                onChange={setSelectedModalidades}
-                placeholder="Todas"
-              />
-              <MultiSelect
-                label="Gênero"
-                options={toOptions(GENEROS)}
-                selected={selectedGeneros}
-                onChange={setSelectedGeneros}
-                placeholder="Todos"
-              />
-            </div>
-
-            {/* Categoria + Subcategoria (2 colunas) */}
-            <div className="grid grid-cols-2 gap-2">
-              <MultiSelect
-                label="Categoria"
-                options={toOptions(CATEGORIAS)}
-                selected={selectedCategorias}
-                onChange={(next) => {
-                  setSelectedCategorias(next);
-                  const allowed = new Set<string>();
-                  if (next.length === 0 || next.includes("Adulto")) SUB_CATEGORIAS_ADULTO.forEach((s) => allowed.add(s));
-                  if (next.length === 0 || next.includes("Infantil")) SUB_CATEGORIAS_INFANTIL.forEach((s) => allowed.add(s));
-                  setSelectedSubCategorias((prev) => prev.filter((s) => allowed.has(s)));
+            <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3">
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={() => {
+                  setSelectedUFs([]); setSelectedCities([]); setSelectedRegions([]);
+                  setSelectedModalidades([]); setSelectedCategorias([]); setSelectedSubCategorias([]);
+                  setSelectedGeneros([]); setSelectedDays([]);
+                  setFieldChoice("tanto"); setNivelChoice("todas");
+                  setTimeFrom(""); setTimeTo(""); setOnlyFavorites(false);
                 }}
-                placeholder="Todas"
-              />
-              <MultiSelect
-                label="Subcategoria"
-                options={toOptions(subCategoriaOptions)}
-                selected={selectedSubCategorias}
-                onChange={setSelectedSubCategorias}
-                placeholder="Todas"
-              />
-            </div>
-
-            {/* Time com Campo + Nível (2 colunas) */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time com Campo</p>
-                <Select value={fieldChoice} onValueChange={(v) => setFieldChoice(v as "sim" | "nao" | "tanto")}>
-                  <SelectTrigger className="h-9 bg-background border-border text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                    <SelectItem value="tanto">Tanto Faz</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nível</p>
-                <Select value={nivelChoice} onValueChange={setNivelChoice}>
-                  <SelectTrigger className="h-9 bg-background border-border text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas</SelectItem>
-                    <SelectItem value="5">5+</SelectItem>
-                    <SelectItem value="6">6+</SelectItem>
-                    <SelectItem value="7">7+</SelectItem>
-                    <SelectItem value="8">8+</SelectItem>
-                    <SelectItem value="9">9+</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Favoritos */}
-            <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
-              <div className="flex items-center gap-2">
-                <Heart size={14} className={onlyFavorites ? "text-red-500 fill-red-500" : "text-muted-foreground"} />
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Mostrar apenas favoritos</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOnlyFavorites((v) => !v)}
-                className={`h-5 w-9 rounded-full transition-colors relative ${onlyFavorites ? "bg-primary" : "bg-muted"}`}
-                aria-pressed={onlyFavorites}
               >
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-background transition-all ${onlyFavorites ? "left-[18px]" : "left-0.5"}`} />
-              </button>
+                Limpar filtros
+              </Button>
+              <Button
+                className="flex-1 bg-primary text-primary-foreground"
+                onClick={() => setFiltersOpen(false)}
+              >
+                Ver {filteredTeams.length} resultados
+              </Button>
             </div>
+          </SheetContent>
+        </Sheet>
 
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-xs text-muted-foreground">{filteredTeams.length} times encontrados</p>
+        </div>
 
-            {/* Dia da Semana + Horário (2 colunas) */}
-            <div className="grid grid-cols-2 gap-2">
-              <MultiSelect
-                label="Dia da Semana"
-                options={DIAS_SEMANA}
-                selected={selectedDays}
-                onChange={setSelectedDays}
-                placeholder="Todos"
-              />
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Horário</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Input type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
-                  <Input type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} className="bg-background border-border h-9 px-2 text-xs" />
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="space-y-2">
             {filteredTeams.length > 0 ? (
