@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useAuthContext } from "@/App";
 import { supabase } from "@/integrations/supabase/client";
 import { applyPrimaryColor } from "@/lib/applyPrimaryColor";
 
@@ -16,15 +17,13 @@ const withTimeout = <T,>(promise: PromiseLike<T>): Promise<T | null> => {
   });
 };
 
-const load = async () => {
-  const sessionResult = await withTimeout(supabase.auth.getSession()).catch(() => null);
-  const session = sessionResult?.data.session;
-  if (!session) { applyPrimaryColor(null); return; }
+const loadForUser = async (userId: string | null) => {
+  if (!userId) { applyPrimaryColor(null); return; }
   const result = await withTimeout(
     supabase
       .from("profiles")
       .select("primary_color")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .maybeSingle()
   ).catch(() => null);
   const data = result?.data;
@@ -32,28 +31,22 @@ const load = async () => {
 };
 
 const UserThemeLoader = () => {
-  useEffect(() => {
-    let alive = true;
-    const timers = new Set<number>();
-    const scheduleLoad = () => {
-      const timer = window.setTimeout(() => {
-        timers.delete(timer);
-        if (alive) void load();
-      }, 0);
-      timers.add(timer);
-    };
+  const { session } = useAuthContext();
+  const userId = session?.user.id ?? null;
+  const lastLoadedRef = useRef<string | null | undefined>(undefined);
 
-    scheduleLoad();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => scheduleLoad());
-    const onChange = () => scheduleLoad();
+  useEffect(() => {
+    if (lastLoadedRef.current === userId) return;
+    lastLoadedRef.current = userId;
+    void loadForUser(userId);
+  }, [userId]);
+
+  useEffect(() => {
+    const onChange = () => { void loadForUser(userId); };
     window.addEventListener("supabase-data-change", onChange);
-    return () => {
-      alive = false;
-      timers.forEach((timer) => window.clearTimeout(timer));
-      subscription.unsubscribe();
-      window.removeEventListener("supabase-data-change", onChange);
-    };
-  }, []);
+    return () => window.removeEventListener("supabase-data-change", onChange);
+  }, [userId]);
+
   return null;
 };
 

@@ -70,6 +70,7 @@ const clearAuthStorage = () => {
 type AuthStatus = "loading" | "anon" | "incomplete" | "deactivated" | "ok";
 type AuthCtxValue = { status: AuthStatus; session: Session | null; stuck: boolean };
 const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, stuck: false });
+export const useAuthContext = () => useContext(AuthCtx);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -123,6 +124,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (_event === "SIGNED_OUT") clearAuthStorage();
+      // TOKEN_REFRESHED não muda o usuário; evita refetch desnecessário do profile.
+      if (_event === "TOKEN_REFRESHED") return;
       window.setTimeout(() => void checkProfile(s), 0);
     });
     withTimeout(supabase.auth.getSession()).then((result) => {
@@ -209,20 +212,8 @@ const AuthStuckScreen = () => {
 
 
 const StatsLoader = () => {
-  const [hasSession, setHasSession] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (alive) setHasSession(Boolean(session));
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasSession(Boolean(session));
-    });
-    return () => { alive = false; subscription.unsubscribe(); };
-  }, []);
-
-  useStatsData(hasSession);
+  const { session } = useContext(AuthCtx);
+  useStatsData(Boolean(session));
   return null;
 };
 
@@ -237,11 +228,10 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-
-        <StatsLoader />
-        <UserThemeLoader />
         <BrowserRouter>
           <AuthProvider>
+            <StatsLoader />
+            <UserThemeLoader />
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
