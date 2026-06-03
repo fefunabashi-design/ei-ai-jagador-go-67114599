@@ -192,7 +192,7 @@ const Index = () => {
       return h?.id === t.id || a?.id === t.id;
     });
     const jogos = teamMatches.length;
-    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: 0, campeonatos: 0 };
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: 0 };
   });
 
   // Gols temporada — apenas gols nominalmente atribuídos ao usuário na finalização das partidas
@@ -217,7 +217,6 @@ const Index = () => {
   }, [profile?.user_id, completedAllMatches.length]);
 
   const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
-  const campeonatosTotal = perTeamStats.reduce((a, s) => a + s.campeonatos, 0);
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
   type LembreteMens = { playerId: string; playerName: string; mes: number };
@@ -319,12 +318,11 @@ const Index = () => {
 
 
   // Stat detail dialog
-  type StatKey = "jogos" | "gols" | "campeonatos" | "lembretes";
+  type StatKey = "jogos" | "gols" | "lembretes";
   const [statDetail, setStatDetail] = useState<StatKey | null>(null);
   const statDetailLabels: Record<StatKey, string> = {
     jogos: "Jogos da temporada",
     gols: "Gols da temporada",
-    campeonatos: "Campeonatos",
     lembretes: "Lembretes",
   };
 
@@ -453,11 +451,10 @@ const Index = () => {
 
       {/* Team Season Stats */}
       <div className="px-5 mt-3">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {([
             { key: "jogos" as StatKey, value: jogosTemporada, label: "Jogos temporada" },
             { key: "gols" as StatKey, value: golsTemporada, label: "Gols temporada" },
-            { key: "campeonatos" as StatKey, value: campeonatosTotal, label: "Campeonatos" },
             { key: "lembretes" as StatKey, value: lembretes, label: "Lembretes", highlight: lembretes > 0 },
           ]).map((stat, i) => (
             <motion.button
@@ -485,15 +482,6 @@ const Index = () => {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Campeonatos: ainda não existe esse recurso */}
-          {statDetail === "campeonatos" && (
-            <div className="py-8 text-center space-y-2">
-              <p className="text-sm font-semibold text-foreground">Em breve 🏆</p>
-              <p className="text-xs text-muted-foreground">
-                Os campeonatos ainda não estão disponíveis na plataforma.
-              </p>
-            </div>
-          )}
 
           {/* Jogos / Gols: total por time */}
           {(statDetail === "jogos" || statDetail === "gols") && (
