@@ -88,6 +88,12 @@ const TimesPage = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(!!savedFilters.onlyFavorites);
 
+  // Painel "Filtros" (Sheet)
+  type FilterGroup = "localizacao" | "modalidade" | "genero" | "categoria" | "nivel" | "campo" | "dia" | "horario" | "favoritos";
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<FilterGroup>("localizacao");
+  const [openChip, setOpenChip] = useState<string | null>(null);
+
   // Salvar filtros sempre que mudarem
   useEffect(() => {
     try {
