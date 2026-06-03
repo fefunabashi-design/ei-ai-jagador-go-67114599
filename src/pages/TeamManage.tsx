@@ -504,7 +504,7 @@ const TeamPage = () => {
   const openEditPlayer = (player: any) => {
     setEditingPlayer(player);
     setPlayerForm({
-      cpf: "",
+      cpf: player.cpf ? formatCpf(player.cpf) : "",
       name: player.name || "",
       last_name: player.last_name || "",
       nickname: player.nickname || "",
@@ -536,8 +536,12 @@ const TeamPage = () => {
       toast({ title: "Nome é obrigatório", variant: "destructive" });
       return;
     }
-    if (!playerForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerForm.email.trim())) {
-      toast({ title: "E-mail é obrigatório", description: "Informe um e-mail válido para vincular a conta.", variant: "destructive" });
+    if (!playerForm.birth_date) {
+      toast({ title: "Data de Nascimento é obrigatória", variant: "destructive" });
+      return;
+    }
+    if (playerForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(playerForm.email.trim())) {
+      toast({ title: "E-mail inválido", description: "Informe um e-mail válido ou deixe em branco.", variant: "destructive" });
       return;
     }
     const data = {
@@ -945,11 +949,12 @@ const TeamPage = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Data de Nascimento</Label>
+                <Label>Data de Nascimento *</Label>
                 <Input
                   type="date"
                   value={playerForm.birth_date}
                   onChange={(e) => setPF("birth_date", e.target.value)}
+                  required
                   className="bg-secondary border-border"
                 />
               </div>
@@ -1004,13 +1009,12 @@ const TeamPage = () => {
                 />
               </div>
               <div>
-                <Label>E-mail *</Label>
+                <Label>E-mail</Label>
                 <Input
                   type="email"
                   value={playerForm.email}
                   onChange={(e) => setPF("email", e.target.value)}
                   placeholder="email@email.com"
-                  required
                   className="bg-secondary border-border"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
