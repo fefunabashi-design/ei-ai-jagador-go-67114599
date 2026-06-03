@@ -390,7 +390,7 @@ const TeamPage = () => {
       ["Cidade", teamForm.addr_cidade.trim(), "tf-addr_cidade"],
       ["UF", teamForm.addr_uf.trim(), "tf-addr_uf"],
       ["Técnico", teamForm.coach_name.trim(), "tf-coach_name"],
-      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"),
+      ["Admin App", teamForm.admin_name.trim(), "tf-admin_name"],
       ["Cel. Admin", teamForm.admin_phone.trim(), "tf-admin_phone"],
       ["CPF do Admin", teamForm.admin_cpf.trim(), "tf-admin_cpf"],
     );
@@ -421,7 +421,7 @@ const TeamPage = () => {
       focusField("tf-region");
       return;
     }
-    if (teamForm.admin_cpf && !isValidCpf(teamForm.admin_cpf)) {
+    if (!teamForm.admin_cpf || !isValidCpf(teamForm.admin_cpf)) {
       toast({ title: "CPF do Admin inválido", variant: "destructive" });
       focusField("tf-admin_cpf");
       return;
@@ -1662,6 +1662,7 @@ const TeamFormDialog = ({
                     onChange={(e) => setField("admin_cpf", formatCpf(e.target.value))}
                     placeholder="000.000.000-00"
                     inputMode="numeric"
+                    required
                     className="bg-secondary border-border"
                   />
                 </div>
