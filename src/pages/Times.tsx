@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Shield, Heart, AlertTriangle, Building2, Calendar as CalIcon, Clock } from "lucide-react";
+import { ArrowLeft, Search, Shield, Heart, AlertTriangle, Building2, Calendar as CalIcon, Clock, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
