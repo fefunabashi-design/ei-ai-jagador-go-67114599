@@ -2,7 +2,7 @@ import { startsWithNorm } from "@/lib/normalize";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, DollarSign, Pencil, CreditCard, MessageCircle, Search, Camera, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle, Trophy } from "lucide-react";
+import { Users, DollarSign, Pencil, CreditCard, Search, Shield, CalendarDays, Eye, ClipboardList, MapPin, UserPlus, Building2, AlertTriangle, Calendar as CalIcon, Clock, Swords, ChevronDown, ChevronUp, CalendarClock, XCircle, Trophy } from "lucide-react";
 import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
@@ -408,13 +408,9 @@ const AdminPage = () => {
   });
 
   const quickActions: Array<{ icon: any; label: string; path: string; badge?: number }> = [
-    
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
     { icon: DollarSign, label: "Vaquinha", path: "/funds" },
-    { icon: MessageCircle, label: "Avisar o time", path: "#" },
-    
-    { icon: Camera, label: "Postar fotos", path: "/fotos" },
   ];
 
   return (
