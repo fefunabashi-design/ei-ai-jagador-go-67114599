@@ -197,6 +197,9 @@ const ChatPage = () => {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-4 py-3">
+        <p className="text-[10px] text-muted-foreground font-semibold mb-1">
+          {profile?.display_name || "Você"}
+        </p>
         <div className="flex gap-2">
           <Input
             value={message}
