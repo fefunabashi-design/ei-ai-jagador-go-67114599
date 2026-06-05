@@ -283,6 +283,44 @@ const RouteFallback = () => (
   </div>
 );
 
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { hasError: isChunkLoadError(error) };
+  }
+
+  componentDidCatch(error: unknown, _info: ErrorInfo) {
+    if (isChunkLoadError(error)) reloadWithFreshAssets();
+  }
+
+  handleRetry = () => {
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+    reloadWithFreshAssets();
+  };
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-foreground">Atualizando o app</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Uma parte do app mudou durante o carregamento. Toque abaixo para buscar a versão mais recente.
+          </p>
+          <button
+            onClick={this.handleRetry}
+            className="mt-5 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+          >
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -292,40 +330,42 @@ const App = () => {
           <AuthProvider>
             <StatsLoader />
             <UserThemeLoader />
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
-                <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
-                <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-                <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
-                <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
-                <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-                <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
-                <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
-                <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
-                <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
-                <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
-                <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
-                <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
-                <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
-                <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
-                <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
-                <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
-                <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <ChunkErrorBoundary>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/match" element={<ProtectedRoute><Match /></ProtectedRoute>} />
+                  <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
+                  <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+                  <Route path="/team-manage" element={<ProtectedRoute><TeamManage /></ProtectedRoute>} />
+                  <Route path="/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/chat/:matchId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                  <Route path="/match/:matchId" element={<ProtectedRoute><MatchDetails /></ProtectedRoute>} />
+                  <Route path="/payments/:matchId" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                  <Route path="/funds" element={<ProtectedRoute><Funds /></ProtectedRoute>} />
+                  <Route path="/funds/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+                  <Route path="/funds/event/:eventId" element={<ProtectedRoute><EventDetails /></ProtectedRoute>} />
+                  <Route path="/mensalidades" element={<ProtectedRoute><Mensalidades /></ProtectedRoute>} />
+                  <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
+                  <Route path="/escalacao" element={<ProtectedRoute><Escalacao /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="/desafios" element={<ProtectedRoute><Desafios /></ProtectedRoute>} />
+                  <Route path="/buscar-adversario" element={<ProtectedRoute><BuscarAdversario /></ProtectedRoute>} />
+                  <Route path="/times" element={<ProtectedRoute><Times /></ProtectedRoute>} />
+                  <Route path="/fotos" element={<ProtectedRoute><Fotos /></ProtectedRoute>} />
+                  <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                  <Route path="/opponent-details" element={<ProtectedRoute><OpponentDetails /></ProtectedRoute>} />
+                  <Route path="/resenha" element={<ProtectedRoute><Resenha /></ProtectedRoute>} />
+                  <Route path="/assinatura" element={<ProtectedRoute><Assinatura /></ProtectedRoute>} />
+                  <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </ChunkErrorBoundary>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
