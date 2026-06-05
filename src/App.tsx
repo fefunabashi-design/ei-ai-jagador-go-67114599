@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense, createContext, useContext } from "react";
+import { useEffect, useState, lazy, Suspense, createContext, useContext, Component, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,37 +8,67 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useStatsData } from "@/lib/stats";
 import UserThemeLoader from "@/components/UserThemeLoader";
 
+const CHUNK_RELOAD_KEY = "__chunk_reload_at__";
+const CHUNK_RELOAD_THROTTLE_MS = 10_000;
+const CHUNK_ERROR_PATTERN = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i;
+
+const isChunkLoadError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return CHUNK_ERROR_PATTERN.test(message);
+};
+
+const reloadWithFreshAssets = () => {
+  if (typeof window === "undefined") return false;
+  const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+  if (Date.now() - last < CHUNK_RELOAD_THROTTLE_MS) return false;
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  const url = new URL(window.location.href);
+  url.searchParams.set("__fresh", String(Date.now()));
+  window.location.replace(url.toString());
+  return true;
+};
+
+const lazyWithChunkRetry = <T extends { default: ComponentType<any> }>(factory: () => Promise<T>) =>
+  lazy(() =>
+    factory().catch((error) => {
+      if (isChunkLoadError(error) && reloadWithFreshAssets()) {
+        return new Promise<never>(() => undefined);
+      }
+      throw error;
+    })
+  );
+
 // Lazy-load all route pages so the initial bundle stays small and
 // switching between menus doesn't pay for code that wasn't visited yet.
-const Auth = lazy(() => import("./pages/Auth.tsx"));
-const Index = lazy(() => import("./pages/Index.tsx"));
-const Match = lazy(() => import("./pages/Match.tsx"));
-const Agenda = lazy(() => import("./pages/Agenda.tsx"));
-const Team = lazy(() => import("./pages/Team.tsx"));
-const TeamManage = lazy(() => import("./pages/TeamManage.tsx"));
-const Ranking = lazy(() => import("./pages/Ranking.tsx"));
-const Profile = lazy(() => import("./pages/Profile.tsx"));
-const Chat = lazy(() => import("./pages/Chat.tsx"));
-const Payments = lazy(() => import("./pages/Payments.tsx"));
-const Funds = lazy(() => import("./pages/Funds.tsx"));
-const EventDetails = lazy(() => import("./pages/EventDetails.tsx"));
-const CreateEvent = lazy(() => import("./pages/CreateEvent.tsx"));
-const Mensalidades = lazy(() => import("./pages/Mensalidades.tsx"));
-const Caixa = lazy(() => import("./pages/Caixa.tsx"));
-const Escalacao = lazy(() => import("./pages/Escalacao.tsx"));
-const Admin = lazy(() => import("./pages/Admin.tsx"));
-const Desafios = lazy(() => import("./pages/Desafios.tsx"));
-const BuscarAdversario = lazy(() => import("./pages/BuscarAdversario.tsx"));
-const Times = lazy(() => import("./pages/Times.tsx"));
-const Fotos = lazy(() => import("./pages/Fotos.tsx"));
-const Notifications = lazy(() => import("./pages/Notifications.tsx"));
-const OpponentDetails = lazy(() => import("./pages/OpponentDetails.tsx"));
-const Resenha = lazy(() => import("./pages/Resenha.tsx"));
-const Assinatura = lazy(() => import("./pages/Assinatura.tsx"));
-const SuperAdminPagamentos = lazy(() => import("./pages/SuperAdminPagamentos.tsx"));
-const MatchDetails = lazy(() => import("./pages/MatchDetails.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+const Auth = lazyWithChunkRetry(() => import("./pages/Auth.tsx"));
+const Index = lazyWithChunkRetry(() => import("./pages/Index.tsx"));
+const Match = lazyWithChunkRetry(() => import("./pages/Match.tsx"));
+const Agenda = lazyWithChunkRetry(() => import("./pages/Agenda.tsx"));
+const Team = lazyWithChunkRetry(() => import("./pages/Team.tsx"));
+const TeamManage = lazyWithChunkRetry(() => import("./pages/TeamManage.tsx"));
+const Ranking = lazyWithChunkRetry(() => import("./pages/Ranking.tsx"));
+const Profile = lazyWithChunkRetry(() => import("./pages/Profile.tsx"));
+const Chat = lazyWithChunkRetry(() => import("./pages/Chat.tsx"));
+const Payments = lazyWithChunkRetry(() => import("./pages/Payments.tsx"));
+const Funds = lazyWithChunkRetry(() => import("./pages/Funds.tsx"));
+const EventDetails = lazyWithChunkRetry(() => import("./pages/EventDetails.tsx"));
+const CreateEvent = lazyWithChunkRetry(() => import("./pages/CreateEvent.tsx"));
+const Mensalidades = lazyWithChunkRetry(() => import("./pages/Mensalidades.tsx"));
+const Caixa = lazyWithChunkRetry(() => import("./pages/Caixa.tsx"));
+const Escalacao = lazyWithChunkRetry(() => import("./pages/Escalacao.tsx"));
+const Admin = lazyWithChunkRetry(() => import("./pages/Admin.tsx"));
+const Desafios = lazyWithChunkRetry(() => import("./pages/Desafios.tsx"));
+const BuscarAdversario = lazyWithChunkRetry(() => import("./pages/BuscarAdversario.tsx"));
+const Times = lazyWithChunkRetry(() => import("./pages/Times.tsx"));
+const Fotos = lazyWithChunkRetry(() => import("./pages/Fotos.tsx"));
+const Notifications = lazyWithChunkRetry(() => import("./pages/Notifications.tsx"));
+const OpponentDetails = lazyWithChunkRetry(() => import("./pages/OpponentDetails.tsx"));
+const Resenha = lazyWithChunkRetry(() => import("./pages/Resenha.tsx"));
+const Assinatura = lazyWithChunkRetry(() => import("./pages/Assinatura.tsx"));
+const SuperAdminPagamentos = lazyWithChunkRetry(() => import("./pages/SuperAdminPagamentos.tsx"));
+const MatchDetails = lazyWithChunkRetry(() => import("./pages/MatchDetails.tsx"));
+const NotFound = lazyWithChunkRetry(() => import("./pages/NotFound.tsx"));
+const ResetPassword = lazyWithChunkRetry(() => import("./pages/ResetPassword.tsx"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
