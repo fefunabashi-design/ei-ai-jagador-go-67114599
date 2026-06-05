@@ -118,8 +118,18 @@ export const useUpdateProfile = createMutationHook<Record<string, unknown>>({
     ["display_name","last_name","nickname","phone","birth_date","cpf","city","state","region","avatar_url","role","is_pro","is_active","gender","email","primary_color"].forEach(k => {
       if (k in updates) allowed[k] = (updates as any)[k];
     });
-    if (Object.keys(allowed).length) {
-      await supabase.from("profiles").update(allowed).eq("user_id", uid);
+    if (!Object.keys(allowed).length) return;
+    // Use upsert + .select() so first-time saves work even if the profile row
+    // wasn't pre-created, and we can detect silent RLS failures (returning 0
+    // rows with no error) instead of falsely toasting "success".
+    const payload = { user_id: uid, ...allowed };
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(payload, { onConflict: "user_id" })
+      .select("user_id");
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      throw new Error("Não foi possível salvar. Faça login novamente e tente outra vez.");
     }
   },
   success: "Perfil atualizado!",
