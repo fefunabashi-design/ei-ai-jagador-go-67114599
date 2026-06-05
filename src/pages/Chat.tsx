@@ -214,14 +214,6 @@ const ChatPage = () => {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-4 py-3">
-        <p className="text-[10px] text-muted-foreground font-semibold leading-tight">
-          {profile?.nickname || profile?.display_name || "Você"}
-        </p>
-        {myTeam?.name && (
-          <p className="text-[10px] text-primary font-semibold mb-1 leading-tight">
-            {getShortTeamName(myTeam.name)}
-          </p>
-        )}
         <div className="flex gap-2">
           <Input
             value={message}
