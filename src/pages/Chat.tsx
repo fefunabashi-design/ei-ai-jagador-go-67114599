@@ -27,6 +27,16 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+const TEAM_PREFIX_SKIP = new Set([
+  "EC","SC","AC","FC","AA","AD","CR","CA","SE","CE","CD","SD","GE","ABC","CF","RC","CRB","SER","ASA","AE","CSA",
+]);
+const getShortTeamName = (name?: string) => {
+  if (!name) return "";
+  const tokens = name.trim().split(/\s+/);
+  const main = tokens.find((t) => !TEAM_PREFIX_SKIP.has(t.toUpperCase()) && t.length > 2);
+  return main || tokens[0] || "";
+};
+
 const ChatPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
