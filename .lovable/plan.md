@@ -1,45 +1,27 @@
-## Objetivo
-Padronizar o tamanho da fonte dos botões das telas **Início** e **Admin** para o mesmo tamanho usado nos botões da tela **Agenda** (`text-xs` / 12px).
+# Configurar e-mails com domínio próprio
 
-## Telas afetadas
-- `src/pages/Index.tsx` — 3 botões de estatísticas (Jogos da temporada, Gols da temporada, Lembretes)
-- `src/pages/Admin.tsx` — 5 botões de atalhos administrativos (Mensalidade, Desafios, Vaquinha, Meu Time, Saldo)
+**Subdomínio remetente:** `eaijogador.funando.com.br`
+**Nome do remetente:** `E Aí Jogador(a)`
 
-## Referência
-Tela **Agenda** (`src/pages/Agenda.tsx`) usa `text-xs` (12px) nos botões de filtro e ações.
+## O que será feito
 
-## Alterações necessárias
+1. **Abrir o diálogo de configuração de domínio de e-mail** — você adicionará o subdomínio `eaijogador.funando.com.br` e receberá os registros NS para colocar no seu provedor de DNS (funando.com.br). A Lovable passa a gerenciar SPF/DKIM/MX automaticamente nesse subdomínio.
 
-### `src/pages/Index.tsx`
-Localizar os 3 `motion.button` de estatísticas (linha ~456) e alterar o label de:
-```
-className="text-[8px] text-muted-foreground font-semibold leading-tight"
-```
-para:
-```
-className="text-xs text-muted-foreground font-semibold leading-tight"
-```
+2. **Após o subdomínio ser registrado** (mesmo antes da verificação de DNS completar), eu vou:
+   - Provisionar a infraestrutura de e-mail (fila, cron, logs de envio, supressão).
+   - Gerar os 6 templates de auth (signup, **recovery**, magic-link, invite, email-change, reauthentication).
+   - Aplicar a identidade visual do app (tema escuro, verde menta e dourado, fonte Nunito, textos em PT-BR).
+   - Customizar o template de **recuperação de senha** com copy em português, marca "E Aí Jogador(a)" e CTA "Redefinir senha".
+   - Publicar a função `auth-email-hook` que processa os eventos de e-mail.
 
-### `src/pages/Admin.tsx`
-1. **Atalhos administrativos** (linha ~600): alterar o label de:
-```
-className="text-[10px] text-muted-foreground font-medium text-center leading-tight"
-```
-para:
-```
-className="text-xs text-muted-foreground font-medium text-center leading-tight"
-```
+3. **Verificação de DNS** — pode levar até 72h (geralmente <1h). Durante esse período, os e-mails padrão da Lovable continuam funcionando. Após verificação, os e-mails passam a sair de `nao-responda@eaijogador.funando.com.br` com o nome "E Aí Jogador(a)".
 
-2. **Cards superiores** (linha ~432): alterar o label de:
-```
-className="text-[10px] text-muted-foreground font-medium"
-```
-para:
-```
-className="text-xs text-muted-foreground font-medium"
-```
+## Detalhes técnicos
 
-## Critérios de sucesso
-- Botões da tela Início com fonte `text-xs` (12px) nos labels.
-- Botões da tela Admin com fonte `text-xs` (12px) nos labels.
-- Tamanho visualmente consistente com os botões da Agenda.
+- Domínio delegado via NS records para `ns3.lovable.cloud` / `ns4.lovable.cloud`.
+- Remetente final: `E Aí Jogador(a) <nao-responda@eaijogador.funando.com.br>`.
+- Templates em `supabase/functions/_shared/email-templates/*.tsx` usando React Email.
+- Hook em `supabase/functions/auth-email-hook/` usa a fila `auth_emails` (pgmq) com retentativas automáticas.
+- Monitoramento em **Cloud → Emails** após o setup.
+
+Aprovar para iniciar?
