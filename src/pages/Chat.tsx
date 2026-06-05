@@ -27,6 +27,16 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+const TEAM_PREFIX_SKIP = new Set([
+  "EC","SC","AC","FC","AA","AD","CR","CA","SE","CE","CD","SD","GE","ABC","CF","RC","CRB","SER","ASA","AE","CSA",
+]);
+const getShortTeamName = (name?: string) => {
+  if (!name) return "";
+  const tokens = name.trim().split(/\s+/);
+  const main = tokens.find((t) => !TEAM_PREFIX_SKIP.has(t.toUpperCase()) && t.length > 2);
+  return main || tokens[0] || "";
+};
+
 const ChatPage = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
@@ -176,7 +186,9 @@ const ChatPage = () => {
               )}
               <div className={`max-w-[75%] ${isMe ? "items-end" : ""}`}>
                 <p className={`text-[10px] text-muted-foreground font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
-                  {isMe ? (profile?.display_name || "Você") : senderName}
+                  {isMe
+                    ? (profile?.nickname || profile?.display_name || "Você")
+                    : (senderProfile?.nickname || senderName)}
                 </p>
                 <div className={`rounded-2xl px-3 py-2 ${
                   isMe
@@ -197,9 +209,14 @@ const ChatPage = () => {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-4 py-3">
-        <p className="text-[10px] text-muted-foreground font-semibold mb-1">
-          {profile?.display_name || "Você"}
+        <p className="text-[10px] text-muted-foreground font-semibold leading-tight">
+          {profile?.nickname || profile?.display_name || "Você"}
         </p>
+        {myTeam?.name && (
+          <p className="text-[10px] text-primary font-semibold mb-1 leading-tight">
+            {getShortTeamName(myTeam.name)}
+          </p>
+        )}
         <div className="flex gap-2">
           <Input
             value={message}
