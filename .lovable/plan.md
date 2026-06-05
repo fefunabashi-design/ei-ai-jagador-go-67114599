@@ -1,27 +1,30 @@
-# Configurar e-mails com domínio próprio
+# Testar fluxo "Esqueci minha senha"
 
-**Subdomínio remetente:** `eaijogador.funando.com.br`
-**Nome do remetente:** `E Aí Jogador(a)`
+Hoje o app ainda usa o remetente padrão da plataforma (o domínio próprio `eaijogador.funando.com.br` ainda não foi cadastrado). Mesmo assim já dá para validar o fluxo ponta-a-ponta.
 
-## O que será feito
+## Passo a passo do teste
 
-1. **Abrir o diálogo de configuração de domínio de e-mail** — você adicionará o subdomínio `eaijogador.funando.com.br` e receberá os registros NS para colocar no seu provedor de DNS (funando.com.br). A Lovable passa a gerenciar SPF/DKIM/MX automaticamente nesse subdomínio.
+1. Abrir a tela de login do app (`/auth`).
+2. Clicar em **Esqueci minha senha**.
+3. Informar um e-mail real de um usuário existente (ex.: `fe.funabashi@gmail.com`) e enviar.
+4. Conferir a caixa de entrada (e a pasta de spam/lixo eletrônico — como ainda é o remetente padrão, a chance de cair em spam é maior).
+5. Clicar no link do e-mail. Deve abrir a tela `/reset-password` do app.
+6. Definir uma nova senha e confirmar. Esperado: toast "Senha alterada" e redirecionamento para `/dashboard`.
+7. Voltar para `/auth` e fazer login com a nova senha para confirmar.
 
-2. **Após o subdomínio ser registrado** (mesmo antes da verificação de DNS completar), eu vou:
-   - Provisionar a infraestrutura de e-mail (fila, cron, logs de envio, supressão).
-   - Gerar os 6 templates de auth (signup, **recovery**, magic-link, invite, email-change, reauthentication).
-   - Aplicar a identidade visual do app (tema escuro, verde menta e dourado, fonte Nunito, textos em PT-BR).
-   - Customizar o template de **recuperação de senha** com copy em português, marca "E Aí Jogador(a)" e CTA "Redefinir senha".
-   - Publicar a função `auth-email-hook` que processa os eventos de e-mail.
+## Verificações que eu faço em paralelo
 
-3. **Verificação de DNS** — pode levar até 72h (geralmente <1h). Durante esse período, os e-mails padrão da Lovable continuam funcionando. Após verificação, os e-mails passam a sair de `nao-responda@eaijogador.funando.com.br` com o nome "E Aí Jogador(a)".
+- Conferir nos logs de auth se a requisição `/recover` retornou 200 e se o hook de e-mail rodou com sucesso (já vi os dois eventos nos logs mais recentes — está funcionando).
+- Confirmar que o link de redirecionamento aponta para `/reset-password` do ambiente correto (preview vs. publicado).
 
-## Detalhes técnicos
+## Cenários extras para cobrir
 
-- Domínio delegado via NS records para `ns3.lovable.cloud` / `ns4.lovable.cloud`.
-- Remetente final: `E Aí Jogador(a) <nao-responda@eaijogador.funando.com.br>`.
-- Templates em `supabase/functions/_shared/email-templates/*.tsx` usando React Email.
-- Hook em `supabase/functions/auth-email-hook/` usa a fila `auth_emails` (pgmq) com retentativas automáticas.
-- Monitoramento em **Cloud → Emails** após o setup.
+- E-mail **não cadastrado**: o Supabase responde 200 mesmo assim (por segurança), nenhum e-mail é enviado. Comportamento esperado, não é bug.
+- Link **expirado/reutilizado**: a tela `/reset-password` deve mostrar "Link inválido" com botão de voltar.
+- Senha com menos de 6 caracteres ou senhas diferentes: deve mostrar toast de erro sem chamar o backend.
 
-Aprovar para iniciar?
+## Observação sobre entrega
+
+Enquanto o domínio `eaijogador.funando.com.br` não estiver verificado, os e-mails saem do remetente padrão e podem cair em spam. Depois que o domínio for ativado, a entrega melhora bastante e o remetente passa a ser `E Aí Jogador(a) <nao-responda@eaijogador.funando.com.br>`.
+
+Quer que eu já dispare um e-mail de recuperação de teste pra um endereço específico e acompanhe os logs, ou prefere testar manualmente pelo app?
