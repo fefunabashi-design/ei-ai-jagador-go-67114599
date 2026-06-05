@@ -21,6 +21,7 @@ import {
   useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
   useToggleResenhaCommentReaction,
 } from "@/hooks/useSupabaseData";
+import { getShortTeamName } from "@/lib/teamName";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
 const STAFF_TEAM_FIELDS = [
