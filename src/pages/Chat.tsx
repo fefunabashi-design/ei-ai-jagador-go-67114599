@@ -130,55 +130,9 @@ const ChatPage = () => {
             <p className="text-sm font-semibold text-foreground">
               {homeTeam?.name || "???"} × {awayTeam?.name || "???"}
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              Detalhes da partida · {match?.location}
-            </p>
           </div>
           <button><MoreHorizontal size={18} className="text-muted-foreground" /></button>
         </div>
-      </div>
-
-      {/* Match info banner */}
-      {match && (
-        <div className="bg-secondary/50 px-4 py-2 text-center border-b border-border">
-          <p className="text-[10px] text-muted-foreground">
-            {matchDate?.toLocaleDateString("pt-BR", { weekday: "long" })} · {matchDate?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {match.location}
-          </p>
-          <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-            match.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-          }`}>
-            {match.status === "confirmed" ? "Confirmado" : "Aberto"}
-          </span>
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="px-4 py-3 border-b border-border bg-background space-y-2">
-        {canScheduleLineup && (
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={() => navigate(`/escalacao?matchId=${matchId}`)}
-              className="bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
-            >
-              <Pencil size={14} className="mr-1" /> ESCALAR TIME
-            </Button>
-            <Button
-              onClick={() => {
-                setHomeScore(String(match?.home_score ?? ""));
-                setAwayScore(String(match?.away_score ?? ""));
-                setEvents(((match as any)?.events as MatchEvent[]) || []);
-                setNewEventType("goal");
-                setNewEventPlayer("");
-                setFinalizeOpen(true);
-              }}
-              variant="outline"
-              className="border-success/40 text-success hover:bg-success/10 font-semibold h-10"
-              disabled={match?.status === "completed"}
-            >
-              <Flag size={14} className="mr-1" /> {match?.status === "completed" ? "FINALIZADA" : "FINALIZAR"}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Messages */}
