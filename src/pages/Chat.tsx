@@ -186,7 +186,9 @@ const ChatPage = () => {
               )}
               <div className={`max-w-[75%] ${isMe ? "items-end" : ""}`}>
                 <p className={`text-[10px] text-muted-foreground font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
-                  {isMe ? (profile?.display_name || "Você") : senderName}
+                  {isMe
+                    ? (profile?.nickname || profile?.display_name || "Você")
+                    : (senderProfile?.nickname || senderName)}
                 </p>
                 <div className={`rounded-2xl px-3 py-2 ${
                   isMe
