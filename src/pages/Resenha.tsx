@@ -21,6 +21,7 @@ import {
   useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
   useToggleResenhaCommentReaction,
 } from "@/hooks/useSupabaseData";
+import { getShortTeamName } from "@/lib/teamName";
 
 const STAFF_ROLES = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"];
 const STAFF_TEAM_FIELDS = [
@@ -242,8 +243,12 @@ const Resenha = () => {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{post.author_name}</p>
+                  {post.team_name && (
+                    <p className="text-[11px] text-primary font-semibold truncate">
+                      {getShortTeamName(post.team_name)}
+                    </p>
+                  )}
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    {post.team_name && <span className="truncate">{post.team_name} · </span>}
                     {formatRelative(post.created_at)} · <Clock size={10} /> {remainingTime(post.created_at)}
                   </p>
                   {post.match_label && (

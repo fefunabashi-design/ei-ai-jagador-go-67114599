@@ -739,17 +739,60 @@ const Index = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          <DropdownMenuItem onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank")}>
+                          <DropdownMenuItem onClick={async () => {
+                            try {
+                              toast({ title: "Gerando imagem..." });
+                              const blob = await generateMatchShareImage({
+                                homeName: homeTeam?.name,
+                                awayName: awayTeam?.name,
+                                homeLogoUrl: homeTeam?.logo_url,
+                                awayLogoUrl: awayTeam?.logo_url,
+                                matchDate,
+                                location: (homeTeam as any)?.field_name || m.location,
+                              });
+                              const file = new File([blob], `partida-${m.id}.png`, { type: "image/png" });
+                              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({ files: [file], text: shareText, title: "Próxima partida" });
+                              } else {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url; a.download = file.name; a.click();
+                                URL.revokeObjectURL(url);
+                                window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+                                toast({ title: "Imagem baixada", description: "Anexe a imagem no WhatsApp." });
+                              }
+                            } catch (e: any) {
+                              toast({ title: "Erro ao compartilhar", description: e?.message, variant: "destructive" });
+                            }
+                          }}>
                             <MessageCircle size={14} className="mr-2" /> WhatsApp
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={async () => {
                             try {
-                              await navigator.clipboard.writeText(shareText);
-                              toast({ title: "Texto copiado!", description: "Abra o Instagram e cole na sua publicação." });
-                            } catch {
-                              toast({ title: "Não foi possível copiar", variant: "destructive" });
+                              toast({ title: "Gerando imagem..." });
+                              const blob = await generateMatchShareImage({
+                                homeName: homeTeam?.name,
+                                awayName: awayTeam?.name,
+                                homeLogoUrl: homeTeam?.logo_url,
+                                awayLogoUrl: awayTeam?.logo_url,
+                                matchDate,
+                                location: (homeTeam as any)?.field_name || m.location,
+                              });
+                              const file = new File([blob], `partida-${m.id}.png`, { type: "image/png" });
+                              try { await navigator.clipboard.writeText(shareText); } catch {}
+                              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({ files: [file], text: shareText, title: "Próxima partida" });
+                              } else {
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url; a.download = file.name; a.click();
+                                URL.revokeObjectURL(url);
+                                window.open("https://www.instagram.com/", "_blank");
+                                toast({ title: "Imagem baixada", description: "Abra o Instagram e publique a imagem (texto já copiado)." });
+                              }
+                            } catch (e: any) {
+                              toast({ title: "Erro ao compartilhar", description: e?.message, variant: "destructive" });
                             }
-                            window.open("https://www.instagram.com/", "_blank");
                           }}>
                             <Instagram size={14} className="mr-2" /> Instagram
                           </DropdownMenuItem>
