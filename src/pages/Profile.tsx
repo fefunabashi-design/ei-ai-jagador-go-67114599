@@ -21,6 +21,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthContext } from "@/App";
 
 import { getCitiesForUf } from "@/lib/brCities";
 
