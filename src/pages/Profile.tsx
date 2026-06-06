@@ -93,7 +93,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (justSaved || pendingNavigate) return;
     if (autoOpenedRef.current) return;
-    if (!isLoading && profile && (requireComplete || isIncomplete)) {
+    if (!isLoading && profile && isIncomplete) {
       autoOpenedRef.current = true;
       openEditProfile();
     }
