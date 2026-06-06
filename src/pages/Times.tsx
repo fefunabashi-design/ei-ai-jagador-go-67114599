@@ -415,11 +415,12 @@ const TimesPage = () => {
       ? (teamAddress(adminTeam) || "Campo do mandante")
       : (teamAddress(challengeTeam) || "Campo do adversário");
     const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
-    const homeIsOwn = locationChoice ? locationChoice === "own" : true;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
+    // O time desafiante é sempre o "home_team_id" (mandante do desafio) para passar na RLS.
+    // O local (campo do mandante/adversário) é informado em `location`.
     await createMatch.mutateAsync({
-      home_team_id: homeIsOwn ? adminTeam.id : challengeTeam.id,
-      away_team_id: homeIsOwn ? challengeTeam.id : adminTeam.id,
+      home_team_id: adminTeam.id,
+      away_team_id: challengeTeam.id,
       match_date,
       location,
       status: "open",
