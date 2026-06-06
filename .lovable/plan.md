@@ -1,30 +1,33 @@
-# Testar fluxo "Esqueci minha senha"
+## Contexto
 
-Hoje o app ainda usa o remetente padrão da plataforma (o domínio próprio `eaijogador.funando.com.br` ainda não foi cadastrado). Mesmo assim já dá para validar o fluxo ponta-a-ponta.
+Você está logado em `vorva.funa@gmail.com` (Cauan) e, ao completar o perfil, tentou salvar o CPF `80941133834` — que já pertence a outra conta no banco (Aristenides Teixeira). O sistema bloqueia, mas a mensagem atual ("Este CPF já está cadastrado em outra conta. Verifique o número ou faça login na conta existente.") aparece como um toast genérico de erro e não fica clara para o usuário final.
 
-## Passo a passo do teste
+## O que vou mudar
 
-1. Abrir a tela de login do app (`/auth`).
-2. Clicar em **Esqueci minha senha**.
-3. Informar um e-mail real de um usuário existente (ex.: `fe.funabashi@gmail.com`) e enviar.
-4. Conferir a caixa de entrada (e a pasta de spam/lixo eletrônico — como ainda é o remetente padrão, a chance de cair em spam é maior).
-5. Clicar no link do e-mail. Deve abrir a tela `/reset-password` do app.
-6. Definir uma nova senha e confirmar. Esperado: toast "Senha alterada" e redirecionamento para `/dashboard`.
-7. Voltar para `/auth` e fazer login com a nova senha para confirmar.
+Apenas a mensagem/UX do erro de CPF duplicado no fluxo de salvar perfil. Sem mexer em login, sem apagar contas, sem alterar banco.
 
-## Verificações que eu faço em paralelo
+### Arquivo: `src/hooks/useSupabaseData.ts` (mutação `useUpdateProfile`)
 
-- Conferir nos logs de auth se a requisição `/recover` retornou 200 e se o hook de e-mail rodou com sucesso (já vi os dois eventos nos logs mais recentes — está funcionando).
-- Confirmar que o link de redirecionamento aponta para `/reset-password` do ambiente correto (preview vs. publicado).
+- Trocar a mensagem do `throw` para um texto mais claro e acionável em PT-BR, indicando:
+  - Que o CPF já está vinculado a outra conta.
+  - Que o usuário deve conferir os dígitos ou entrar com a conta dona desse CPF (por e-mail ou pelo próprio CPF na tela de login).
+- Manter o mesmo tratamento para e-mail duplicado, ajustando o texto no mesmo padrão.
 
-## Cenários extras para cobrir
+### Arquivo: `src/pages/Profile.tsx` (envio do formulário)
 
-- E-mail **não cadastrado**: o Supabase responde 200 mesmo assim (por segurança), nenhum e-mail é enviado. Comportamento esperado, não é bug.
-- Link **expirado/reutilizado**: a tela `/reset-password` deve mostrar "Link inválido" com botão de voltar.
-- Senha com menos de 6 caracteres ou senhas diferentes: deve mostrar toast de erro sem chamar o backend.
+- No `catch` do submit do perfil, quando a mensagem retornada contiver "CPF", além do toast destrutivo:
+  - Manter o diálogo de edição aberto (sem fechar).
+  - Marcar o campo CPF como inválido (borda destacada) e exibir um texto auxiliar logo abaixo do campo com a mesma mensagem, para que o usuário enxergue o erro sem depender só do toast.
+  - Limpar essa marcação assim que o usuário editar o campo CPF novamente.
 
-## Observação sobre entrega
+## O que NÃO vou fazer
 
-Enquanto o domínio `eaijogador.funando.com.br` não estiver verificado, os e-mails saem do remetente padrão e podem cair em spam. Depois que o domínio for ativado, a entrega melhora bastante e o remetente passa a ser `E Aí Jogador(a) <nao-responda@eaijogador.funando.com.br>`.
+- Não apago nem mescla a conta antiga (Aristenides / `e20b93e1-...`).
+- Não altero o constraint `profiles_cpf_unique`.
+- Não mudo o fluxo de login por CPF/e-mail.
+- Não altero migrations nem RLS.
 
-Quer que eu já dispare um e-mail de recuperação de teste pra um endereço específico e acompanhe os logs, ou prefere testar manualmente pelo app?
+## Como validar depois
+
+1. Logado como `vorva.funa@gmail.com`, abrir o perfil e tentar salvar com CPF `80941133834` → ver mensagem clara no toast **e** no campo, diálogo permanece aberto.
+2. Trocar para um CPF válido e não usado → salvar funciona normalmente e redireciona para `/dashboard`.

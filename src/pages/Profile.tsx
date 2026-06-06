@@ -81,6 +81,7 @@ const ProfilePage = () => {
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
+  const [cpfError, setCpfError] = useState<string | null>(null);
 
   // Auto-open edit dialog on first login when profile is incomplete.
   // Only fires once per profile load — never re-opens after the user closes it,
@@ -225,21 +226,31 @@ const ProfilePage = () => {
     const finalEmail = emailTrimmed && !emailTrimmed.toLowerCase().endsWith(SYNTHETIC_EMAIL_SUFFIX) ? emailTrimmed : null;
     const isSpSp = editState === "SP" && editCity === "São Paulo";
     setJustSaved(true);
+    setCpfError(null);
     const genderValue = editGender === "Outro" ? editGenderOther.trim() || undefined : editGender || undefined;
-    await updateProfile.mutate({
-      display_name: editName.trim(),
-      last_name: editLastName.trim(),
-      nickname: editNickname.trim() || undefined,
-      gender: genderValue,
-      phone: editPhone,
-      birth_date: isoBirth,
-      cpf: (editCpf || "").replace(/\D/g, "") || null,
-      state: editState || null,
-      city: editCity.trim(),
-      region: isSpSp ? (editRegion || null) : null,
-      email: finalEmail,
-      primary_color: editPrimaryColor || null,
-    } as any);
+    try {
+      await updateProfile.mutateAsync({
+        display_name: editName.trim(),
+        last_name: editLastName.trim(),
+        nickname: editNickname.trim() || undefined,
+        gender: genderValue,
+        phone: editPhone,
+        birth_date: isoBirth,
+        cpf: (editCpf || "").replace(/\D/g, "") || null,
+        state: editState || null,
+        city: editCity.trim(),
+        region: isSpSp ? (editRegion || null) : null,
+        email: finalEmail,
+        primary_color: editPrimaryColor || null,
+      } as any);
+    } catch (err: any) {
+      setJustSaved(false);
+      const msg = String(err?.message || "");
+      if (/cpf/i.test(msg)) {
+        setCpfError(msg);
+      }
+      return;
+    }
     // Apply immediately so the UI reflects the new color without reload
     const { applyPrimaryColor } = await import("@/lib/applyPrimaryColor");
     applyPrimaryColor(editPrimaryColor || null);
@@ -462,11 +473,15 @@ const ProfilePage = () => {
                 <Input
                   inputMode="numeric"
                   value={editCpf}
-                  onChange={(e) => setEditCpf(formatCpf(e.target.value))}
+                  onChange={(e) => { setEditCpf(formatCpf(e.target.value)); if (cpfError) setCpfError(null); }}
                   placeholder="000.000.000-00"
-                  className="bg-secondary border-border"
+                  className={`bg-secondary border-border ${cpfError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={cpfError ? true : undefined}
                   required
                 />
+                {cpfError && (
+                  <p className="mt-1 text-xs text-destructive">{cpfError}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
