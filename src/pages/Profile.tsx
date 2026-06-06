@@ -82,10 +82,15 @@ const ProfilePage = () => {
   const [editEmail, setEditEmail] = useState("");
   const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
 
-  // Auto-open edit dialog on first login when profile is incomplete
+  // Auto-open edit dialog on first login when profile is incomplete.
+  // Only fires once per profile load — never re-opens after the user closes it,
+  // to avoid resetting typed fields when Radix Select portals trigger outside-clicks.
+  const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (justSaved) return;
-    if (!isLoading && profile && (requireComplete || isIncomplete) && !editOpen) {
+    if (autoOpenedRef.current) return;
+    if (!isLoading && profile && (requireComplete || isIncomplete)) {
+      autoOpenedRef.current = true;
       openEditProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
