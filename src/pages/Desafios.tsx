@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
@@ -49,9 +59,16 @@ const DesafiosPage = () => {
     acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
   };
 
+  const [cancelMatchId, setCancelMatchId] = useState<string | null>(null);
+
   const handleDecline = (matchId: string) => {
-    deleteMatchMut.mutate(matchId);
-    toast({ title: "Desafio cancelado." });
+    setCancelMatchId(matchId);
+  };
+
+  const confirmDecline = () => {
+    if (!cancelMatchId) return;
+    deleteMatchMut.mutate(cancelMatchId);
+    setCancelMatchId(null);
   };
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
@@ -251,6 +268,26 @@ const DesafiosPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!cancelMatchId} onOpenChange={(open) => !open && setCancelMatchId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar partida?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A partida será removida para os dois times.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDecline}
+            >
+              Sim, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav />
     </div>
