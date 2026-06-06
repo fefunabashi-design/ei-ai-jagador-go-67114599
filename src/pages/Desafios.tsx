@@ -175,7 +175,7 @@ const DesafiosPage = () => {
                           size="sm"
                           variant="outline"
                           className="basis-full h-8 text-[11px] px-2"
-                          onClick={() => navigate(`/opponent?teamId=${homeTeam.id}`)}
+                          onClick={() => navigate(`/opponent-details?teamId=${homeTeam.id}`)}
                         >
                           Detalhes do time
                         </Button>
