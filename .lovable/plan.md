@@ -1,33 +1,38 @@
-## Contexto
+## Objetivo
 
-Você está logado em `vorva.funa@gmail.com` (Cauan) e, ao completar o perfil, tentou salvar o CPF `80941133834` — que já pertence a outra conta no banco (Aristenides Teixeira). O sistema bloqueia, mas a mensagem atual ("Este CPF já está cadastrado em outra conta. Verifique o número ou faça login na conta existente.") aparece como um toast genérico de erro e não fica clara para o usuário final.
+Apagar completamente as duas contas do banco:
 
-## O que vou mudar
+- `vorva.funa@gmail.com` — user `37bf03f0-df70-42b2-8d3d-ab43acfaf08d` (Cauan)
+- CPF `80941133834` — user `e20b93e1-79c5-47f9-b3af-fbe735dd4c0c` (Aristenides)
 
-Apenas a mensagem/UX do erro de CPF duplicado no fluxo de salvar perfil. Sem mexer em login, sem apagar contas, sem alterar banco.
+## Como será feito
 
-### Arquivo: `src/hooks/useSupabaseData.ts` (mutação `useUpdateProfile`)
+Uma única migration que executa, dentro de uma transação, para os dois `user_id`:
 
-- Trocar a mensagem do `throw` para um texto mais claro e acionável em PT-BR, indicando:
-  - Que o CPF já está vinculado a outra conta.
-  - Que o usuário deve conferir os dígitos ou entrar com a conta dona desse CPF (por e-mail ou pelo próprio CPF na tela de login).
-- Manter o mesmo tratamento para e-mail duplicado, ajustando o texto no mesmo padrão.
+1. Apagar linhas dependentes em todas as tabelas do schema `public` que referenciam o usuário (direta ou indiretamente via `players`, `teams` que ele possui, `matches` desses times, `posts`, `resenha_posts`, `photo_posts` etc.). Ordem segura:
+   - reactions / comments → `resenha_comment_reactions`, `resenha_reactions`, `resenha_comments`, `resenha_posts`
+   - `match_chat_messages`, `match_events`, `match_guests`, `match_lineups`, `match_payments`, `match_summons` ligados às matches dos times do usuário e às linhas onde ele é player
+   - `matches` cujos times pertencem ao usuário
+   - `mensalidades`, `mensalidade_config`, `debitos` ligados aos times do usuário
+   - `team_favorites` do usuário
+   - `players` do usuário (e os vinculados aos times dele)
+   - `photo_posts`, `posts` do usuário
+   - `admin_subscriptions` do usuário
+   - `trial_blocklist` com `source_user_id` do usuário
+   - `teams` cujo `owner_id` é o usuário
+   - `profiles` do usuário
+2. Apagar o usuário em `auth.users` (cascateia o que sobrar).
 
-### Arquivo: `src/pages/Profile.tsx` (envio do formulário)
+A migration usa apenas os dois UUIDs acima, sem afetar outros usuários.
 
-- No `catch` do submit do perfil, quando a mensagem retornada contiver "CPF", além do toast destrutivo:
-  - Manter o diálogo de edição aberto (sem fechar).
-  - Marcar o campo CPF como inválido (borda destacada) e exibir um texto auxiliar logo abaixo do campo com a mesma mensagem, para que o usuário enxergue o erro sem depender só do toast.
-  - Limpar essa marcação assim que o usuário editar o campo CPF novamente.
+## Riscos / efeitos colaterais
 
-## O que NÃO vou fazer
+- Times de propriedade dessas contas serão removidos junto com tudo que pendura neles (partidas, escalações, chats, pagamentos, mensalidades, caixa). Se algum jogador de outro `user_id` estiver vinculado a esses times, o vínculo também some.
+- Arquivos em Storage (avatars, team-logos, photos, payment-proofs, post-media) **não** são apagados por esta migration. Se quiser limpar storage também, me diga e eu adiciono uma etapa via Edge Function (a CLI/SQL não apaga buckets diretamente).
+- Operação **irreversível**.
 
-- Não apago nem mescla a conta antiga (Aristenides / `e20b93e1-...`).
-- Não altero o constraint `profiles_cpf_unique`.
-- Não mudo o fluxo de login por CPF/e-mail.
-- Não altero migrations nem RLS.
+## O que não será feito
 
-## Como validar depois
-
-1. Logado como `vorva.funa@gmail.com`, abrir o perfil e tentar salvar com CPF `80941133834` → ver mensagem clara no toast **e** no campo, diálogo permanece aberto.
-2. Trocar para um CPF válido e não usado → salvar funciona normalmente e redireciona para `/dashboard`.
+- Não mexo em código (sem alterações em React, hooks ou Edge Functions).
+- Não toco em outros usuários, times ou registros.
+- Não altero schema, RLS, triggers ou policies.
