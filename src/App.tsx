@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense, createContext, useContext, Component, type ComponentType, type ErrorInfo, type ReactNode } from "react";
+import { useEffect, useState, useRef, lazy, Suspense, createContext, useContext, Component, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
@@ -123,6 +123,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [stuck, setStuck] = useState(false);
+  const statusRef = useRef<AuthStatus>("loading");
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     let alive = true;
@@ -186,7 +191,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const onDataChange = () => {
       // Only re-check the profile on data changes if we currently consider it
       // incomplete — avoids extra network calls on every mutation.
-      if (status !== "incomplete") return;
+      if (statusRef.current !== "incomplete") return;
       withTimeout(supabase.auth.getSession()).then((result) => {
         const s = result?.data.session ?? null;
         void checkProfile(s);
