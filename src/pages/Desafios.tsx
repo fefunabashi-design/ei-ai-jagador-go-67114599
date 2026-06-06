@@ -170,12 +170,12 @@ const DesafiosPage = () => {
                       >
                         Cancelar
                       </Button>
-                      {homeTeam?.id && (
+                      {m.home_team_id && (
                         <Button
                           size="sm"
                           variant="outline"
                           className="basis-full h-8 text-[11px] px-2"
-                          onClick={() => navigate(`/opponent-details?teamId=${homeTeam.id}`)}
+                          onClick={() => navigate(`/opponent-details?teamId=${m.home_team_id}`)}
                         >
                           Detalhes do time
                         </Button>
