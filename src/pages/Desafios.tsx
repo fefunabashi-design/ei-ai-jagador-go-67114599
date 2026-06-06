@@ -59,9 +59,16 @@ const DesafiosPage = () => {
     acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
   };
 
+  const [cancelMatchId, setCancelMatchId] = useState<string | null>(null);
+
   const handleDecline = (matchId: string) => {
-    deleteMatchMut.mutate(matchId);
-    toast({ title: "Desafio cancelado." });
+    setCancelMatchId(matchId);
+  };
+
+  const confirmDecline = () => {
+    if (!cancelMatchId) return;
+    deleteMatchMut.mutate(cancelMatchId);
+    setCancelMatchId(null);
   };
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
