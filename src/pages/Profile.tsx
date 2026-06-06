@@ -273,8 +273,11 @@ const ProfilePage = () => {
     applyPrimaryColor(editPrimaryColor || null);
     setEditOpen(false);
     if (requireComplete || isIncomplete) {
-      // Clear location.state so a future remount doesn't auto-reopen
-      navigate("/dashboard", { replace: true, state: {} });
+      // Defer navigation until AuthProvider confirms the profile is complete
+      // (status === "ok"). This avoids the bounce-back loop where the
+      // dashboard guard sees a stale "incomplete" status and sends us back to
+      // /profile, which then reopens the edit form with blank fields.
+      setPendingNavigate(true);
     }
   };
 
