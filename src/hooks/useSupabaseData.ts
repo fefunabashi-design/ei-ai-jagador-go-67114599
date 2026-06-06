@@ -143,6 +143,7 @@ export const useUpdateProfile = createMutationHook<Record<string, unknown>>({
   },
   success: "Perfil atualizado!",
   error: "Erro ao atualizar perfil",
+  rethrow: true,
 });
 
 export const useUploadAvatar = createMutationHook<File>({
