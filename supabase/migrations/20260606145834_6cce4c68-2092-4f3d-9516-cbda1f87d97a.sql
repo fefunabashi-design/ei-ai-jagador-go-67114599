@@ -1,0 +1,1 @@
+REVOKE SELECT ON public.public_teams FROM anon;
