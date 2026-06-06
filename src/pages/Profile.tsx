@@ -81,6 +81,7 @@ const ProfilePage = () => {
   const [editRegion, setEditRegion] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPrimaryColor, setEditPrimaryColor] = useState("#bfc4cb");
+  const [cpfError, setCpfError] = useState<string | null>(null);
 
   // Auto-open edit dialog on first login when profile is incomplete.
   // Only fires once per profile load — never re-opens after the user closes it,
