@@ -130,10 +130,10 @@ export const useUpdateProfile = createMutationHook<Record<string, unknown>>({
     if (error) {
       const msg = `${error.message || ""} ${(error as any).details || ""}`.toLowerCase();
       if (msg.includes("profiles_cpf_unique") || (msg.includes("cpf") && msg.includes("duplicate"))) {
-        throw new Error("Este CPF já está cadastrado em outra conta. Verifique o número ou faça login na conta existente.");
+        throw new Error("CPF já vinculado a outra conta. Confira os 11 dígitos. Se o CPF é seu, volte ao login e entre com ele (ou com o e-mail dessa conta) em vez de criar um novo cadastro.");
       }
       if (msg.includes("profiles_email") && msg.includes("duplicate")) {
-        throw new Error("Este e-mail já está cadastrado em outra conta.");
+        throw new Error("E-mail já vinculado a outra conta. Volte ao login e entre com esse e-mail em vez de criar um novo cadastro.");
       }
       throw error;
     }
