@@ -226,21 +226,31 @@ const ProfilePage = () => {
     const finalEmail = emailTrimmed && !emailTrimmed.toLowerCase().endsWith(SYNTHETIC_EMAIL_SUFFIX) ? emailTrimmed : null;
     const isSpSp = editState === "SP" && editCity === "São Paulo";
     setJustSaved(true);
+    setCpfError(null);
     const genderValue = editGender === "Outro" ? editGenderOther.trim() || undefined : editGender || undefined;
-    await updateProfile.mutate({
-      display_name: editName.trim(),
-      last_name: editLastName.trim(),
-      nickname: editNickname.trim() || undefined,
-      gender: genderValue,
-      phone: editPhone,
-      birth_date: isoBirth,
-      cpf: (editCpf || "").replace(/\D/g, "") || null,
-      state: editState || null,
-      city: editCity.trim(),
-      region: isSpSp ? (editRegion || null) : null,
-      email: finalEmail,
-      primary_color: editPrimaryColor || null,
-    } as any);
+    try {
+      await updateProfile.mutateAsync({
+        display_name: editName.trim(),
+        last_name: editLastName.trim(),
+        nickname: editNickname.trim() || undefined,
+        gender: genderValue,
+        phone: editPhone,
+        birth_date: isoBirth,
+        cpf: (editCpf || "").replace(/\D/g, "") || null,
+        state: editState || null,
+        city: editCity.trim(),
+        region: isSpSp ? (editRegion || null) : null,
+        email: finalEmail,
+        primary_color: editPrimaryColor || null,
+      } as any);
+    } catch (err: any) {
+      setJustSaved(false);
+      const msg = String(err?.message || "");
+      if (/cpf/i.test(msg)) {
+        setCpfError(msg);
+      }
+      return;
+    }
     // Apply immediately so the UI reflects the new color without reload
     const { applyPrimaryColor } = await import("@/lib/applyPrimaryColor");
     applyPrimaryColor(editPrimaryColor || null);
