@@ -21,6 +21,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useProfile, useUpdateProfile, useUploadAvatar, useAuth } from "@/hooks/useSupabaseData";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthContext } from "@/App";
 
 import { getCitiesForUf } from "@/lib/brCities";
 
@@ -57,6 +58,8 @@ const ProfilePage = () => {
 
   const requireComplete = (location.state as any)?.requireComplete === true;
   const [justSaved, setJustSaved] = useState(false);
+  const [pendingNavigate, setPendingNavigate] = useState(false);
+  const { status: authStatus } = useAuthContext();
 
   const isIncomplete = !!profile && [
     profile?.display_name,
@@ -88,14 +91,28 @@ const ProfilePage = () => {
   // to avoid resetting typed fields when Radix Select portals trigger outside-clicks.
   const autoOpenedRef = useRef(false);
   useEffect(() => {
-    if (justSaved) return;
+    if (justSaved || pendingNavigate) return;
     if (autoOpenedRef.current) return;
     if (!isLoading && profile && (requireComplete || isIncomplete)) {
       autoOpenedRef.current = true;
       openEditProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved]);
+  }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved, pendingNavigate]);
+
+  // After a successful first-time save, wait until the AuthProvider re-checks
+  // the profile and flips status to "ok" before navigating — otherwise the
+  // dashboard route guard sees the stale "incomplete" status and bounces us
+  // back to /profile, where the auto-open effect reopens the form with the
+  // not-yet-refetched (blank) profile data.
+  useEffect(() => {
+    if (!pendingNavigate) return;
+    if (authStatus === "ok") {
+      setPendingNavigate(false);
+      navigate("/dashboard", { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingNavigate, authStatus]);
 
   // Intercept browser/Android back button to close the dialog first
   useEffect(() => {
@@ -256,8 +273,11 @@ const ProfilePage = () => {
     applyPrimaryColor(editPrimaryColor || null);
     setEditOpen(false);
     if (requireComplete || isIncomplete) {
-      // Clear location.state so a future remount doesn't auto-reopen
-      navigate("/dashboard", { replace: true, state: {} });
+      // Defer navigation until AuthProvider confirms the profile is complete
+      // (status === "ok"). This avoids the bounce-back loop where the
+      // dashboard guard sees a stale "incomplete" status and sends us back to
+      // /profile, which then reopens the edit form with blank fields.
+      setPendingNavigate(true);
     }
   };
 
