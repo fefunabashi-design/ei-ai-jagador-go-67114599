@@ -127,7 +127,16 @@ export const useUpdateProfile = createMutationHook<Record<string, unknown>>({
       .from("profiles")
       .upsert(payload, { onConflict: "user_id" })
       .select("user_id");
-    if (error) throw error;
+    if (error) {
+      const msg = `${error.message || ""} ${(error as any).details || ""}`.toLowerCase();
+      if (msg.includes("profiles_cpf_unique") || (msg.includes("cpf") && msg.includes("duplicate"))) {
+        throw new Error("Este CPF já está cadastrado em outra conta. Verifique o número ou faça login na conta existente.");
+      }
+      if (msg.includes("profiles_email") && msg.includes("duplicate")) {
+        throw new Error("Este e-mail já está cadastrado em outra conta.");
+      }
+      throw error;
+    }
     if (!data || data.length === 0) {
       throw new Error("Não foi possível salvar. Faça login novamente e tente outra vez.");
     }
