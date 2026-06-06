@@ -150,7 +150,7 @@ const DesafiosPage = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       <Button
                         size="sm"
                         onClick={() => handleAccept(m.id)}
@@ -170,6 +170,16 @@ const DesafiosPage = () => {
                       >
                         Cancelar
                       </Button>
+                      {homeTeam?.id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="basis-full h-8 text-[11px] px-2"
+                          onClick={() => navigate(`/opponent-details?teamId=${homeTeam.id}`)}
+                        >
+                          Detalhes do time
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
