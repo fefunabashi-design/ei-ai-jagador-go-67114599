@@ -32,7 +32,7 @@ const UFS = Object.keys(CITIES_BY_UF).sort();
 const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
 const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
 const CATEGORIAS = ["Adulto", "Infantil"];
-const SUB_CATEGORIAS_ADULTO = ["Todas", "Esporte", "35+", "40+", "45+", "50+", "60+"];
+const SUB_CATEGORIAS_ADULTO = ["Esporte", "35+", "40+", "45+", "50+", "60+"];
 const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 5}`);
 const GENEROS = ["Masculino", "Feminino"];
 const DIAS_SEMANA = [
