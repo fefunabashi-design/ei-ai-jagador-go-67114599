@@ -58,6 +58,8 @@ const ProfilePage = () => {
 
   const requireComplete = (location.state as any)?.requireComplete === true;
   const [justSaved, setJustSaved] = useState(false);
+  const [pendingNavigate, setPendingNavigate] = useState(false);
+  const { status: authStatus } = useAuthContext();
 
   const isIncomplete = !!profile && [
     profile?.display_name,
