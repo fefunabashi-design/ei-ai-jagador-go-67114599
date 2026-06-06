@@ -91,14 +91,28 @@ const ProfilePage = () => {
   // to avoid resetting typed fields when Radix Select portals trigger outside-clicks.
   const autoOpenedRef = useRef(false);
   useEffect(() => {
-    if (justSaved) return;
+    if (justSaved || pendingNavigate) return;
     if (autoOpenedRef.current) return;
     if (!isLoading && profile && (requireComplete || isIncomplete)) {
       autoOpenedRef.current = true;
       openEditProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved]);
+  }, [isLoading, profile?.user_id, requireComplete, isIncomplete, justSaved, pendingNavigate]);
+
+  // After a successful first-time save, wait until the AuthProvider re-checks
+  // the profile and flips status to "ok" before navigating — otherwise the
+  // dashboard route guard sees the stale "incomplete" status and bounces us
+  // back to /profile, where the auto-open effect reopens the form with the
+  // not-yet-refetched (blank) profile data.
+  useEffect(() => {
+    if (!pendingNavigate) return;
+    if (authStatus === "ok") {
+      setPendingNavigate(false);
+      navigate("/dashboard", { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingNavigate, authStatus]);
 
   // Intercept browser/Android back button to close the dialog first
   useEffect(() => {
