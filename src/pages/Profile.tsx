@@ -473,11 +473,15 @@ const ProfilePage = () => {
                 <Input
                   inputMode="numeric"
                   value={editCpf}
-                  onChange={(e) => setEditCpf(formatCpf(e.target.value))}
+                  onChange={(e) => { setEditCpf(formatCpf(e.target.value)); if (cpfError) setCpfError(null); }}
                   placeholder="000.000.000-00"
-                  className="bg-secondary border-border"
+                  className={`bg-secondary border-border ${cpfError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  aria-invalid={cpfError ? true : undefined}
                   required
                 />
+                {cpfError && (
+                  <p className="mt-1 text-xs text-destructive">{cpfError}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
