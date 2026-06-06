@@ -1307,6 +1307,7 @@ export type Database = {
           rating: number | null
           region: string | null
           team_id: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
@@ -1323,6 +1324,7 @@ export type Database = {
           rating?: number | null
           region?: string | null
           team_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1339,6 +1341,7 @@ export type Database = {
           rating?: number | null
           region?: string | null
           team_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [

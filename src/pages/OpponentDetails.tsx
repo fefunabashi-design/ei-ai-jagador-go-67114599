@@ -47,7 +47,7 @@ const OpponentDetails = () => {
         }
       }
       if (opp?.id) {
-        const { data: pls } = await supabase.from("players").select("*").eq("team_id", opp.id);
+        const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", opp.id);
         if (!cancelled) setOpponentPlayers(pls || []);
         const userIds = (pls || []).map((p: any) => p.user_id).filter(Boolean);
         if (userIds.length) {
