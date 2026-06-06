@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense, createContext, useContext, Component, type ComponentType, type ErrorInfo, type ReactNode } from "react";
+import { useEffect, useState, useRef, lazy, Suspense, createContext, useContext, Component, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { Toaster } from "@/components/ui/toaster";
