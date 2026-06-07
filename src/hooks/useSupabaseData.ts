@@ -774,16 +774,24 @@ export const useChatMessages = (matchId?: string) => {
       setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
     };
     load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    const poll = window.setInterval(load, 5000);
     let ch: any = null;
     (async () => {
       if (!matchId) return;
       const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
       if (!alive || !allowed) return;
-      ch = supabase.channel(`chat-${matchId}`)
+      ch = supabase.channel(`chat:${matchId}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "match_chat_messages", filter: `match_id=eq.${matchId}` }, () => load())
         .subscribe();
     })();
-    return () => { alive = false; if (ch) supabase.removeChannel(ch); };
+    return () => {
+      alive = false;
+      window.removeEventListener("supabase-data-change", h);
+      window.clearInterval(poll);
+      if (ch) supabase.removeChannel(ch);
+    };
   }, [matchId]);
   return { data };
 };
@@ -797,6 +805,7 @@ export const useSendChatMessage = () => {
       match_id: matchId, user_id: uid, message, message_type: "text",
     });
     if (error) toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
+    else emitChange();
   };
   return { mutate, mutateAsync: mutate };
 };
