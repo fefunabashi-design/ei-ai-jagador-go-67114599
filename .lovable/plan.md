@@ -1,38 +1,68 @@
-## Objetivo
+## O que está acontecendo
 
-Apagar completamente as duas contas do banco:
+O chat da partida em si **já está correto**. A função vive em `src/hooks/useSupabaseData.ts`:
 
-- `vorva.funa@gmail.com` — user `37bf03f0-df70-42b2-8d3d-ab43acfaf08d` (Cauan)
-- CPF `80941133834` — user `e20b93e1-79c5-47f9-b3af-fbe735dd4c0c` (Aristenides)
+- `useChatMessages(matchId)` (linhas 759–797) — faz `SELECT` em `match_chat_messages` filtrando por `match_id`, inscreve no canal Realtime `chat:${matchId}`, ouve o evento global `supabase-data-change` e ainda faz polling a cada 5s.
+- `useSendChatMessage()` (linhas 799–811) — insere a mensagem e dispara `emitChange()` para forçar o reload.
 
-## Como será feito
+E no banco:
+- `match_chat_messages` está na publicação `supabase_realtime`.
+- Política de leitura: `can_access_match_realtime(match_id)` — libera dono do mandante, dono do visitante, jogadores vinculados a qualquer um dos times e usuários convocados.
 
-Uma única migration que executa, dentro de uma transação, para os dois `user_id`:
+## Por que então o adversário não vê as mensagens
 
-1. Apagar linhas dependentes em todas as tabelas do schema `public` que referenciam o usuário (direta ou indiretamente via `players`, `teams` que ele possui, `matches` desses times, `posts`, `resenha_posts`, `photo_posts` etc.). Ordem segura:
-   - reactions / comments → `resenha_comment_reactions`, `resenha_reactions`, `resenha_comments`, `resenha_posts`
-   - `match_chat_messages`, `match_events`, `match_guests`, `match_lineups`, `match_payments`, `match_summons` ligados às matches dos times do usuário e às linhas onde ele é player
-   - `matches` cujos times pertencem ao usuário
-   - `mensalidades`, `mensalidade_config`, `debitos` ligados aos times do usuário
-   - `team_favorites` do usuário
-   - `players` do usuário (e os vinculados aos times dele)
-   - `photo_posts`, `posts` do usuário
-   - `admin_subscriptions` do usuário
-   - `trial_blocklist` com `source_user_id` do usuário
-   - `teams` cujo `owner_id` é o usuário
-   - `profiles` do usuário
-2. Apagar o usuário em `auth.users` (cascateia o que sobrar).
+Olhando a partida que você está testando (`/chat/1bef3c21-1774-4927-9baf-3d839ab30e76`):
 
-A migration usa apenas os dois UUIDs acima, sem afetar outros usuários.
+```
+status        = 'confirmed'
+home_team_id  = SC Corinthians Paulista
+away_team_id  = NULL   ← este é o problema
+```
 
-## Riscos / efeitos colaterais
+Ou seja: a partida está marcada como confirmada, **mas o `away_team_id` nunca foi gravado**. Como `can_access_match_realtime` precisa do `away_team_id` para liberar o adversário, o dono do outro time fica sem permissão de leitura do chat — e por isso só aparecem as próprias mensagens.
 
-- Times de propriedade dessas contas serão removidos junto com tudo que pendura neles (partidas, escalações, chats, pagamentos, mensalidades, caixa). Se algum jogador de outro `user_id` estiver vinculado a esses times, o vínculo também some.
-- Arquivos em Storage (avatars, team-logos, photos, payment-proofs, post-media) **não** são apagados por esta migration. Se quiser limpar storage também, me diga e eu adiciono uma etapa via Edge Function (a CLI/SQL não apaga buckets diretamente).
-- Operação **irreversível**.
+A causa é a política RLS de UPDATE em `matches`:
 
-## O que não será feito
+```
+USING:
+  (home_team owner_id = auth.uid())
+  OR
+  (away_team owner_id = auth.uid())
+```
 
-- Não mexo em código (sem alterações em React, hooks ou Edge Functions).
-- Não toco em outros usuários, times ou registros.
-- Não altero schema, RLS, triggers ou policies.
+Quando o desafiante clica em "aceitar" (`useAcceptMatch` em `useSupabaseData.ts` linha 410), o código chama:
+
+```ts
+supabase.from("matches").update({ away_team_id: awayTeamId, status: "confirmed" }).eq("id", matchId)
+```
+
+No momento dessa UPDATE o `away_team_id` ainda é NULL, então o usuário **não é dono nem do home nem do away**. O RLS bloqueia o update sem lançar erro (PostgREST retorna 0 linhas afetadas) e o toast "Match confirmado!" aparece mesmo assim. Resultado: `away_team_id` continua NULL e o chat fica isolado para o lado mandante.
+
+## Plano de correção
+
+1. **Migration — política RLS para aceitar desafio.** Adicionar uma política de UPDATE em `public.matches` que permita um usuário autenticado preencher o `away_team_id` quando ele ainda for NULL, desde que ele seja dono do time que está virando visitante:
+
+   ```sql
+   CREATE POLICY "Team owner can accept open match"
+   ON public.matches
+   FOR UPDATE
+   TO authenticated
+   USING (
+     away_team_id IS NULL
+     AND EXISTS (SELECT 1 FROM public.teams t
+                 WHERE t.owner_id = auth.uid())
+   )
+   WITH CHECK (
+     away_team_id IS NOT NULL
+     AND EXISTS (SELECT 1 FROM public.teams t
+                 WHERE t.id = away_team_id AND t.owner_id = auth.uid())
+   );
+   ```
+
+2. **`useAcceptMatch` — detectar falha silenciosa.** Pedir `.select()` no update e, se vier 0 linhas, lançar erro com mensagem PT-BR ("Não foi possível aceitar este desafio") em vez de mostrar "Match confirmado!".
+
+3. **Backfill da partida atual (`1bef3c21-…`).** Como ela ficou "confirmada" sem adversário, preciso de uma decisão sua: qual time deveria ser o visitante dessa partida? Posso (a) gravar manualmente o `away_team_id` correto via insert tool, ou (b) reverter o status para `open` para que o desafiante aceite de novo após a correção.
+
+4. **Validação.** Depois do deploy: aceitar um desafio novo de outro usuário, conferir no banco que `away_team_id` foi gravado, e confirmar que o chat aparece para ambos os lados.
+
+Nada precisa ser alterado no `useChatMessages`/`useSendChatMessage` — eles já estão corretos.
