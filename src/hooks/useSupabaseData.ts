@@ -409,10 +409,14 @@ export const useDeleteMatch = createMutationHook<string>({
 
 export const useAcceptMatch = createMutationHook<{ matchId: string; awayTeamId: string }>({
   run: async ({ matchId, awayTeamId }) => {
-    const { error } = await supabase.from("matches")
+    const { data, error } = await supabase.from("matches")
       .update({ away_team_id: awayTeamId, status: "confirmed" })
-      .eq("id", matchId);
+      .eq("id", matchId)
+      .select("id");
     if (error) throw error;
+    if (!data || data.length === 0) {
+      throw new Error("Não foi possível aceitar este desafio. Verifique se você é dono do time.");
+    }
   },
   success: "Match confirmado!",
   successDescription: "Partida agendada na sua agenda.",
