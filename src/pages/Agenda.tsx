@@ -912,7 +912,7 @@ const AgendaPage = () => {
               </DialogHeader>
               <div className="space-y-3 text-sm">
                 {[
-                  { label: "Status", value: statusLabels[selectedMatch.status] },
+                  { label: "Status", value: statusLabels[getMatchView(selectedMatch, myTeam?.id).status] },
                   { label: "Local", value: (selectedMatch.home_team as any)?.field_name || selectedMatch.location },
                   { label: "Data", value: new Date(selectedMatch.match_date).toLocaleDateString("pt-BR", { dateStyle: "long" }) },
                   { label: "Hora", value: new Date(selectedMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) },
