@@ -255,6 +255,30 @@ const AgendaPage = () => {
     };
   };
 
+  const { data: allPayments = [] } = useQuery({
+    queryKey: ["all-match-payments", myMatchIds.join(",")],
+    queryFn: async () => {
+      if (!myMatchIds.length) return [];
+      const { data, error } = await supabase
+        .from("match_payments")
+        .select("id, match_id, amount, status")
+        .in("match_id", myMatchIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: myMatchIds.length > 0,
+  });
+
+  const getPaymentSummary = (matchId: string) => {
+    const list = allPayments.filter((p: any) => p.match_id === matchId);
+    if (list.length === 0) return null;
+    const perPlayer = Number(list[0].amount) || 0;
+    const total = list.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+    const paid = list.filter((p: any) => p.status === "paid").length;
+    return { perPlayer, total, paid, count: list.length };
+  };
+
+
   const now = new Date();
 
   const myMatches = matches.filter((m: any) => {
@@ -745,16 +769,34 @@ const AgendaPage = () => {
                       );
                     })()}
 
+                    {/* Vaquinha summary (read-only for non-admin) */}
+                    {!fromAdmin && (() => {
+                      const pay = getPaymentSummary(match.id);
+                      if (!pay) return null;
+                      return (
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/60 border border-border/50">
+                          <CreditCard size={12} className="text-primary" />
+                          <div className="flex-1 text-[11px] text-foreground">
+                            <span className="font-semibold">Vaquinha: R$ {pay.perPlayer.toFixed(2)}</span>
+                            <span className="text-muted-foreground"> · por jogador · {pay.paid}/{pay.count} pagos</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+
+
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
-                      {isOwner && (
+                      {isOwner && fromAdmin && (
                         <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/payments/${match.id}`)}>
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
+
                       {isOwner && view.isFinalizedByMe && (
                         <Button
                           size="sm"
@@ -1429,13 +1471,16 @@ const AgendaPage = () => {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setResultMatch(null)}>Fechar</Button>
-            <Button
-              className="bg-gradient-primary text-primary-foreground border-0"
-              onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
-            >
-              <Pencil size={14} className="mr-1" /> Editar finalização
-            </Button>
+            {fromAdmin && (
+              <Button
+                className="bg-gradient-primary text-primary-foreground border-0"
+                onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
+              >
+                <Pencil size={14} className="mr-1" /> Editar finalização
+              </Button>
+            )}
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
