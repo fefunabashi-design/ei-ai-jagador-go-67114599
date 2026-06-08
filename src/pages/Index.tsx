@@ -85,9 +85,9 @@ const Index = () => {
 
   // Carrega eventos + jogadores dos dois times para cada partida finalizada exibida
   const [matchExtras, setMatchExtras] = useState<Record<string, { events: any[]; playerMap: Map<string, any> }>>({});
-  const completedIdsKey = relevantMatches.filter((m) => m.status === "completed").map((m) => m.id).join(",");
+  const completedIdsKey = relevantMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed").map((m) => m.id).join(",");
   useEffect(() => {
-    const completed = relevantMatches.filter((m) => m.status === "completed");
+    const completed = relevantMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed");
     if (!completed.length) { setMatchExtras({}); return; }
     let alive = true;
     (async () => {
