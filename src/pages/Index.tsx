@@ -12,7 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
-import { getMatchView } from "@/lib/matchView";
+import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
 import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
