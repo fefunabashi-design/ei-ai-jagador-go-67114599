@@ -116,6 +116,14 @@ const AgendaPage = () => {
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
+  const { data: matches = [], isLoading } = useMatches();
+  const { data: myTeam } = useMyTeam();
+  const createMatch = useCreateMatch();
+  const updateMatch = useUpdateMatch();
+  const hideMatch = useHideMatch();
+  const { data: players = [] } = usePlayers(myTeam?.id);
+
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
