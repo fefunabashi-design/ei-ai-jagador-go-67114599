@@ -68,6 +68,20 @@ const ChatPage = () => {
 
   // Players of home team for the roster (presence dialog)
   const { data: teamPlayers = [] } = usePlayers(homeTeam?.id);
+  const { data: awayPlayers = [] } = usePlayers(awayTeam?.id);
+
+  // Map user_id -> short team name for chat message attribution
+  const userTeamMap = new Map<string, string>();
+  if (homeTeam?.name) {
+    const short = getShortTeamName(homeTeam.name);
+    if (homeTeam.owner_id) userTeamMap.set(homeTeam.owner_id, short);
+    teamPlayers.forEach((p: any) => { if (p.user_id) userTeamMap.set(p.user_id, short); });
+  }
+  if (awayTeam?.name) {
+    const short = getShortTeamName(awayTeam.name);
+    if (awayTeam.owner_id) userTeamMap.set(awayTeam.owner_id, short);
+    awayPlayers.forEach((p: any) => { if (p.user_id) userTeamMap.set(p.user_id, short); });
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,18 +143,10 @@ const ChatPage = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)}>
             <ArrowLeft size={20} className="text-muted-foreground" />
           </button>
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield size={14} className="text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">
-              {homeTeam?.name || "???"} × {awayTeam?.name || "???"}
-            </p>
-          </div>
           <button><MoreHorizontal size={18} className="text-muted-foreground" /></button>
         </div>
       </div>
@@ -190,11 +196,17 @@ const ChatPage = () => {
                     ? (profile?.nickname || profile?.display_name || "Você")
                     : (senderProfile?.nickname || senderName)}
                 </p>
-                {isMe && myTeam?.name && (
-                  <p className={`text-[9px] text-primary font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
-                    {getShortTeamName(myTeam.name)}
-                  </p>
-                )}
+                {(() => {
+                  const teamLabel = isMe
+                    ? (myTeam?.name ? getShortTeamName(myTeam.name) : "")
+                    : (userTeamMap.get(msg.user_id) || "");
+                  if (!teamLabel) return null;
+                  return (
+                    <p className={`text-[9px] text-primary font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
+                      {teamLabel}
+                    </p>
+                  );
+                })()}
                 <div className={`rounded-2xl px-3 py-2 ${
                   isMe
                     ? "bg-primary text-primary-foreground rounded-br-md"
