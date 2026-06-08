@@ -174,7 +174,7 @@ const MatchPage = () => {
                   </div>
 
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>
+                    <span className="flex items-center gap-1"><MapPin size={12} /> {getFieldDisplayName(match)}</span>
                     <span className="flex items-center gap-1"><Clock size={12} /> {timeStr}</span>
                     <span className="flex items-center gap-1"><Users size={12} /> {match.format}</span>
                   </div>

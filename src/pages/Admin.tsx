@@ -656,7 +656,7 @@ const AdminPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name} desafiou</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                          {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {getFieldDisplayName(m)}
                         </p>
                       </div>
                     </div>

@@ -660,7 +660,7 @@ const AgendaPage = () => {
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-1"><CalendarIcon size={11} /> {dateStr}</span>
                       <span className="flex items-center gap-1"><Clock size={11} /> {timeStr}</span>
-                      <span className="flex items-center gap-1"><MapPin size={11} /> {(match.home_team as any)?.field_name || match.location}</span>
+                      <span className="flex items-center gap-1"><MapPin size={11} /> {getFieldDisplayName(match)}</span>
                     </div>
 
                     {/* Summon counters */}
@@ -912,7 +912,7 @@ const AgendaPage = () => {
               <div className="space-y-3 text-sm">
                 {[
                   { label: "Status", value: statusLabels[getMatchView(selectedMatch, myTeam?.id).status] },
-                  { label: "Local", value: (selectedMatch.home_team as any)?.field_name || selectedMatch.location },
+                  { label: "Local", value: getFieldDisplayName(selectedMatch) },
                   { label: "Data", value: new Date(selectedMatch.match_date).toLocaleDateString("pt-BR", { dateStyle: "long" }) },
                   { label: "Hora", value: new Date(selectedMatch.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) },
                   { label: "Desafiador", value: (selectedMatch.home_team as any)?.name },

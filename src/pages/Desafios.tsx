@@ -146,7 +146,7 @@ const DesafiosPage = () => {
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} ·{" "}
-                          {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                          {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {getFieldDisplayName(m)}
                         </p>
                       </div>
                     </div>
@@ -222,7 +222,7 @@ const DesafiosPage = () => {
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} ·{" "}
-                          {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {m.location}
+                          {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {getFieldDisplayName(m)}
                         </p>
                         <p className="text-[9px] text-warning mt-0.5">Aguardando resposta</p>
                       </div>

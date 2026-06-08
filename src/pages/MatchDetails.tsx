@@ -87,7 +87,7 @@ const MatchDetails = () => {
           </div>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><Clock size={12} /> {matchDate.toLocaleDateString("pt-BR")} {matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-            {match.location && <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>}
+            {match.location && <span className="flex items-center gap-1"><MapPin size={12} /> {getFieldDisplayName(match)}</span>}
           </div>
         </div>
 
