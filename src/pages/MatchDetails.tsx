@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { getFieldDisplayName } from "@/lib/matchView";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, MessageCircle, ListChecks, Shield, MapPin, Clock } from "lucide-react";

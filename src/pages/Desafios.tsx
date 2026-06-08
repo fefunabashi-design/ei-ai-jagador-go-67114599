@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getFieldDisplayName } from "@/lib/matchView";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Shield, Swords, Inbox, Send } from "lucide-react";
 

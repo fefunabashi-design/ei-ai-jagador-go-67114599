@@ -1,4 +1,5 @@
 import { startsWithNorm } from "@/lib/normalize";
+import { getFieldDisplayName } from "@/lib/matchView";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, MapPin, Plus, Clock, Users } from "lucide-react";
