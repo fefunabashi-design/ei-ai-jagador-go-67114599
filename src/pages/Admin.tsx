@@ -285,6 +285,12 @@ const AdminPage = () => {
   const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
     .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
     .filter((m) => m.status === "confirmed" && !!m.away_team_id)
+    .filter((m) => {
+      if (!myTeam) return false;
+      const isHome = m.home_team_id === myTeam.id;
+      // Esconde do meu admin assim que EU finalizei (o outro time ainda pode ver e finalizar do lado dele)
+      return isHome ? !m.home_finalized_at : !m.away_finalized_at;
+    })
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
   const handleAccept = (matchId: string) => {
