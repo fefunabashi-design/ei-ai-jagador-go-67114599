@@ -162,9 +162,21 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
         if (insErr) throw insErr;
       }
 
+      // Finaliza apenas o lado do meu time (cada time grava seu próprio placar)
+      const patch: Record<string, any> = mySide === "home"
+        ? {
+            home_finalized_at: new Date().toISOString(),
+            home_reported_home_score: hs,
+            home_reported_away_score: as,
+          }
+        : {
+            away_finalized_at: new Date().toISOString(),
+            away_reported_home_score: hs,
+            away_reported_away_score: as,
+          };
       const { error: upErr } = await supabase
         .from("matches")
-        .update({ home_score: hs, away_score: as, status: "completed" })
+        .update(patch)
         .eq("id", match.id);
       if (upErr) throw upErr;
 
