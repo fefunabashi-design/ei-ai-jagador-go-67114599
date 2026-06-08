@@ -745,6 +745,16 @@ const AgendaPage = () => {
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
+                      {isOwner && view.isFinalizedByMe && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2.5 rounded-lg border-primary/40 text-primary"
+                          onClick={() => setResultMatch(match)}
+                        >
+                          <Trophy size={12} className="mr-1" /> Finalização
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
