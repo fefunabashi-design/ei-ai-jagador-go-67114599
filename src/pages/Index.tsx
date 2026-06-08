@@ -226,28 +226,13 @@ const Index = () => {
   });
 
 
-  // Gols temporada — apenas gols nominalmente atribuídos ao usuário na finalização das partidas
-  const [golsTemporada, setGolsTemporada] = useState(0);
-  useEffect(() => {
-    const uid = profile?.user_id;
-    if (!uid) { setGolsTemporada(0); return; }
-    let alive = true;
-    (async () => {
-      const { data: myPlayers = [] } = await supabase
-        .from("players").select("id").eq("user_id", uid);
-      const ids = (myPlayers || []).map((p: any) => p.id);
-      if (!ids.length) { if (alive) setGolsTemporada(0); return; }
-      const { count } = await supabase
-        .from("match_events")
-        .select("id", { count: "exact", head: true })
-        .eq("type", "goal")
-        .in("player_id", ids);
-      if (alive) setGolsTemporada(count || 0);
-    })();
-    return () => { alive = false; };
-  }, [profile?.user_id, completedAllMatches.length]);
-
+  // Totais agregados a partir do breakdown por time (mesma fonte:
+  // `match_events` para gols, `matches` finalizadas para jogos). Isso
+  // garante que o KPI bate com o detalhamento por time mostrado no diálogo.
+  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
   const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
+
+
 
   // Lembretes — mensalidades em atraso + vaquinhas pendentes — para TODOS os times
   type LembreteMens = { playerId: string; playerName: string; mes: number };
