@@ -876,7 +876,7 @@ export const useChatMessages = (matchId?: string) => {
       const userIds = Array.from(new Set((rows || []).map((m: any) => m.user_id).filter(Boolean)));
       let profMap: Record<string, any> = {};
       if (userIds.length) {
-        const { data: profs = [] } = await supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", userIds);
+        const { data: profs = [] } = await supabase.from("public_profiles").select("user_id, display_name, nickname, avatar_url").in("user_id", userIds);
         (profs || []).forEach((p: any) => { profMap[p.user_id] = p; });
       }
       setData((rows || []).map((m: any) => ({ ...m, profile: profMap[m.user_id] || null })));
