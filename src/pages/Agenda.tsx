@@ -1132,7 +1132,7 @@ const AgendaPage = () => {
                   </div>
                 );
               })()}
-            >
+            </>
           )}
 
           {selectedMatch && detailView === "lineup" && (
