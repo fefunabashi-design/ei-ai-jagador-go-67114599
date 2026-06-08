@@ -39,17 +39,35 @@ function getTeamSideFinalized(match: Match, teamId: string): { homeScore: number
   const isHome = match.home_team_id === teamId;
   const isAway = match.away_team_id === teamId;
   if (!isHome && !isAway) return null;
-  if (isHome && match.home_finalized_at) {
-    return {
-      homeScore: match.home_reported_home_score ?? match.home_score ?? 0,
-      awayScore: match.home_reported_away_score ?? match.away_score ?? 0,
-    };
+  // Prefer my own reported scores; fall back to the opponent's reported scores
+  // so a match still counts for me even if I haven't finalized my side yet.
+  if (isHome) {
+    if (match.home_finalized_at) {
+      return {
+        homeScore: match.home_reported_home_score ?? match.home_score ?? 0,
+        awayScore: match.home_reported_away_score ?? match.away_score ?? 0,
+      };
+    }
+    if (match.away_finalized_at) {
+      return {
+        homeScore: match.away_reported_home_score ?? match.home_score ?? 0,
+        awayScore: match.away_reported_away_score ?? match.away_score ?? 0,
+      };
+    }
   }
-  if (isAway && match.away_finalized_at) {
-    return {
-      homeScore: match.away_reported_home_score ?? match.home_score ?? 0,
-      awayScore: match.away_reported_away_score ?? match.away_score ?? 0,
-    };
+  if (isAway) {
+    if (match.away_finalized_at) {
+      return {
+        homeScore: match.away_reported_home_score ?? match.home_score ?? 0,
+        awayScore: match.away_reported_away_score ?? match.away_score ?? 0,
+      };
+    }
+    if (match.home_finalized_at) {
+      return {
+        homeScore: match.home_reported_home_score ?? match.home_score ?? 0,
+        awayScore: match.home_reported_away_score ?? match.away_score ?? 0,
+      };
+    }
   }
   // Legado: partidas antigas com status 'completed' sem flags por lado
   if (match.status === "completed") {
