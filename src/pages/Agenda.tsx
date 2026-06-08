@@ -109,6 +109,7 @@ const AgendaPage = () => {
   const [editFormat, setEditFormat] = useState("8x8");
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+  const [opponentAvatars, setOpponentAvatars] = useState<Record<string, string>>({});
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
@@ -117,9 +118,24 @@ const AgendaPage = () => {
     let cancelled = false;
     (async () => {
       const awayId = (selectedMatch as any)?.away_team?.id;
-      if (!awayId || detailView !== "details") { setOpponentPlayers([]); return; }
+      if (!awayId || detailView !== "details") { setOpponentPlayers([]); setOpponentAvatars({}); return; }
       const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", awayId);
-      if (!cancelled) setOpponentPlayers(pls || []);
+      if (cancelled) return;
+      const list = pls || [];
+      setOpponentPlayers(list);
+      const userIds = list.map((p: any) => p.user_id).filter(Boolean);
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("public_profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds);
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+        setOpponentAvatars(map);
+      } else {
+        setOpponentAvatars({});
+      }
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView]);
