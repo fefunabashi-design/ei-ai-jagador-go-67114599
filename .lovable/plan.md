@@ -1,37 +1,24 @@
 ## Objetivo
 
-Adicionar um botão **Agenda** no Painel Admin e personalizar o nome do menu e o título da tela com o primeiro nome do time ativo do admin.
+Os botões **Finalizar partida**, **Editar Partida** e **Remover da agenda** não devem mais aparecer dentro do dialog "Detalhar" da tela Agenda. A ação **Finalizar partida** continua disponível no botão **Detalhes** do card da próxima partida na tela Admin (onde já existe hoje).
 
 ## Mudanças
 
-### 1. `src/pages/Admin.tsx` — Novo atalho "Agenda"
+### 1. `src/pages/Admin.tsx`
+Sem alterações de comportamento — confirmar que o bloco `showNextActions` (card "Próxima partida") já contém **Finalizar partida** (linhas 574–580). Não é preciso adicionar Editar/Remover lá, pois essas ações já estão acessíveis em outros pontos (Reagendar/Cancelar no card, e na Agenda há o painel de ações por card).
 
-No bloco **Atalhos administrativos** (`quickActions`), adicionar uma nova entrada antes/junto das existentes (Mensalidade, Desafios, Vaquinha):
+### 2. `src/pages/Agenda.tsx` (dialog Detalhar — linhas ~1135–1179)
+Remover o bloco inteiro que renderiza:
+- Botão **Finalizar partida** (IIFE com `getMatchView`, linhas 1135–1148)
+- Botão **Editar Partida** (linhas 1150–1156)
+- `AlertDialog` de **Remover da agenda** (linhas 1157–1178)
 
-- Ícone: `CalendarDays` (já importado)
-- Label dinâmico: `Agenda {primeiroNome}` — onde `primeiroNome` vem de `myTeam.name.split(" ")[0]`. Se não houver time ativo, usar apenas `Agenda`.
-- `path: "/agenda"`
+O dialog Detalhar passa a mostrar apenas o conteúdo informativo (placar, gols, cartões, etc.) sem os três botões de ação no rodapé.
 
-O grid muda de `grid-cols-3` para `grid-cols-2` (ou mantém `grid-cols-3` com 4 itens em duas linhas) para acomodar o novo botão sem quebrar o layout — manter `grid-cols-3` é mais simples e consistente.
+As ações continuam disponíveis:
+- **Finalizar partida**: no card "Próxima partida" do Admin (Detalhes) e no painel de ações expandido do card da Agenda (quando aplicável).
+- **Reagendar / Cancelar partida**: já existem no painel de ações expandido do card da Agenda.
+- **Editar finalização**: já existe no painel de ações quando a partida foi finalizada.
 
-### 2. `src/pages/Agenda.tsx` — Título dinâmico
-
-Na linha do `<h1>` da tela:
-
-```tsx
-<h1 className="text-4xl text-foreground font-display">AGENDA</h1>
-```
-
-Trocar por:
-
-```tsx
-<h1 className="text-4xl text-foreground font-display">
-  AGENDA{myTeam?.name ? ` ${myTeam.name.split(" ")[0].toUpperCase()}` : ""}
-</h1>
-```
-
-Isso garante que o título da tela reflete o time ativo (mesmo dado já usado no Admin via `useMyTeam`), seja quando acessada via bottom nav ou via novo botão no Admin.
-
-## Fora do escopo
-
-- Não altera o label "Agenda" do `BottomNav` (o pedido fala do "menu" do Admin; o botão do bottom nav continua "Agenda" para manter consistência mobile). Se quiser que o bottom nav também mostre o nome do time, basta avisar.
+## Notas técnicas
+- Após a remoção, verificar se `Trophy`, `Pencil`, `Trash2`, `AlertDialog*` ainda são usados em outros pontos do arquivo antes de remover imports (provavelmente continuam em uso pelos cards da lista).
