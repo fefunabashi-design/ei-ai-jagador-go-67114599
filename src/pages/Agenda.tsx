@@ -1132,51 +1132,6 @@ const AgendaPage = () => {
                   </div>
                 );
               })()}
-              {/* Finalizar partida — meu time ainda não finalizou */}
-              {(() => {
-                const selView = getMatchView(selectedMatch, myTeam?.id);
-                if (selView.isCancelled || selView.isFinalizedByMe) return null;
-                if (selectedMatch.status !== "confirmed" && selectedMatch.status !== "past") return null;
-                return (
-                  <Button
-                    onClick={() => { setFinalizeMatch(selectedMatch); setDetailView(null); }}
-                    className="w-full mt-4 bg-gradient-primary text-primary-foreground border-0"
-                  >
-                    <Trophy size={14} className="mr-1" /> Finalizar partida
-                  </Button>
-                );
-              })()}
-              <div className="flex gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1 text-xs"
-                  onClick={() => { setDetailView(null); openEdit(selectedMatch); }}
-                >
-                  <Pencil size={14} className="mr-1" /> Editar Partida
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" className="flex-1 text-xs text-destructive">
-                      <Trash2 size={14} className="mr-1" /> Remover da agenda
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-card border-border">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remover da sua agenda?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta partida será removida apenas da sua agenda. O time adversário continuará vendo no histórico dele.
-                        Para cancelar para os dois times, use "Cancelar partida".
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Voltar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
-                        Remover
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
             </>
           )}
 
