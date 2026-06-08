@@ -196,11 +196,17 @@ const ChatPage = () => {
                     ? (profile?.nickname || profile?.display_name || "Você")
                     : (senderProfile?.nickname || senderName)}
                 </p>
-                {isMe && myTeam?.name && (
-                  <p className={`text-[9px] text-primary font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
-                    {getShortTeamName(myTeam.name)}
-                  </p>
-                )}
+                {(() => {
+                  const teamLabel = isMe
+                    ? (myTeam?.name ? getShortTeamName(myTeam.name) : "")
+                    : (userTeamMap.get(msg.user_id) || "");
+                  if (!teamLabel) return null;
+                  return (
+                    <p className={`text-[9px] text-primary font-semibold mb-0.5 ${isMe ? "text-right" : ""}`}>
+                      {teamLabel}
+                    </p>
+                  );
+                })()}
                 <div className={`rounded-2xl px-3 py-2 ${
                   isMe
                     ? "bg-primary text-primary-foreground rounded-br-md"
