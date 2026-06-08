@@ -999,98 +999,114 @@ const AgendaPage = () => {
                 );
               })()}
 
-              {selectedMatch.status === "completed" && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Resultado</h3>
-                  <div className="flex items-center justify-center gap-4 mb-3">
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground">{(selectedMatch.home_team as any)?.name}</p>
-                      <p className="text-3xl font-display text-foreground">{selectedMatch.home_score ?? 0}</p>
-                    </div>
-                    <span className="text-sm text-muted-foreground">x</span>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground">{(selectedMatch.away_team as any)?.name || "Adversário"}</p>
-                      <p className="text-3xl font-display text-foreground">{selectedMatch.away_score ?? 0}</p>
-                    </div>
-                  </div>
-                  {(() => {
-                    const evs: any[] = matchEvents;
-                    const goals = evs.filter((e) => e.type === "goal" || e.type === "own_goal");
-                    const yellows = evs.filter((e) => e.type === "yellow");
-                    const reds = evs.filter((e) => e.type === "red");
-                    const blues = evs.filter((e) => e.type === "blue");
-                    const nameOf = (e: any) => {
-                      if (e.player_name) return e.player_name;
-                      const p: any = players.find((pl) => pl.id === e.player_id) || opponentPlayers.find((pl: any) => pl.id === e.player_id);
-                      return p?.nickname || p?.name || "Jogador";
-                    };
-                    return (
-                      <div className="space-y-2">
-                        {goals.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Gols</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {goals.map((e) => (
-                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                                  {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {yellows.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões amarelos</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {yellows.map((e) => (
-                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">
-                                  🟨 {nameOf(e)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {reds.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões vermelhos</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {reds.map((e) => (
-                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">
-                                  🟥 {nameOf(e)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {blues.length > 0 && (
-                          <div>
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões azuis</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {blues.map((e) => (
-                                <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                                  🟦 {nameOf(e)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {evs.length === 0 && (
-                          <p className="text-[11px] text-muted-foreground text-center">Sem gols ou cartões registrados.</p>
-                        )}
+              {(() => {
+                const selView = getMatchView(selectedMatch, myTeam?.id);
+                if (selView.status !== "completed") return null;
+                return (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      Resultado {selView.isFinalizedByMe ? "(reportado pelo seu time)" : "(reportado pelo adversário)"}
+                    </h3>
+                    <div className="flex items-center justify-center gap-4 mb-3">
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted-foreground">{(selectedMatch.home_team as any)?.name}</p>
+                        <p className="text-3xl font-display text-foreground">{selView.homeScore ?? 0}</p>
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
-              {/* Finalizar partida — para partidas confirmadas ou passadas */}
-              {(selectedMatch.status === "confirmed" || selectedMatch.status === "past") && myTeam && (
-                <Button
-                  onClick={() => { setFinalizeMatch(selectedMatch); setDetailView(null); }}
-                  className="w-full mt-4 bg-gradient-primary text-primary-foreground border-0"
-                >
-                  <Trophy size={14} className="mr-1" /> Finalizar partida
-                </Button>
-              )}
+                      <span className="text-sm text-muted-foreground">x</span>
+                      <div className="text-center">
+                        <p className="text-[10px] text-muted-foreground">{(selectedMatch.away_team as any)?.name || "Adversário"}</p>
+                        <p className="text-3xl font-display text-foreground">{selView.awayScore ?? 0}</p>
+                      </div>
+                    </div>
+                    {selView.hasScoreConflict && (
+                      <p className="text-[11px] text-warning text-center mb-3">
+                        ⚠️ Os times reportaram placares diferentes. Adversário: {selView.opponentReportedHomeScore} x {selView.opponentReportedAwayScore}.
+                      </p>
+                    )}
+                    {(() => {
+                      const evs: any[] = matchEvents;
+                      const goals = evs.filter((e) => e.type === "goal" || e.type === "own_goal");
+                      const yellows = evs.filter((e) => e.type === "yellow");
+                      const reds = evs.filter((e) => e.type === "red");
+                      const blues = evs.filter((e) => e.type === "blue");
+                      const nameOf = (e: any) => {
+                        if (e.player_name) return e.player_name;
+                        const p: any = players.find((pl) => pl.id === e.player_id) || opponentPlayers.find((pl: any) => pl.id === e.player_id);
+                        return p?.nickname || p?.name || "Jogador";
+                      };
+                      return (
+                        <div className="space-y-2">
+                          {goals.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Gols</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {goals.map((e) => (
+                                  <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                    {e.type === "own_goal" ? "🥅" : "⚽"} {nameOf(e)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {yellows.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões amarelos</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {yellows.map((e) => (
+                                  <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">
+                                    🟨 {nameOf(e)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {reds.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões vermelhos</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {reds.map((e) => (
+                                  <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">
+                                    🟥 {nameOf(e)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {blues.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Cartões azuis</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {blues.map((e) => (
+                                  <span key={e.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                                    🟦 {nameOf(e)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {evs.length === 0 && (
+                            <p className="text-[11px] text-muted-foreground text-center">Sem gols ou cartões registrados.</p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })()}
+              {/* Finalizar partida — meu time ainda não finalizou */}
+              {(() => {
+                const selView = getMatchView(selectedMatch, myTeam?.id);
+                if (selView.isCancelled || selView.isFinalizedByMe) return null;
+                if (selectedMatch.status !== "confirmed" && selectedMatch.status !== "past") return null;
+                return (
+                  <Button
+                    onClick={() => { setFinalizeMatch(selectedMatch); setDetailView(null); }}
+                    className="w-full mt-4 bg-gradient-primary text-primary-foreground border-0"
+                  >
+                    <Trophy size={14} className="mr-1" /> Finalizar partida
+                  </Button>
+                );
+              })()}
               <div className="flex gap-2 mt-4">
                 <Button
                   variant="outline"
@@ -1099,27 +1115,28 @@ const AgendaPage = () => {
                 >
                   <Pencil size={14} className="mr-1" /> Editar Partida
                 </Button>
-                {selectedMatch.status !== "completed" && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" className="flex-1 text-xs text-destructive">
-                        <Trash2 size={14} className="mr-1" /> Excluir
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-border">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir partida?</AlertDialogTitle>
-                        <AlertDialogDescription>Essa ação é irreversível.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" className="flex-1 text-xs text-destructive">
+                      <Trash2 size={14} className="mr-1" /> Remover da agenda
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-card border-border">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover da sua agenda?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta partida será removida apenas da sua agenda. O time adversário continuará vendo no histórico dele.
+                        Para cancelar para os dois times, use "Cancelar partida".
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteMatch(selectedMatch.id)} className="bg-destructive text-destructive-foreground">
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </>
           )}
