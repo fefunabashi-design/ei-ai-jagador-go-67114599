@@ -1429,13 +1429,16 @@ const AgendaPage = () => {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setResultMatch(null)}>Fechar</Button>
-            <Button
-              className="bg-gradient-primary text-primary-foreground border-0"
-              onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
-            >
-              <Pencil size={14} className="mr-1" /> Editar finalização
-            </Button>
+            {fromAdmin && (
+              <Button
+                className="bg-gradient-primary text-primary-foreground border-0"
+                onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
+              >
+                <Pencil size={14} className="mr-1" /> Editar finalização
+              </Button>
+            )}
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
