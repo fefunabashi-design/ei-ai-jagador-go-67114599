@@ -192,12 +192,6 @@ const AgendaPage = () => {
   const [lineupPosition, setLineupPosition] = useState("");
   const [lineupPlayerId, setLineupPlayerId] = useState("");
 
-  const { data: matches = [], isLoading } = useMatches();
-  const { data: myTeam } = useMyTeam();
-  const createMatch = useCreateMatch();
-  const updateMatch = useUpdateMatch();
-  const hideMatch = useHideMatch();
-  const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(selectedMatch?.id);
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
   const createSummons = useCreateSummons();
