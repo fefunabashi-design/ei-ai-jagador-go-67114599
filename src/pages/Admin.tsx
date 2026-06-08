@@ -104,7 +104,7 @@ const AdminPage = () => {
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
-    navigate("/agenda", { state: { fromAdmin: true } });
+    navigate("/agenda?from=admin", { state: { fromAdmin: true } });
   };
 
   // Pré-popular filtros de busca com o cadastro do meu time ao abrir o painel
@@ -166,7 +166,7 @@ const AdminPage = () => {
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
     setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
-    navigate("/agenda", { state: { fromAdmin: true } });
+    navigate("/agenda?from=admin", { state: { fromAdmin: true } });
   };
 
   const typedPlayers = players as Player[];
@@ -632,7 +632,7 @@ const AdminPage = () => {
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
                 if (action.path !== "#") {
-                  navigate(action.path, action.path === "/agenda" ? { state: { fromAdmin: true } } : undefined);
+                  navigate(action.path === "/agenda" ? "/agenda?from=admin" : action.path, action.path === "/agenda" ? { state: { fromAdmin: true } } : undefined);
                 }
               }}
               className="relative flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"

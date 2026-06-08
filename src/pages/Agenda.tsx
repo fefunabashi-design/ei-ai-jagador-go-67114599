@@ -34,6 +34,7 @@ import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
+  useProfile,
 } from "@/hooks/useSupabaseData";
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
 import { getShortTeamName } from "@/lib/teamName";
@@ -97,7 +98,8 @@ const AgendaPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const routerLocation = useLocation();
-  const fromAdmin = (routerLocation.state as any)?.fromAdmin === true;
+  const fromAdmin = (routerLocation.state as any)?.fromAdmin === true
+    || searchParams.get("from") === "admin";
   const focusMatchId = searchParams.get("matchId");
   const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
@@ -121,6 +123,7 @@ const AgendaPage = () => {
 
   const { data: matches = [], isLoading } = useMatches();
   const { data: myTeam } = useMyTeam();
+  const { data: profile } = useProfile();
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const hideMatch = useHideMatch();
@@ -539,9 +542,16 @@ const AgendaPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl text-foreground font-display">
-              {fromAdmin && (myTeam as any)?.name
-                ? `AGENDA ${getShortTeamName((myTeam as any).name).toUpperCase()}`
-                : "AGENDA"}
+              {(() => {
+                if (fromAdmin && (myTeam as any)?.name) {
+                  return `AGENDA ${getShortTeamName((myTeam as any).name).toUpperCase()}`;
+                }
+                const userName = (profile as any)?.nickname
+                  || (profile as any)?.display_name
+                  || "";
+                const first = userName.trim().split(/\s+/)[0] || "";
+                return first ? `AGENDA ${first.toUpperCase()}` : "AGENDA";
+              })()}
             </h1>
             <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
           </div>
