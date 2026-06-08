@@ -116,12 +116,24 @@ const AgendaPage = () => {
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
+  const { data: matches = [], isLoading } = useMatches();
+  const { data: myTeam } = useMyTeam();
+  const createMatch = useCreateMatch();
+  const updateMatch = useUpdateMatch();
+  const hideMatch = useHideMatch();
+  const { data: players = [] } = usePlayers(myTeam?.id);
+
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const homeId = (selectedMatch as any)?.home_team?.id;
       const awayId = (selectedMatch as any)?.away_team?.id;
-      if (!awayId || detailView !== "details") { setOpponentPlayers([]); setOpponentAvatars({}); return; }
-      const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", awayId);
+      if (!selectedMatch || detailView !== "details") { setOpponentPlayers([]); setOpponentAvatars({}); return; }
+      // Carrega jogadores do time adversário (independente do meu time ser home ou away)
+      const otherId = myTeam && homeId === myTeam.id ? awayId : homeId;
+      if (!otherId) { setOpponentPlayers([]); setOpponentAvatars({}); return; }
+      const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", otherId);
       if (cancelled) return;
       const list = pls || [];
       setOpponentPlayers(list);
@@ -140,7 +152,7 @@ const AgendaPage = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [selectedMatch?.id, detailView]);
+  }, [selectedMatch?.id, detailView, myTeam?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,12 +200,6 @@ const AgendaPage = () => {
   const [lineupPosition, setLineupPosition] = useState("");
   const [lineupPlayerId, setLineupPlayerId] = useState("");
 
-  const { data: matches = [], isLoading } = useMatches();
-  const { data: myTeam } = useMyTeam();
-  const createMatch = useCreateMatch();
-  const updateMatch = useUpdateMatch();
-  const hideMatch = useHideMatch();
-  const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(selectedMatch?.id);
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
   const createSummons = useCreateSummons();
