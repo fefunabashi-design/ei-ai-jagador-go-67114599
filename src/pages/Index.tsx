@@ -718,10 +718,11 @@ const Index = () => {
                     </div>
                     <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
                       <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                        m.status === "completed" ? "bg-muted text-muted-foreground" :
-                        m.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                        mView.status === "completed" ? "bg-muted text-muted-foreground" :
+                        mView.status === "confirmed" ? "bg-success/10 text-success" :
+                        mView.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"
                       }`}>
-                        {m.status === "completed" ? "🏁 Finalizado" : m.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                        {mView.status === "completed" ? "🏁 Finalizado" : mView.status === "confirmed" ? "✓ Confirmado" : mView.status === "cancelled" ? "✕ Cancelado" : "Aberto"}
                       </span>
                     </div>
 
@@ -730,7 +731,7 @@ const Index = () => {
                         size="sm"
                         variant="outline"
                         className="text-[10px] h-6 px-2 rounded-md"
-                        onClick={() => m.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
+                        onClick={() => mView.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
                       >
                         <MessageCircle size={10} className="mr-1" /> Detalhes
                       </Button>
