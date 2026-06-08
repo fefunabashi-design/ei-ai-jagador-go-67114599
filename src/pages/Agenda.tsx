@@ -174,6 +174,7 @@ const AgendaPage = () => {
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const deleteMatch = useDeleteMatch();
+  const hideMatch = useHideMatch();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: summons = [] } = useMatchSummons(selectedMatch?.id);
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
