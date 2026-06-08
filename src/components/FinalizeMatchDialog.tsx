@@ -53,25 +53,27 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
     if (!open || !match?.id || !myTeamId) return;
     let alive = true;
     (async () => {
-      const [{ data: teamPlayers = [] }, { data: summons = [] }, { data: lineups = [] }, { data: guests = [] }, { data: events = [] }] = await Promise.all([
-        supabase.from("players").select("id, name, nickname").eq("team_id", myTeamId),
-        supabase.from("match_summons").select("player_id, status").eq("match_id", match.id).eq("status", "confirmed"),
-        supabase.from("match_lineups").select("player_id").eq("match_id", match.id),
-        supabase.from("match_guests").select("id, name").eq("match_id", match.id),
+      const [{ data: teamPlayers = [] }, { data: guests = [] }, { data: events = [] }, { data: teamRow }] = await Promise.all([
+        supabase.from("players").select("id, name, nickname, user_id").eq("team_id", myTeamId),
+        supabase.from("match_guests").select("id, name, invited_by").eq("match_id", match.id),
         supabase.from("match_events").select("*").eq("match_id", match.id),
+        supabase.from("teams").select("owner_id").eq("id", myTeamId).maybeSingle(),
       ]);
       if (!alive) return;
 
-      const confirmedIds = new Set((summons || []).map((s: any) => s.player_id));
-      const lineupIds = new Set((lineups || []).map((l: any) => l.player_id));
-      const eligibleIds = new Set([...confirmedIds, ...lineupIds]);
-
       const opts: PlayerOption[] = (teamPlayers || [])
-        .filter((p: any) => eligibleIds.has(p.id))
         .map((p: any) => ({ id: p.id, name: p.nickname?.trim() || p.name }));
 
-      (guests || []).forEach((g: any) => opts.push({ id: `guest:${g.name}`, name: `${g.name} (convidado)`, isGuest: true }));
+      // Filter guests to those invited by members of my team (owner or players)
+      const myTeamUserIds = new Set<string>();
+      if (teamRow?.owner_id) myTeamUserIds.add(teamRow.owner_id);
+      (teamPlayers || []).forEach((p: any) => { if (p.user_id) myTeamUserIds.add(p.user_id); });
+
+      (guests || [])
+        .filter((g: any) => g.invited_by && myTeamUserIds.has(g.invited_by))
+        .forEach((g: any) => opts.push({ id: `guest:${g.name}`, name: `${g.name} (convidado)`, isGuest: true }));
       setPlayers(opts);
+
 
       // Pré-preenche placar previamente reportado pelo meu lado (se existir)
       const myHs = mySide === "home" ? match.home_reported_home_score : match.away_reported_home_score;
