@@ -255,6 +255,30 @@ const AgendaPage = () => {
     };
   };
 
+  const { data: allPayments = [] } = useQuery({
+    queryKey: ["all-match-payments", myMatchIds.join(",")],
+    queryFn: async () => {
+      if (!myMatchIds.length) return [];
+      const { data, error } = await supabase
+        .from("match_payments")
+        .select("id, match_id, amount, status")
+        .in("match_id", myMatchIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: myMatchIds.length > 0,
+  });
+
+  const getPaymentSummary = (matchId: string) => {
+    const list = allPayments.filter((p: any) => p.match_id === matchId);
+    if (list.length === 0) return null;
+    const perPlayer = Number(list[0].amount) || 0;
+    const total = list.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+    const paid = list.filter((p: any) => p.status === "paid").length;
+    return { perPlayer, total, paid, count: list.length };
+  };
+
+
   const now = new Date();
 
   const myMatches = matches.filter((m: any) => {
