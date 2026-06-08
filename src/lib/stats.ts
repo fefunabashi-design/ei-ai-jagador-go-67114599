@@ -1,9 +1,9 @@
 // ============================================================
 // Sistema de pontuação e notas (0–10) — integrado ao Supabase
 // Vitória = 3 pts | Empate = 1 pt | Derrota = 0 pts
-// Apenas jogadores presentes na escalação (match_lineups) de partidas
-// finalizadas (status === 'completed') recebem pontos.
-// Nota = (pontos obtidos / pontos possíveis) * 10
+// A partida só conta para um time quando ESSE time finalizou seu próprio
+// lado (home_finalized_at / away_finalized_at). O placar usado é o que o
+// próprio time reportou — assim cada time é responsável por suas estatísticas.
 // ============================================================
 
 import { useEffect } from "react";
@@ -17,6 +17,12 @@ type Match = {
   home_score?: number | null;
   away_score?: number | null;
   status: string;
+  home_finalized_at?: string | null;
+  away_finalized_at?: string | null;
+  home_reported_home_score?: number | null;
+  home_reported_away_score?: number | null;
+  away_reported_home_score?: number | null;
+  away_reported_away_score?: number | null;
 };
 
 type Lineup = {
@@ -28,23 +34,45 @@ type Lineup = {
 let matchesCache: Match[] = [];
 let lineupsCache: Lineup[] = [];
 
-function pointsForTeam(match: Match, teamId: string): number {
-  const home = match.home_score ?? 0;
-  const away = match.away_score ?? 0;
+// Diz se o time finalizou a partida pelo lado dele, e devolve o placar reportado.
+function getTeamSideFinalized(match: Match, teamId: string): { homeScore: number; awayScore: number } | null {
   const isHome = match.home_team_id === teamId;
   const isAway = match.away_team_id === teamId;
-  if (!isHome && !isAway) return 0;
-  if (home === away) return 1;
-  const teamScore = isHome ? home : away;
-  const oppScore = isHome ? away : home;
+  if (!isHome && !isAway) return null;
+  if (isHome && match.home_finalized_at) {
+    return {
+      homeScore: match.home_reported_home_score ?? match.home_score ?? 0,
+      awayScore: match.home_reported_away_score ?? match.away_score ?? 0,
+    };
+  }
+  if (isAway && match.away_finalized_at) {
+    return {
+      homeScore: match.away_reported_home_score ?? match.home_score ?? 0,
+      awayScore: match.away_reported_away_score ?? match.away_score ?? 0,
+    };
+  }
+  // Legado: partidas antigas com status 'completed' sem flags por lado
+  if (match.status === "completed") {
+    return { homeScore: match.home_score ?? 0, awayScore: match.away_score ?? 0 };
+  }
+  return null;
+}
+
+function pointsForTeam(match: Match, teamId: string): number {
+  const scores = getTeamSideFinalized(match, teamId);
+  if (!scores) return 0;
+  const isHome = match.home_team_id === teamId;
+  const teamScore = isHome ? scores.homeScore : scores.awayScore;
+  const oppScore = isHome ? scores.awayScore : scores.homeScore;
+  if (teamScore === oppScore) return 1;
   return teamScore > oppScore ? 3 : 0;
 }
 
 function getCompletedMatchesForTeam(teamId: string): Match[] {
   return matchesCache.filter(
     (m) =>
-      m.status === "completed" &&
-      (m.home_team_id === teamId || m.away_team_id === teamId)
+      (m.home_team_id === teamId || m.away_team_id === teamId) &&
+      getTeamSideFinalized(m, teamId) !== null
   );
 }
 
@@ -93,8 +121,8 @@ export function useStatsData(enabled = true) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matches")
-        .select("id, home_team_id, away_team_id, home_score, away_score, status")
-        .eq("status", "completed");
+        .select("id, home_team_id, away_team_id, home_score, away_score, status, home_finalized_at, away_finalized_at, home_reported_home_score, home_reported_away_score, away_reported_home_score, away_reported_away_score")
+        .or("status.eq.completed,home_finalized_at.not.is.null,away_finalized_at.not.is.null");
       if (error) throw error;
       return (data || []) as Match[];
     },
