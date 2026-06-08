@@ -514,7 +514,9 @@ const AgendaPage = () => {
       <div className="px-5 pt-12 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl text-foreground font-display">AGENDA</h1>
+            <h1 className="text-4xl text-foreground font-display">
+              AGENDA{(myTeam as any)?.name ? ` ${String((myTeam as any).name).trim().split(/\s+/)[0].toUpperCase()}` : ""}
+            </h1>
             <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
           </div>
         </div>

@@ -1,33 +1,37 @@
-## Problema
+## Objetivo
 
-Na aba **Jogadores** dentro do diálogo "Detalhes da Partida" (acessado a partir de uma partida confirmada na Agenda), a lista vem vazia ou incompleta. O objetivo é exibir **todos os jogadores ativos do time adversário** (o elenco do time), e não apenas os jogadores confirmados para aquela partida.
+Adicionar um botão **Agenda** no Painel Admin e personalizar o nome do menu e o título da tela com o primeiro nome do time ativo do admin.
 
-## Causa
+## Mudanças
 
-Em `src/pages/Agenda.tsx` (linha ~120), o carregamento dos jogadores do adversário usa a tabela `players` diretamente:
+### 1. `src/pages/Admin.tsx` — Novo atalho "Agenda"
 
-```ts
-supabase.from("players").select("*").eq("team_id", awayId)
+No bloco **Atalhos administrativos** (`quickActions`), adicionar uma nova entrada antes/junto das existentes (Mensalidade, Desafios, Vaquinha):
+
+- Ícone: `CalendarDays` (já importado)
+- Label dinâmico: `Agenda {primeiroNome}` — onde `primeiroNome` vem de `myTeam.name.split(" ")[0]`. Se não houver time ativo, usar apenas `Agenda`.
+- `path: "/agenda"`
+
+O grid muda de `grid-cols-3` para `grid-cols-2` (ou mantém `grid-cols-3` com 4 itens em duas linhas) para acomodar o novo botão sem quebrar o layout — manter `grid-cols-3` é mais simples e consistente.
+
+### 2. `src/pages/Agenda.tsx` — Título dinâmico
+
+Na linha do `<h1>` da tela:
+
+```tsx
+<h1 className="text-4xl text-foreground font-display">AGENDA</h1>
 ```
 
-Como o usuário logado normalmente **não é membro do time adversário**, a RLS da tabela `players` bloqueia esse SELECT e retorna lista vazia. Por isso a aba aparece sem jogadores.
+Trocar por:
 
-A tela "Detalhar Adversário" (`src/pages/OpponentDetails.tsx`) já resolve isso usando a view pública `public_players`, que expõe os jogadores ativos de qualquer time sem violar RLS.
+```tsx
+<h1 className="text-4xl text-foreground font-display">
+  AGENDA{myTeam?.name ? ` ${myTeam.name.split(" ")[0].toUpperCase()}` : ""}
+</h1>
+```
 
-## Mudança
+Isso garante que o título da tela reflete o time ativo (mesmo dado já usado no Admin via `useMyTeam`), seja quando acessada via bottom nav ou via novo botão no Admin.
 
-Em `src/pages/Agenda.tsx`, no `useEffect` que carrega `opponentPlayers` (linhas ~115‑124):
+## Fora do escopo
 
-- Trocar `supabase.from("players")` por `supabase.from("public_players" as any)` para listar o elenco ativo do time adversário, mesmo quando o usuário não pertence a ele.
-- Manter o resto do efeito igual (mesmo gatilho por `selectedMatch?.id` e `detailView`, mesmo estado `opponentPlayers`).
-
-Na renderização da aba **Jogadores** (linhas ~966‑995):
-
-- Atualizar o rótulo do contador para deixar explícito que são jogadores do elenco: `Jogadores ({opponentPlayers.length})` → `Elenco ({opponentPlayers.length})` (ou manter "Jogadores" — confirmar preferência), e o título/empty state para refletir "jogadores ativos do time".
-- Continuar exibindo apelido/nome de cada jogador como já está.
-
-## Arquivos alterados
-
-- `src/pages/Agenda.tsx` — trocar fonte de dados para `public_players` e ajustar rótulo da aba.
-
-Sem mudanças de backend, banco ou regras de negócio.
+- Não altera o label "Agenda" do `BottomNav` (o pedido fala do "menu" do Admin; o botão do bottom nav continua "Agenda" para manter consistência mobile). Se quiser que o bottom nav também mostre o nome do time, basta avisar.
