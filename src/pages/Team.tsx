@@ -137,20 +137,21 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
             </div>
           ) : (
             players.map((p: any) => {
-              const isoToBr = (iso?: string | null) => {
-                if (!iso) return "";
-                const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-                return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
-              };
+              const display = (p.nickname?.trim() || `${p.name || ""} ${p.last_name || ""}`.trim() || "Jogador");
+              const age = computeAge(p.birth_date);
+              const avatarUrl = p.user_id ? avatarMap[p.user_id] : undefined;
+              const initial = (display[0] || "?").toUpperCase();
               return (
-              <div key={p.id} className="p-3">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {p.name} {p.last_name || ""}
-                </p>
-                <div className="mt-1 grid grid-cols-1 gap-0.5 text-[11px] text-muted-foreground">
-                  {p.nickname && <p>Nome social: <span className="text-foreground">{p.nickname}</span></p>}
-                  {p.birth_date && <p>Nascimento: <span className="text-foreground">{isoToBr(p.birth_date)}</span></p>}
-                  {p.phone && <p>Celular: <span className="text-foreground">{p.phone}</span></p>}
+              <div key={p.id} className="p-3 flex items-center gap-3">
+                <Avatar className="w-10 h-10">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
+                  <AvatarFallback className="text-xs">{initial}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{display}</p>
+                  {age !== null && (
+                    <p className="text-[11px] text-muted-foreground">{age} anos</p>
+                  )}
                 </div>
               </div>
               );
