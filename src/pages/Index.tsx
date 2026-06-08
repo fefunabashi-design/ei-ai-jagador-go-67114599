@@ -554,7 +554,7 @@ const Index = () => {
                 </p>
               )}
               {perTeamStats.map((s) => {
-                const value = statDetail === "jogos" ? s.jogos : s.gols;
+                const value = statDetail === "jogos" ? s.jogos : (meusGolsByTeam[s.teamId] || 0);
                 return (
                   <div
                     key={s.teamId}
