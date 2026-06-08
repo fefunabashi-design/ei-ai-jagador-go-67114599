@@ -233,32 +233,42 @@ const Index = () => {
   const norm = (s?: string | null) =>
     (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   const [meusGolsTemporada, setMeusGolsTemporada] = useState(0);
+  const [meusGolsByTeam, setMeusGolsByTeam] = useState<Record<string, number>>({});
   useEffect(() => {
     const matchIds = completedAllMatches.map((m) => m.id);
-    if (!matchIds.length || !profile) { setMeusGolsTemporada(0); return; }
+    if (!matchIds.length || !profile) { setMeusGolsTemporada(0); setMeusGolsByTeam({}); return; }
     let alive = true;
     (async () => {
       const teamIds = Array.from(myTeamIds);
-      if (!teamIds.length) { if (alive) setMeusGolsTemporada(0); return; }
+      if (!teamIds.length) { if (alive) { setMeusGolsTemporada(0); setMeusGolsByTeam({}); } return; }
       const { data: allMyTeamPlayers = [] } = await supabase
         .from("players")
         .select("id, name, nickname, user_id, team_id")
         .in("team_id", teamIds);
+      const playerToTeam = new Map<string, string>();
       const candidates = new Set<string>();
       const myNames = [norm(profile.display_name), norm(profile.nickname)].filter(Boolean);
       (allMyTeamPlayers || []).forEach((p: any) => {
-        if (p.user_id && p.user_id === profile.user_id) candidates.add(p.id);
-        else if (myNames.includes(norm(p.name)) || myNames.includes(norm(p.nickname))) candidates.add(p.id);
+        const isMe = (p.user_id && p.user_id === profile.user_id)
+          || myNames.includes(norm(p.name))
+          || myNames.includes(norm(p.nickname));
+        if (isMe) { candidates.add(p.id); playerToTeam.set(p.id, p.team_id); }
       });
       const ids = Array.from(candidates);
-      if (!ids.length) { if (alive) setMeusGolsTemporada(0); return; }
+      if (!ids.length) { if (alive) { setMeusGolsTemporada(0); setMeusGolsByTeam({}); } return; }
       const { data: evs = [] } = await supabase
         .from("match_events")
-        .select("id")
+        .select("id, player_id")
         .in("match_id", matchIds)
         .in("player_id", ids)
         .eq("type", "goal");
-      if (alive) setMeusGolsTemporada((evs || []).length);
+      const byTeam: Record<string, number> = {};
+      (evs || []).forEach((e: any) => {
+        const tid = playerToTeam.get(e.player_id);
+        if (!tid) return;
+        byTeam[tid] = (byTeam[tid] || 0) + 1;
+      });
+      if (alive) { setMeusGolsTemporada((evs || []).length); setMeusGolsByTeam(byTeam); }
     })();
     return () => { alive = false; };
   }, [completedAllMatches.map((m) => m.id).join(","), profile?.user_id, profile?.display_name, profile?.nickname, Array.from(myTeamIds).join(",")]);
