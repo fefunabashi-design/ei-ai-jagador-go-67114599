@@ -32,19 +32,20 @@ const OpponentDetails = () => {
       } else if (matchId) {
         const { data: m } = await supabase
           .from("matches")
-          .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+          .select("*")
           .eq("id", matchId).maybeSingle();
         if (cancelled) return;
-        setMatch(m);
-        const home = (m as any)?.home_team;
-        const away = (m as any)?.away_team;
+        const ids = [m?.home_team_id, m?.away_team_id].filter(Boolean) as string[];
+        const { data: teamsData = [] } = ids.length
+          ? await supabase.from("public_teams").select("*").in("id", ids)
+          : { data: [] as any[] };
+        const tMap = new Map((teamsData || []).map((t: any) => [t.id, t]));
+        const home = m?.home_team_id ? tMap.get(m.home_team_id) : null;
+        const away = m?.away_team_id ? tMap.get(m.away_team_id) : null;
+        setMatch({ ...(m || {}), home_team: home, away_team: away });
         if (myTeam && home?.id === myTeam.id) opp = away;
         else if (myTeam && away?.id === myTeam.id) opp = home;
         else opp = away || home;
-        if (opp?.id) {
-          const { data: full } = await supabase.from("public_teams").select("*").eq("id", opp.id).maybeSingle();
-          if (full) opp = full;
-        }
       }
       if (opp?.id) {
         const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", opp.id);
