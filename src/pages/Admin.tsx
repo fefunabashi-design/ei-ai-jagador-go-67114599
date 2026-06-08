@@ -104,7 +104,7 @@ const AdminPage = () => {
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
-    navigate("/agenda", { state: { fromAdmin: true } });
+    navigate("/agenda?from=admin", { state: { fromAdmin: true } });
   };
 
   // Pré-popular filtros de busca com o cadastro do meu time ao abrir o painel
