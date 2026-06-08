@@ -95,6 +95,8 @@ const allPositions = [
 const AgendaPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const routerLocation = useLocation();
+  const fromAdmin = (routerLocation.state as any)?.fromAdmin === true;
   const focusMatchId = searchParams.get("matchId");
   const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
@@ -237,7 +239,9 @@ const AgendaPage = () => {
     return m.home_team_id === myTeam.id || m.away_team_id === myTeam.id;
   });
 
-  const availableDays = Array.isArray((myTeam as any)?.play_days)
+  const availableDays = !fromAdmin
+    ? []
+    : Array.isArray((myTeam as any)?.play_days)
     ? ((myTeam as any).play_days as string[])
         .map((day) => ({
           domingo: 0,
