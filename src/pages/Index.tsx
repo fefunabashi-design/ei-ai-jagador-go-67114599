@@ -178,7 +178,7 @@ const Index = () => {
     const awayTeam = m.away_team as any;
     return (homeTeam?.id && myTeamIds.has(homeTeam.id)) || (awayTeam?.id && myTeamIds.has(awayTeam.id));
   });
-  const completedAllMatches = allMyMatches.filter((m) => m.status === "completed");
+  const completedAllMatches = allMyMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed");
 
   // Backward-compatible (current active team) — used elsewhere on the page
   const myMatches = matches.filter((m) => {
