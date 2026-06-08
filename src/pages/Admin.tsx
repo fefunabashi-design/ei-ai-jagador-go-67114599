@@ -166,7 +166,7 @@ const AdminPage = () => {
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
     setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
-    navigate("/agenda", { state: { fromAdmin: true } });
+    navigate("/agenda?from=admin", { state: { fromAdmin: true } });
   };
 
   const typedPlayers = players as Player[];
