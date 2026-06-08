@@ -118,13 +118,11 @@ const Index = () => {
 
   const [detailsMatchId, setDetailsMatchId] = useState<string | null>(null);
 
-  // Player stats
+  // Player vinculado (somente para presença/escalação). Estatísticas
+  // (gols, jogos, nota) NÃO devem usar colunas de `players` — elas estão
+  // obsoletas; usamos `match_events` e `match_lineups` como fonte única.
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
-  const playerStats = {
-    matches: myPlayer?.matches || 0,
-    goals: myPlayer?.goals || 0,
-    rating: myPlayer?.rating || 0,
-  };
+
 
   const pendingSummons = summons.filter((s: any) => s.status === "pending").length;
 
