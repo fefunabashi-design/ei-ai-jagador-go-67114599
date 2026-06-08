@@ -73,8 +73,13 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
       (guests || []).forEach((g: any) => opts.push({ id: `guest:${g.name}`, name: `${g.name} (convidado)`, isGuest: true }));
       setPlayers(opts);
 
-      setHomeScore(match.home_score != null ? String(match.home_score) : "");
-      setAwayScore(match.away_score != null ? String(match.away_score) : "");
+      // Pré-preenche placar previamente reportado pelo meu lado (se existir)
+      const myHs = mySide === "home" ? match.home_reported_home_score : match.away_reported_home_score;
+      const myAs = mySide === "home" ? match.home_reported_away_score : match.away_reported_away_score;
+      const fallbackHs = myHs ?? match.home_score;
+      const fallbackAs = myAs ?? match.away_score;
+      setHomeScore(fallbackHs != null ? String(fallbackHs) : "");
+      setAwayScore(fallbackAs != null ? String(fallbackAs) : "");
 
       // Pre-populate existing events for my side
       const mine = (events || []).filter((e: any) => e.team_side === mySide);
@@ -87,7 +92,7 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
       setCards(mine.filter((e: any) => ["yellow", "red", "blue"].includes(e.type)).map(toDraft));
     })();
     return () => { alive = false; };
-  }, [open, match?.id, myTeamId, mySide, match?.home_score, match?.away_score]);
+  }, [open, match?.id, myTeamId, mySide, match?.home_reported_home_score, match?.away_reported_home_score]);
 
   const myScore = useMemo(() => {
     const v = parseInt(mySide === "home" ? homeScore : awayScore, 10);
