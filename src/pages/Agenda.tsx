@@ -750,11 +750,12 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
-                      {isOwner && (
+                      {isOwner && fromAdmin && (
                         <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/payments/${match.id}`)}>
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
+
                       {isOwner && view.isFinalizedByMe && (
                         <Button
                           size="sm"
