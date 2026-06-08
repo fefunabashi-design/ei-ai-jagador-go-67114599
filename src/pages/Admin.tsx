@@ -64,6 +64,7 @@ const AdminPage = () => {
   const createMatchMut = useCreateMatch();
   const updateMatchMut = useUpdateMatch();
   const deleteMatchMut = useDeleteMatch();
+  const hideMatchMut = useHideMatch();
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
