@@ -957,7 +957,7 @@ const Index = () => {
             <DialogTitle className="font-display">CONFIRMAÇÕES ({confirmedRoster.length}/{roster.length})</DialogTitle>
           </DialogHeader>
 
-          {nextMatch && nextMatch.status !== "completed" && (
+          {nextMatch && getMatchView(nextMatch, myTeam?.id).status !== "completed" && (
             <Button
               onClick={() => { setListOpen(false); setConfirmOpen(true); }}
               className="bg-gradient-primary text-primary-foreground border-0 font-semibold w-full"
