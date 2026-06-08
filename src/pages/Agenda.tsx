@@ -36,6 +36,7 @@ import {
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
 } from "@/hooks/useSupabaseData";
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
+import { getShortTeamName } from "@/lib/teamName";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -114,6 +115,8 @@ const AgendaPage = () => {
   const [opponentAvatars, setOpponentAvatars] = useState<Record<string, string>>({});
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+  const [resultMatch, setResultMatch] = useState<any | null>(null);
+  const [resultEvents, setResultEvents] = useState<any[]>([]);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
   const { data: matches = [], isLoading } = useMatches();
@@ -187,6 +190,17 @@ const AgendaPage = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView, selectedMatch?.status]);
+
+  // Load events for the "Finalização" dialog
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!resultMatch) { setResultEvents([]); return; }
+      const { data } = await supabase.from("match_events").select("*").eq("match_id", resultMatch.id);
+      if (!cancelled) setResultEvents(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [resultMatch?.id]);
 
 
   // Create match
@@ -525,7 +539,9 @@ const AgendaPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl text-foreground font-display">
-              AGENDA{(myTeam as any)?.name ? ` ${String((myTeam as any).name).trim().split(/\s+/)[0].toUpperCase()}` : ""}
+              {fromAdmin && (myTeam as any)?.name
+                ? `AGENDA ${getShortTeamName((myTeam as any).name).toUpperCase()}`
+                : "AGENDA"}
             </h1>
             <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
           </div>
@@ -729,6 +745,16 @@ const AgendaPage = () => {
                           <CreditCard size={12} className="mr-1" /> Vaquinha
                         </Button>
                       )}
+                      {isOwner && view.isFinalizedByMe && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2.5 rounded-lg border-primary/40 text-primary"
+                          onClick={() => setResultMatch(match)}
+                        >
+                          <Trophy size={12} className="mr-1" /> Finalização
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -766,15 +792,6 @@ const AgendaPage = () => {
                               <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
                             </button>
                           </>
-                        )}
-                        {isOwner && view.isFinalizedByMe && (
-                          <button
-                            onClick={() => { setFinalizeMatch(match); setExpandedActionsId(null); }}
-                            className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
-                          >
-                            <Trophy size={14} className="text-primary" />
-                            <span className="text-xs font-semibold text-foreground">Editar finalização</span>
-                          </button>
                         )}
                       </div>
                     )}
@@ -1336,6 +1353,82 @@ const AgendaPage = () => {
           myTeamId={myTeam.id}
         />
       )}
+
+      {/* Finalização (resultado) Dialog */}
+      <Dialog open={!!resultMatch} onOpenChange={(o) => !o && setResultMatch(null)}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">FINALIZAÇÃO</DialogTitle>
+          </DialogHeader>
+          {resultMatch && (() => {
+            const mySide: "home" | "away" = resultMatch.home_team_id === myTeam?.id ? "home" : "away";
+            const hs = (mySide === "home" ? resultMatch.home_reported_home_score : resultMatch.away_reported_home_score)
+              ?? resultMatch.home_score;
+            const as = (mySide === "home" ? resultMatch.home_reported_away_score : resultMatch.away_reported_away_score)
+              ?? resultMatch.away_score;
+            const mineEvents = resultEvents.filter((e: any) => e.team_side === mySide);
+            const goals = mineEvents.filter((e: any) => e.type === "goal" || e.type === "own_goal");
+            const cards = mineEvents.filter((e: any) => ["yellow", "red", "blue"].includes(e.type));
+            const nameOf = (e: any) => e.player?.name || e.player_name || "—";
+            const cardEmoji: Record<string, string> = { yellow: "🟨", red: "🟥", blue: "🟦" };
+            return (
+              <div className="space-y-4 text-sm">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Placar final</p>
+                  <div className="flex items-center justify-center gap-3 font-display text-3xl">
+                    <span className="truncate max-w-[40%] text-base">{resultMatch.home_team?.name}</span>
+                    <span>{hs ?? "-"}</span>
+                    <span className="text-muted-foreground">x</span>
+                    <span>{as ?? "-"}</span>
+                    <span className="truncate max-w-[40%] text-base">{resultMatch.away_team?.name}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold mb-2">Gols do meu time</p>
+                  {goals.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">Nenhum gol registrado.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {goals.map((g: any) => (
+                        <li key={g.id} className="flex items-center gap-2 text-xs">
+                          <span>⚽</span><span>{nameOf(g)}</span>
+                          {g.type === "own_goal" && <span className="text-[10px] text-muted-foreground">(contra)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold mb-2">Cartões do meu time</p>
+                  {cards.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">Nenhum cartão registrado.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {cards.map((c: any) => (
+                        <li key={c.id} className="flex items-center gap-2 text-xs">
+                          <span>{cardEmoji[c.type] || "🟨"}</span><span>{nameOf(c)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResultMatch(null)}>Fechar</Button>
+            <Button
+              className="bg-gradient-primary text-primary-foreground border-0"
+              onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
+            >
+              <Pencil size={14} className="mr-1" /> Editar finalização
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <BottomNav />
     </div>
