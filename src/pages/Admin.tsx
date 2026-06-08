@@ -20,7 +20,7 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
   useMyTeam, useMatches, usePlayers, useAcceptMatch,
   useMyAdminTeams, useSetActiveTeam,
-  useCreateMatch, useUpdateMatch, useDeleteMatch, useHideMatch,
+  useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
 import { getTeamStats } from "@/lib/stats";
