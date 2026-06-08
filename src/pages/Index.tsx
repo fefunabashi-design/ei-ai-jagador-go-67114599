@@ -185,15 +185,46 @@ const Index = () => {
     return myTeam && (homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id);
   });
 
-  // Per-team breakdown for the 4 stat cards
+  // Per-team breakdown for the stat cards. Goals are aggregated from
+  // `match_events` (single source of truth) per team_side of each match.
+  const [golsByTeam, setGolsByTeam] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const matchIds = completedAllMatches.map((m) => m.id);
+    if (!matchIds.length) { setGolsByTeam({}); return; }
+    let alive = true;
+    (async () => {
+      const { data: evs = [] } = await supabase
+        .from("match_events")
+        .select("match_id, team_side, type")
+        .in("match_id", matchIds)
+        .in("type", ["goal", "own_goal"]);
+      const matchById = new Map(completedAllMatches.map((m: any) => [m.id, m]));
+      const tally: Record<string, number> = {};
+      (evs || []).forEach((e: any) => {
+        const m: any = matchById.get(e.match_id);
+        if (!m) return;
+        // own_goal conta para o lado oposto
+        const scoringSide = e.type === "own_goal"
+          ? (e.team_side === "home" ? "away" : "home")
+          : e.team_side;
+        const teamId = scoringSide === "home" ? m.home_team_id : m.away_team_id;
+        if (!teamId) return;
+        tally[teamId] = (tally[teamId] || 0) + 1;
+      });
+      if (alive) setGolsByTeam(tally);
+    })();
+    return () => { alive = false; };
+  }, [completedAllMatches.map((m) => m.id).join(",")]);
+
   const perTeamStats = (myTeams || []).map((t: any) => {
     const teamMatches = completedAllMatches.filter((m) => {
       const h = m.home_team as any; const a = m.away_team as any;
       return h?.id === t.id || a?.id === t.id;
     });
     const jogos = teamMatches.length;
-    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: 0 };
+    return { teamId: t.id, teamName: t.name, logo: t.logo_url, jogos, gols: golsByTeam[t.id] || 0 };
   });
+
 
   // Gols temporada — apenas gols nominalmente atribuídos ao usuário na finalização das partidas
   const [golsTemporada, setGolsTemporada] = useState(0);
