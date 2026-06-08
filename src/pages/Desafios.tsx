@@ -227,7 +227,7 @@ const DesafiosPage = () => {
                         <p className="text-[9px] text-warning mt-0.5">Aguardando resposta</p>
                       </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                       <Button size="sm" variant="outline" className="flex-1 h-8 text-[11px] px-2" onClick={() => openReschedule(m)}>
                         Reagendar
                       </Button>
@@ -239,6 +239,16 @@ const DesafiosPage = () => {
                       >
                         Cancelar
                       </Button>
+                      {m.away_team_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="basis-full h-8 text-[11px] px-2"
+                          onClick={() => navigate(`/opponent-details?teamId=${m.away_team_id}`)}
+                        >
+                          Detalhes do time
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );

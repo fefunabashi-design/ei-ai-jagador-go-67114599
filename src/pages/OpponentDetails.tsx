@@ -174,6 +174,16 @@ const OpponentDetails = () => {
                       const display = p.nickname?.trim() || p.name || "Jogador";
                       const avatarUrl = p.user_id ? avatarMap[p.user_id] : undefined;
                       const initial = (display[0] || "?").toUpperCase();
+                      let age: number | null = null;
+                      if (p.birth_date) {
+                        const bd = new Date(p.birth_date);
+                        if (!isNaN(bd.getTime())) {
+                          const today = new Date();
+                          age = today.getFullYear() - bd.getFullYear();
+                          const m = today.getMonth() - bd.getMonth();
+                          if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                        }
+                      }
                       return (
                         <li
                           key={p.id}
@@ -183,7 +193,12 @@ const OpponentDetails = () => {
                             {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
                             <AvatarFallback className="text-xs">{initial}</AvatarFallback>
                           </Avatar>
-                          <span className="truncate flex-1">{display}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate">{display}</p>
+                            {age !== null && (
+                              <p className="text-[10px] text-muted-foreground">{age} anos</p>
+                            )}
+                          </div>
                           <NotaBadge nota={ps.nota} played={ps.played} />
                         </li>
                       );
