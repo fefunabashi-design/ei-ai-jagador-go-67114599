@@ -31,9 +31,10 @@ import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
 import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
-  useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch,
+  useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch, useHideMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
 } from "@/hooks/useSupabaseData";
+import { getMatchView } from "@/lib/matchView";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
