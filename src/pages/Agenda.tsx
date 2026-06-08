@@ -98,7 +98,8 @@ const AgendaPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const routerLocation = useLocation();
-  const fromAdmin = (routerLocation.state as any)?.fromAdmin === true;
+  const fromAdmin = (routerLocation.state as any)?.fromAdmin === true
+    || searchParams.get("from") === "admin";
   const focusMatchId = searchParams.get("matchId");
   const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
