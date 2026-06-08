@@ -33,6 +33,24 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value
 const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
   const { data: players = [] } = usePlayers(team.id);
   const teamStats = getTeamStats(team.id);
+  const [avatarMap, setAvatarMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const userIds = (players || []).map((p: any) => p.user_id).filter(Boolean);
+    if (!userIds.length) { setAvatarMap({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: profs } = await supabase
+        .from("public_profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", userIds);
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      setAvatarMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [players]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
