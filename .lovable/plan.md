@@ -1,34 +1,21 @@
-# Corrigir cards de partida
+## Ajustes na tela de Chat da partida
 
-Dois ajustes em todos os cards de partida (Dashboard, Agenda, Desafios e qualquer outro que liste partidas).
+### 1. Remover cabeçalho com nomes dos times
+No `src/pages/Chat.tsx`, no header superior, remover o bloco que exibe `{homeTeam?.name} × {awayTeam?.name}`. Manter apenas o botão de voltar (`ArrowLeft`) e o botão de menu (`MoreHorizontal`) à direita, para preservar a navegação.
 
-## 1. Logos dos times não aparecem
+### 2. Mostrar nome e time também nas mensagens do adversário
+Hoje só as mensagens do próprio usuário (`isMe`) exibem o nome do time (`myTeam.name`) acima do balão. Para as mensagens recebidas, é exibido apenas o apelido/nome do remetente, sem o time.
 
-**Causa:** `useMatches` faz JOIN direto com a tabela `teams` (`teams!matches_home_team_id_fkey(*)`). A RLS da `teams` é "owner-only", então quando o time pertence a outro usuário (adversário, ou time do qual sou apenas jogador), o join devolve `null` — sem `logo_url`, sem `name`, sem `field_name`. Por isso o card cai no fallback (ícone `Shield` rosa, "???").
+Mudanças:
+- Buscar a qual time cada remetente pertence. Como a partida envolve apenas dois times (`home_team` e `away_team`), e cada mensagem traz `user_id`, vou:
+  - Carregar os jogadores de ambos os times (já temos `usePlayers(homeTeam?.id)`; adicionar `usePlayers(awayTeam?.id)`).
+  - Montar um mapa `userId → teamName` usando `player.user_id` + nome do time correspondente. Considerar também os donos dos times (`home_team.owner_id` / `away_team.owner_id`) como fallback.
+- Para mensagens onde `!isMe`, renderizar acima do balão (mesmo padrão já usado para o usuário atual) uma linha extra com o nome curto do time do remetente, usando `getShortTeamName(...)` que já existe no arquivo. Se o time não for identificado, não renderiza nada (evita "undefined").
 
-**Correção:** trocar o join para a view pública `public_teams`, que expõe os campos seguros (`id, name, logo_url, field_name, city, state, ...`) para qualquer usuário autenticado.
+### Resumo dos arquivos alterados
+- `src/pages/Chat.tsx`
+  - Remoção do bloco de nomes dos times no header.
+  - Adição de fetch dos jogadores do time visitante.
+  - Construção do mapa `user_id → time` e renderização do nome do time também nas mensagens recebidas.
 
-- Em `src/hooks/useSupabaseData.ts`, no `useMatches` (linha ~365) e em qualquer outra query equivalente (linha ~829), substituir:
-  - `home_team:teams!matches_home_team_id_fkey(*)` → `home_team:public_teams!matches_home_team_id_fkey(*)`
-  - `away_team:teams!matches_away_team_id_fkey(*)` → `away_team:public_teams!matches_away_team_id_fkey(*)`
-- Validar que a FK `matches_home_team_id_fkey` resolve a `public_teams`; caso a hint da FK não funcione com a view, fazer fetch separado em `public_teams` pelos IDs e mesclar no resultado (fallback robusto).
-
-## 2. Localização mostra o endereço inteiro
-
-Hoje os cards exibem `(home_team as any)?.field_name || m.location`. Quando `field_name` está vazio (caso de matches antigos / desafios onde o usuário digitou local livre como `"Itaquerão — Avenida Miguel Ignácio Curi, 111 - Vila Carmosina - SP"`), cai no `m.location` completo.
-
-**Correção:** criar um helper `getFieldDisplayName(match)` em `src/lib/matchView.ts` (ou novo `src/lib/matchLocation.ts`) que retorna apenas o nome do campo:
-
-1. Se `home_team.field_name` existir, usa ele.
-2. Caso contrário, pega `m.location` e corta na primeira ocorrência de `—`, ` - `, `,` ou `·`, retornando só a parte inicial (`trim()`).
-
-Aplicar esse helper em todos os locais que hoje fazem `field_name || location`:
-- `src/pages/Index.tsx` (linhas 629, 641, 701, 755, 783)
-- `src/pages/Agenda.tsx` (linhas 663, 915)
-- `src/lib/matchShareImage.ts` (se aplicável)
-- Qualquer outro local detectado por `rg "field_name \|\| .*location"`
-
-## Não incluído
-
-- Não alterar a forma como a localização é **gravada** (continua salvando o que o usuário digitou). A mudança é apenas de exibição.
-- Não mexer em RLS da tabela `teams` (manter owner-only).
+Sem mudanças de backend, banco ou regras de negócio.
