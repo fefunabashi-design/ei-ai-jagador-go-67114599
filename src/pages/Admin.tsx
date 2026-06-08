@@ -20,9 +20,10 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
   useMyTeam, useMatches, usePlayers, useAcceptMatch,
   useMyAdminTeams, useSetActiveTeam,
-  useCreateMatch, useUpdateMatch, useDeleteMatch,
+  useCreateMatch, useUpdateMatch, useDeleteMatch, useHideMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
+import { getTeamStats } from "@/lib/stats";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
