@@ -362,7 +362,10 @@ const AgendaPage = () => {
 
 
   const handleDeleteMatch = (matchId: string) => {
-    deleteMatch.mutate(matchId);
+    // "Excluir" agora remove a partida apenas da agenda do meu time.
+    // O time adversário continua vendo no histórico dele.
+    if (!myTeam) return;
+    hideMatch.mutate({ matchId, myTeamId: myTeam.id });
     setDetailView(null);
     setSelectedMatch(null);
   };
