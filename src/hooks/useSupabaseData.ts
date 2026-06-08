@@ -354,8 +354,9 @@ export const useMatches = () => {
         supabase.from("teams").select("id").eq("owner_id", uid),
         supabase.from("players").select("team_id").eq("user_id", uid),
       ]);
+      const ownedIds = new Set((owned || []).map((t: any) => t.id));
       const teamIds = Array.from(new Set([
-        ...(owned || []).map((t: any) => t.id),
+        ...ownedIds,
         ...(playerLinks || []).map((p: any) => p.team_id),
       ]));
       if (!teamIds.length) return [];
@@ -364,7 +365,15 @@ export const useMatches = () => {
         .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
         .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
         .order("match_date", { ascending: true });
-      return rows || [];
+      // Esconder partidas que o meu time marcou como removidas
+      const filtered = (rows || []).filter((m: any) => {
+        const isMyHome = ownedIds.has(m.home_team_id) || (playerLinks || []).some((p: any) => p.team_id === m.home_team_id);
+        const isMyAway = m.away_team_id && (ownedIds.has(m.away_team_id) || (playerLinks || []).some((p: any) => p.team_id === m.away_team_id));
+        if (isMyHome && m.home_hidden) return false;
+        if (isMyAway && m.away_hidden) return false;
+        return true;
+      });
+      return filtered;
     },
     staleTime: 30_000,
   });
@@ -372,7 +381,14 @@ export const useMatches = () => {
 };
 
 const cleanMatchPayload = (raw: Record<string, any>) => {
-  const allowed = ["home_team_id","away_team_id","match_date","location","format","status","compatibility","home_score","away_score"];
+  const allowed = [
+    "home_team_id","away_team_id","match_date","location","format","status","compatibility",
+    "home_score","away_score",
+    "home_finalized_at","away_finalized_at",
+    "home_reported_home_score","home_reported_away_score",
+    "away_reported_home_score","away_reported_away_score",
+    "home_hidden","away_hidden",
+  ];
   const out: Record<string, any> = {};
   allowed.forEach(k => { if (k in raw) out[k] = raw[k]; });
   return out;
@@ -398,6 +414,9 @@ export const useUpdateMatch = createMutationHook<Record<string, any> & { id: str
   error: "Erro ao atualizar partida",
 });
 
+// Hard delete — usado apenas para partidas em aberto que ainda não têm adversário.
+// Para partidas com adversário, use useHideMatch (só remove da minha agenda) ou
+// useCancelMatch (cancela para os dois).
 export const useDeleteMatch = createMutationHook<string>({
   run: async (id) => {
     const { error } = await supabase.from("matches").delete().eq("id", id);
@@ -405,6 +424,37 @@ export const useDeleteMatch = createMutationHook<string>({
   },
   success: "Partida excluída!",
   error: "Erro ao excluir partida",
+});
+
+// Remove a partida da agenda do meu time apenas. O adversário continua vendo.
+export const useHideMatch = createMutationHook<{ matchId: string; myTeamId: string }>({
+  run: async ({ matchId, myTeamId }) => {
+    const { data: match, error: fetchErr } = await supabase
+      .from("matches").select("home_team_id, away_team_id").eq("id", matchId).maybeSingle();
+    if (fetchErr) throw fetchErr;
+    if (!match) throw new Error("Partida não encontrada");
+    const patch: Record<string, any> = {};
+    if (match.home_team_id === myTeamId) patch.home_hidden = true;
+    else if (match.away_team_id === myTeamId) patch.away_hidden = true;
+    else throw new Error("Você não faz parte desta partida");
+    const { error } = await supabase.from("matches").update(patch).eq("id", matchId);
+    if (error) throw error;
+  },
+  success: "Partida removida da sua agenda.",
+  error: "Erro ao remover partida",
+});
+
+// Marca a partida como cancelada para AMBOS os times (fica no histórico).
+export const useCancelMatch = createMutationHook<string>({
+  run: async (matchId) => {
+    const { error } = await supabase.from("matches")
+      .update({ status: "cancelled" })
+      .eq("id", matchId);
+    if (error) throw error;
+  },
+  success: "Partida cancelada.",
+  successDescription: "O adversário foi avisado.",
+  error: "Erro ao cancelar partida",
 });
 
 export const useAcceptMatch = createMutationHook<{ matchId: string; awayTeamId: string }>({
@@ -421,6 +471,34 @@ export const useAcceptMatch = createMutationHook<{ matchId: string; awayTeamId: 
   success: "Match confirmado!",
   successDescription: "Partida agendada na sua agenda.",
   error: "Erro ao aceitar match",
+});
+
+// Finaliza a partida pelo MEU lado, gravando placar reportado pelo meu time.
+// Não muda `status` global da partida — o lado oposto pode finalizar com placar próprio.
+export const useFinalizeMatchForTeam = createMutationHook<{
+  matchId: string;
+  mySide: "home" | "away";
+  homeScore: number;
+  awayScore: number;
+}>({
+  run: async ({ matchId, mySide, homeScore, awayScore }) => {
+    const patch: Record<string, any> =
+      mySide === "home"
+        ? {
+            home_finalized_at: new Date().toISOString(),
+            home_reported_home_score: homeScore,
+            home_reported_away_score: awayScore,
+          }
+        : {
+            away_finalized_at: new Date().toISOString(),
+            away_reported_home_score: homeScore,
+            away_reported_away_score: awayScore,
+          };
+    const { error } = await supabase.from("matches").update(patch).eq("id", matchId);
+    if (error) throw error;
+  },
+  success: "Partida finalizada!",
+  error: "Erro ao finalizar",
 });
 
 // =================== SUMMONS / LINEUPS ===================

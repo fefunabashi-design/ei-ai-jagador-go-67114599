@@ -12,6 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
+import { getMatchView } from "@/lib/matchView";
 import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
@@ -70,22 +71,23 @@ const Index = () => {
       const awayTeam = m.away_team as any;
       if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
       const md = new Date(m.match_date).getTime();
-      if (m.status === "completed") return now.getTime() - md <= DAY_MS;
-      return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
+      const v = getMatchView(m, myTeam?.id);
+      if (v.status === "completed") return now.getTime() - md <= DAY_MS;
+      return new Date(m.match_date) >= now && (v.status === "open" || v.status === "confirmed");
     })
     .sort((a, b) => {
-      const aCompleted = a.status === "completed" ? 1 : 0;
-      const bCompleted = b.status === "completed" ? 1 : 0;
+      const aCompleted = getMatchView(a, myTeam?.id).status === "completed" ? 1 : 0;
+      const bCompleted = getMatchView(b, myTeam?.id).status === "completed" ? 1 : 0;
       if (aCompleted !== bCompleted) return aCompleted - bCompleted;
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
     });
-  const nextMatch = relevantMatches.find((m) => m.status !== "completed") || relevantMatches[0];
+  const nextMatch = relevantMatches.find((m) => getMatchView(m, myTeam?.id).status !== "completed") || relevantMatches[0];
 
   // Carrega eventos + jogadores dos dois times para cada partida finalizada exibida
   const [matchExtras, setMatchExtras] = useState<Record<string, { events: any[]; playerMap: Map<string, any> }>>({});
-  const completedIdsKey = relevantMatches.filter((m) => m.status === "completed").map((m) => m.id).join(",");
+  const completedIdsKey = relevantMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed").map((m) => m.id).join(",");
   useEffect(() => {
-    const completed = relevantMatches.filter((m) => m.status === "completed");
+    const completed = relevantMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed");
     if (!completed.length) { setMatchExtras({}); return; }
     let alive = true;
     (async () => {
@@ -176,7 +178,7 @@ const Index = () => {
     const awayTeam = m.away_team as any;
     return (homeTeam?.id && myTeamIds.has(homeTeam.id)) || (awayTeam?.id && myTeamIds.has(awayTeam.id));
   });
-  const completedAllMatches = allMyMatches.filter((m) => m.status === "completed");
+  const completedAllMatches = allMyMatches.filter((m) => getMatchView(m, myTeam?.id).status === "completed");
 
   // Backward-compatible (current active team) — used elsewhere on the page
   const myMatches = matches.filter((m) => {
@@ -622,8 +624,9 @@ const Index = () => {
               const matchDate = new Date(m.match_date);
               const extras = matchExtras[m.id];
               const goals = (extras?.events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
-              const shareText = m.status === "completed"
-                ? `🏁 ${homeTeam?.name || "Mandante"} ${m.home_score ?? 0} x ${m.away_score ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
+              const mView = getMatchView(m, myTeam?.id);
+              const shareText = mView.status === "completed"
+                ? `🏁 ${homeTeam?.name || "Mandante"} ${mView.homeScore ?? 0} x ${mView.awayScore ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
                 : `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${m.location}`;
 
               const handleResenha = async () => {
@@ -683,11 +686,11 @@ const Index = () => {
                         })()}
                       </div>
                       <div className="flex flex-col items-center gap-2 px-3">
-                        {m.status === "completed" ? (
+                        {mView.status === "completed" ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-display text-foreground leading-none">{m.home_score ?? 0}</span>
+                            <span className="text-2xl font-display text-foreground leading-none">{mView.homeScore ?? 0}</span>
                             <span className="text-xs text-muted-foreground">x</span>
-                            <span className="text-2xl font-display text-foreground leading-none">{m.away_score ?? 0}</span>
+                            <span className="text-2xl font-display text-foreground leading-none">{mView.awayScore ?? 0}</span>
                           </div>
                         ) : (
                           <span className="text-xs font-bold text-muted-foreground">VS</span>
@@ -715,10 +718,11 @@ const Index = () => {
                     </div>
                     <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
                       <span className={`ml-auto text-[9px] font-semibold px-2 py-0.5 rounded-full ${
-                        m.status === "completed" ? "bg-muted text-muted-foreground" :
-                        m.status === "confirmed" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                        mView.status === "completed" ? "bg-muted text-muted-foreground" :
+                        mView.status === "confirmed" ? "bg-success/10 text-success" :
+                        mView.status === "cancelled" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"
                       }`}>
-                        {m.status === "completed" ? "🏁 Finalizado" : m.status === "confirmed" ? "✓ Confirmado" : "Aberto"}
+                        {mView.status === "completed" ? "🏁 Finalizado" : mView.status === "confirmed" ? "✓ Confirmado" : mView.status === "cancelled" ? "✕ Cancelado" : "Aberto"}
                       </span>
                     </div>
 
@@ -727,7 +731,7 @@ const Index = () => {
                         size="sm"
                         variant="outline"
                         className="text-[10px] h-6 px-2 rounded-md"
-                        onClick={() => m.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
+                        onClick={() => mView.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
                       >
                         <MessageCircle size={10} className="mr-1" /> Detalhes
                       </Button>
@@ -803,7 +807,7 @@ const Index = () => {
                       </DropdownMenu>
                     </div>
 
-                    {m.status === "completed" && goals.length > 0 && (
+                    {mView.status === "completed" && goals.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5 justify-center">
                         {goals.map((e: any) => {
                           const p = extras?.playerMap.get(e.player_id);
@@ -862,11 +866,12 @@ const Index = () => {
                 )}
               </div>
             );
+            const dView = getMatchView(m, myTeam?.id);
             return (
               <>
                 <DialogHeader>
                   <DialogTitle className="font-display text-center">
-                    {homeTeam?.name} {m.home_score ?? 0} x {m.away_score ?? 0} {awayTeam?.name}
+                    {homeTeam?.name} {dView.homeScore ?? 0} x {dView.awayScore ?? 0} {awayTeam?.name}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
@@ -952,7 +957,7 @@ const Index = () => {
             <DialogTitle className="font-display">CONFIRMAÇÕES ({confirmedRoster.length}/{roster.length})</DialogTitle>
           </DialogHeader>
 
-          {nextMatch && nextMatch.status !== "completed" && (
+          {nextMatch && getMatchView(nextMatch, myTeam?.id).status !== "completed" && (
             <Button
               onClick={() => { setListOpen(false); setConfirmOpen(true); }}
               className="bg-gradient-primary text-primary-foreground border-0 font-semibold w-full"

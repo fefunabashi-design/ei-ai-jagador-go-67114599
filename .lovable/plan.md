@@ -1,68 +1,85 @@
-## O que está acontecendo
+## Objetivo
 
-O chat da partida em si **já está correto**. A função vive em `src/hooks/useSupabaseData.ts`:
+Hoje a `matches` é uma única linha compartilhada pelos dois times, então confirmar/reagendar já sincroniza, mas **excluir apaga para os dois** e **finalizar é único pra partida**. Precisamos diferenciar o que é compartilhado do que é por time.
 
-- `useChatMessages(matchId)` (linhas 759–797) — faz `SELECT` em `match_chat_messages` filtrando por `match_id`, inscreve no canal Realtime `chat:${matchId}`, ouve o evento global `supabase-data-change` e ainda faz polling a cada 5s.
-- `useSendChatMessage()` (linhas 799–811) — insere a mensagem e dispara `emitChange()` para forçar o reload.
+## Regras finais
 
-E no banco:
-- `match_chat_messages` está na publicação `supabase_realtime`.
-- Política de leitura: `can_access_match_realtime(match_id)` — libera dono do mandante, dono do visitante, jogadores vinculados a qualquer um dos times e usuários convocados.
+| Ação | Quem vê | Como implementar |
+|---|---|---|
+| Confirmar | Os dois | `status = 'confirmed'` (já funciona) |
+| Reagendar (data/local) | Os dois | `UPDATE match_date/location` (já funciona) |
+| Cancelar | Os dois (fica no histórico como "Cancelada") | Novo: `status = 'cancelled'` |
+| **Excluir** | Só quem excluiu | Soft delete por time (flag) |
+| **Finalizar** | Por time | Cada time grava placar e status próprios |
 
-## Por que então o adversário não vê as mensagens
+## Mudanças no banco (migration)
 
-Olhando a partida que você está testando (`/chat/1bef3c21-1774-4927-9baf-3d839ab30e76`):
+Adicionar em `public.matches`:
 
-```
-status        = 'confirmed'
-home_team_id  = SC Corinthians Paulista
-away_team_id  = NULL   ← este é o problema
-```
-
-Ou seja: a partida está marcada como confirmada, **mas o `away_team_id` nunca foi gravado**. Como `can_access_match_realtime` precisa do `away_team_id` para liberar o adversário, o dono do outro time fica sem permissão de leitura do chat — e por isso só aparecem as próprias mensagens.
-
-A causa é a política RLS de UPDATE em `matches`:
-
-```
-USING:
-  (home_team owner_id = auth.uid())
-  OR
-  (away_team owner_id = auth.uid())
+```sql
+ALTER TABLE public.matches
+  ADD COLUMN home_hidden boolean NOT NULL DEFAULT false,
+  ADD COLUMN away_hidden boolean NOT NULL DEFAULT false,
+  ADD COLUMN home_finalized_at timestamptz,
+  ADD COLUMN away_finalized_at timestamptz,
+  ADD COLUMN home_reported_home_score int,
+  ADD COLUMN home_reported_away_score int,
+  ADD COLUMN away_reported_home_score int,
+  ADD COLUMN away_reported_away_score int;
 ```
 
-Quando o desafiante clica em "aceitar" (`useAcceptMatch` em `useSupabaseData.ts` linha 410), o código chama:
+- `status` vira o ciclo compartilhado: `open | confirmed | cancelled` (removemos o uso de `'completed'` como estado global — passa a ser derivado por time).
+- RLS de UPDATE já cobre dono de qualquer lado; sem mudança.
+- Sem `DELETE` no fluxo padrão. (Opcional, num passo futuro: cron apaga linhas com `home_hidden AND away_hidden`.)
 
-```ts
-supabase.from("matches").update({ away_team_id: awayTeamId, status: "confirmed" }).eq("id", matchId)
-```
+Backfill rápido na mesma migration:
+- partidas com `status='completed'` ⇒ marcar `home_finalized_at = updated_at`, `away_finalized_at = updated_at`, copiar scores para ambos os lados, e setar `status='confirmed'` (a "finalização" passa a ser por flag, não por status).
 
-No momento dessa UPDATE o `away_team_id` ainda é NULL, então o usuário **não é dono nem do home nem do away**. O RLS bloqueia o update sem lançar erro (PostgREST retorna 0 linhas afetadas) e o toast "Match confirmado!" aparece mesmo assim. Resultado: `away_team_id` continua NULL e o chat fica isolado para o lado mandante.
+## Mudanças no código
 
-## Plano de correção
+### `src/hooks/useSupabaseData.ts`
 
-1. **Migration — política RLS para aceitar desafio.** Adicionar uma política de UPDATE em `public.matches` que permita um usuário autenticado preencher o `away_team_id` quando ele ainda for NULL, desde que ele seja dono do time que está virando visitante:
+1. **`useDeleteMatch` → `useHideMatch`** — em vez de `DELETE`, faz `UPDATE` setando `home_hidden=true` ou `away_hidden=true` conforme o time do usuário (descobre via `useMyTeam` ou recebe `mySide` como parâmetro). Toast: "Partida removida da sua agenda".
+2. **Novo `useCancelMatch`** — `UPDATE matches SET status='cancelled' WHERE id=…`. Toast: "Partida cancelada".
+3. **`useMatches`** — no `select`, filtrar `home_hidden=false quando sou home` / `away_hidden=false quando sou away`. Mais simples: trazer tudo e filtrar no client comparando com `myTeam.id`.
 
-   ```sql
-   CREATE POLICY "Team owner can accept open match"
-   ON public.matches
-   FOR UPDATE
-   TO authenticated
-   USING (
-     away_team_id IS NULL
-     AND EXISTS (SELECT 1 FROM public.teams t
-                 WHERE t.owner_id = auth.uid())
-   )
-   WITH CHECK (
-     away_team_id IS NOT NULL
-     AND EXISTS (SELECT 1 FROM public.teams t
-                 WHERE t.id = away_team_id AND t.owner_id = auth.uid())
-   );
-   ```
+### `src/components/FinalizeMatchDialog.tsx`
 
-2. **`useAcceptMatch` — detectar falha silenciosa.** Pedir `.select()` no update e, se vier 0 linhas, lançar erro com mensagem PT-BR ("Não foi possível aceitar este desafio") em vez de mostrar "Match confirmado!".
+- Em vez de `UPDATE matches SET home_score, away_score, status='completed'`, gravar nos campos do meu lado: `{mySide}_reported_home_score`, `{mySide}_reported_away_score`, `{mySide}_finalized_at = now()`.
+- Mantém a lógica de `match_events` por `team_side` (já está por time).
+- Status da partida não muda.
 
-3. **Backfill da partida atual (`1bef3c21-…`).** Como ela ficou "confirmada" sem adversário, preciso de uma decisão sua: qual time deveria ser o visitante dessa partida? Posso (a) gravar manualmente o `away_team_id` correto via insert tool, ou (b) reverter o status para `open` para que o desafiante aceite de novo após a correção.
+### Telas que mostram placar/estado
 
-4. **Validação.** Depois do deploy: aceitar um desafio novo de outro usuário, conferir no banco que `away_team_id` foi gravado, e confirmar que o chat aparece para ambos os lados.
+- `src/pages/Agenda.tsx`, `src/pages/Index.tsx`, qualquer card que use `match.home_score`/`away_score`/`status==='completed'`: criar helper `getMatchViewForTeam(match, myTeamId)` em `src/lib/stats.ts` (ou novo `src/lib/matchView.ts`) que devolve:
+  - `isFinalizedByMe` (a partir de `{mySide}_finalized_at`)
+  - `homeScore`, `awayScore` (do meu lado se eu finalizei, senão do outro lado se ele finalizou, senão `null`)
+  - `displayStatus`: `cancelled` | `completed` (se algum lado finalizou) | `confirmed` | `open`
+- Substituir leituras diretas pelos campos do helper.
+- Filtro "Finalizado" na Agenda usa `isFinalizedByMe`.
+- Cartão de partida cancelada: badge "Cancelada", sem botões de ação (só "Remover da agenda" chamando `useHideMatch`).
 
-Nada precisa ser alterado no `useChatMessages`/`useSendChatMessage` — eles já estão corretos.
+### Telas com botão "Cancelar"
+
+- `src/pages/Desafios.tsx` e `src/pages/Agenda.tsx`: o atual "Cancelar" (que hoje deleta) passa a abrir um menu com duas opções:
+  - **Cancelar partida** → `useCancelMatch` (avisa o adversário).
+  - **Remover da minha agenda** → `useHideMatch` (só pra mim; usado também depois que a partida foi cancelada/finalizada).
+- Para partidas ainda `open` enviadas por mim sem adversário, "Cancelar partida" pode continuar excluindo de verdade (sem efeito para terceiros) — manter um `useDeleteMatchOpen` interno só pra esse caso.
+
+### `src/lib/stats.ts`
+
+Hoje conta vitória/derrota a partir de `home_score`/`away_score`. Passar a usar o helper acima — só conta partida quando o time finalizou o lado dele. Times que ainda não finalizaram não pontuam.
+
+## Validação
+
+1. Time A confirma partida ⇒ Time B vê `confirmed`. ✅
+2. Time A reagenda ⇒ Time B vê nova data. ✅
+3. Time A cancela ⇒ Time B vê `cancelled` na agenda (histórico). ✅
+4. Time A "remove da agenda" ⇒ some pra A, continua aparecendo pra B. ✅
+5. Time A finaliza com placar X⇒ Time B continua vendo a partida como `confirmed`/não finalizada do lado dele, mas vê placar reportado por A; quando B finaliza, grava o placar dele. Estatísticas em `stats.ts` só usam o placar do próprio time. ✅
+
+## Pontos abertos para você decidir
+
+1. Se A e B reportarem placares diferentes, mostro os dois lado a lado ("A reportou 3x2 · B reportou 2x2") ou priorizo o do dono da página?
+2. Quando a partida estiver `cancelled`, ainda pode ser "removida da agenda" pelos dois lados independentemente — confirma?
+3. Posso seguir com a migration sem deletar o status `'completed'` antigo (mantenho como sinônimo de "ambos finalizaram") ou prefere que eu remova totalmente?

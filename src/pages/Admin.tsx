@@ -23,6 +23,7 @@ import {
   useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
+
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
@@ -178,9 +179,23 @@ const AdminPage = () => {
     return myTeam && homeTeam?.id === myTeam.id;
   });
 
-  const completedMatches = myMatches.filter((m) => m.status === "completed");
-  const wins = completedMatches.filter((m) => (m.home_score || 0) > (m.away_score || 0)).length;
-  const draws = completedMatches.filter((m) => m.home_score === m.away_score).length;
+  // Estatísticas: cada time só conta partidas que ELE finalizou pelo lado dele.
+  const completedMatches = myMatches.filter((m: any) => {
+    if (!myTeam) return false;
+    const isHome = m.home_team_id === myTeam.id;
+    return isHome ? !!m.home_finalized_at : !!m.away_finalized_at;
+  });
+  const wins = completedMatches.filter((m: any) => {
+    const isHome = m.home_team_id === myTeam!.id;
+    const hs = (isHome ? m.home_reported_home_score : m.away_reported_home_score) ?? m.home_score ?? 0;
+    const as = (isHome ? m.home_reported_away_score : m.away_reported_away_score) ?? m.away_score ?? 0;
+    return isHome ? hs > as : as > hs;
+  }).length;
+  const draws = completedMatches.filter((m: any) => {
+    const hs = (m.home_team_id === myTeam!.id ? m.home_reported_home_score : m.away_reported_home_score) ?? m.home_score ?? 0;
+    const as = (m.home_team_id === myTeam!.id ? m.home_reported_away_score : m.away_reported_away_score) ?? m.away_score ?? 0;
+    return hs === as;
+  }).length;
   const losses = completedMatches.length - wins - draws;
 
   // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
