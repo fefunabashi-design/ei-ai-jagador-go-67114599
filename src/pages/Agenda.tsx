@@ -36,6 +36,7 @@ import {
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
 } from "@/hooks/useSupabaseData";
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
+import { getShortTeamName } from "@/lib/teamName";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
