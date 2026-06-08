@@ -624,8 +624,9 @@ const Index = () => {
               const matchDate = new Date(m.match_date);
               const extras = matchExtras[m.id];
               const goals = (extras?.events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
-              const shareText = m.status === "completed"
-                ? `🏁 ${homeTeam?.name || "Mandante"} ${m.home_score ?? 0} x ${m.away_score ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
+              const mView = getMatchView(m, myTeam?.id);
+              const shareText = mView.status === "completed"
+                ? `🏁 ${homeTeam?.name || "Mandante"} ${mView.homeScore ?? 0} x ${mView.awayScore ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
                 : `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${m.location}`;
 
               const handleResenha = async () => {
