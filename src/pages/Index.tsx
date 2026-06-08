@@ -71,16 +71,17 @@ const Index = () => {
       const awayTeam = m.away_team as any;
       if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
       const md = new Date(m.match_date).getTime();
-      if (m.status === "completed") return now.getTime() - md <= DAY_MS;
-      return new Date(m.match_date) >= now && (m.status === "open" || m.status === "confirmed");
+      const v = getMatchView(m, myTeam?.id);
+      if (v.status === "completed") return now.getTime() - md <= DAY_MS;
+      return new Date(m.match_date) >= now && (v.status === "open" || v.status === "confirmed");
     })
     .sort((a, b) => {
-      const aCompleted = a.status === "completed" ? 1 : 0;
-      const bCompleted = b.status === "completed" ? 1 : 0;
+      const aCompleted = getMatchView(a, myTeam?.id).status === "completed" ? 1 : 0;
+      const bCompleted = getMatchView(b, myTeam?.id).status === "completed" ? 1 : 0;
       if (aCompleted !== bCompleted) return aCompleted - bCompleted;
       return new Date(a.match_date).getTime() - new Date(b.match_date).getTime();
     });
-  const nextMatch = relevantMatches.find((m) => m.status !== "completed") || relevantMatches[0];
+  const nextMatch = relevantMatches.find((m) => getMatchView(m, myTeam?.id).status !== "completed") || relevantMatches[0];
 
   // Carrega eventos + jogadores dos dois times para cada partida finalizada exibida
   const [matchExtras, setMatchExtras] = useState<Record<string, { events: any[]; playerMap: Map<string, any> }>>({});
