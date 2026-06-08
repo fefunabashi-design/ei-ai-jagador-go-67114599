@@ -191,6 +191,17 @@ const AgendaPage = () => {
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView, selectedMatch?.status]);
 
+  // Load events for the "Finalização" dialog
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!resultMatch) { setResultEvents([]); return; }
+      const { data } = await supabase.from("match_events").select("*").eq("match_id", resultMatch.id);
+      if (!cancelled) setResultEvents(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [resultMatch?.id]);
+
 
   // Create match
   const [createOpen, setCreateOpen] = useState(false);
