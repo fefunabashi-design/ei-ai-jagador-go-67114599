@@ -179,12 +179,7 @@ const AdminPage = () => {
     return myTeam && homeTeam?.id === myTeam.id;
   });
 
-  // Estatísticas: usa o helper baseado em finalização por lado
-  const teamStats = myTeam ? getTeamStats(myTeam.id) : { played: 0, points: 0, maxPoints: 0, nota: 0 };
-  // wins/draws/losses derivados a partir do total e dos pontos: V*3 + E*1 = pontos
-  // Como não temos placar oficial único, derivamos os agregados a partir do helper:
-  // pontos = wins*3 + draws*1; played = wins + draws + losses.
-  // Como o helper só dá pontos totais e jogos jogados, fazemos detalhamento aqui:
+  // Estatísticas: cada time só conta partidas que ELE finalizou pelo lado dele.
   const completedMatches = myMatches.filter((m: any) => {
     if (!myTeam) return false;
     const isHome = m.home_team_id === myTeam.id;
@@ -197,13 +192,11 @@ const AdminPage = () => {
     return isHome ? hs > as : as > hs;
   }).length;
   const draws = completedMatches.filter((m: any) => {
-    const isHome = m.home_team_id === myTeam!.id;
-    const hs = (isHome ? m.home_reported_home_score : m.away_reported_home_score) ?? m.home_score ?? 0;
-    const as = (isHome ? m.home_reported_away_score : m.away_reported_away_score) ?? m.away_score ?? 0;
+    const hs = (m.home_team_id === myTeam!.id ? m.home_reported_home_score : m.away_reported_home_score) ?? m.home_score ?? 0;
+    const as = (m.home_team_id === myTeam!.id ? m.home_reported_away_score : m.away_reported_away_score) ?? m.away_score ?? 0;
     return hs === as;
   }).length;
   const losses = completedMatches.length - wins - draws;
-  void teamStats;
 
   // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
   // OU matches abertos sem adversário definido criados por outro time
