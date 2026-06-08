@@ -1318,6 +1318,7 @@ export type Database = {
     Views: {
       public_players: {
         Row: {
+          birth_date: string | null
           created_at: string | null
           display_name: string | null
           goals: number | null
@@ -1335,6 +1336,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          birth_date?: string | null
           created_at?: string | null
           display_name?: string | null
           goals?: number | null
@@ -1352,6 +1354,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          birth_date?: string | null
           created_at?: string | null
           display_name?: string | null
           goals?: number | null
