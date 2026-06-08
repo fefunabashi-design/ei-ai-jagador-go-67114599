@@ -23,7 +23,7 @@ import {
   useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
-import { getTeamStats } from "@/lib/stats";
+
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { getCitiesForUf } from "@/lib/brCities";
