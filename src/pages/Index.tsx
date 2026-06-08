@@ -12,7 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
-import { getMatchView } from "@/lib/matchView";
+import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
 import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
@@ -626,8 +626,8 @@ const Index = () => {
               const goals = (extras?.events || []).filter((e: any) => e.type === "goal" || e.type === "own_goal");
               const mView = getMatchView(m, myTeam?.id);
               const shareText = mView.status === "completed"
-                ? `🏁 ${homeTeam?.name || "Mandante"} ${mView.homeScore ?? 0} x ${mView.awayScore ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${(homeTeam as any)?.field_name || m.location}`
-                : `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${m.location}`;
+                ? `🏁 ${homeTeam?.name || "Mandante"} ${mView.homeScore ?? 0} x ${mView.awayScore ?? 0} ${awayTeam?.name || "Visitante"}\n📅 ${matchDate.toLocaleDateString("pt-BR")}\n📍 ${getFieldDisplayName(m)}`
+                : `⚽ Próxima partida: ${homeTeam?.name || "Meu time"} x ${awayTeam?.name || "Adversário"}\n📅 ${matchDate.toLocaleDateString("pt-BR")} às ${matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${getFieldDisplayName(m)}`;
 
               const handleResenha = async () => {
                 try {
@@ -638,7 +638,7 @@ const Index = () => {
                     homeLogoUrl: homeTeam?.logo_url,
                     awayLogoUrl: awayTeam?.logo_url,
                     matchDate,
-                    location: (homeTeam as any)?.field_name || m.location,
+                    location: getFieldDisplayName(m),
                   });
                   const { data: { user } } = await supabase.auth.getUser();
                   if (!user) throw new Error("Sessão expirada. Faça login novamente.");
@@ -698,7 +698,7 @@ const Index = () => {
                         <div className="text-[10px] text-muted-foreground text-center whitespace-nowrap">
                           <p className="font-semibold">{matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</p>
                           <p>{matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
-                          <p className="mt-2 flex items-center justify-center gap-1"><MapPin size={10} /> {(homeTeam as any)?.field_name || m.location}</p>
+                          <p className="mt-2 flex items-center justify-center gap-1"><MapPin size={10} /> {getFieldDisplayName(m)}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
@@ -752,7 +752,7 @@ const Index = () => {
                                 homeLogoUrl: homeTeam?.logo_url,
                                 awayLogoUrl: awayTeam?.logo_url,
                                 matchDate,
-                                location: (homeTeam as any)?.field_name || m.location,
+                                location: getFieldDisplayName(m),
                               });
                               const file = new File([blob], `partida-${m.id}.png`, { type: "image/png" });
                               if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -780,7 +780,7 @@ const Index = () => {
                                 homeLogoUrl: homeTeam?.logo_url,
                                 awayLogoUrl: awayTeam?.logo_url,
                                 matchDate,
-                                location: (homeTeam as any)?.field_name || m.location,
+                                location: getFieldDisplayName(m),
                               });
                               const file = new File([blob], `partida-${m.id}.png`, { type: "image/png" });
                               try { await navigator.clipboard.writeText(shareText); } catch {}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { getFieldDisplayName } from "@/lib/matchView";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, MessageCircle, ListChecks, Shield, MapPin, Clock } from "lucide-react";
@@ -87,7 +88,7 @@ const MatchDetails = () => {
           </div>
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><Clock size={12} /> {matchDate.toLocaleDateString("pt-BR")} {matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-            {match.location && <span className="flex items-center gap-1"><MapPin size={12} /> {match.location}</span>}
+            {match.location && <span className="flex items-center gap-1"><MapPin size={12} /> {getFieldDisplayName(match)}</span>}
           </div>
         </div>
 

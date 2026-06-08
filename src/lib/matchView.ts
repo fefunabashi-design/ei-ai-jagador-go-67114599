@@ -101,3 +101,16 @@ export function getMatchView(match: any, myTeamId?: string | null): MatchView {
     hasScoreConflict,
   };
 }
+
+// Retorna apenas o nome do campo (sem endereço completo).
+// Prioriza `home_team.field_name`; senão extrai a primeira parte de `location`
+// cortando em separadores comuns: em-dash, hífen com espaços, vírgula, bullet.
+export function getFieldDisplayName(match: any): string {
+  const fieldName = (match?.home_team as any)?.field_name;
+  if (fieldName && String(fieldName).trim()) return String(fieldName).trim();
+  const loc = String(match?.location ?? "").trim();
+  if (!loc) return "";
+  const parts = loc.split(/\s+[—–-]\s+|·|,/);
+  return (parts[0] || loc).trim();
+}
+
