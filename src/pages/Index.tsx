@@ -376,7 +376,7 @@ const Index = () => {
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
-  }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+  }, [Array.from(myTeamIds).join(","), allMyMatches.length, profile?.user_id]);
 
   const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
