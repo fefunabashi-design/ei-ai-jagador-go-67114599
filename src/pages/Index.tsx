@@ -226,11 +226,47 @@ const Index = () => {
   });
 
 
-  // Totais agregados a partir do breakdown por time (mesma fonte:
-  // `match_events` para gols, `matches` finalizadas para jogos). Isso
-  // garante que o KPI bate com o detalhamento por time mostrado no diálogo.
-  const golsTemporada = perTeamStats.reduce((a, s) => a + s.gols, 0);
+  // Gols pessoais (KPI "Gols da Temporada"): conta apenas eventos
+  // type='goal' cujo player_id pertence ao usuário logado.
+  // Resolução tolerante: vínculo direto por user_id OU match por nome/apelido
+  // (display_name/nickname) normalizado, restrito aos times do usuário.
+  const norm = (s?: string | null) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const [meusGolsTemporada, setMeusGolsTemporada] = useState(0);
+  useEffect(() => {
+    const matchIds = completedAllMatches.map((m) => m.id);
+    if (!matchIds.length || !profile) { setMeusGolsTemporada(0); return; }
+    let alive = true;
+    (async () => {
+      const teamIds = Array.from(myTeamIds);
+      if (!teamIds.length) { if (alive) setMeusGolsTemporada(0); return; }
+      const { data: allMyTeamPlayers = [] } = await supabase
+        .from("players")
+        .select("id, name, nickname, user_id, team_id")
+        .in("team_id", teamIds);
+      const candidates = new Set<string>();
+      const myNames = [norm(profile.display_name), norm(profile.nickname)].filter(Boolean);
+      (allMyTeamPlayers || []).forEach((p: any) => {
+        if (p.user_id && p.user_id === profile.user_id) candidates.add(p.id);
+        else if (myNames.includes(norm(p.name)) || myNames.includes(norm(p.nickname))) candidates.add(p.id);
+      });
+      const ids = Array.from(candidates);
+      if (!ids.length) { if (alive) setMeusGolsTemporada(0); return; }
+      const { data: evs = [] } = await supabase
+        .from("match_events")
+        .select("id")
+        .in("match_id", matchIds)
+        .in("player_id", ids)
+        .eq("type", "goal");
+      if (alive) setMeusGolsTemporada((evs || []).length);
+    })();
+    return () => { alive = false; };
+  }, [completedAllMatches.map((m) => m.id).join(","), profile?.user_id, profile?.display_name, profile?.nickname, Array.from(myTeamIds).join(",")]);
+
+  // KPI individual de gols + jogos da temporada (jogos = total do time).
+  const golsTemporada = meusGolsTemporada;
   const jogosTemporada = perTeamStats.reduce((a, s) => a + s.jogos, 0);
+
 
 
 
