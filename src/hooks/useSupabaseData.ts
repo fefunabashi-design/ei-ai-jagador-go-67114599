@@ -854,8 +854,9 @@ export const useMatchDetail = (matchId?: string) => {
         away_team: row.away_team_id ? teamMap.get(row.away_team_id) || null : null,
       };
       if (alive) setData(merged);
-
+    };
     load();
+
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
     return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
