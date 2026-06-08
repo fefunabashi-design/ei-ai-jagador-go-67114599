@@ -123,6 +123,7 @@ const AgendaPage = () => {
 
   const { data: matches = [], isLoading } = useMatches();
   const { data: myTeam } = useMyTeam();
+  const { data: profile } = useProfile();
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const hideMatch = useHideMatch();
