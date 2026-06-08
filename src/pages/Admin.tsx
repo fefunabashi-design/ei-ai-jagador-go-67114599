@@ -632,7 +632,7 @@ const AdminPage = () => {
               transition={{ delay: 0.2 + i * 0.03 }}
               onClick={() => {
                 if (action.path !== "#") {
-                  navigate(action.path, action.path === "/agenda" ? { state: { fromAdmin: true } } : undefined);
+                  navigate(action.path === "/agenda" ? "/agenda?from=admin" : action.path, action.path === "/agenda" ? { state: { fromAdmin: true } } : undefined);
                 }
               }}
               className="relative flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
