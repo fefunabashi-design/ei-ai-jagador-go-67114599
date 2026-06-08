@@ -612,8 +612,9 @@ const AgendaPage = () => {
                 >
                   {/* Header bar */}
                   <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between">
-                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[match.status] || ""}`}>
-                      {statusLabels[match.status] || match.status}
+                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[view.status] || ""}`}>
+                      {statusLabels[view.status] || view.status}
+                      {view.status === "completed" && !view.isFinalizedByMe ? " (pelo adversário)" : ""}
                     </span>
                     <span className="text-[11px] text-muted-foreground font-semibold">{match.format}</span>
                   </div>
@@ -630,19 +631,19 @@ const AgendaPage = () => {
                           )}
                         </div>
                         <span className="font-display text-foreground truncate">{homeTeam?.name?.toUpperCase() || "???"}</span>
-                        {match.status === "completed" && (
+                        {view.status === "completed" && (
                           <span className="ml-1 inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-primary/15 text-primary font-display text-lg leading-none">
-                            {match.home_score ?? 0}
+                            {view.homeScore ?? 0}
                           </span>
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground font-bold px-1 shrink-0">
-                        {match.status === "completed" ? "–" : "VS"}
+                        {view.status === "completed" ? "–" : "VS"}
                       </span>
                       <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
-                        {match.status === "completed" && (
+                        {view.status === "completed" && (
                           <span className="mr-1 inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md bg-muted text-foreground font-display text-lg leading-none">
-                            {match.away_score ?? 0}
+                            {view.awayScore ?? 0}
                           </span>
                         )}
                         <span className="font-display text-foreground truncate">{awayTeam?.name?.toUpperCase() || "???"}</span>
