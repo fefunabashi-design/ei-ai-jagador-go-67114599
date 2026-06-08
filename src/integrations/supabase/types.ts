@@ -438,11 +438,19 @@ export type Database = {
       }
       matches: {
         Row: {
+          away_finalized_at: string | null
+          away_hidden: boolean
+          away_reported_away_score: number | null
+          away_reported_home_score: number | null
           away_score: number | null
           away_team_id: string | null
           compatibility: number | null
           created_at: string
           format: string
+          home_finalized_at: string | null
+          home_hidden: boolean
+          home_reported_away_score: number | null
+          home_reported_home_score: number | null
           home_score: number | null
           home_team_id: string
           id: string
@@ -452,11 +460,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          away_finalized_at?: string | null
+          away_hidden?: boolean
+          away_reported_away_score?: number | null
+          away_reported_home_score?: number | null
           away_score?: number | null
           away_team_id?: string | null
           compatibility?: number | null
           created_at?: string
           format?: string
+          home_finalized_at?: string | null
+          home_hidden?: boolean
+          home_reported_away_score?: number | null
+          home_reported_home_score?: number | null
           home_score?: number | null
           home_team_id: string
           id?: string
@@ -466,11 +482,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          away_finalized_at?: string | null
+          away_hidden?: boolean
+          away_reported_away_score?: number | null
+          away_reported_home_score?: number | null
           away_score?: number | null
           away_team_id?: string | null
           compatibility?: number | null
           created_at?: string
           format?: string
+          home_finalized_at?: string | null
+          home_hidden?: boolean
+          home_reported_away_score?: number | null
+          home_reported_home_score?: number | null
           home_score?: number | null
           home_team_id?: string
           id?: string
