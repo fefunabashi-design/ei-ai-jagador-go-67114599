@@ -1001,9 +1001,30 @@ const AgendaPage = () => {
                           <ul className="space-y-1.5">
                             {opponentPlayers.map((p: any) => {
                               const display = p.nickname?.trim() || p.name || "Jogador";
+                              const avatarUrl = p.user_id ? opponentAvatars[p.user_id] : undefined;
+                              const initial = (display[0] || "?").toUpperCase();
+                              let age: number | null = null;
+                              if (p.birth_date) {
+                                const bd = new Date(p.birth_date);
+                                if (!isNaN(bd.getTime())) {
+                                  const today = new Date();
+                                  age = today.getFullYear() - bd.getFullYear();
+                                  const m = today.getMonth() - bd.getMonth();
+                                  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                                }
+                              }
                               return (
-                                <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2">
-                                  {display}
+                                <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2 flex items-center gap-3">
+                                  <Avatar className="w-8 h-8">
+                                    {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
+                                    <AvatarFallback className="text-xs">{initial}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="truncate">{display}</p>
+                                    {age !== null && (
+                                      <p className="text-[10px] text-muted-foreground">{age} anos</p>
+                                    )}
+                                  </div>
                                 </li>
                               );
                             })}
