@@ -31,7 +31,7 @@ import SoccerField from "@/components/SoccerField";
 import MonthlyCalendar from "@/components/MonthlyCalendar";
 import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
-  useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useDeleteMatch, useHideMatch,
+  useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
   usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
 } from "@/hooks/useSupabaseData";
 import { getMatchView } from "@/lib/matchView";
