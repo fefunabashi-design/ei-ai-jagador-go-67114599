@@ -840,10 +840,21 @@ export const useMatchDetail = (matchId?: string) => {
     const load = async () => {
       const { data: row } = await supabase
         .from("matches")
-        .select("*, home_team:teams!matches_home_team_fk(*), away_team:teams!matches_away_team_fk(*)")
+        .select("*")
         .eq("id", matchId).maybeSingle();
-      if (alive) setData(row);
-    };
+      if (!row) { if (alive) setData(null); return; }
+      const ids = [row.home_team_id, row.away_team_id].filter(Boolean);
+      const { data: teamsData = [] } = ids.length
+        ? await supabase.from("public_teams").select("*").in("id", ids)
+        : { data: [] as any[] };
+      const teamMap = new Map((teamsData || []).map((t: any) => [t.id, t]));
+      const merged = {
+        ...row,
+        home_team: row.home_team_id ? teamMap.get(row.home_team_id) || null : null,
+        away_team: row.away_team_id ? teamMap.get(row.away_team_id) || null : null,
+      };
+      if (alive) setData(merged);
+
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
