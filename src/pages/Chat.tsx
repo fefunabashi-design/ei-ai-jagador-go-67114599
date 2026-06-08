@@ -68,6 +68,20 @@ const ChatPage = () => {
 
   // Players of home team for the roster (presence dialog)
   const { data: teamPlayers = [] } = usePlayers(homeTeam?.id);
+  const { data: awayPlayers = [] } = usePlayers(awayTeam?.id);
+
+  // Map user_id -> short team name for chat message attribution
+  const userTeamMap = new Map<string, string>();
+  if (homeTeam?.name) {
+    const short = getShortTeamName(homeTeam.name);
+    if (homeTeam.owner_id) userTeamMap.set(homeTeam.owner_id, short);
+    teamPlayers.forEach((p: any) => { if (p.user_id) userTeamMap.set(p.user_id, short); });
+  }
+  if (awayTeam?.name) {
+    const short = getShortTeamName(awayTeam.name);
+    if (awayTeam.owner_id) userTeamMap.set(awayTeam.owner_id, short);
+    awayPlayers.forEach((p: any) => { if (p.user_id) userTeamMap.set(p.user_id, short); });
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
