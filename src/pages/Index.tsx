@@ -807,7 +807,7 @@ const Index = () => {
                       </DropdownMenu>
                     </div>
 
-                    {m.status === "completed" && goals.length > 0 && (
+                    {mView.status === "completed" && goals.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5 justify-center">
                         {goals.map((e: any) => {
                           const p = extras?.playerMap.get(e.player_id);
