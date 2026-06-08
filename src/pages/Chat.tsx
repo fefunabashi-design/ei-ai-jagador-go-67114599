@@ -435,14 +435,26 @@ const ChatPage = () => {
             <Button variant="outline" onClick={() => setFinalizeOpen(false)}>Cancelar</Button>
             <Button
               onClick={async () => {
-                if (!matchId) return;
+                if (!matchId || !myTeam || !match) return;
                 const hs = parseInt(homeScore);
                 const as = parseInt(awayScore);
                 if (isNaN(hs) || isNaN(as)) {
                   toast({ title: "Informe o placar", variant: "destructive" });
                   return;
                 }
-                await updateMatch.mutateAsync({ id: matchId, status: "completed", home_score: hs, away_score: as });
+                const mySide: "home" | "away" = match.home_team_id === myTeam.id ? "home" : "away";
+                const patch: Record<string, any> = mySide === "home"
+                  ? {
+                      home_finalized_at: new Date().toISOString(),
+                      home_reported_home_score: hs,
+                      home_reported_away_score: as,
+                    }
+                  : {
+                      away_finalized_at: new Date().toISOString(),
+                      away_reported_home_score: hs,
+                      away_reported_away_score: as,
+                    };
+                await updateMatch.mutateAsync({ id: matchId, ...patch });
                 toast({ title: "Partida finalizada! 🏁" });
                 setFinalizeOpen(false);
               }}
