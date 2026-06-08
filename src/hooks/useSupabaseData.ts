@@ -362,11 +362,24 @@ export const useMatches = () => {
       if (!teamIds.length) return [];
       const { data: rows = [] } = await supabase
         .from("matches")
-        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .select("*")
         .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
         .order("match_date", { ascending: true });
+      // Fetch team data via public_teams view (bypasses owner-only RLS on base teams table)
+      const allTeamIds = Array.from(new Set(
+        (rows || []).flatMap((m: any) => [m.home_team_id, m.away_team_id]).filter(Boolean)
+      ));
+      const { data: teamsData = [] } = allTeamIds.length
+        ? await supabase.from("public_teams").select("*").in("id", allTeamIds)
+        : { data: [] as any[] };
+      const teamMap = new Map((teamsData || []).map((t: any) => [t.id, t]));
+      const withTeams = (rows || []).map((m: any) => ({
+        ...m,
+        home_team: m.home_team_id ? teamMap.get(m.home_team_id) || null : null,
+        away_team: m.away_team_id ? teamMap.get(m.away_team_id) || null : null,
+      }));
       // Esconder partidas que o meu time marcou como removidas
-      const filtered = (rows || []).filter((m: any) => {
+      const filtered = withTeams.filter((m: any) => {
         const isMyHome = ownedIds.has(m.home_team_id) || (playerLinks || []).some((p: any) => p.team_id === m.home_team_id);
         const isMyAway = m.away_team_id && (ownedIds.has(m.away_team_id) || (playerLinks || []).some((p: any) => p.team_id === m.away_team_id));
         if (isMyHome && m.home_hidden) return false;
@@ -374,6 +387,7 @@ export const useMatches = () => {
         return true;
       });
       return filtered;
+
     },
     staleTime: 30_000,
   });
