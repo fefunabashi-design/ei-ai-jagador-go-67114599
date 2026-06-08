@@ -295,9 +295,11 @@ const Index = () => {
       const ano = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
 
-      // Players of all teams
+      // Apenas os registros de jogador do usuário logado nos times em que está ativo
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id, name").in("team_id", teamIds);
+        .from("players").select("id, team_id, name")
+        .in("team_id", teamIds)
+        .eq("user_id", profile?.user_id || "");
       const playersByTeam = new Map<string, { id: string; name: string }[]>();
       const playerById = new Map<string, { id: string; name: string; team_id: string }>();
       (allPlayers || []).forEach((p: any) => {
@@ -374,7 +376,7 @@ const Index = () => {
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
-  }, [Array.from(myTeamIds).join(","), allMyMatches.length]);
+  }, [Array.from(myTeamIds).join(","), allMyMatches.length, profile?.user_id]);
 
   const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
@@ -652,7 +654,7 @@ const Index = () => {
                         {Array.from(vaqByMatch.entries()).map(([mid, e]) => (
                           <button
                             key={mid}
-                            onClick={() => { setStatDetail(null); navigate(`/match/${mid}`); }}
+                            onClick={() => { setStatDetail(null); navigate(`/payments/${mid}`); }}
                             className="w-full text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
                           >
                             <p className="text-xs font-semibold text-foreground truncate">{e.label}</p>
