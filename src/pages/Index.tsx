@@ -686,11 +686,11 @@ const Index = () => {
                         })()}
                       </div>
                       <div className="flex flex-col items-center gap-2 px-3">
-                        {m.status === "completed" ? (
+                        {mView.status === "completed" ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-display text-foreground leading-none">{m.home_score ?? 0}</span>
+                            <span className="text-2xl font-display text-foreground leading-none">{mView.homeScore ?? 0}</span>
                             <span className="text-xs text-muted-foreground">x</span>
-                            <span className="text-2xl font-display text-foreground leading-none">{m.away_score ?? 0}</span>
+                            <span className="text-2xl font-display text-foreground leading-none">{mView.awayScore ?? 0}</span>
                           </div>
                         ) : (
                           <span className="text-xs font-bold text-muted-foreground">VS</span>
