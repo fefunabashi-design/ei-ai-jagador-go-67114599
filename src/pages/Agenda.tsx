@@ -793,15 +793,6 @@ const AgendaPage = () => {
                             </button>
                           </>
                         )}
-                        {isOwner && view.isFinalizedByMe && (
-                          <button
-                            onClick={() => { setFinalizeMatch(match); setExpandedActionsId(null); }}
-                            className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
-                          >
-                            <Trophy size={14} className="text-primary" />
-                            <span className="text-xs font-semibold text-foreground">Editar finalização</span>
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>
