@@ -866,11 +866,12 @@ const Index = () => {
                 )}
               </div>
             );
+            const dView = getMatchView(m, myTeam?.id);
             return (
               <>
                 <DialogHeader>
                   <DialogTitle className="font-display text-center">
-                    {homeTeam?.name} {m.home_score ?? 0} x {m.away_score ?? 0} {awayTeam?.name}
+                    {homeTeam?.name} {dView.homeScore ?? 0} x {dView.awayScore ?? 0} {awayTeam?.name}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
