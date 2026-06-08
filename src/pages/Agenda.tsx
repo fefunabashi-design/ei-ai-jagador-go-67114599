@@ -526,7 +526,9 @@ const AgendaPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl text-foreground font-display">
-              AGENDA{(myTeam as any)?.name ? ` ${String((myTeam as any).name).trim().split(/\s+/)[0].toUpperCase()}` : ""}
+              {fromAdmin && (myTeam as any)?.name
+                ? `AGENDA ${getShortTeamName((myTeam as any).name).toUpperCase()}`
+                : "AGENDA"}
             </h1>
             <p className="text-sm text-muted-foreground">Gerencie suas partidas</p>
           </div>
