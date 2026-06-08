@@ -1,21 +1,33 @@
-## Ajustes na tela de Chat da partida
+## Problema
 
-### 1. Remover cabeçalho com nomes dos times
-No `src/pages/Chat.tsx`, no header superior, remover o bloco que exibe `{homeTeam?.name} × {awayTeam?.name}`. Manter apenas o botão de voltar (`ArrowLeft`) e o botão de menu (`MoreHorizontal`) à direita, para preservar a navegação.
+Na aba **Jogadores** dentro do diálogo "Detalhes da Partida" (acessado a partir de uma partida confirmada na Agenda), a lista vem vazia ou incompleta. O objetivo é exibir **todos os jogadores ativos do time adversário** (o elenco do time), e não apenas os jogadores confirmados para aquela partida.
 
-### 2. Mostrar nome e time também nas mensagens do adversário
-Hoje só as mensagens do próprio usuário (`isMe`) exibem o nome do time (`myTeam.name`) acima do balão. Para as mensagens recebidas, é exibido apenas o apelido/nome do remetente, sem o time.
+## Causa
 
-Mudanças:
-- Buscar a qual time cada remetente pertence. Como a partida envolve apenas dois times (`home_team` e `away_team`), e cada mensagem traz `user_id`, vou:
-  - Carregar os jogadores de ambos os times (já temos `usePlayers(homeTeam?.id)`; adicionar `usePlayers(awayTeam?.id)`).
-  - Montar um mapa `userId → teamName` usando `player.user_id` + nome do time correspondente. Considerar também os donos dos times (`home_team.owner_id` / `away_team.owner_id`) como fallback.
-- Para mensagens onde `!isMe`, renderizar acima do balão (mesmo padrão já usado para o usuário atual) uma linha extra com o nome curto do time do remetente, usando `getShortTeamName(...)` que já existe no arquivo. Se o time não for identificado, não renderiza nada (evita "undefined").
+Em `src/pages/Agenda.tsx` (linha ~120), o carregamento dos jogadores do adversário usa a tabela `players` diretamente:
 
-### Resumo dos arquivos alterados
-- `src/pages/Chat.tsx`
-  - Remoção do bloco de nomes dos times no header.
-  - Adição de fetch dos jogadores do time visitante.
-  - Construção do mapa `user_id → time` e renderização do nome do time também nas mensagens recebidas.
+```ts
+supabase.from("players").select("*").eq("team_id", awayId)
+```
+
+Como o usuário logado normalmente **não é membro do time adversário**, a RLS da tabela `players` bloqueia esse SELECT e retorna lista vazia. Por isso a aba aparece sem jogadores.
+
+A tela "Detalhar Adversário" (`src/pages/OpponentDetails.tsx`) já resolve isso usando a view pública `public_players`, que expõe os jogadores ativos de qualquer time sem violar RLS.
+
+## Mudança
+
+Em `src/pages/Agenda.tsx`, no `useEffect` que carrega `opponentPlayers` (linhas ~115‑124):
+
+- Trocar `supabase.from("players")` por `supabase.from("public_players" as any)` para listar o elenco ativo do time adversário, mesmo quando o usuário não pertence a ele.
+- Manter o resto do efeito igual (mesmo gatilho por `selectedMatch?.id` e `detailView`, mesmo estado `opponentPlayers`).
+
+Na renderização da aba **Jogadores** (linhas ~966‑995):
+
+- Atualizar o rótulo do contador para deixar explícito que são jogadores do elenco: `Jogadores ({opponentPlayers.length})` → `Elenco ({opponentPlayers.length})` (ou manter "Jogadores" — confirmar preferência), e o título/empty state para refletir "jogadores ativos do time".
+- Continuar exibindo apelido/nome de cada jogador como já está.
+
+## Arquivos alterados
+
+- `src/pages/Agenda.tsx` — trocar fonte de dados para `public_players` e ajustar rótulo da aba.
 
 Sem mudanças de backend, banco ou regras de negócio.

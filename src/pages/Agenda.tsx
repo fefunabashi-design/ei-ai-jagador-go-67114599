@@ -117,7 +117,7 @@ const AgendaPage = () => {
     (async () => {
       const awayId = (selectedMatch as any)?.away_team?.id;
       if (!awayId || detailView !== "details") { setOpponentPlayers([]); return; }
-      const { data: pls } = await supabase.from("players").select("*").eq("team_id", awayId);
+      const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", awayId);
       if (!cancelled) setOpponentPlayers(pls || []);
     })();
     return () => { cancelled = true; };
