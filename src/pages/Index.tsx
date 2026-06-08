@@ -654,7 +654,7 @@ const Index = () => {
                         {Array.from(vaqByMatch.entries()).map(([mid, e]) => (
                           <button
                             key={mid}
-                            onClick={() => { setStatDetail(null); navigate(`/match/${mid}`); }}
+                            onClick={() => { setStatDetail(null); navigate(`/payments/${mid}`); }}
                             className="w-full text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
                           >
                             <p className="text-xs font-semibold text-foreground truncate">{e.label}</p>
