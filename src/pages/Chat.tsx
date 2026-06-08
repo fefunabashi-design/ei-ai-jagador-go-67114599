@@ -19,6 +19,7 @@ import {
   useMatchDetail, useChatMessages, useSendChatMessage,
   useCreateSummons, useUpdateMatch,
 } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const getInitials = (name: string) => {
