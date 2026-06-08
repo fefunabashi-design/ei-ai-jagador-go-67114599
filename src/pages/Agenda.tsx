@@ -115,6 +115,8 @@ const AgendaPage = () => {
   const [opponentAvatars, setOpponentAvatars] = useState<Record<string, string>>({});
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+  const [resultMatch, setResultMatch] = useState<any | null>(null);
+  const [resultEvents, setResultEvents] = useState<any[]>([]);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
   const { data: matches = [], isLoading } = useMatches();
