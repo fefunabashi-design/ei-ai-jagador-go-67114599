@@ -21,6 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,7 @@ const AgendaPage = () => {
   const [editFormat, setEditFormat] = useState("8x8");
 
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
+  const [opponentAvatars, setOpponentAvatars] = useState<Record<string, string>>({});
   const [cancelReasonText, setCancelReasonText] = useState<string>("");
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
@@ -116,9 +118,24 @@ const AgendaPage = () => {
     let cancelled = false;
     (async () => {
       const awayId = (selectedMatch as any)?.away_team?.id;
-      if (!awayId || detailView !== "details") { setOpponentPlayers([]); return; }
+      if (!awayId || detailView !== "details") { setOpponentPlayers([]); setOpponentAvatars({}); return; }
       const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", awayId);
-      if (!cancelled) setOpponentPlayers(pls || []);
+      if (cancelled) return;
+      const list = pls || [];
+      setOpponentPlayers(list);
+      const userIds = list.map((p: any) => p.user_id).filter(Boolean);
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("public_profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds);
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+        setOpponentAvatars(map);
+      } else {
+        setOpponentAvatars({});
+      }
     })();
     return () => { cancelled = true; };
   }, [selectedMatch?.id, detailView]);
@@ -984,9 +1001,30 @@ const AgendaPage = () => {
                           <ul className="space-y-1.5">
                             {opponentPlayers.map((p: any) => {
                               const display = p.nickname?.trim() || p.name || "Jogador";
+                              const avatarUrl = p.user_id ? opponentAvatars[p.user_id] : undefined;
+                              const initial = (display[0] || "?").toUpperCase();
+                              let age: number | null = null;
+                              if (p.birth_date) {
+                                const bd = new Date(p.birth_date);
+                                if (!isNaN(bd.getTime())) {
+                                  const today = new Date();
+                                  age = today.getFullYear() - bd.getFullYear();
+                                  const m = today.getMonth() - bd.getMonth();
+                                  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                                }
+                              }
                               return (
-                                <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2">
-                                  {display}
+                                <li key={p.id} className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2 flex items-center gap-3">
+                                  <Avatar className="w-8 h-8">
+                                    {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
+                                    <AvatarFallback className="text-xs">{initial}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="truncate">{display}</p>
+                                    {age !== null && (
+                                      <p className="text-[10px] text-muted-foreground">{age} anos</p>
+                                    )}
+                                  </div>
                                 </li>
                               );
                             })}

@@ -1,11 +1,24 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, ChevronRight, Shield, MapPin, Phone, Mail, Instagram, Calendar, Clock, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMyTeams, usePlayers } from "@/hooks/useSupabaseData";
 import { getTeamStats } from "@/lib/stats";
+import { supabase } from "@/integrations/supabase/client";
+
+const computeAge = (birth?: string | null): number | null => {
+  if (!birth) return null;
+  const bd = new Date(birth);
+  if (isNaN(bd.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - bd.getFullYear();
+  const m = today.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+  return age;
+};
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => (
   <div className="flex items-start gap-2.5 py-1.5">
@@ -20,6 +33,24 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value
 const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
   const { data: players = [] } = usePlayers(team.id);
   const teamStats = getTeamStats(team.id);
+  const [avatarMap, setAvatarMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const userIds = (players || []).map((p: any) => p.user_id).filter(Boolean);
+    if (!userIds.length) { setAvatarMap({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: profs } = await supabase
+        .from("public_profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", userIds);
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      setAvatarMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [players]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -106,20 +137,21 @@ const TeamDetail = ({ team, onBack }: { team: any; onBack: () => void }) => {
             </div>
           ) : (
             players.map((p: any) => {
-              const isoToBr = (iso?: string | null) => {
-                if (!iso) return "";
-                const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-                return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
-              };
+              const display = (p.nickname?.trim() || `${p.name || ""} ${p.last_name || ""}`.trim() || "Jogador");
+              const age = computeAge(p.birth_date);
+              const avatarUrl = p.user_id ? avatarMap[p.user_id] : undefined;
+              const initial = (display[0] || "?").toUpperCase();
               return (
-              <div key={p.id} className="p-3">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {p.name} {p.last_name || ""}
-                </p>
-                <div className="mt-1 grid grid-cols-1 gap-0.5 text-[11px] text-muted-foreground">
-                  {p.nickname && <p>Nome social: <span className="text-foreground">{p.nickname}</span></p>}
-                  {p.birth_date && <p>Nascimento: <span className="text-foreground">{isoToBr(p.birth_date)}</span></p>}
-                  {p.phone && <p>Celular: <span className="text-foreground">{p.phone}</span></p>}
+              <div key={p.id} className="p-3 flex items-center gap-3">
+                <Avatar className="w-10 h-10">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
+                  <AvatarFallback className="text-xs">{initial}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{display}</p>
+                  {age !== null && (
+                    <p className="text-[11px] text-muted-foreground">{age} anos</p>
+                  )}
                 </div>
               </div>
               );
