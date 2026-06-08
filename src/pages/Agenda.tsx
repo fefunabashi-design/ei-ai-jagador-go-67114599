@@ -1354,6 +1354,82 @@ const AgendaPage = () => {
         />
       )}
 
+      {/* Finalização (resultado) Dialog */}
+      <Dialog open={!!resultMatch} onOpenChange={(o) => !o && setResultMatch(null)}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">FINALIZAÇÃO</DialogTitle>
+          </DialogHeader>
+          {resultMatch && (() => {
+            const mySide: "home" | "away" = resultMatch.home_team_id === myTeam?.id ? "home" : "away";
+            const hs = (mySide === "home" ? resultMatch.home_reported_home_score : resultMatch.away_reported_home_score)
+              ?? resultMatch.home_score;
+            const as = (mySide === "home" ? resultMatch.home_reported_away_score : resultMatch.away_reported_away_score)
+              ?? resultMatch.away_score;
+            const mineEvents = resultEvents.filter((e: any) => e.team_side === mySide);
+            const goals = mineEvents.filter((e: any) => e.type === "goal" || e.type === "own_goal");
+            const cards = mineEvents.filter((e: any) => ["yellow", "red", "blue"].includes(e.type));
+            const nameOf = (e: any) => e.player?.name || e.player_name || "—";
+            const cardEmoji: Record<string, string> = { yellow: "🟨", red: "🟥", blue: "🟦" };
+            return (
+              <div className="space-y-4 text-sm">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Placar final</p>
+                  <div className="flex items-center justify-center gap-3 font-display text-3xl">
+                    <span className="truncate max-w-[40%] text-base">{resultMatch.home_team?.name}</span>
+                    <span>{hs ?? "-"}</span>
+                    <span className="text-muted-foreground">x</span>
+                    <span>{as ?? "-"}</span>
+                    <span className="truncate max-w-[40%] text-base">{resultMatch.away_team?.name}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold mb-2">Gols do meu time</p>
+                  {goals.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">Nenhum gol registrado.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {goals.map((g: any) => (
+                        <li key={g.id} className="flex items-center gap-2 text-xs">
+                          <span>⚽</span><span>{nameOf(g)}</span>
+                          {g.type === "own_goal" && <span className="text-[10px] text-muted-foreground">(contra)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold mb-2">Cartões do meu time</p>
+                  {cards.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground">Nenhum cartão registrado.</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {cards.map((c: any) => (
+                        <li key={c.id} className="flex items-center gap-2 text-xs">
+                          <span>{cardEmoji[c.type] || "🟨"}</span><span>{nameOf(c)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResultMatch(null)}>Fechar</Button>
+            <Button
+              className="bg-gradient-primary text-primary-foreground border-0"
+              onClick={() => { const m = resultMatch; setResultMatch(null); setFinalizeMatch(m); }}
+            >
+              <Pencil size={14} className="mr-1" /> Editar finalização
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <BottomNav />
     </div>
   );
