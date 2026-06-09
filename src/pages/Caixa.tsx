@@ -46,7 +46,6 @@ const EMPTY_DEBITO = { descricao: "", data: "", valor: "", observacao: "" };
 type Lancamento = {
   id: string;
   tipo: "credito" | "debito";
-  status: "realizado" | "previsto";
   descricao: string;
   data: string;
   valor: number;
@@ -54,6 +53,7 @@ type Lancamento = {
   jogador?: string;
   observacao?: string;
 };
+
 
 // ─── page ───────────────────────────────────────────────────────────────────
 const CaixaPage = () => {
