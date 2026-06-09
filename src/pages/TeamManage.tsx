@@ -547,6 +547,11 @@ const TeamPage = () => {
       toast({ title: "E-mail inválido", description: "Informe um e-mail válido ou deixe em branco.", variant: "destructive" });
       return;
     }
+    const cpfDigits = (playerForm.cpf || "").replace(/\D/g, "");
+    if (cpfDigits && !isValidCpf(cpfDigits)) {
+      toast({ title: "CPF inválido", variant: "destructive" });
+      return;
+    }
     const data = {
       name: playerForm.name,
       last_name: playerForm.last_name || null,
@@ -557,6 +562,7 @@ const TeamPage = () => {
       jersey_number: parseInt(playerForm.jersey_number) || 0,
       phone: playerForm.phone || null,
       email: playerForm.email || null,
+      cpf: cpfDigits || null,
       is_active: playerForm.is_active !== "false",
       positions: selectedPositions,
       position: selectedPositions[0] || null,
