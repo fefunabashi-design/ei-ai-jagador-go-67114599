@@ -49,6 +49,9 @@ import {
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CITIES_BY_UF } from "@/lib/brCities";
+
+const UF_LIST = Object.keys(CITIES_BY_UF).sort();
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
@@ -1133,8 +1136,13 @@ const TeamFormDialog = ({
         if (!data.erro) {
           setField("addr_rua", data.logradouro || "");
           setField("addr_bairro", data.bairro || "");
-          setField("addr_cidade", data.localidade || "");
-          setField("addr_uf", data.uf || "");
+          const uf = (data.uf || "").toUpperCase();
+          setField("addr_uf", uf);
+          const cidade = data.localidade || "";
+          // Se a cidade retornada existir na lista da UF, usa ela; senão limpa para o usuário escolher
+          const lista = CITIES_BY_UF[uf] || [];
+          const match = lista.find((c) => c.toLowerCase() === cidade.toLowerCase());
+          setField("addr_cidade", match || "");
         }
       } catch (_) {
         // silently ignore
@@ -1478,26 +1486,45 @@ const TeamFormDialog = ({
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <Label>Cidade *</Label>
-              <Input
-                id="tf-addr_cidade"
-                value={form.addr_cidade}
-                onChange={(e) => setField("addr_cidade", e.target.value)}
-                placeholder="Cidade"
-                className="bg-secondary border-border"
-              />
-            </div>
             <div>
               <Label>UF *</Label>
-              <Input
-                id="tf-addr_uf"
+              <Select
                 value={form.addr_uf}
-                onChange={(e) => setField("addr_uf", e.target.value.toUpperCase().slice(0, 2))}
-                placeholder="SP"
-                maxLength={2}
-                className="bg-secondary border-border"
-              />
+                onValueChange={(v) => {
+                  setField("addr_uf", v);
+                  // Se a cidade atual não pertence à nova UF, limpa
+                  const lista = CITIES_BY_UF[v] || [];
+                  if (!lista.includes(form.addr_cidade)) {
+                    setField("addr_cidade", "");
+                  }
+                }}
+              >
+                <SelectTrigger id="tf-addr_uf" className="bg-secondary border-border">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UF_LIST.map((uf) => (
+                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label>Cidade *</Label>
+              <Select
+                value={form.addr_cidade}
+                onValueChange={(v) => setField("addr_cidade", v)}
+                disabled={!form.addr_uf}
+              >
+                <SelectTrigger id="tf-addr_cidade" className="bg-secondary border-border">
+                  <SelectValue placeholder={form.addr_uf ? "Selecione a cidade" : "Selecione a UF"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(CITIES_BY_UF[form.addr_uf] || []).map((cidade) => (
+                    <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
