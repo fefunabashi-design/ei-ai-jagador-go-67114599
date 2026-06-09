@@ -99,7 +99,7 @@ const AgendaPage = () => {
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
   const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
+  const [detailView, setDetailView] = useState<"details" | "lineup" | "field" | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
