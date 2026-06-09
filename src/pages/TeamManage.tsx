@@ -1511,23 +1511,18 @@ const TeamFormDialog = ({
             </div>
             <div className="col-span-2 min-w-0">
               <Label htmlFor="tf-addr_cidade">Cidade *</Label>
-              <Input
+              <select
                 id="tf-addr_cidade"
-                list={form.addr_uf ? `cidades-${form.addr_uf}` : undefined}
                 value={form.addr_cidade}
                 onChange={(e) => setField("addr_cidade", e.target.value)}
                 disabled={!form.addr_uf}
-                placeholder={form.addr_uf ? "Digite ou selecione a cidade" : "Selecione a UF"}
-                autoComplete="off"
-                className="w-full bg-secondary border-border"
-              />
-              {form.addr_uf && (
-                <datalist id={`cidades-${form.addr_uf}`}>
-                  {(CITIES_BY_UF[form.addr_uf] || []).map((cidade) => (
-                    <option key={cidade} value={cidade} />
-                  ))}
-                </datalist>
-              )}
+                className="flex h-10 w-full min-w-0 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">{form.addr_uf ? "Selecione a cidade" : "Selecione a UF"}</option>
+                {(CITIES_BY_UF[form.addr_uf] || []).map((cidade) => (
+                  <option key={cidade} value={cidade}>{cidade}</option>
+                ))}
+              </select>
             </div>
           </div>
 
