@@ -66,17 +66,8 @@ const statusLabels: Record<string, string> = {
   past: "Passada",
 };
 
-const summonStatusLabels: Record<string, string> = {
-  pending: "Pendente",
-  confirmed: "Confirmado",
-  declined: "Recusado",
-};
 
-const summonStatusStyles: Record<string, string> = {
-  pending: "bg-warning/10 text-warning",
-  confirmed: "bg-success/10 text-success",
-  declined: "bg-destructive/10 text-destructive",
-};
+
 
 type FilterType = "upcoming" | "past" | "all" | "open" | "confirmed" | "completed" | "cancelled";
 
