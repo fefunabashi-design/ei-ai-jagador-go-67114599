@@ -293,11 +293,12 @@ const ChatPage = () => {
                   <Select value={newEventPlayer} onValueChange={setNewEventPlayer}>
                     <SelectTrigger className="bg-secondary border-border h-9"><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      {confirmedRoster.map((r: any) => (
-                        <SelectItem key={r.player.id} value={r.player.id}>
-                          {r.player?.nickname || r.player?.name || "Jogador"}
+                      {teamPlayers.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nickname || p.name || "Jogador"}
                         </SelectItem>
                       ))}
+
                     </SelectContent>
                   </Select>
                 </div>
