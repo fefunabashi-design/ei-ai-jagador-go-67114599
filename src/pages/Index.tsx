@@ -295,10 +295,11 @@ const Index = () => {
       const ano = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
 
-      // Todos os jogadores dos times do usuário (owner/membro), para refletir Mensalidades
+      // Lembretes são pessoais: só mostram inadimplências do próprio usuário logado
       const { data: allPlayers = [] } = await supabase
         .from("players").select("id, team_id, name, nickname, display_name")
-        .in("team_id", teamIds);
+        .in("team_id", teamIds)
+        .eq("user_id", profile?.user_id || "");
       const displayNameOf = (p: any) =>
         (p?.nickname && String(p.nickname).trim()) ||
         (p?.display_name && String(p.display_name).trim()) ||
