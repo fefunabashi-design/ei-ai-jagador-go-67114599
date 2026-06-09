@@ -121,49 +121,10 @@ const Index = () => {
   const myPlayer = players.find((p) => p.user_id === profile?.user_id);
 
 
-  const pendingSummons = summons.filter((s: any) => s.status === "pending").length;
-
   // Is owner
   const isOwner = myTeam && profile && myTeam.owner_id === profile.user_id;
 
-  // Presence: every active team player is implicitly summoned. We just track responses.
-  const teamPlayers = players;
-  const nextMatchSummons: any[] = nextMatch
-    ? summons.filter((s: any) => s.match_id === nextMatch.id)
-    : [];
-  const summonByPlayerId = new Map(nextMatchSummons.map((s: any) => [s.player_id, s]));
 
-  // Build a unified roster with status (confirmed | declined | pending) for each active player
-  const roster = teamPlayers.map((p: any) => {
-    const s = summonByPlayerId.get(p.id);
-    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
-  });
-  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
-  const declinedRoster = roster.filter((r) => r.status === "declined");
-  const pendingRoster = roster.filter((r) => r.status === "pending");
-
-  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
-  const myCurrentStatus = myPlayerForPresence
-    ? (summonByPlayerId.get(myPlayerForPresence.id)?.status as "confirmed" | "declined" | undefined)
-    : undefined;
-
-  const handlePresence = async (status: "confirmed" | "declined") => {
-    if (!nextMatch) {
-      toast({ title: "Sem partida agendada", variant: "destructive" });
-      return;
-    }
-    if (!myPlayerForPresence) {
-      toast({ title: "Você ainda não está vinculado a este time", variant: "destructive" });
-      return;
-    }
-    await createSummons.mutateAsync({
-      matchId: nextMatch.id,
-      playerId: myPlayerForPresence.id,
-      status,
-    });
-    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
-    setConfirmOpen(false);
-  };
 
 
   // Aggregate season stats across ALL teams the user belongs to
