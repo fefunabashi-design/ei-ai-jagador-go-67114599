@@ -168,7 +168,6 @@ const EMPTY_PLAYER_FORM = {
   nickname: "",
   birth_date: "",
   hire_date: "",
-  jersey_number: "",
   phone: "",
   email: "",
   is_active: "true",
@@ -516,7 +515,6 @@ const TeamPage = () => {
       nickname: player.nickname || "",
       birth_date: player.birth_date || "",
       hire_date: player.hire_date || "",
-      jersey_number: player.jersey_number?.toString() || "",
       phone: player.phone || "",
       email: player.email || "",
       is_active: player.is_active === false ? "false" : "true",
@@ -562,7 +560,6 @@ const TeamPage = () => {
       display_name: playerForm.nickname?.trim() || playerForm.name,
       birth_date: playerForm.birth_date || null,
       hire_date: playerForm.hire_date || null,
-      jersey_number: parseInt(playerForm.jersey_number) || 0,
       phone: playerForm.phone || null,
       email: playerForm.email || null,
       cpf: cpfDigits || null,
@@ -809,13 +806,7 @@ const TeamPage = () => {
                     transition={{ delay: i * 0.03 }}
                     className="bg-card rounded-xl border border-border p-3 flex items-center gap-3"
                   >
-                    {/* Número */}
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-display text-primary">{player.jersey_number || "—"}</span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-foreground truncate">
                           {player.display_name || player.nickname || player.name}
@@ -979,19 +970,6 @@ const TeamPage = () => {
                   className="bg-secondary border-border"
                 />
               </div>
-            </div>
-
-            <div className="w-1/2 pr-1.5">
-              <Label>Nº da Camisa</Label>
-              <Input
-                type="number"
-                value={playerForm.jersey_number}
-                onChange={(e) => setPF("jersey_number", e.target.value)}
-                min={0}
-                max={99}
-                placeholder="10"
-                className="bg-secondary border-border"
-              />
             </div>
 
             {/* Posições — multi-select */}
