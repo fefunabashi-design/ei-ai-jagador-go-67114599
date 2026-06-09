@@ -61,7 +61,7 @@ const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 
 const GENEROS = ["Masculino", "Feminino"];
 const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
 
-const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+const REGIOES = ["Centro", "Z/L", "Z/N", "Z/O", "Z/S"];
 
 const WEEK_DAYS = [
   { value: "domingo", label: "Domingo" },
