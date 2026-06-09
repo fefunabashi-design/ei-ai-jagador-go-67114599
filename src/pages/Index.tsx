@@ -7,9 +7,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import PlayerSummons from "@/components/PlayerSummons";
 import BottomNav from "@/components/BottomNav";
-import { useMyTeam, useMyTeams, useMatches, usePlayers, useMatchSummons, useProfile, useCreateSummons, useCreateResenhaPost } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMyTeams, useMatches, usePlayers, useProfile, useCreateResenhaPost } from "@/hooks/useSupabaseData";
+
 import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { getTeamStats } from "@/lib/stats";
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
