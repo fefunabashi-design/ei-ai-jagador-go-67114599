@@ -297,16 +297,21 @@ const Index = () => {
 
       // Apenas os registros de jogador do usuário logado nos times em que está ativo
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id, name")
+        .from("players").select("id, team_id, name, nickname, display_name")
         .in("team_id", teamIds)
         .eq("user_id", profile?.user_id || "");
+      const displayNameOf = (p: any) =>
+        (p?.nickname && String(p.nickname).trim()) ||
+        (p?.display_name && String(p.display_name).trim()) ||
+        p?.name || "Jogador";
       const playersByTeam = new Map<string, { id: string; name: string }[]>();
       const playerById = new Map<string, { id: string; name: string; team_id: string }>();
       (allPlayers || []).forEach((p: any) => {
+        const entry = { id: p.id, name: displayNameOf(p), team_id: p.team_id };
         const arr = playersByTeam.get(p.team_id) || [];
-        arr.push({ id: p.id, name: p.name });
+        arr.push(entry);
         playersByTeam.set(p.team_id, arr);
-        playerById.set(p.id, p);
+        playerById.set(p.id, entry);
       });
       const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
 
@@ -317,16 +322,24 @@ const Index = () => {
           .from("mensalidades")
           .select("id, pago, mes, ano, player_id")
           .in("player_id", allPlayerIds)
-          .eq("ano", ano)
-          .lte("mes", mesAtual);
-        (mens || []).filter((m: any) => !m.pago).forEach((m: any) => {
-          const p = playerById.get(m.player_id);
-          if (!p) return;
-          const item = { playerId: m.player_id, playerName: p.name, mes: m.mes };
-          mensList.push(item);
-          const arr = mensByTeam.get(p.team_id) || [];
-          arr.push(item);
-          mensByTeam.set(p.team_id, arr);
+          .eq("ano", ano);
+        // Build set of paid (player_id, mes)
+        const paidSet = new Set<string>();
+        (mens || []).filter((m: any) => m.pago).forEach((m: any) => {
+          paidSet.add(`${m.player_id}:${m.mes}`);
+        });
+        // Para cada jogador, todo mes <= mesAtual-1 sem pagamento conta como inadimplente
+        const limit = mesAtual - 1;
+        (allPlayers || []).forEach((p: any) => {
+          for (let mes = 1; mes <= limit; mes++) {
+            if (!paidSet.has(`${p.id}:${mes}`)) {
+              const item = { playerId: p.id, playerName: displayNameOf(p), mes };
+              mensList.push(item);
+              const arr = mensByTeam.get(p.team_id) || [];
+              arr.push(item);
+              mensByTeam.set(p.team_id, arr);
+            }
+          }
         });
       }
 
