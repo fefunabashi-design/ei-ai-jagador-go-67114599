@@ -49,6 +49,9 @@ import {
 } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CITIES_BY_UF } from "@/lib/brCities";
+
+const UF_LIST = Object.keys(CITIES_BY_UF).sort();
 
 const POSITIONS = ["Gol", "Lat Esq", "Lat Dir", "Zaga", "Volante", "Meia", "Atacante"];
 
