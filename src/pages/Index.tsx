@@ -296,16 +296,24 @@ const Index = () => {
       const mesAtual = now.getMonth() + 1;
 
       // Lembretes são pessoais: só mostram inadimplências do próprio usuário logado.
-      // Alguns jogadores antigos ainda não têm user_id vinculado; nesses casos,
-      // usamos o e-mail do cadastro do jogador como vínculo pessoal seguro.
+      // Regra estrita: casa por user_id; se não houver vínculo, casa por e-mail
+      // SOMENTE quando exatamente 1 jogador (em todos os times do usuário) tem esse e-mail —
+      // assim evitamos confundir jogadores diferentes cadastrados com o mesmo e-mail.
       const profileEmail = String(profile?.email || "").trim().toLowerCase();
       const { data: allPlayers = [] } = await supabase
         .from("players").select("id, team_id, name, nickname, display_name, user_id, email")
         .in("team_id", teamIds);
-      const personalPlayers = (allPlayers || []).filter((p: any) => {
-        const playerEmail = String(p?.email || "").trim().toLowerCase();
-        return p?.user_id === profile?.user_id || (!!profileEmail && playerEmail === profileEmail);
-      });
+      const byUserId = (allPlayers || []).filter(
+        (p: any) => !!profile?.user_id && p?.user_id === profile.user_id
+      );
+      let personalPlayers = byUserId;
+      if (personalPlayers.length === 0 && profileEmail) {
+        const byEmail = (allPlayers || []).filter(
+          (p: any) => String(p?.email || "").trim().toLowerCase() === profileEmail
+        );
+        if (byEmail.length === 1) personalPlayers = byEmail;
+      }
+
       const displayNameOf = (p: any) =>
         (p?.nickname && String(p.nickname).trim()) ||
         (p?.display_name && String(p.display_name).trim()) ||
