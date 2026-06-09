@@ -61,7 +61,7 @@ const SUB_CATEGORIAS_INFANTIL = Array.from({ length: 14 }, (_, i) => `Sub ${i + 
 const GENEROS = ["Masculino", "Feminino"];
 const MODALIDADES = ["Campo", "Mini Campo (Society)", "Futsal"];
 
-const REGIOES = ["Z/L", "Z/N", "Z/O", "Z/S"];
+const REGIOES = ["Centro", "Z/L", "Z/N", "Z/O", "Z/S"];
 
 const WEEK_DAYS = [
   { value: "domingo", label: "Domingo" },
@@ -1457,32 +1457,15 @@ const TeamFormDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Bairro *</Label>
-              <Input
-                id="tf-addr_bairro"
-                value={form.addr_bairro}
-                onChange={(e) => setField("addr_bairro", e.target.value)}
-                placeholder="Bairro"
-                className="bg-secondary border-border"
-              />
-            </div>
-            <div>
-              <Label>
-                Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
-              </Label>
-              <Select value={form.region} onValueChange={(v) => setField("region", v)}>
-                <SelectTrigger id="tf-region" className="bg-secondary border-border">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {REGIOES.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Bairro *</Label>
+            <Input
+              id="tf-addr_bairro"
+              value={form.addr_bairro}
+              onChange={(e) => setField("addr_bairro", e.target.value)}
+              placeholder="Bairro"
+              className="bg-secondary border-border"
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -1524,6 +1507,26 @@ const TeamFormDialog = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <Label>
+              Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
+            </Label>
+            <Select
+              value={form.region}
+              onValueChange={(v) => setField("region", v)}
+              disabled={form.addr_cidade.trim().toLowerCase() !== "são paulo"}
+            >
+              <SelectTrigger id="tf-region" className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {REGIOES.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 
