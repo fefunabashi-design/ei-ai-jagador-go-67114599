@@ -46,7 +46,6 @@ const EMPTY_DEBITO = { descricao: "", data: "", valor: "", observacao: "" };
 type Lancamento = {
   id: string;
   tipo: "credito" | "debito";
-  status: "realizado" | "previsto";
   descricao: string;
   data: string;
   valor: number;
@@ -54,6 +53,7 @@ type Lancamento = {
   jogador?: string;
   observacao?: string;
 };
+
 
 // ─── page ───────────────────────────────────────────────────────────────────
 const CaixaPage = () => {
@@ -67,9 +67,9 @@ const CaixaPage = () => {
   const _firstDay = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().slice(0, 10);
   const _lastDay = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).toISOString().slice(0, 10);
   const [filterTipo, setFilterTipo] = useState<"all" | "credito" | "debito">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "realizado" | "previsto">("all");
   const [filterDtInicio, setFilterDtInicio] = useState(_firstDay);
   const [filterDtFim, setFilterDtFim] = useState(_lastDay);
+
   const [showFilters, setShowFilters] = useState(false);
 
   // ── lançamento dialog ──
@@ -138,7 +138,6 @@ const CaixaPage = () => {
           list.push({
             id: `mens-${m.id || m.player_id + m.mes}`,
             tipo: "credito",
-            status: "realizado",
             descricao: `Mensalidade ${["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][m.mes - 1]}/${m.ano}`,
             data: m.data_pagamento,
             valor: valorMensal,
@@ -146,38 +145,14 @@ const CaixaPage = () => {
             jogador: nome,
           });
         });
-
-      // Créditos previstos — mensalidades em aberto do mês atual em diante
-      const activePlayers = players.filter((p) => p.is_active !== false);
-      const monthLabels = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-      for (let mes = currentMonth; mes <= 12; mes++) {
-        const paidThisMonth = mensalidades.filter(
-          (m: any) => m.pago && m.mes === mes && m.ano === currentYear
-        ).length;
-        const pendingCount = activePlayers.length - paidThisMonth;
-        if (pendingCount > 0) {
-          list.push({
-            id: `previsto-mens-${currentYear}-${mes}`,
-            tipo: "credito",
-            status: "previsto",
-            descricao: `Mensalidade ${monthLabels[mes - 1]}/${currentYear} — ${pendingCount} jogador(es) em aberto`,
-            data: new Date(currentYear, mes - 1, 28).toISOString(),
-            valor: pendingCount * valorMensal,
-            origem: "mensalidade",
-          });
-        }
-      }
     }
 
     // Débitos e créditos manuais
-    const now = Date.now();
     debitos.forEach((d: any) => {
       const isCredito = d.tipo === "credito";
-      const isFuture = new Date(d.data).getTime() > now;
       list.push({
         id: d.id,
         tipo: isCredito ? "credito" : "debito",
-        status: isFuture ? "previsto" : "realizado",
         descricao: d.descricao,
         data: d.data,
         valor: Number(d.valor),
@@ -193,32 +168,23 @@ const CaixaPage = () => {
   const filtered = useMemo(() => {
     return lancamentos.filter((l) => {
       if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
-      if (filterStatus !== "all" && l.status !== filterStatus) return false;
       if (filterDtInicio && l.data < filterDtInicio) return false;
       if (filterDtFim && l.data > filterDtFim + "T23:59:59") return false;
       return true;
     });
-  }, [lancamentos, filterTipo, filterStatus, filterDtInicio, filterDtFim]);
+  }, [lancamentos, filterTipo, filterDtInicio, filterDtFim]);
 
   // ── totalizadores (respeitam filtro) ──
   const creditosRealizados = filtered
-    .filter((l) => l.tipo === "credito" && l.status === "realizado")
+    .filter((l) => l.tipo === "credito")
     .reduce((s, l) => s + l.valor, 0);
 
   const debitosRealizados = filtered
-    .filter((l) => l.tipo === "debito" && l.status === "realizado")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const creditosPrevistos = filtered
-    .filter((l) => l.tipo === "credito" && l.status === "previsto")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const debitosPrevistos = filtered
-    .filter((l) => l.tipo === "debito" && l.status === "previsto")
+    .filter((l) => l.tipo === "debito")
     .reduce((s, l) => s + l.valor, 0);
 
   const saldoAtual = creditosRealizados - debitosRealizados;
-  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
+
 
   // ── totalizadores filtrados ──
   const totalFiltradoCredito = filtered
@@ -270,7 +236,8 @@ const CaixaPage = () => {
   };
 
   const hasFilters =
-    filterTipo !== "all" || filterStatus !== "all" || filterDtInicio || filterDtFim;
+    filterTipo !== "all" || filterDtInicio || filterDtFim;
+
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -344,36 +311,21 @@ const CaixaPage = () => {
             icon={<TrendingDown size={14} />}
             delay={0.05}
           />
-          <SummaryCard
-            label="Créditos Previstos"
-            value={fmtCurrency(creditosPrevistos)}
-            color="text-amber-500"
-            bg="bg-amber-500/10"
-            icon={<TrendingUp size={14} />}
-            delay={0.1}
-          />
-          <SummaryCard
-            label="Débitos Previstos"
-            value={fmtCurrency(debitosPrevistos)}
-            color="text-orange-500"
-            bg="bg-orange-500/10"
-            icon={<TrendingDown size={14} />}
-            delay={0.15}
-          />
         </div>
 
-        {/* Saldo previsto */}
+        {/* Saldo atual */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-card rounded-xl border border-border p-3 flex items-center justify-between"
         >
-          <span className="text-xs text-muted-foreground font-semibold">Saldo Previsto</span>
-          <span className={`text-lg font-display ${saldoPrevisto >= 0 ? "text-primary" : "text-destructive"}`}>
-            {fmtCurrency(saldoPrevisto)}
+          <span className="text-xs text-muted-foreground font-semibold">Saldo Atual</span>
+          <span className={`text-lg font-display ${saldoAtual >= 0 ? "text-primary" : "text-destructive"}`}>
+            {fmtCurrency(saldoAtual)}
           </span>
         </motion.div>
+
 
         {/* ── Filters ── */}
         {showFilters && (
@@ -388,7 +340,6 @@ const CaixaPage = () => {
                 <button
                   onClick={() => {
                     setFilterTipo("all");
-                    setFilterStatus("all");
                     setFilterDtInicio(_firstDay);
                     setFilterDtFim(_lastDay);
                   }}
@@ -399,34 +350,20 @@ const CaixaPage = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[10px]">Tipo</Label>
-                <Select value={filterTipo} onValueChange={(v: any) => setFilterTipo(v)}>
-                  <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="credito">Crédito</SelectItem>
-                    <SelectItem value="debito">Débito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-[10px]">Status</Label>
-                <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
-                  <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="realizado">Realizado</SelectItem>
-                    <SelectItem value="previsto">Previsto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label className="text-[10px]">Tipo</Label>
+              <Select value={filterTipo} onValueChange={(v: any) => setFilterTipo(v)}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="credito">Crédito</SelectItem>
+                  <SelectItem value="debito">Débito</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
 
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -526,8 +463,8 @@ const CaixaPage = () => {
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[9px] text-muted-foreground">{fmtDate(l.data)}</span>
                       <OrigemBadge origem={l.origem} tipo={l.tipo} />
-                      <StatusBadge status={l.status} />
                     </div>
+
 
                     {l.observacao && (
                       <p className="text-[10px] text-muted-foreground mt-1 italic">
@@ -722,16 +659,7 @@ const OrigemBadge = ({ origem, tipo }: { origem: Lancamento["origem"]; tipo: Lan
   );
 };
 
-const StatusBadge = ({ status }: { status: Lancamento["status"] }) => (
-  <span
-    className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${
-      status === "realizado"
-        ? "bg-emerald-500/10 text-emerald-600"
-        : "bg-amber-500/10 text-amber-600"
-    }`}
-  >
-    {status === "realizado" ? "Realizado" : "Previsto"}
-  </span>
-);
+
+
 
 export default CaixaPage;
