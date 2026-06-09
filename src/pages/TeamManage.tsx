@@ -1510,21 +1510,24 @@ const TeamFormDialog = ({
               </Select>
             </div>
             <div className="col-span-2 min-w-0">
-              <Label>Cidade *</Label>
-              <Select
+              <Label htmlFor="tf-addr_cidade">Cidade *</Label>
+              <Input
+                id="tf-addr_cidade"
+                list={form.addr_uf ? `cidades-${form.addr_uf}` : undefined}
                 value={form.addr_cidade}
-                onValueChange={(v) => setField("addr_cidade", v)}
+                onChange={(e) => setField("addr_cidade", e.target.value)}
                 disabled={!form.addr_uf}
-              >
-                <SelectTrigger id="tf-addr_cidade" className="w-full bg-secondary border-border">
-                  <SelectValue placeholder={form.addr_uf ? "Selecione a cidade" : "Selecione a UF"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-72 max-w-[--radix-select-trigger-width]">
+                placeholder={form.addr_uf ? "Digite ou selecione a cidade" : "Selecione a UF"}
+                autoComplete="off"
+                className="w-full bg-secondary border-border"
+              />
+              {form.addr_uf && (
+                <datalist id={`cidades-${form.addr_uf}`}>
                   {(CITIES_BY_UF[form.addr_uf] || []).map((cidade) => (
-                    <SelectItem key={cidade} value={cidade} className="truncate">{cidade}</SelectItem>
+                    <option key={cidade} value={cidade} />
                   ))}
-                </SelectContent>
-              </Select>
+                </datalist>
+              )}
             </div>
           </div>
 
