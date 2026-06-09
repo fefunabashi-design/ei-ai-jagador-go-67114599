@@ -1136,8 +1136,13 @@ const TeamFormDialog = ({
         if (!data.erro) {
           setField("addr_rua", data.logradouro || "");
           setField("addr_bairro", data.bairro || "");
-          setField("addr_cidade", data.localidade || "");
-          setField("addr_uf", data.uf || "");
+          const uf = (data.uf || "").toUpperCase();
+          setField("addr_uf", uf);
+          const cidade = data.localidade || "";
+          // Se a cidade retornada existir na lista da UF, usa ela; senão limpa para o usuário escolher
+          const lista = CITIES_BY_UF[uf] || [];
+          const match = lista.find((c) => c.toLowerCase() === cidade.toLowerCase());
+          setField("addr_cidade", match || "");
         }
       } catch (_) {
         // silently ignore
