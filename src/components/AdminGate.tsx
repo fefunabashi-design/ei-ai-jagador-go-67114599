@@ -14,7 +14,7 @@ const benefits = [
   "Cadastrar jogadores e categorias",
   "Agendar partidas",
   "Fazer escalações",
-  "Enviar convocações",
+  
   "Controle de mensalidades e caixa",
   "Buscar adversários e desafios",
   "Suporte prioritário",
