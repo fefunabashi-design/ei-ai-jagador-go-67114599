@@ -458,7 +458,6 @@ const AdminPage = () => {
     { icon: CalendarDays, label: teamFirstName ? `Agenda ${teamFirstName}` : "Agenda", path: "/agenda" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
-    { icon: DollarSign, label: "Vaquinha", path: "/funds" },
   ];
 
   return (

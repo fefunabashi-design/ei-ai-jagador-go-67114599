@@ -769,33 +769,11 @@ const AgendaPage = () => {
                       );
                     })()}
 
-                    {/* Vaquinha summary (read-only for non-admin) */}
-                    {!fromAdmin && (() => {
-                      const pay = getPaymentSummary(match.id);
-                      if (!pay) return null;
-                      return (
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/60 border border-border/50">
-                          <CreditCard size={12} className="text-primary" />
-                          <div className="flex-1 text-[11px] text-foreground">
-                            <span className="font-semibold">Vaquinha: R$ {pay.perPlayer.toFixed(2)}</span>
-                            <span className="text-muted-foreground"> · por jogador · {pay.paid}/{pay.count} pagos</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-
-
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
-                      {isOwner && fromAdmin && (
-                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/payments/${match.id}`)}>
-                          <CreditCard size={12} className="mr-1" /> Vaquinha
-                        </Button>
-                      )}
 
                       {isOwner && view.isFinalizedByMe && (
                         <Button

@@ -385,7 +385,7 @@ const Index = () => {
           vaq: vaqByTeam.get(tid) || [],
         };
       });
-      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length + v.vaq.length, 0);
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length, 0);
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
@@ -600,7 +600,7 @@ const Index = () => {
               )}
               {perTeamStats.map((s) => {
                 const lt = lembretesPerTeam[s.teamId] || { mens: [], vaq: [] };
-                const total = lt.mens.length + lt.vaq.length;
+                const total = lt.mens.length;
 
                 // Agrupa mensalidades por jogador
                 const mensByPlayer = new Map<string, { name: string; meses: number[] }>();
@@ -659,25 +659,6 @@ const Index = () => {
                       </div>
                     )}
 
-                    {vaqByMatch.size > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
-                          Vaquinhas pendentes
-                        </p>
-                        {Array.from(vaqByMatch.entries()).map(([mid, e]) => (
-                          <button
-                            key={mid}
-                            onClick={() => { setStatDetail(null); navigate(`/payments/${mid}`); }}
-                            className="w-full text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
-                          >
-                            <p className="text-xs font-semibold text-foreground truncate">{e.label}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                              {e.players.length} jogador(es) • R$ {e.total.toFixed(2).replace(".", ",")}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
