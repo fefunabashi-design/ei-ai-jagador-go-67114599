@@ -311,36 +311,21 @@ const CaixaPage = () => {
             icon={<TrendingDown size={14} />}
             delay={0.05}
           />
-          <SummaryCard
-            label="Créditos Previstos"
-            value={fmtCurrency(creditosPrevistos)}
-            color="text-amber-500"
-            bg="bg-amber-500/10"
-            icon={<TrendingUp size={14} />}
-            delay={0.1}
-          />
-          <SummaryCard
-            label="Débitos Previstos"
-            value={fmtCurrency(debitosPrevistos)}
-            color="text-orange-500"
-            bg="bg-orange-500/10"
-            icon={<TrendingDown size={14} />}
-            delay={0.15}
-          />
         </div>
 
-        {/* Saldo previsto */}
+        {/* Saldo atual */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-card rounded-xl border border-border p-3 flex items-center justify-between"
         >
-          <span className="text-xs text-muted-foreground font-semibold">Saldo Previsto</span>
-          <span className={`text-lg font-display ${saldoPrevisto >= 0 ? "text-primary" : "text-destructive"}`}>
-            {fmtCurrency(saldoPrevisto)}
+          <span className="text-xs text-muted-foreground font-semibold">Saldo Atual</span>
+          <span className={`text-lg font-display ${saldoAtual >= 0 ? "text-primary" : "text-destructive"}`}>
+            {fmtCurrency(saldoAtual)}
           </span>
         </motion.div>
+
 
         {/* ── Filters ── */}
         {showFilters && (
