@@ -340,7 +340,6 @@ const CaixaPage = () => {
                 <button
                   onClick={() => {
                     setFilterTipo("all");
-                    setFilterStatus("all");
                     setFilterDtInicio(_firstDay);
                     setFilterDtFim(_lastDay);
                   }}
@@ -351,34 +350,20 @@ const CaixaPage = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[10px]">Tipo</Label>
-                <Select value={filterTipo} onValueChange={(v: any) => setFilterTipo(v)}>
-                  <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="credito">Crédito</SelectItem>
-                    <SelectItem value="debito">Débito</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-[10px]">Status</Label>
-                <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
-                  <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="realizado">Realizado</SelectItem>
-                    <SelectItem value="previsto">Previsto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label className="text-[10px]">Tipo</Label>
+              <Select value={filterTipo} onValueChange={(v: any) => setFilterTipo(v)}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="credito">Crédito</SelectItem>
+                  <SelectItem value="debito">Débito</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
 
             <div className="grid grid-cols-2 gap-2">
               <div>
