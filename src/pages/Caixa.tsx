@@ -138,7 +138,6 @@ const CaixaPage = () => {
           list.push({
             id: `mens-${m.id || m.player_id + m.mes}`,
             tipo: "credito",
-            status: "realizado",
             descricao: `Mensalidade ${["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"][m.mes - 1]}/${m.ano}`,
             data: m.data_pagamento,
             valor: valorMensal,
@@ -146,38 +145,14 @@ const CaixaPage = () => {
             jogador: nome,
           });
         });
-
-      // Créditos previstos — mensalidades em aberto do mês atual em diante
-      const activePlayers = players.filter((p) => p.is_active !== false);
-      const monthLabels = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-      for (let mes = currentMonth; mes <= 12; mes++) {
-        const paidThisMonth = mensalidades.filter(
-          (m: any) => m.pago && m.mes === mes && m.ano === currentYear
-        ).length;
-        const pendingCount = activePlayers.length - paidThisMonth;
-        if (pendingCount > 0) {
-          list.push({
-            id: `previsto-mens-${currentYear}-${mes}`,
-            tipo: "credito",
-            status: "previsto",
-            descricao: `Mensalidade ${monthLabels[mes - 1]}/${currentYear} — ${pendingCount} jogador(es) em aberto`,
-            data: new Date(currentYear, mes - 1, 28).toISOString(),
-            valor: pendingCount * valorMensal,
-            origem: "mensalidade",
-          });
-        }
-      }
     }
 
     // Débitos e créditos manuais
-    const now = Date.now();
     debitos.forEach((d: any) => {
       const isCredito = d.tipo === "credito";
-      const isFuture = new Date(d.data).getTime() > now;
       list.push({
         id: d.id,
         tipo: isCredito ? "credito" : "debito",
-        status: isFuture ? "previsto" : "realizado",
         descricao: d.descricao,
         data: d.data,
         valor: Number(d.valor),
@@ -193,32 +168,23 @@ const CaixaPage = () => {
   const filtered = useMemo(() => {
     return lancamentos.filter((l) => {
       if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
-      if (filterStatus !== "all" && l.status !== filterStatus) return false;
       if (filterDtInicio && l.data < filterDtInicio) return false;
       if (filterDtFim && l.data > filterDtFim + "T23:59:59") return false;
       return true;
     });
-  }, [lancamentos, filterTipo, filterStatus, filterDtInicio, filterDtFim]);
+  }, [lancamentos, filterTipo, filterDtInicio, filterDtFim]);
 
   // ── totalizadores (respeitam filtro) ──
   const creditosRealizados = filtered
-    .filter((l) => l.tipo === "credito" && l.status === "realizado")
+    .filter((l) => l.tipo === "credito")
     .reduce((s, l) => s + l.valor, 0);
 
   const debitosRealizados = filtered
-    .filter((l) => l.tipo === "debito" && l.status === "realizado")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const creditosPrevistos = filtered
-    .filter((l) => l.tipo === "credito" && l.status === "previsto")
-    .reduce((s, l) => s + l.valor, 0);
-
-  const debitosPrevistos = filtered
-    .filter((l) => l.tipo === "debito" && l.status === "previsto")
+    .filter((l) => l.tipo === "debito")
     .reduce((s, l) => s + l.valor, 0);
 
   const saldoAtual = creditosRealizados - debitosRealizados;
-  const saldoPrevisto = creditosRealizados + creditosPrevistos - debitosRealizados - debitosPrevistos;
+
 
   // ── totalizadores filtrados ──
   const totalFiltradoCredito = filtered
