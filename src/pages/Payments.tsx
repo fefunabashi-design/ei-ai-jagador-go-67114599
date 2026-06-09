@@ -51,27 +51,29 @@ const PaymentsPage = () => {
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   const { data: match } = useMatchDetail(matchId);
-  const { data: summons = [] } = useMatchSummons(matchId);
+  const { data: lineups = [] } = useMatchLineups(matchId);
   const { data: payments = [] } = useMatchPayments(matchId);
   const createPaymentsMut = useCreateMatchPayments();
   const deletePaymentMut = useDeleteMatchPayment();
   const deleteAllMut = useDeleteMatchPaymentsByMatch();
 
+  const lineupPlayerIds = Array.from(
+    new Set(lineups.map((l: any) => l.player_id).filter(Boolean))
+  );
+
   const handleCreatePayments = async (amount: number) => {
     if (!matchId) return;
-    const confirmedPlayers = summons
-      .filter((s: any) => s.status === "confirmed")
-      .map((s: any) => s.player_id);
-    if (confirmedPlayers.length === 0) {
-      toast({ title: "Nenhum jogador confirmado", variant: "destructive" });
+    if (lineupPlayerIds.length === 0) {
+      toast({ title: "Nenhum jogador escalado", variant: "destructive" });
       return;
     }
     try {
-      await createPaymentsMut.mutateAsync({ matchId, playerIds: confirmedPlayers, amount });
+      await createPaymentsMut.mutateAsync({ matchId, playerIds: lineupPlayerIds, amount });
       toast({ title: "Vaquinha criada! 💰" });
       setSetupOpen(false);
     } catch {}
   };
+
 
   const handleDeleteVaquinha = async () => {
     if (!matchId) return;
