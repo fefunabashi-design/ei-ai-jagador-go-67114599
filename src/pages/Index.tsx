@@ -600,7 +600,7 @@ const Index = () => {
               )}
               {perTeamStats.map((s) => {
                 const lt = lembretesPerTeam[s.teamId] || { mens: [], vaq: [] };
-                const total = lt.mens.length + lt.vaq.length;
+                const total = lt.mens.length;
 
                 // Agrupa mensalidades por jogador
                 const mensByPlayer = new Map<string, { name: string; meses: number[] }>();
