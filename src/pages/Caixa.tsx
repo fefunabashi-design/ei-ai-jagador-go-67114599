@@ -463,8 +463,8 @@ const CaixaPage = () => {
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[9px] text-muted-foreground">{fmtDate(l.data)}</span>
                       <OrigemBadge origem={l.origem} tipo={l.tipo} />
-                      <StatusBadge status={l.status} />
                     </div>
+
 
                     {l.observacao && (
                       <p className="text-[10px] text-muted-foreground mt-1 italic">
