@@ -209,13 +209,10 @@ const AgendaPage = () => {
   const [lineupPosition, setLineupPosition] = useState("");
   const [lineupPlayerId, setLineupPlayerId] = useState("");
 
-  const { data: summons = [] } = useMatchSummons(selectedMatch?.id);
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
-  const createSummons = useCreateSummons();
   const createLineup = useCreateLineup();
   const deleteLineup = useDeleteLineup();
 
-  // Fetch all summons for all matches to show counters on cards
   const myMatchIds = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
@@ -223,29 +220,7 @@ const AgendaPage = () => {
     })
     .map((m) => m.id);
 
-  const { data: allSummons = [] } = useQuery({
-    queryKey: ["all-match-summons", myMatchIds.join(",")],
-    queryFn: async () => {
-      if (!myMatchIds.length) return [];
-      const { data, error } = await supabase
-        .from("match_summons")
-        .select("id, match_id, status")
-        .in("match_id", myMatchIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: myMatchIds.length > 0,
-  });
 
-  const getSummonCounts = (matchId: string) => {
-    const matchSummons = allSummons.filter((s) => s.match_id === matchId);
-    return {
-      total: matchSummons.length,
-      confirmed: matchSummons.filter((s) => s.status === "confirmed").length,
-      pending: matchSummons.filter((s) => s.status === "pending").length,
-      declined: matchSummons.filter((s) => s.status === "declined").length,
-    };
-  };
 
   const { data: allPayments = [] } = useQuery({
     queryKey: ["all-match-payments", myMatchIds.join(",")],
