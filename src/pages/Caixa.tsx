@@ -147,23 +147,25 @@ const CaixaPage = () => {
           });
         });
 
-      // Crédito previsto — mensalidade do mês atual não paga
+      // Créditos previstos — mensalidades em aberto do mês atual em diante
       const activePlayers = players.filter((p) => p.is_active !== false);
-      const paidThisMonth = mensalidades.filter(
-        (m: any) => m.pago && m.mes === currentMonth && m.ano === currentYear
-      ).length;
-      const pendingCount = activePlayers.length - paidThisMonth;
-      if (pendingCount > 0) {
-        const monthLabel = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][currentMonth - 1];
-        list.push({
-          id: `previsto-mens-${currentMonth}`,
-          tipo: "credito",
-          status: "previsto",
-          descricao: `Mensalidade ${monthLabel}/${currentYear} — ${pendingCount} jogador(es) em aberto`,
-          data: new Date(currentYear, currentMonth - 1, 28).toISOString(),
-          valor: pendingCount * valorMensal,
-          origem: "mensalidade",
-        });
+      const monthLabels = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      for (let mes = currentMonth; mes <= 12; mes++) {
+        const paidThisMonth = mensalidades.filter(
+          (m: any) => m.pago && m.mes === mes && m.ano === currentYear
+        ).length;
+        const pendingCount = activePlayers.length - paidThisMonth;
+        if (pendingCount > 0) {
+          list.push({
+            id: `previsto-mens-${currentYear}-${mes}`,
+            tipo: "credito",
+            status: "previsto",
+            descricao: `Mensalidade ${monthLabels[mes - 1]}/${currentYear} — ${pendingCount} jogador(es) em aberto`,
+            data: new Date(currentYear, mes - 1, 28).toISOString(),
+            valor: pendingCount * valorMensal,
+            origem: "mensalidade",
+          });
+        }
       }
     }
 
