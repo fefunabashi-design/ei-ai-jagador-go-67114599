@@ -247,9 +247,14 @@ const AdminPage = () => {
 
   const saldoAtual = (() => {
     const valorMensal = mensalidadeConfig?.valor_mensal ? Number(mensalidadeConfig.valor_mensal) : 0;
+    const now = Date.now();
     const creditosMensalidades = mensalidades.filter((m) => m.pago && m.data_pagamento).length * valorMensal;
-    const manualCredits = debitos.filter((d) => d.tipo === "credito").reduce((sum, debito) => sum + Number(debito.valor), 0);
-    const totalDebitos = debitos.filter((d) => d.tipo === "debito").reduce((sum, debito) => sum + Number(debito.valor), 0);
+    const manualCredits = debitos
+      .filter((d) => d.tipo === "credito" && new Date(d.data).getTime() <= now)
+      .reduce((sum, debito) => sum + Number(debito.valor), 0);
+    const totalDebitos = debitos
+      .filter((d) => d.tipo === "debito" && new Date(d.data).getTime() <= now)
+      .reduce((sum, debito) => sum + Number(debito.valor), 0);
     return (creditosMensalidades + manualCredits) - totalDebitos;
   })();
 
