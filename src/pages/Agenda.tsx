@@ -281,10 +281,28 @@ const AgendaPage = () => {
 
   const now = new Date();
 
-  const myMatches = matches.filter((m: any) => {
-    if (!myTeam) return false;
-    return m.home_team_id === myTeam.id || m.away_team_id === myTeam.id;
+  // Times em que o usuário está cadastrado como jogador ativo (para Agenda fora do Admin)
+  const { data: myPlayerTeamIds = [] } = useQuery({
+    queryKey: ["my-player-team-ids", profile?.user_id || ""],
+    queryFn: async () => {
+      if (!profile?.user_id) return [] as string[];
+      const { data } = await supabase
+        .from("players").select("team_id").eq("user_id", profile.user_id);
+      return Array.from(new Set((data || []).map((r: any) => r.team_id).filter(Boolean)));
+    },
+    enabled: !!profile?.user_id,
   });
+
+  const myMatches = matches.filter((m: any) => {
+    if (fromAdmin) {
+      if (!myTeam) return false;
+      return m.home_team_id === myTeam.id || m.away_team_id === myTeam.id;
+    }
+    // Agenda do usuário: somente partidas dos times em que ele é jogador ativo
+    const ids = new Set(myPlayerTeamIds);
+    return ids.has(m.home_team_id) || ids.has(m.away_team_id);
+  });
+
 
   const availableDays = !fromAdmin
     ? []
