@@ -15,10 +15,11 @@ type MatchEvent = {
   player_id: string;
 };
 import {
-  useProfile, useMatchSummons, usePlayers, useMyTeam,
+  useProfile, usePlayers, useMyTeam,
   useMatchDetail, useChatMessages, useSendChatMessage,
-  useCreateSummons, useUpdateMatch,
+  useUpdateMatch,
 } from "@/hooks/useSupabaseData";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
