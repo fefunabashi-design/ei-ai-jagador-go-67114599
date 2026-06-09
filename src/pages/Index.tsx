@@ -385,7 +385,7 @@ const Index = () => {
           vaq: vaqByTeam.get(tid) || [],
         };
       });
-      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length + v.vaq.length, 0);
+      const total = Object.values(perTeam).reduce((acc, v) => acc + v.mens.length, 0);
       if (alive) { setLembretes(total); setLembretesPerTeam(perTeam); }
     })();
     return () => { alive = false; };
