@@ -33,9 +33,10 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
-  usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
+  usePlayers, useCreateLineup, useMatchLineups, useDeleteLineup,
   useProfile,
 } from "@/hooks/useSupabaseData";
+
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
 import { getShortTeamName } from "@/lib/teamName";
 import { supabase } from "@/integrations/supabase/client";
