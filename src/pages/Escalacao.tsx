@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, RotateCcw, Save, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMyTeam, usePlayers, useMatches, useMatchSummons } from "@/hooks/useSupabaseData";
+import { useMyTeam, usePlayers, useMatches } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
@@ -142,7 +142,6 @@ export default function EscalacaoPage() {
   const myMatches = useMemo(()=>
     matches.filter(m=>(m.home_team as any)?.id===myTeam?.id),[matches,myTeam]);
   const matchId = myMatches[0]?.id||"";
-  const { data: summons=[] } = useMatchSummons(matchId||undefined);
 
   const fallbackPlayers = useMemo<Player[]>(() => {
     if (allPlayers.length > 0 || typeof window === "undefined") {
@@ -164,15 +163,12 @@ export default function EscalacaoPage() {
   }, [allPlayers]);
 
   const confirmed = useMemo<Player[]>(()=>{
-    const list = summons
-      .filter((s:any)=>s.status==="confirmed")
-      .map((s:any)=>({ id:s.player_id, name:s.player?.display_name||s.player?.nickname||s.player?.name||"?" }));
-    if(list.length) return list;
     const teamPlayers = allPlayers.map(p=>({ id:p.id, name:p.display_name||p.nickname||p.name }));
     if (teamPlayers.length) return teamPlayers;
     if (fallbackPlayers.length) return fallbackPlayers;
     return FALLBACK_SQUAD;
-  },[summons,allPlayers,fallbackPlayers]);
+  },[allPlayers,fallbackPlayers]);
+
 
   const placedIds = useMemo(()=>new Set([
     ...Object.values(slots).map(p=>p.id),

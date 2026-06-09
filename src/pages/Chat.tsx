@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X, Flag, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal, Flag, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,11 @@ type MatchEvent = {
   player_id: string;
 };
 import {
-  useProfile, useMatchSummons, usePlayers, useMyTeam,
+  useProfile, usePlayers, useMyTeam,
   useMatchDetail, useChatMessages, useSendChatMessage,
-  useCreateSummons, useUpdateMatch,
+  useUpdateMatch,
 } from "@/hooks/useSupabaseData";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,8 +46,6 @@ const ChatPage = () => {
   const { data: myTeam } = useMyTeam();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
@@ -58,10 +57,9 @@ const ChatPage = () => {
 
   const { data: match } = useMatchDetail(matchId);
   const { data: messages = [] } = useChatMessages(matchId);
-  const { data: summons = [] } = useMatchSummons(matchId);
   const sendMessage = useSendChatMessage();
-  const createSummonsMut = useCreateSummons();
   const updateMatch = useUpdateMatch();
+
 
   const homeTeam = match?.home_team as any;
   const awayTeam = match?.away_team as any;
@@ -128,35 +126,8 @@ const ChatPage = () => {
   const isHomeOwner = !!(myTeam && homeTeam?.id === myTeam.id && myTeam.owner_id === profile?.user_id);
   const canScheduleLineup = isHomeOwner || isStaff;
 
-  // Roster + statuses
-  const summonByPlayerId = new Map(summons.map((s: any) => [s.player_id, s]));
-  const roster = teamPlayers.map((p: any) => {
-    const s: any = summonByPlayerId.get(p.id);
-    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
-  });
-  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
-  const declinedRoster = roster.filter((r) => r.status === "declined");
-  const pendingRoster = roster.filter((r) => r.status === "pending");
 
-  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
-  const myCurrentStatus = myPlayerForPresence
-    ? (summonByPlayerId.get(myPlayerForPresence.id) as any)?.status as "confirmed" | "declined" | undefined
-    : undefined;
 
-  const handlePresence = async (status: "confirmed" | "declined") => {
-    if (!matchId) return;
-    if (!myPlayerForPresence) {
-      toast({ title: "Você não está vinculado a este time", variant: "destructive" });
-      return;
-    }
-    await createSummonsMut.mutateAsync({
-      matchId,
-      playerId: myPlayerForPresence.id,
-      status,
-    });
-    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
-    setConfirmOpen(false);
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -264,86 +235,8 @@ const ChatPage = () => {
         </div>
       </div>
 
-      {/* Confirmations list dialog with Confirm button inside */}
-      <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="bg-card border-border max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
-          </DialogHeader>
 
-          {/* Confirm action inside the same screen */}
-          <div className="rounded-xl border border-border bg-secondary/40 p-3 space-y-2">
-            <p className="text-[11px] font-semibold text-foreground">Sua presença</p>
-            {myCurrentStatus && (
-              <p className="text-[11px] text-primary font-semibold">
-                Status atual: {myCurrentStatus === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={() => handlePresence("confirmed")}
-                className="bg-success text-success-foreground hover:bg-success/90 font-semibold h-10"
-              >
-                <Check size={14} className="mr-1" /> CONFIRMADO
-              </Button>
-              <Button
-                onClick={() => handlePresence("declined")}
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold h-10"
-              >
-                <X size={14} className="mr-1" /> AUSENTE
-              </Button>
-            </div>
-          </div>
 
-          <div>
-            <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
-              ✓ Confirmados ({confirmedRoster.length})
-            </p>
-            {confirmedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
-            ) : (
-              <ul className="space-y-1 mb-3">
-                {confirmedRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
-              ✗ Ausentes ({declinedRoster.length})
-            </p>
-            {declinedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
-            ) : (
-              <ul className="space-y-1 mb-3">
-                {declinedRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
-              • Aguardando ({pendingRoster.length})
-            </p>
-            {pendingRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Todos responderam.</p>
-            ) : (
-              <ul className="space-y-1">
-                {pendingRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Finalize match dialog */}
       <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
@@ -378,8 +271,9 @@ const ChatPage = () => {
           {/* Eventos: gols e cartões */}
           <div className="mt-4 space-y-2">
             <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Gols e Cartões</p>
-            {confirmedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum jogador confirmado para selecionar.</p>
+            {teamPlayers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum jogador disponível para selecionar.</p>
+
             ) : (
               <div className="grid grid-cols-[1fr_1.3fr_auto] gap-2 items-end">
                 <div>
@@ -399,11 +293,12 @@ const ChatPage = () => {
                   <Select value={newEventPlayer} onValueChange={setNewEventPlayer}>
                     <SelectTrigger className="bg-secondary border-border h-9"><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      {confirmedRoster.map((r: any) => (
-                        <SelectItem key={r.player.id} value={r.player.id}>
-                          {r.player?.nickname || r.player?.name || "Jogador"}
+                      {teamPlayers.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nickname || p.name || "Jogador"}
                         </SelectItem>
                       ))}
+
                     </SelectContent>
                   </Select>
                 </div>

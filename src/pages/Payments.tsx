@@ -13,13 +13,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import {
-  useMatchSummons,
+  useMatchLineups,
   useMatchDetail,
   useMatchPayments,
   useCreateMatchPayments,
   useDeleteMatchPayment,
   useDeleteMatchPaymentsByMatch,
 } from "@/hooks/useSupabaseData";
+
 import { useToast } from "@/hooks/use-toast";
 
 const statusStyles: Record<string, string> = {
@@ -50,27 +51,29 @@ const PaymentsPage = () => {
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   const { data: match } = useMatchDetail(matchId);
-  const { data: summons = [] } = useMatchSummons(matchId);
+  const { data: lineups = [] } = useMatchLineups(matchId);
   const { data: payments = [] } = useMatchPayments(matchId);
   const createPaymentsMut = useCreateMatchPayments();
   const deletePaymentMut = useDeleteMatchPayment();
   const deleteAllMut = useDeleteMatchPaymentsByMatch();
 
+  const lineupPlayerIds = Array.from(
+    new Set(lineups.map((l: any) => l.player_id).filter(Boolean))
+  );
+
   const handleCreatePayments = async (amount: number) => {
     if (!matchId) return;
-    const confirmedPlayers = summons
-      .filter((s: any) => s.status === "confirmed")
-      .map((s: any) => s.player_id);
-    if (confirmedPlayers.length === 0) {
-      toast({ title: "Nenhum jogador confirmado", variant: "destructive" });
+    if (lineupPlayerIds.length === 0) {
+      toast({ title: "Nenhum jogador escalado", variant: "destructive" });
       return;
     }
     try {
-      await createPaymentsMut.mutateAsync({ matchId, playerIds: confirmedPlayers, amount });
+      await createPaymentsMut.mutateAsync({ matchId, playerIds: lineupPlayerIds, amount });
       toast({ title: "Vaquinha criada! 💰" });
       setSetupOpen(false);
     } catch {}
   };
+
 
   const handleDeleteVaquinha = async () => {
     if (!matchId) return;
@@ -237,9 +240,10 @@ const PaymentsPage = () => {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {summons.filter((s: any) => s.status === "confirmed").length} jogadores confirmados · 
-              Total: R$ {(Number(amountPerPlayer) * summons.filter((s: any) => s.status === "confirmed").length).toFixed(2)}
+              {lineupPlayerIds.length} jogadores escalados · 
+              Total: R$ {(Number(amountPerPlayer) * lineupPlayerIds.length).toFixed(2)}
             </p>
+
             <Button
               onClick={() => createPayments.mutate(Number(amountPerPlayer))}
               disabled={createPayments.isPending}

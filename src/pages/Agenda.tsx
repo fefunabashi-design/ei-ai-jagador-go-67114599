@@ -33,9 +33,10 @@ import MonthlyCalendar from "@/components/MonthlyCalendar";
 import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
-  usePlayers, useMatchSummons, useCreateSummons, useCreateLineup, useMatchLineups, useDeleteLineup,
+  usePlayers, useCreateLineup, useMatchLineups, useDeleteLineup,
   useProfile,
 } from "@/hooks/useSupabaseData";
+
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
 import { getShortTeamName } from "@/lib/teamName";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,17 +66,8 @@ const statusLabels: Record<string, string> = {
   past: "Passada",
 };
 
-const summonStatusLabels: Record<string, string> = {
-  pending: "Pendente",
-  confirmed: "Confirmado",
-  declined: "Recusado",
-};
 
-const summonStatusStyles: Record<string, string> = {
-  pending: "bg-warning/10 text-warning",
-  confirmed: "bg-success/10 text-success",
-  declined: "bg-destructive/10 text-destructive",
-};
+
 
 type FilterType = "upcoming" | "past" | "all" | "open" | "confirmed" | "completed" | "cancelled";
 
@@ -107,7 +99,7 @@ const AgendaPage = () => {
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
   const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [detailView, setDetailView] = useState<"details" | "lineup" | "summons" | "field" | null>(null);
+  const [detailView, setDetailView] = useState<"details" | "lineup" | "field" | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLocation, setEditLocation] = useState("");
   const [editDate, setEditDate] = useState("");
@@ -217,13 +209,10 @@ const AgendaPage = () => {
   const [lineupPosition, setLineupPosition] = useState("");
   const [lineupPlayerId, setLineupPlayerId] = useState("");
 
-  const { data: summons = [] } = useMatchSummons(selectedMatch?.id);
   const { data: lineups = [] } = useMatchLineups(selectedMatch?.id);
-  const createSummons = useCreateSummons();
   const createLineup = useCreateLineup();
   const deleteLineup = useDeleteLineup();
 
-  // Fetch all summons for all matches to show counters on cards
   const myMatchIds = matches
     .filter((m) => {
       const homeTeam = m.home_team as any;
@@ -231,29 +220,7 @@ const AgendaPage = () => {
     })
     .map((m) => m.id);
 
-  const { data: allSummons = [] } = useQuery({
-    queryKey: ["all-match-summons", myMatchIds.join(",")],
-    queryFn: async () => {
-      if (!myMatchIds.length) return [];
-      const { data, error } = await supabase
-        .from("match_summons")
-        .select("id, match_id, status")
-        .in("match_id", myMatchIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: myMatchIds.length > 0,
-  });
 
-  const getSummonCounts = (matchId: string) => {
-    const matchSummons = allSummons.filter((s) => s.match_id === matchId);
-    return {
-      total: matchSummons.length,
-      confirmed: matchSummons.filter((s) => s.status === "confirmed").length,
-      pending: matchSummons.filter((s) => s.status === "pending").length,
-      declined: matchSummons.filter((s) => s.status === "declined").length,
-    };
-  };
 
   const { data: allPayments = [] } = useQuery({
     queryKey: ["all-match-payments", myMatchIds.join(",")],
@@ -342,10 +309,11 @@ const AgendaPage = () => {
     const t = setTimeout(() => {
       const el = matchRefs.current[focusMatchId];
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      if (focusView === "summons" || focusView === "lineup" || focusView === "field") {
+      if (focusView === "lineup" || focusView === "field") {
         const m = matches.find((x: any) => x.id === focusMatchId);
         if (m) openDetails(m, focusView);
       }
+
       const t2 = setTimeout(() => {
         setHighlightedMatchId(null);
         searchParams.delete("matchId");
@@ -455,20 +423,9 @@ const AgendaPage = () => {
     setSelectedMatch(null);
   };
 
-  const openDetails = (match: any, view: "details" | "lineup" | "summons" | "field") => {
+  const openDetails = (match: any, view: "details" | "lineup" | "field") => {
     setSelectedMatch(match);
     setDetailView(view);
-  };
-
-  const handleSendSummons = () => {
-    if (!selectedMatch || !lineups.length) return;
-    lineups.forEach((l: any) => {
-      createSummons.mutate({
-        matchId: selectedMatch.id,
-        playerId: l.player_id,
-        status: "pending",
-      });
-    });
   };
 
   const handleAddToLineup = () => {
@@ -511,15 +468,6 @@ const AgendaPage = () => {
     avatarUrl: null,
   }));
 
-  // Build summons field players
-  const summonsFieldPlayers = summons.map((s: any) => ({
-    id: s.id,
-    name: s.player?.name || "???",
-    position: s.position || "",
-    avatarUrl: null,
-    status: s.status,
-  }));
-
   // Empty positions not yet filled
   const filledPositions = lineups.map((l: any) => l.position || l.player?.position).filter(Boolean);
   const emptyPositions = allPositions.filter((p) => !filledPositions.includes(p));
@@ -534,30 +482,11 @@ const AgendaPage = () => {
       avatarUrl: null,
     }));
 
-  // Split available players by summon status:
-  // Confirmed summons → main list; others → secondary
-  const confirmedPlayerIds = summons
-    .filter((s: any) => s.status === "confirmed")
-    .map((s: any) => s.player_id);
-  const declinedPlayerIds = summons
-    .filter((s: any) => s.status === "declined")
-    .map((s: any) => s.player_id);
-
-  const confirmedAvailable = players
-    .filter((p) => confirmedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
+  // All players not already in the lineup are available to be added
+  const availableForDrag = players
+    .filter((p) => !lineups.some((l: any) => l.player_id === p.id))
     .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
 
-  const otherAvailable = players
-    .filter((p) => !confirmedPlayerIds.includes(p.id) && !declinedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
-    .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
-
-  // Combine: confirmed first, then others (pending/no summon)
-  const availableForDrag = [...confirmedAvailable, ...otherAvailable];
-
-  // Counters
-  const confirmedCount = summons.filter((s: any) => s.status === "confirmed").length;
-  const pendingCount = summons.filter((s: any) => s.status === "pending").length;
-  const declinedCount = summons.filter((s: any) => s.status === "declined").length;
 
   // Match info for field header
   const getMatchInfo = () => {
@@ -760,32 +689,8 @@ const AgendaPage = () => {
                       <span className="flex items-center gap-1"><MapPin size={11} /> {getFieldDisplayName(match)}</span>
                     </div>
 
-                    {/* Summon counters */}
-                    {(() => {
-                      const counts = getSummonCounts(match.id);
-                      if (counts.total === 0) return null;
-                      return (
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 size={12} className="text-success" />
-                            <span className="text-[11px] font-semibold text-success">{counts.confirmed}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <AlertCircle size={12} className="text-warning" />
-                            <span className="text-[11px] font-semibold text-warning">{counts.pending}</span>
-                          </div>
-                          {counts.declined > 0 && (
-                            <div className="flex items-center gap-1">
-                              <XCircle size={12} className="text-destructive" />
-                              <span className="text-[11px] font-semibold text-destructive">{counts.declined}</span>
-                            </div>
-                          )}
-                          <span className="text-[10px] text-muted-foreground ml-auto">
-                            {counts.confirmed}/{counts.total} confirmados
-                          </span>
-                        </div>
-                      );
-                    })()}
+
+
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -995,7 +900,7 @@ const AgendaPage = () => {
       </Dialog>
 
 
-      {/* Details / Lineup (Field) / Summons Dialog */}
+      {/* Details / Lineup (Field) Dialog */}
       <Dialog open={!!detailView} onOpenChange={() => setDetailView(null)}>
         <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto sm:max-w-lg">
           {selectedMatch && detailView === "details" && (
@@ -1215,9 +1120,6 @@ const AgendaPage = () => {
               <DialogHeader>
                 <DialogTitle className="font-display text-2xl">ESCALAÇÃO</DialogTitle>
               </DialogHeader>
-              <p className="text-xs text-muted-foreground mb-2">
-                Somente jogadores que <span className="text-success font-semibold">confirmaram</span> presença aparecem na lista principal.
-              </p>
               <SoccerField
                 players={fieldPlayers.filter((p) => p.position)}
                 unpositioned={unpositionedLineups}
@@ -1227,8 +1129,8 @@ const AgendaPage = () => {
                 onDropPlayer={handleDropPlayer}
                 onRemovePlayer={handleRemoveFromLineup}
                 matchInfo={getMatchInfo()}
-                counters={{ confirmed: confirmedCount, pending: pendingCount, vacant: declinedCount }}
               />
+
               <div className="flex gap-2 mt-3">
                 <Button onClick={() => setLineupOpen(true)} variant="outline" className="flex-1 text-xs">
                   <Plus size={12} className="mr-1" /> Escalar Manual
@@ -1263,59 +1165,7 @@ const AgendaPage = () => {
           )}
 
 
-          {selectedMatch && detailView === "summons" && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="font-display text-2xl">ELENCO DA PARTIDA</DialogTitle>
-              </DialogHeader>
-              {summons.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma convocação enviada.</p>
-              ) : (
-                <>
-                  <SoccerField
-                    players={summonsFieldPlayers.filter((p) => p.position)}
-                    unpositioned={summonsFieldPlayers.filter((p) => !p.position)}
-                    showStatus
-                  />
-                  {/* Legend */}
-                  <div className="flex items-center gap-4 mt-2 justify-center">
-                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <div className="w-2.5 h-2.5 rounded-full bg-warning" /> Pendente
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <div className="w-2.5 h-2.5 rounded-full bg-success" /> Confirmado
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <div className="w-2.5 h-2.5 rounded-full bg-destructive" /> Recusado
-                    </span>
-                  </div>
-                  {/* Mini cards list */}
-                  <div className="space-y-1.5 mt-3">
-                    {summons.map((s: any) => (
-                      <div key={s.id} className="flex items-center justify-between bg-secondary/80 rounded-xl px-4 py-3 border border-border/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                            {s.player?.name?.charAt(0) || "?"}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground leading-tight">{s.player?.name}</p>
-                            <p className="text-[11px] text-muted-foreground">{s.position || "Sem posição"}</p>
-                          </div>
-                        </div>
-                        <span className={`text-[11px] font-semibold ${
-                          s.status === "confirmed" ? "text-success" :
-                          s.status === "declined" ? "text-destructive" :
-                          "text-warning"
-                        }`}>
-                          {summonStatusLabels[s.status] || s.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          )}
+
         </DialogContent>
       </Dialog>
 

@@ -1,16 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { getFieldDisplayName } from "@/lib/matchView";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, MessageCircle, ListChecks, Shield, MapPin, Clock } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ArrowLeft, MessageCircle, Shield, MapPin, Clock } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import MatchConfirmationList from "@/components/MatchConfirmationList";
 
 import { useMatches, useMyTeam } from "@/hooks/useSupabaseData";
 
@@ -21,8 +14,6 @@ const MatchDetails = () => {
   const { data: myTeam } = useMyTeam();
 
   const match = useMemo(() => matches.find((m: any) => m.id === matchId), [matches, matchId]);
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!match) {
     return (
@@ -45,13 +36,6 @@ const MatchDetails = () => {
       label: "Chat da partida",
       description: "Conversar com o grupo",
       onClick: () => navigate(`/chat/${match.id}`),
-      disabled: false,
-    },
-    {
-      icon: ListChecks,
-      label: "Confirmações",
-      description: "Ver quem confirmou presença",
-      onClick: () => setConfirmOpen(true),
       disabled: false,
     },
     {
@@ -114,19 +98,6 @@ const MatchDetails = () => {
           ))}
         </div>
       </div>
-
-      {/* Confirmações */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">CONFIRMAÇÕES</DialogTitle>
-          </DialogHeader>
-          <MatchConfirmationList
-            matchId={match.id}
-            teamId={myIsHome ? homeTeam?.id : awayTeam?.id}
-          />
-        </DialogContent>
-      </Dialog>
 
       <BottomNav />
     </div>
