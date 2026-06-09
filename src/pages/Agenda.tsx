@@ -423,20 +423,9 @@ const AgendaPage = () => {
     setSelectedMatch(null);
   };
 
-  const openDetails = (match: any, view: "details" | "lineup" | "summons" | "field") => {
+  const openDetails = (match: any, view: "details" | "lineup" | "field") => {
     setSelectedMatch(match);
     setDetailView(view);
-  };
-
-  const handleSendSummons = () => {
-    if (!selectedMatch || !lineups.length) return;
-    lineups.forEach((l: any) => {
-      createSummons.mutate({
-        matchId: selectedMatch.id,
-        playerId: l.player_id,
-        status: "pending",
-      });
-    });
   };
 
   const handleAddToLineup = () => {
@@ -479,15 +468,6 @@ const AgendaPage = () => {
     avatarUrl: null,
   }));
 
-  // Build summons field players
-  const summonsFieldPlayers = summons.map((s: any) => ({
-    id: s.id,
-    name: s.player?.name || "???",
-    position: s.position || "",
-    avatarUrl: null,
-    status: s.status,
-  }));
-
   // Empty positions not yet filled
   const filledPositions = lineups.map((l: any) => l.position || l.player?.position).filter(Boolean);
   const emptyPositions = allPositions.filter((p) => !filledPositions.includes(p));
@@ -502,30 +482,11 @@ const AgendaPage = () => {
       avatarUrl: null,
     }));
 
-  // Split available players by summon status:
-  // Confirmed summons → main list; others → secondary
-  const confirmedPlayerIds = summons
-    .filter((s: any) => s.status === "confirmed")
-    .map((s: any) => s.player_id);
-  const declinedPlayerIds = summons
-    .filter((s: any) => s.status === "declined")
-    .map((s: any) => s.player_id);
-
-  const confirmedAvailable = players
-    .filter((p) => confirmedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
+  // All players not already in the lineup are available to be added
+  const availableForDrag = players
+    .filter((p) => !lineups.some((l: any) => l.player_id === p.id))
     .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
 
-  const otherAvailable = players
-    .filter((p) => !confirmedPlayerIds.includes(p.id) && !declinedPlayerIds.includes(p.id) && !lineups.some((l: any) => l.player_id === p.id))
-    .map((p) => ({ id: p.id, name: p.name, position: p.position, avatarUrl: null }));
-
-  // Combine: confirmed first, then others (pending/no summon)
-  const availableForDrag = [...confirmedAvailable, ...otherAvailable];
-
-  // Counters
-  const confirmedCount = summons.filter((s: any) => s.status === "confirmed").length;
-  const pendingCount = summons.filter((s: any) => s.status === "pending").length;
-  const declinedCount = summons.filter((s: any) => s.status === "declined").length;
 
   // Match info for field header
   const getMatchInfo = () => {
