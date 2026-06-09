@@ -295,25 +295,31 @@ const Index = () => {
       const ano = now.getFullYear();
       const mesAtual = now.getMonth() + 1;
 
-      // Lembretes são pessoais: só mostram inadimplências do próprio usuário logado
+      // Lembretes são pessoais: só mostram inadimplências do próprio usuário logado.
+      // Alguns jogadores antigos ainda não têm user_id vinculado; nesses casos,
+      // usamos o e-mail do cadastro do jogador como vínculo pessoal seguro.
+      const profileEmail = String(profile?.email || "").trim().toLowerCase();
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id, name, nickname, display_name")
-        .in("team_id", teamIds)
-        .eq("user_id", profile?.user_id || "");
+        .from("players").select("id, team_id, name, nickname, display_name, user_id, email")
+        .in("team_id", teamIds);
+      const personalPlayers = (allPlayers || []).filter((p: any) => {
+        const playerEmail = String(p?.email || "").trim().toLowerCase();
+        return p?.user_id === profile?.user_id || (!!profileEmail && playerEmail === profileEmail);
+      });
       const displayNameOf = (p: any) =>
         (p?.nickname && String(p.nickname).trim()) ||
         (p?.display_name && String(p.display_name).trim()) ||
         p?.name || "Jogador";
       const playersByTeam = new Map<string, { id: string; name: string }[]>();
       const playerById = new Map<string, { id: string; name: string; team_id: string }>();
-      (allPlayers || []).forEach((p: any) => {
+      personalPlayers.forEach((p: any) => {
         const entry = { id: p.id, name: displayNameOf(p), team_id: p.team_id };
         const arr = playersByTeam.get(p.team_id) || [];
         arr.push(entry);
         playersByTeam.set(p.team_id, arr);
         playerById.set(p.id, entry);
       });
-      const allPlayerIds = (allPlayers || []).map((p: any) => p.id);
+      const allPlayerIds = personalPlayers.map((p: any) => p.id);
 
       const mensList: LembreteMens[] = [];
       const mensByTeam = new Map<string, LembreteMens[]>();
@@ -330,7 +336,7 @@ const Index = () => {
         });
         // Para cada jogador, todo mes <= mesAtual-1 sem pagamento conta como inadimplente
         const limit = mesAtual - 1;
-        (allPlayers || []).forEach((p: any) => {
+        personalPlayers.forEach((p: any) => {
           for (let mes = 1; mes <= limit; mes++) {
             if (!paidSet.has(`${p.id}:${mes}`)) {
               const item = { playerId: p.id, playerName: displayNameOf(p), mes };
