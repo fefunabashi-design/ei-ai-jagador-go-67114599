@@ -723,6 +723,7 @@ export type Database = {
       players: {
         Row: {
           birth_date: string | null
+          cpf: string | null
           created_at: string
           display_name: string | null
           email: string | null
@@ -743,6 +744,7 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -763,6 +765,7 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          cpf?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
