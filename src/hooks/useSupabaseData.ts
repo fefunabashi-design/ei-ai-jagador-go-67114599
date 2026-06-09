@@ -515,73 +515,8 @@ export const useFinalizeMatchForTeam = createMutationHook<{
   error: "Erro ao finalizar",
 });
 
-// =================== SUMMONS / LINEUPS ===================
-export const useMatchSummons = (matchId?: string) => {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+// =================== LINEUPS ===================
 
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      if (matchId) {
-        const { data: rows = [] } = await supabase.from("match_summons").select("*").eq("match_id", matchId);
-        if (alive) { setData(rows || []); setIsLoading(false); }
-      } else {
-        // summons for the current user (across matches)
-        const uid = await getUserId();
-        if (!uid) { setData([]); setIsLoading(false); return; }
-        const { data: links = [] } = await supabase.from("players").select("id").eq("user_id", uid);
-        const ids = (links || []).map((p: any) => p.id);
-        if (!ids.length) { setData([]); setIsLoading(false); return; }
-        const { data: rows = [] } = await supabase.from("match_summons").select("*").in("player_id", ids);
-        if (alive) { setData(rows || []); setIsLoading(false); }
-      }
-    };
-    load();
-    const h = () => load();
-    window.addEventListener("supabase-data-change", h);
-    window.addEventListener("mock-db-change", h);
-
-    // Realtime for live summons updates — gated by match access
-    let ch: any = null;
-    (async () => {
-      if (!matchId) return;
-      const { data: allowed } = await supabase.rpc("can_access_match_realtime", { _match_id: matchId });
-      if (!alive || !allowed) return;
-      ch = supabase.channel(`summons-${matchId}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "match_summons", filter: `match_id=eq.${matchId}` }, () => load())
-        .subscribe();
-    })();
-
-    return () => {
-      alive = false;
-      window.removeEventListener("supabase-data-change", h);
-      window.removeEventListener("mock-db-change", h);
-      if (ch) supabase.removeChannel(ch);
-    };
-  }, [matchId]);
-
-  return { data, isLoading };
-};
-
-export const useCreateSummons = createMutationHook<{ matchId: string; playerId: string; status: "pending" | "confirmed" | "declined"; absenceReason?: string | null }>({
-  run: async (payload) => {
-    const reason = payload.status === "declined" ? (payload.absenceReason ?? null) : null;
-    const { data: existing } = await supabase.from("match_summons")
-      .select("id").eq("match_id", payload.matchId).eq("player_id", payload.playerId).maybeSingle();
-    if (existing) {
-      const { error } = await supabase.from("match_summons")
-        .update({ status: payload.status, absence_reason: reason, responded_at: new Date().toISOString() })
-        .eq("id", existing.id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from("match_summons")
-        .insert({ match_id: payload.matchId, player_id: payload.playerId, status: payload.status, absence_reason: reason });
-      if (error) throw error;
-    }
-  },
-  error: "Erro ao confirmar presença",
-});
 
 export const useMatchLineups = (matchId?: string) => {
   const [data, setData] = useState<any[]>([]);
