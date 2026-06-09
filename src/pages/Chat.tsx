@@ -126,35 +126,8 @@ const ChatPage = () => {
   const isHomeOwner = !!(myTeam && homeTeam?.id === myTeam.id && myTeam.owner_id === profile?.user_id);
   const canScheduleLineup = isHomeOwner || isStaff;
 
-  // Roster + statuses
-  const summonByPlayerId = new Map(summons.map((s: any) => [s.player_id, s]));
-  const roster = teamPlayers.map((p: any) => {
-    const s: any = summonByPlayerId.get(p.id);
-    return { player: p, status: (s?.status as "confirmed" | "declined" | "pending") || "pending", summon: s };
-  });
-  const confirmedRoster = roster.filter((r) => r.status === "confirmed");
-  const declinedRoster = roster.filter((r) => r.status === "declined");
-  const pendingRoster = roster.filter((r) => r.status === "pending");
 
-  const myPlayerForPresence = teamPlayers.find((p: any) => p.user_id === profile?.user_id);
-  const myCurrentStatus = myPlayerForPresence
-    ? (summonByPlayerId.get(myPlayerForPresence.id) as any)?.status as "confirmed" | "declined" | undefined
-    : undefined;
 
-  const handlePresence = async (status: "confirmed" | "declined") => {
-    if (!matchId) return;
-    if (!myPlayerForPresence) {
-      toast({ title: "Você não está vinculado a este time", variant: "destructive" });
-      return;
-    }
-    await createSummonsMut.mutateAsync({
-      matchId,
-      playerId: myPlayerForPresence.id,
-      status,
-    });
-    toast({ title: status === "confirmed" ? "Presença confirmada! ✅" : "Ausência registrada" });
-    setConfirmOpen(false);
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
