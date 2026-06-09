@@ -417,7 +417,7 @@ const MensalidadesPage = () => {
                                 playerId: player.id,
                                 mes,
                                 isPaid,
-                                playerName: player.name,
+                                playerName: getDisplayName(player),
                               })
                             }
                             disabled={false}
