@@ -1457,34 +1457,6 @@ const TeamFormDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Bairro *</Label>
-              <Input
-                id="tf-addr_bairro"
-                value={form.addr_bairro}
-                onChange={(e) => setField("addr_bairro", e.target.value)}
-                placeholder="Bairro"
-                className="bg-secondary border-border"
-              />
-            </div>
-            <div>
-              <Label>
-                Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
-              </Label>
-              <Select value={form.region} onValueChange={(v) => setField("region", v)}>
-                <SelectTrigger id="tf-region" className="bg-secondary border-border">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {REGIOES.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="grid grid-cols-3 gap-3">
             <div className="min-w-0">
               <Label>UF *</Label>
@@ -1524,6 +1496,26 @@ const TeamFormDialog = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <Label>
+              Região{form.addr_cidade.trim().toLowerCase() === "são paulo" ? " *" : ""}
+            </Label>
+            <Select
+              value={form.region}
+              onValueChange={(v) => setField("region", v)}
+              disabled={form.addr_cidade.trim().toLowerCase() !== "são paulo"}
+            >
+              <SelectTrigger id="tf-region" className="bg-secondary border-border">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {REGIOES.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
 
