@@ -518,8 +518,8 @@ const Index = () => {
             {pendingSummons > 0 && (
               <button
                 type="button"
-                onClick={() => setSettingsOpen(true)}
-                aria-label="Abrir notificações e configurações"
+                onClick={() => navigate("/notifications")}
+                aria-label="Abrir notificações"
                 className="relative p-1 -m-1 rounded-full hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Bell size={18} className="text-muted-foreground" />
