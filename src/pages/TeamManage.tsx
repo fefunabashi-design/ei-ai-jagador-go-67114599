@@ -1470,27 +1470,25 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-3 gap-3">
             <div className="min-w-0">
-              <Label>UF *</Label>
-              <Select
+              <Label htmlFor="tf-addr_uf">UF *</Label>
+              <select
+                id="tf-addr_uf"
                 value={form.addr_uf}
-                onValueChange={(v) => {
+                onChange={(e) => {
+                  const v = e.target.value;
                   setField("addr_uf", v);
-                  // Se a cidade atual não pertence à nova UF, limpa
                   const lista = CITIES_BY_UF[v] || [];
                   if (!lista.includes(form.addr_cidade)) {
                     setField("addr_cidade", "");
                   }
                 }}
+                className="flex h-10 w-full min-w-0 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <SelectTrigger id="tf-addr_uf" className="w-full bg-secondary border-border">
-                  <SelectValue placeholder="UF" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {UF_LIST.map((uf) => (
-                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">UF</option>
+                {UF_LIST.map((uf) => (
+                  <option key={uf} value={uf}>{uf}</option>
+                ))}
+              </select>
             </div>
             <div className="col-span-2 min-w-0">
               <Label htmlFor="tf-addr_cidade">Cidade *</Label>
