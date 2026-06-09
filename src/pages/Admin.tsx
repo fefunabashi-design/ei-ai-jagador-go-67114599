@@ -455,7 +455,7 @@ const AdminPage = () => {
 
   const teamFirstName = myTeam?.name ? myTeam.name.trim().split(/\s+/)[0] : "";
   const quickActions: Array<{ icon: any; label: string; path: string; badge?: number }> = [
-    { icon: CalendarDays, label: teamFirstName ? `Agenda ${teamFirstName}` : "Agenda", path: "/agenda" },
+    { icon: CalendarDays, label: "Agenda Time", path: "/agenda" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
   ];

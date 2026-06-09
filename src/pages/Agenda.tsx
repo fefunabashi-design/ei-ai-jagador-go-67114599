@@ -514,8 +514,8 @@ const AgendaPage = () => {
           <div>
             <h1 className="text-4xl text-foreground font-display">
               {(() => {
-                if (fromAdmin && (myTeam as any)?.name) {
-                  return `AGENDA ${getShortTeamName((myTeam as any).name).toUpperCase()}`;
+                if (fromAdmin) {
+                  return "AGENDA TIME";
                 }
                 const userName = (profile as any)?.nickname
                   || (profile as any)?.display_name
