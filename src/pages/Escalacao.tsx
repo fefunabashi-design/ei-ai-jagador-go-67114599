@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, RotateCcw, Save, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMyTeam, usePlayers, useMatches, useMatchSummons } from "@/hooks/useSupabaseData";
+import { useMyTeam, usePlayers, useMatches } from "@/hooks/useSupabaseData";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
