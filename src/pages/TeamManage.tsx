@@ -1486,7 +1486,7 @@ const TeamFormDialog = ({
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div>
+            <div className="min-w-0">
               <Label>UF *</Label>
               <Select
                 value={form.addr_uf}
@@ -1499,34 +1499,35 @@ const TeamFormDialog = ({
                   }
                 }}
               >
-                <SelectTrigger id="tf-addr_uf" className="bg-secondary border-border">
+                <SelectTrigger id="tf-addr_uf" className="w-full bg-secondary border-border">
                   <SelectValue placeholder="UF" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-72">
                   {UF_LIST.map((uf) => (
                     <SelectItem key={uf} value={uf}>{uf}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-2 min-w-0">
               <Label>Cidade *</Label>
               <Select
                 value={form.addr_cidade}
                 onValueChange={(v) => setField("addr_cidade", v)}
                 disabled={!form.addr_uf}
               >
-                <SelectTrigger id="tf-addr_cidade" className="bg-secondary border-border">
+                <SelectTrigger id="tf-addr_cidade" className="w-full bg-secondary border-border">
                   <SelectValue placeholder={form.addr_uf ? "Selecione a cidade" : "Selecione a UF"} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-72 max-w-[--radix-select-trigger-width]">
                   {(CITIES_BY_UF[form.addr_uf] || []).map((cidade) => (
-                    <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                    <SelectItem key={cidade} value={cidade} className="truncate">{cidade}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
+
 
           <div className="grid grid-cols-2 gap-3">
             <div>
