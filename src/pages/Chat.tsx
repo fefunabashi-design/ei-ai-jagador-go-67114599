@@ -46,8 +46,6 @@ const ChatPage = () => {
   const { data: myTeam } = useMyTeam();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [homeScore, setHomeScore] = useState("");
   const [awayScore, setAwayScore] = useState("");
@@ -59,10 +57,9 @@ const ChatPage = () => {
 
   const { data: match } = useMatchDetail(matchId);
   const { data: messages = [] } = useChatMessages(matchId);
-  const { data: summons = [] } = useMatchSummons(matchId);
   const sendMessage = useSendChatMessage();
-  const createSummonsMut = useCreateSummons();
   const updateMatch = useUpdateMatch();
+
 
   const homeTeam = match?.home_team as any;
   const awayTeam = match?.away_team as any;
