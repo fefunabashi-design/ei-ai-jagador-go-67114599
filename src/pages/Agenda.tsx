@@ -689,32 +689,8 @@ const AgendaPage = () => {
                       <span className="flex items-center gap-1"><MapPin size={11} /> {getFieldDisplayName(match)}</span>
                     </div>
 
-                    {/* Summon counters */}
-                    {(() => {
-                      const counts = getSummonCounts(match.id);
-                      if (counts.total === 0) return null;
-                      return (
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 size={12} className="text-success" />
-                            <span className="text-[11px] font-semibold text-success">{counts.confirmed}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <AlertCircle size={12} className="text-warning" />
-                            <span className="text-[11px] font-semibold text-warning">{counts.pending}</span>
-                          </div>
-                          {counts.declined > 0 && (
-                            <div className="flex items-center gap-1">
-                              <XCircle size={12} className="text-destructive" />
-                              <span className="text-[11px] font-semibold text-destructive">{counts.declined}</span>
-                            </div>
-                          )}
-                          <span className="text-[10px] text-muted-foreground ml-auto">
-                            {counts.confirmed}/{counts.total} confirmados
-                          </span>
-                        </div>
-                      );
-                    })()}
+
+
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
