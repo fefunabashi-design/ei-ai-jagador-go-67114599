@@ -296,23 +296,30 @@ const Index = () => {
       const mesAtual = now.getMonth() + 1;
 
       // Lembretes são pessoais: só mostram inadimplências do próprio usuário logado.
-      // Regra estrita: casa por user_id; se não houver vínculo, casa por e-mail
-      // SOMENTE quando exatamente 1 jogador (em todos os times do usuário) tem esse e-mail —
-      // assim evitamos confundir jogadores diferentes cadastrados com o mesmo e-mail.
+      // Vínculo do jogador logado, em ordem de prioridade:
+      //   1) players.user_id == profile.user_id
+      //   2) players.cpf == profile.cpf  (CPF é único por usuário)
+      //   3) players.email == profile.email — apenas se houver exatamente 1 jogador com esse e-mail
       const profileEmail = String(profile?.email || "").trim().toLowerCase();
+      const profileCpf = String((profile as any)?.cpf || "").replace(/\D/g, "");
       const { data: allPlayers = [] } = await supabase
-        .from("players").select("id, team_id, name, nickname, display_name, user_id, email")
+        .from("players").select("id, team_id, name, nickname, display_name, user_id, email, cpf")
         .in("team_id", teamIds);
+      const normCpf = (v: any) => String(v || "").replace(/\D/g, "");
       const byUserId = (allPlayers || []).filter(
         (p: any) => !!profile?.user_id && p?.user_id === profile.user_id
       );
       let personalPlayers = byUserId;
+      if (personalPlayers.length === 0 && profileCpf) {
+        personalPlayers = (allPlayers || []).filter((p: any) => normCpf(p?.cpf) === profileCpf);
+      }
       if (personalPlayers.length === 0 && profileEmail) {
         const byEmail = (allPlayers || []).filter(
           (p: any) => String(p?.email || "").trim().toLowerCase() === profileEmail
         );
         if (byEmail.length === 1) personalPlayers = byEmail;
       }
+
 
       const displayNameOf = (p: any) =>
         (p?.nickname && String(p.nickname).trim()) ||
