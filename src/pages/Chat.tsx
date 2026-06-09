@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, MoreHorizontal, Shield, Pencil, Eye, UserCheck, ListChecks, Check, X, Flag, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, MoreHorizontal, Flag, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
