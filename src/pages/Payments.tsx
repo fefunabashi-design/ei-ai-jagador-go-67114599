@@ -240,9 +240,10 @@ const PaymentsPage = () => {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {summons.filter((s: any) => s.status === "confirmed").length} jogadores confirmados · 
-              Total: R$ {(Number(amountPerPlayer) * summons.filter((s: any) => s.status === "confirmed").length).toFixed(2)}
+              {lineupPlayerIds.length} jogadores escalados · 
+              Total: R$ {(Number(amountPerPlayer) * lineupPlayerIds.length).toFixed(2)}
             </p>
+
             <Button
               onClick={() => createPayments.mutate(Number(amountPerPlayer))}
               disabled={createPayments.isPending}
