@@ -1,35 +1,14 @@
-# Ajustes na tela Agenda
+## Decisão
 
-## 1. Título da página
+O botão **Lembretes** no Início mostra **apenas as inadimplências do jogador logado** — é o comportamento já implementado na última alteração. Inadimplências de outros jogadores (como Kazu) **não** devem aparecer aí; quem precisa ver isso é o admin do time, na tela de **Mensalidades** (dentro do Admin).
 
-Arquivo: `src/pages/Agenda.tsx` (linha 527-529)
+## O que será feito
 
-- Quando aberta a partir do Admin (`fromAdmin === true`): mostrar `AGENDA {NOME_CURTO_DO_TIME}` usando `getShortTeamName` de `src/lib/teamName.ts` (mesma lógica do Chat — ex.: "SC Corinthians Paulista" → "AGENDA CORINTHIANS").
-- Quando aberta fora do Admin (acesso pelo BottomNav): mostrar apenas `AGENDA`.
+Nada no código. A implementação atual em `src/pages/Index.tsx` (filtro `.eq("user_id", profile.user_id)` no carregamento dos jogadores para Lembretes) já corresponde à regra confirmada.
 
-Hoje o código concatena sempre o primeiro token em uppercase, incluindo siglas como "SC"/"EC". Será substituído por `getShortTeamName` e condicionado a `fromAdmin`.
+## Onde ver as inadimplências do Kazu
 
-## 2. Novo botão "Finalização" no card finalizado (somente admin)
+- Menu **Admin → Mensalidades** continua mostrando todos os jogadores do time (inclui Kazu) com os meses em aberto, usando o nome social.
+- O card de Lembretes no Início é pessoal e não vai listar Kazu para o dono do time.
 
-Arquivo: `src/pages/Agenda.tsx` (linhas 722-780) + um novo Dialog.
-
-Comportamento:
-
-- Em cards cujo `view.isFinalizedByMe === true` e `isOwner === true` (e `fromAdmin === true`), adicionar um novo botão na linha de ações (ao lado de Chat / Vaquinha / Detalhes) chamado **"Finalização"** (ícone `Trophy`).
-- Ao clicar, abre um Dialog "Finalização da partida" contendo:
-  - Placar final (mandante x visitante) — reaproveitando os campos `home_reported_*` / `away_reported_*` ou `home_score`/`away_score` já usados em outras telas.
-  - Lista resumida de gols e cartões do meu time (usando `match_events` já carregados em `matchEvents`, filtrando pelo meu `team_side`).
-  - Botão **"Editar finalização"** dentro do dialog, que fecha este modal e abre o `FinalizeMatchDialog` existente (`setFinalizeMatch(match)`).
-- Remover o botão "Editar finalização" do bloco expandido `expandedActionsId` (linhas 770-778), pois ele agora vive dentro do novo dialog.
-
-## Detalhes técnicos
-
-- Importar `getShortTeamName` de `@/lib/teamName`.
-- Criar estado `const [resultMatch, setResultMatch] = useState<any | null>(null)` para controlar o novo dialog.
-- Carregar eventos do `resultMatch` via `match_events` (consulta pontual quando abrir o dialog), espelhando o padrão já em uso (`matchEvents`).
-- Nenhuma alteração de backend ou schema — somente UI.
-
-## Fora de escopo
-
-- Estilo/visual do título não muda além da regra acima.
-- Demais botões e fluxos do card permanecem inalterados.
+Se quiser que o dono do time também veja um resumo das inadimplências do time inteiro no Início, posso adicionar uma seção separada "Inadimplências do time" visível apenas para owners — me avise para eu replanejar.
