@@ -967,18 +967,8 @@ const Index = () => {
 
       {/* Scheduled matches list moved to /agenda */}
 
-      {/* Presence / Summons */}
-      {myTeam && summons.length > 0 && (
-        <div className="px-5 mt-5">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-display text-foreground">PRESENÇA — {myTeam.name.toUpperCase()}</h2>
-            <button onClick={() => navigate("/agenda")} className="text-[10px] text-primary font-semibold">
-              Ver escalação →
-            </button>
-          </div>
-          <PlayerSummons />
-        </div>
-      )}
+      {/* Presença removida da Home — acessível pela Agenda */}
+
 
       {/* Feed do Campo movido para "Resenha da Várzea" no botão + da barra inferior */}
 
