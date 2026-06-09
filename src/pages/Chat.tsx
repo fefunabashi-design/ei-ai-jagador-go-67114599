@@ -235,86 +235,8 @@ const ChatPage = () => {
         </div>
       </div>
 
-      {/* Confirmations list dialog with Confirm button inside */}
-      <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="bg-card border-border max-w-sm max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display">CONFIRMAÇÕES</DialogTitle>
-          </DialogHeader>
 
-          {/* Confirm action inside the same screen */}
-          <div className="rounded-xl border border-border bg-secondary/40 p-3 space-y-2">
-            <p className="text-[11px] font-semibold text-foreground">Sua presença</p>
-            {myCurrentStatus && (
-              <p className="text-[11px] text-primary font-semibold">
-                Status atual: {myCurrentStatus === "confirmed" ? "✓ Confirmado" : "✗ Ausente"}
-              </p>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={() => handlePresence("confirmed")}
-                className="bg-success text-success-foreground hover:bg-success/90 font-semibold h-10"
-              >
-                <Check size={14} className="mr-1" /> CONFIRMADO
-              </Button>
-              <Button
-                onClick={() => handlePresence("declined")}
-                variant="outline"
-                className="border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold h-10"
-              >
-                <X size={14} className="mr-1" /> AUSENTE
-              </Button>
-            </div>
-          </div>
 
-          <div>
-            <p className="text-[11px] font-semibold text-success uppercase tracking-wider mb-2">
-              ✓ Confirmados ({confirmedRoster.length})
-            </p>
-            {confirmedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground mb-3">Ninguém confirmado ainda.</p>
-            ) : (
-              <ul className="space-y-1 mb-3">
-                {confirmedRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-foreground bg-success/5 border border-success/20 rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="text-[11px] font-semibold text-destructive uppercase tracking-wider mb-2">
-              ✗ Ausentes ({declinedRoster.length})
-            </p>
-            {declinedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground mb-3">Nenhuma ausência registrada.</p>
-            ) : (
-              <ul className="space-y-1 mb-3">
-                {declinedRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-foreground bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="text-[11px] font-semibold text-warning uppercase tracking-wider mb-2">
-              • Aguardando ({pendingRoster.length})
-            </p>
-            {pendingRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Todos responderam.</p>
-            ) : (
-              <ul className="space-y-1">
-                {pendingRoster.map((r: any) => (
-                  <li key={r.player.id} className="text-sm text-muted-foreground bg-muted/30 border border-border rounded-lg px-3 py-1.5">
-                    {r.player?.nickname || r.player?.name || "Jogador"}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Finalize match dialog */}
       <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
