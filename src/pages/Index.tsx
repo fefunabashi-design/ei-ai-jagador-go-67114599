@@ -473,20 +473,8 @@ const Index = () => {
         <div className="relative">
           <div className="flex items-start justify-between gap-3">
             <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
-            {pendingSummons > 0 && (
-              <button
-                type="button"
-                onClick={() => navigate("/notifications")}
-                aria-label="Abrir notificações"
-                className="relative p-1 -m-1 rounded-full hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Bell size={18} className="text-muted-foreground" />
-                <span className="absolute -top-0 -right-0 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                  {pendingSummons}
-                </span>
-              </button>
-            )}
           </div>
+
           <div className="flex items-center gap-3 mt-2">
             <div className="w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0">
               {profile?.avatar_url ? (
