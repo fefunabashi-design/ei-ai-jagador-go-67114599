@@ -1457,6 +1457,17 @@ const TeamFormDialog = ({
             </div>
           </div>
 
+          <div>
+            <Label>Bairro *</Label>
+            <Input
+              id="tf-addr_bairro"
+              value={form.addr_bairro}
+              onChange={(e) => setField("addr_bairro", e.target.value)}
+              placeholder="Bairro"
+              className="bg-secondary border-border"
+            />
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div className="min-w-0">
               <Label>UF *</Label>
