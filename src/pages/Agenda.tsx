@@ -900,7 +900,7 @@ const AgendaPage = () => {
       </Dialog>
 
 
-      {/* Details / Lineup (Field) / Summons Dialog */}
+      {/* Details / Lineup (Field) Dialog */}
       <Dialog open={!!detailView} onOpenChange={() => setDetailView(null)}>
         <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto sm:max-w-lg">
           {selectedMatch && detailView === "details" && (
