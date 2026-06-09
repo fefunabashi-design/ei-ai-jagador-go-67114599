@@ -48,7 +48,7 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
   const [cards, setCards] = useState<EventDraft[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Load players (confirmed summons + manual lineups + guests of my side)
+  // Load players (team players + guests of my side)
   useEffect(() => {
     if (!open || !match?.id || !myTeamId) return;
     let alive = true;
