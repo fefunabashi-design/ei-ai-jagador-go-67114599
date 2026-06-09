@@ -236,7 +236,8 @@ const CaixaPage = () => {
   };
 
   const hasFilters =
-    filterTipo !== "all" || filterStatus !== "all" || filterDtInicio || filterDtFim;
+    filterTipo !== "all" || filterDtInicio || filterDtFim;
+
 
   return (
     <div className="min-h-screen bg-background pb-24">
