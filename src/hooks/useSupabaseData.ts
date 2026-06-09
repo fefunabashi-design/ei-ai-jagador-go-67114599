@@ -307,7 +307,7 @@ export const usePlayers = (teamId?: string) => {
 };
 
 const cleanPlayerPayload = (raw: Record<string, any>) => {
-  const allowed = ["name","last_name","display_name","nickname","email","phone","position","jersey_number",
+  const allowed = ["name","last_name","display_name","nickname","email","phone","cpf","position","jersey_number",
     "goals","matches","rating","birth_date","region","user_id","team_id"];
   const out: Record<string, any> = {};
   allowed.forEach(k => { if (k in raw) out[k] = raw[k]; });
