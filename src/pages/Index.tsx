@@ -666,17 +666,17 @@ const Index = () => {
                           Mensalidades em atraso
                         </p>
                         {Array.from(mensByPlayer.values()).map((e, idx) => (
-                          <button
+                          <div
                             key={idx}
-                            onClick={() => { setStatDetail(null); navigate("/mensalidades"); }}
-                            className="w-full flex items-start gap-2 text-left p-2 rounded-md bg-destructive/5 border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                            className="w-full flex items-start gap-2 p-2 rounded-md bg-destructive/5 border border-destructive/20"
                           >
                             <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.name}</span>
                             <span className="text-[10px] text-destructive font-medium">
                               {e.meses.sort((a, b) => a - b).map((m) => MONTHS_SHORT[m - 1]).join(", ")}
                             </span>
-                          </button>
+                          </div>
                         ))}
+
                       </div>
                     )}
 
