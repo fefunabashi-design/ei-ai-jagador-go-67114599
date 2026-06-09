@@ -13,13 +13,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import {
-  useMatchSummons,
+  useMatchLineups,
   useMatchDetail,
   useMatchPayments,
   useCreateMatchPayments,
   useDeleteMatchPayment,
   useDeleteMatchPaymentsByMatch,
 } from "@/hooks/useSupabaseData";
+
 import { useToast } from "@/hooks/use-toast";
 
 const statusStyles: Record<string, string> = {
