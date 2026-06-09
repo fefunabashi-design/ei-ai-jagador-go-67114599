@@ -271,8 +271,9 @@ const ChatPage = () => {
           {/* Eventos: gols e cartões */}
           <div className="mt-4 space-y-2">
             <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Gols e Cartões</p>
-            {confirmedRoster.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum jogador confirmado para selecionar.</p>
+            {teamPlayers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhum jogador disponível para selecionar.</p>
+
             ) : (
               <div className="grid grid-cols-[1fr_1.3fr_auto] gap-2 items-end">
                 <div>
