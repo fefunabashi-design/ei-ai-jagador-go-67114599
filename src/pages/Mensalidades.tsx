@@ -27,6 +27,12 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+const getDisplayName = (player: any) =>
+  (player?.nickname && String(player.nickname).trim()) ||
+  (player?.display_name && String(player.display_name).trim()) ||
+  player?.name ||
+  "";
+
 const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -365,10 +371,10 @@ const MensalidadesPage = () => {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                          {getInitials(player.name)}
+                          {getInitials(getDisplayName(player))}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">{player.name}</p>
+                          <p className="text-sm font-semibold text-foreground">{getDisplayName(player)}</p>
                           <p className="text-[10px] text-muted-foreground">{player.position || "—"}</p>
                         </div>
                       </div>
@@ -411,7 +417,7 @@ const MensalidadesPage = () => {
                                 playerId: player.id,
                                 mes,
                                 isPaid,
-                                playerName: player.name,
+                                playerName: getDisplayName(player),
                               })
                             }
                             disabled={false}
