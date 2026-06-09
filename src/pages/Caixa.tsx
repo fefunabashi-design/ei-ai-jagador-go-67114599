@@ -67,9 +67,9 @@ const CaixaPage = () => {
   const _firstDay = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().slice(0, 10);
   const _lastDay = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).toISOString().slice(0, 10);
   const [filterTipo, setFilterTipo] = useState<"all" | "credito" | "debito">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "realizado" | "previsto">("all");
   const [filterDtInicio, setFilterDtInicio] = useState(_firstDay);
   const [filterDtFim, setFilterDtFim] = useState(_lastDay);
+
   const [showFilters, setShowFilters] = useState(false);
 
   // ── lançamento dialog ──
