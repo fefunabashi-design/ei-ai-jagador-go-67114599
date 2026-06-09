@@ -659,16 +659,7 @@ const OrigemBadge = ({ origem, tipo }: { origem: Lancamento["origem"]; tipo: Lan
   );
 };
 
-const StatusBadge = ({ status }: { status: Lancamento["status"] }) => (
-  <span
-    className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${
-      status === "realizado"
-        ? "bg-emerald-500/10 text-emerald-600"
-        : "bg-amber-500/10 text-amber-600"
-    }`}
-  >
-    {status === "realizado" ? "Realizado" : "Previsto"}
-  </span>
-);
+
+
 
 export default CaixaPage;
