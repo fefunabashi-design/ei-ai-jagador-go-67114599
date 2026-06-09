@@ -32,14 +32,11 @@ const Index = () => {
   const { data: myTeams = [] } = useMyTeams();
   const { data: matches = [] } = useMatches();
   const { data: players = [] } = usePlayers(myTeam?.id);
-  const { data: summons = [] } = useMatchSummons(undefined);
-  const createSummons = useCreateSummons();
   const createResenhaPost = useCreateResenhaPost();
   const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(false);
   const { toast } = useToast();
+
 
   const handleDeactivate = async () => {
     const { supabase } = await import("@/integrations/supabase/client");
