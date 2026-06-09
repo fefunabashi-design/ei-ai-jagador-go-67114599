@@ -63,14 +63,21 @@ const Index = () => {
   // Cards visíveis na tela inicial: próximos jogos + finalizados nas últimas 24h
   const DAY_MS = 24 * 60 * 60 * 1000;
   const relevantMatches = matches
-    .filter((m) => {
+    .filter((m: any) => {
       const homeTeam = m.home_team as any;
       const awayTeam = m.away_team as any;
       if (!myTeam || !(homeTeam?.id === myTeam.id || awayTeam?.id === myTeam.id)) return false;
-      const md = new Date(m.match_date).getTime();
       const v = getMatchView(m, myTeam?.id);
-      if (v.status === "completed") return now.getTime() - md <= DAY_MS;
-      return new Date(m.match_date) >= now && (v.status === "open" || v.status === "confirmed");
+      if (v.status === "completed") {
+        const finalizedAtRaw = m.home_finalized_at || m.away_finalized_at;
+        if (!finalizedAtRaw) return false;
+        const homeT = m.home_finalized_at ? new Date(m.home_finalized_at).getTime() : 0;
+        const awayT = m.away_finalized_at ? new Date(m.away_finalized_at).getTime() : 0;
+        const finalizedAt = Math.max(homeT, awayT);
+        return now.getTime() - finalizedAt <= DAY_MS;
+      }
+      // Esconde partidas em aberto (sem adversário confirmado); só mostra confirmadas futuras.
+      return new Date(m.match_date) >= now && v.status === "confirmed";
     })
     .sort((a, b) => {
       const aCompleted = getMatchView(a, myTeam?.id).status === "completed" ? 1 : 0;
