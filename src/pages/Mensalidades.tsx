@@ -27,6 +27,12 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
+const getDisplayName = (player: any) =>
+  (player?.nickname && String(player.nickname).trim()) ||
+  (player?.display_name && String(player.display_name).trim()) ||
+  player?.name ||
+  "";
+
 const formatCurrency = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
