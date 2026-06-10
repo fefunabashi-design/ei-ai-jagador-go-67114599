@@ -575,10 +575,11 @@ const BuscarAdversarioPage = () => {
           if (!open) {
             setChallengeTeam(null);
             setChallengeDate(""); setChallengeTime("");
-            setLocationChoice("away"); setChallengeLocation("");
+            setLocationChoice("other"); setChallengeLocation("");
+            setChallengeFieldName(""); setChallengeFieldAddress("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start || "");
-            setChallengeLocation(challengeTeam.field_address || challengeTeam.field_name || "");
+            setChallengeLocation(hasTeamField(challengeTeam) ? teamFieldLocation(challengeTeam) : "");
           }
         }}
       >
@@ -651,8 +652,8 @@ const BuscarAdversarioPage = () => {
               {(() => {
                 const mine = matchActionTeam as any;
                 const opp = challengeTeam as any;
-                const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
-                const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
+                const myHasField = hasTeamField(mine);
+                const oppHasField = hasTeamField(opp);
                 return (
                   <div>
                     <Label className="mb-2 block">Local</Label>
@@ -662,9 +663,9 @@ const BuscarAdversarioPage = () => {
                         const choice = v as "own" | "away" | "other";
                         setLocationChoice(choice);
                         if (choice === "own") {
-                          setChallengeLocation(mine?.field_name || mine?.field_address || "");
+                          setChallengeLocation(teamFieldLocation(mine));
                         } else if (choice === "away") {
-                          setChallengeLocation(opp?.field_name || opp?.field_address || "");
+                          setChallengeLocation(teamFieldLocation(opp));
                         } else {
                           setChallengeLocation("");
                         }
@@ -679,7 +680,7 @@ const BuscarAdversarioPage = () => {
                               <Building2 size={14} /> Meu campo
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {mine?.field_name || mine?.field_address}
+                              {teamFieldLocation(mine)}
                             </div>
                           </div>
                         </label>
@@ -692,7 +693,7 @@ const BuscarAdversarioPage = () => {
                               <Building2 size={14} /> Campo do adversário
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {opp?.field_name || opp?.field_address || "—"}
+                              {teamFieldLocation(opp)}
                             </div>
                           </div>
                         </label>
