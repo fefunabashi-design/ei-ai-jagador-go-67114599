@@ -1361,7 +1361,12 @@ const TeamFormDialog = ({
               {form.play_days.length < WEEK_DAYS.length && (
                 <button
                   type="button"
-                  onClick={() => setShowAllWeekDays(true)}
+                  onClick={() => {
+                    setShowAllWeekDays(true);
+                    setTimeout(() => {
+                      weekDaysPickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 50);
+                  }}
                   className="text-sm font-semibold text-primary py-1.5 px-1"
                 >
                   + Dias
