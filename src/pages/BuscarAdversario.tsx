@@ -636,12 +636,15 @@ const BuscarAdversarioPage = () => {
                     <RadioGroup
                       value={locationChoice}
                       onValueChange={(v) => {
-                        const choice = v as "own" | "away";
+                        const choice = v as "own" | "away" | "other";
                         setLocationChoice(choice);
-                        const name = choice === "own"
-                          ? (mine?.field_name || mine?.field_address || "")
-                          : (opp?.field_name || opp?.field_address || "");
-                        setChallengeLocation(name);
+                        if (choice === "own") {
+                          setChallengeLocation(mine?.field_name || mine?.field_address || "");
+                        } else if (choice === "away") {
+                          setChallengeLocation(opp?.field_name || opp?.field_address || "");
+                        } else {
+                          setChallengeLocation("");
+                        }
                       }}
                       className="space-y-2"
                     >
@@ -671,16 +674,39 @@ const BuscarAdversarioPage = () => {
                           </div>
                         </label>
                       )}
-                      {!myHasField && !oppHasField && (
-                        <p className="text-xs text-muted-foreground">Nenhum dos times tem campo cadastrado. Informe o endereço abaixo.</p>
-                      )}
+                      <label htmlFor="loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                        <RadioGroupItem id="loc-other" value="other" className="mt-1" />
+                        <div className="text-sm">
+                          <div className="font-semibold flex items-center gap-1">
+                            <Building2 size={14} /> Outro campo
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Informe o nome e o endereço abaixo
+                          </div>
+                        </div>
+                      </label>
                     </RadioGroup>
-                    <Input
-                      className="mt-2"
-                      value={challengeLocation}
-                      onChange={(e) => setChallengeLocation(e.target.value)}
-                      placeholder="Endereço do local da partida"
-                    />
+                    {locationChoice === "other" ? (
+                      <div className="mt-2 space-y-2">
+                        <Input
+                          value={challengeFieldName}
+                          onChange={(e) => setChallengeFieldName(e.target.value)}
+                          placeholder="Nome do campo"
+                        />
+                        <Input
+                          value={challengeFieldAddress}
+                          onChange={(e) => setChallengeFieldAddress(e.target.value)}
+                          placeholder="Endereço do campo"
+                        />
+                      </div>
+                    ) : (
+                      <Input
+                        className="mt-2"
+                        value={challengeLocation}
+                        onChange={(e) => setChallengeLocation(e.target.value)}
+                        placeholder="Endereço do local da partida"
+                      />
+                    )}
                   </div>
                 );
               })()}
