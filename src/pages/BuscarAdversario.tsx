@@ -735,7 +735,8 @@ const BuscarAdversarioPage = () => {
               setNewMatchLocationChoice("own");
               if (!newMatchLocation) setNewMatchLocation(t.field_name || t.field_address || "");
             } else {
-              setNewMatchLocationChoice("away");
+              setNewMatchLocationChoice("other");
+              setNewMatchLocation("");
             }
           }
         }}>
