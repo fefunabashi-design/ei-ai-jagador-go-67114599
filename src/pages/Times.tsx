@@ -1051,7 +1051,9 @@ const TimesPage = () => {
                         />
                       </button>
                     </div>
-                    <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {scheduleLines || `${teamDays}${teamTime ? ` · ${teamTime}` : ""}`}
+                    </p>
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
