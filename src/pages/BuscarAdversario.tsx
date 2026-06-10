@@ -112,8 +112,8 @@ const BuscarAdversarioPage = () => {
     if (!challengeTeam) return;
     const mine = matchActionTeam as any;
     const opp = challengeTeam as any;
-    const myHasField = mine?.has_field !== false && !!(mine?.field_name || mine?.field_address);
-    const oppHasField = opp?.has_field !== false && !!(opp?.field_name || opp?.field_address);
+    const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
+    const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
     let choice: "own" | "away" = "away";
     if (myHasField && !oppHasField) choice = "own";
     else if (!myHasField && oppHasField) choice = "away";
@@ -587,8 +587,8 @@ const BuscarAdversarioPage = () => {
               {(() => {
                 const mine = matchActionTeam as any;
                 const opp = challengeTeam as any;
-                const myHasField = mine?.has_field !== false && !!(mine?.field_name || mine?.field_address);
-                const oppHasField = opp?.has_field !== false && !!(opp?.field_name || opp?.field_address);
+                const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
+                const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
                 return (
                   <div>
                     <Label className="mb-2 block">Local</Label>
@@ -662,7 +662,7 @@ const BuscarAdversarioPage = () => {
           setNewMatchOpen(open);
           if (open && matchActionTeam) {
             const t = matchActionTeam as any;
-            const myHasField = t.has_field !== false && !!(t.field_name || t.field_address);
+            const myHasField = t.has_field === true && !!(t.field_name || t.field_address);
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
             if (myHasField) {
               setNewMatchLocationChoice("own");
@@ -692,7 +692,7 @@ const BuscarAdversarioPage = () => {
             </div>
             {(() => {
               const t = matchActionTeam as any;
-              const myHasField = t?.has_field !== false && !!(t?.field_name || t?.field_address);
+              const myHasField = t?.has_field === true && !!(t?.field_name || t?.field_address);
               return (
                 <div>
                   <Label className="mb-2 block">Local</Label>
