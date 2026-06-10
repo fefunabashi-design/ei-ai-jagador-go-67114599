@@ -1357,7 +1357,7 @@ const TeamFormDialog = ({
                   );
                 })}
               </div>
-              {!showAllWeekDays && (
+              {form.play_days.length < WEEK_DAYS.length && (
                 <button
                   type="button"
                   onClick={() => setShowAllWeekDays(true)}
