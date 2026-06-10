@@ -1357,8 +1357,18 @@ const TeamFormDialog = ({
                   );
                 })}
               </div>
+              {!showAllWeekDays && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllWeekDays(true)}
+                  className="text-[11px] font-medium text-primary"
+                >
+                  + Dias
+                </button>
+              )}
             </div>
           )}
+
 
           {(() => {
             const isQuadra = form.estilo === "Mini Campo (Society)" || form.estilo === "Futsal";
