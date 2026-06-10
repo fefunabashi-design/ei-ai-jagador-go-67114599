@@ -1365,11 +1365,13 @@ const TimesPage = () => {
             if (t.play_time_start) {
               setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
-            setNewMatchLocationChoice("own");
-            setNewMatchLocation("");
+            setNewMatchLocationChoice(hasTeamField(t) ? "own" : "other");
+            setNewMatchLocation(hasTeamField(t) ? teamFieldLocation(t) : "");
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           } else if (!open) {
             setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime("");
-            setNewMatchLocation(""); setNewMatchLocationChoice("own");
+            setNewMatchLocation(""); setNewMatchLocationChoice("other");
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           }
         }}>
         <DialogContent className="max-w-sm">
@@ -1479,42 +1481,50 @@ const TimesPage = () => {
               })()}
             </div>
             <div>
+              {(() => {
+                const myHasField = hasTeamField(matchActionTeam);
+                return (
+                  <>
               <Label className="mb-2 block">Local</Label>
               <RadioGroup
-                value={newMatchLocationChoice ?? ""}
+                value={newMatchLocationChoice}
                 onValueChange={(v) => {
-                  const choice = v as "own" | "away";
+                  const choice = v as "own" | "other";
                   setNewMatchLocationChoice(choice);
-                  setNewMatchLocation("");
+                  setNewMatchLocation(choice === "own" ? teamFieldLocation(matchActionTeam) : "");
                 }}
                 className="space-y-2"
               >
+                {myHasField && (
                 <label htmlFor="nm-loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
                   <RadioGroupItem id="nm-loc-own" value="own" className="mt-1" />
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
+                      {teamFieldLocation(matchActionTeam)}
                     </div>
                   </div>
                 </label>
-                <label htmlFor="nm-loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                  <RadioGroupItem id="nm-loc-away" value="away" className="mt-1" />
+                )}
+                <label htmlFor="nm-loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                  <RadioGroupItem id="nm-loc-other" value="other" className="mt-1" />
                   <div className="text-sm">
-                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Campo do Adversário</div>
-                    <div className="text-xs text-muted-foreground">Informe o endereço abaixo</div>
+                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Outro campo</div>
+                    <div className="text-xs text-muted-foreground">Informe o nome e o endereço abaixo</div>
                   </div>
                 </label>
               </RadioGroup>
-              <Input
-                className="mt-2"
-                value={newMatchLocation}
-                onChange={(e) => {
-                  setNewMatchLocation(e.target.value);
-                  if (e.target.value.trim()) setNewMatchLocationChoice(null);
-                }}
-                placeholder="Outro endereço (opcional)"
-              />
+              {newMatchLocationChoice === "other" ? (
+                <div className="mt-2 space-y-2">
+                  <Input value={newMatchFieldName} onChange={(e) => setNewMatchFieldName(e.target.value)} placeholder="Nome do campo" />
+                  <Input value={newMatchFieldAddress} onChange={(e) => setNewMatchFieldAddress(e.target.value)} placeholder="Endereço do campo" />
+                </div>
+              ) : (
+                <Input className="mt-2" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço do local da partida" />
+              )}
+                  </>
+                );
+              })()}
             </div>
           </div>
           <DialogFooter>
