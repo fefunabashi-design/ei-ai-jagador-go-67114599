@@ -1541,7 +1541,7 @@ const TeamFormDialog = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Telefone</Label>
+              <Label>Tel. Campo</Label>
               <Input
                 value={form.phone}
                 onChange={(e) => setField("phone", formatPhone(e.target.value))}
@@ -1550,7 +1550,7 @@ const TeamFormDialog = ({
               />
             </div>
             <div>
-              <Label>Celular</Label>
+              <Label>Cel. Campo</Label>
               <Input
                 value={form.mobile}
                 onChange={(e) => setField("mobile", formatPhone(e.target.value))}
