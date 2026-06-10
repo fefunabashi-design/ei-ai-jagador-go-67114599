@@ -960,13 +960,42 @@ const TimesPage = () => {
           <div className="space-y-2">
             {filteredTeams.length > 0 ? (
               filteredTeams.map((team) => {
+                const schedule: Record<string, { mode?: "fixed" | "flexible"; start?: string; end?: string }> =
+                  (team as any).play_schedule || {};
+                const daysArr: string[] = Array.isArray(team.play_days) ? team.play_days : [];
+
+                const hasPerDaySchedule =
+                  daysArr.length > 0 &&
+                  daysArr.some((d) => schedule[d] && schedule[d].start);
+
+                const scheduleLines = hasPerDaySchedule
+                  ? daysArr
+                      .map((d) => {
+                        const label = DIAS_SEMANA.find((x) => x.value === d)?.label || d;
+                        const sched = schedule[d];
+                        if (sched?.start) {
+                          const timeStr =
+                            sched.mode === "flexible" && sched.end
+                              ? `${sched.start}–${sched.end}`
+                              : sched.start;
+                          return `${label} ${timeStr}`;
+                        }
+                        return label;
+                      })
+                      .join(", ")
+                  : "";
+
                 const teamTime =
-                  team.play_time_start && team.play_time_end
-                    ? `${team.play_time_start} até ${team.play_time_end}`
-                    : team.play_time_start || team.play_time_end || "Horário não informado";
-                const teamDays = Array.isArray(team.play_days) && team.play_days.length > 0
-                  ? team.play_days.map((d: string) => DIAS_SEMANA.find((x) => x.value === d)?.label || d).join(", ")
-                  : "Dias não informados";
+                  !hasPerDaySchedule && (team.play_time_start || team.play_time_end)
+                    ? team.play_time_start && team.play_time_end
+                      ? `${team.play_time_start} até ${team.play_time_end}`
+                      : team.play_time_start || team.play_time_end || "Horário não informado"
+                    : "";
+                const teamDays =
+                  !hasPerDaySchedule && daysArr.length > 0
+                    ? daysArr.map((d: string) => DIAS_SEMANA.find((x) => x.value === d)?.label || d).join(", ")
+                    : !hasPerDaySchedule ? "Dias não informados" : "";
+
                 const isOwnTeam = myTeam?.id === team.id;
                 const canChallengeTeam = canLaunchChallenges && !isOwnTeam;
 
@@ -1022,7 +1051,9 @@ const TimesPage = () => {
                         />
                       </button>
                     </div>
-                    <p className="mt-2 text-[11px] text-muted-foreground">{teamDays} · {teamTime}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {scheduleLines || `${teamDays}${teamTime ? ` · ${teamTime}` : ""}`}
+                    </p>
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
