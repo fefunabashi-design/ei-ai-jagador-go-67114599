@@ -424,15 +424,28 @@ const TimesPage = () => {
       toast({ title: "Data ocupada", description: "Adversário já tem jogo confirmado nesse dia.", variant: "destructive" });
       return;
     }
-    const hasCustom = challengeLocation.trim().length > 0;
-    if (!hasCustom && !locationChoice) {
-      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo do adversário ou informe um endereço.", variant: "destructive" });
-      return;
+    let location = "";
+    if (locationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(adminTeam);
+    } else if (locationChoice === "away") {
+      if (!hasTeamField(challengeTeam)) {
+        toast({ title: "Adversário não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(challengeTeam);
+    } else {
+      const nome = challengeFieldName.trim();
+      const endereco = challengeFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
     }
-    const fallbackLocation = locationChoice === "own"
-      ? (teamAddress(adminTeam) || "Campo do mandante")
-      : (teamAddress(challengeTeam) || "Campo do adversário");
-    const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     // O time desafiante é sempre o "home_team_id" (mandante do desafio) para passar na RLS.
     // O local (campo do mandante/adversário) é informado em `location`.
@@ -446,7 +459,8 @@ const TimesPage = () => {
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("other"); setChallengeLocation("");
+    setChallengeFieldName(""); setChallengeFieldAddress("");
     navigate("/agenda");
   };
 
@@ -457,15 +471,22 @@ const TimesPage = () => {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
-    const hasCustom = newMatchLocation.trim().length > 0;
-    if (!hasCustom && !newMatchLocationChoice) {
-      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo Adversário ou informe um endereço.", variant: "destructive" });
-      return;
+    let location = "";
+    if (newMatchLocationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = newMatchLocation.trim() || teamFieldLocation(adminTeam);
+    } else {
+      const nome = newMatchFieldName.trim();
+      const endereco = newMatchFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
     }
-    const fallbackLoc = newMatchLocationChoice === "own"
-      ? (teamAddress(adminTeam) || "Meu campo")
-      : "Campo do adversário";
-    const location = hasCustom ? newMatchLocation.trim() : fallbackLoc;
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
       home_team_id: adminTeam.id,
@@ -477,7 +498,8 @@ const TimesPage = () => {
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
-    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation(""); setNewMatchLocationChoice("own");
+    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation(""); setNewMatchLocationChoice("other");
+    setNewMatchFieldName(""); setNewMatchFieldAddress("");
     navigate("/agenda");
   };
 
