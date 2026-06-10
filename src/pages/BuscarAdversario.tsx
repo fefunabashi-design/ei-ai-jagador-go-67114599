@@ -42,6 +42,17 @@ const DAY_INDEX: Record<string, number> = {
   domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
 };
 
+const cleanValue = (value?: string | null) => String(value || "").trim();
+const hasTeamField = (team: any) =>
+  team?.has_field === true && (!!cleanValue(team?.field_name) || !!cleanValue(team?.field_address));
+const teamFieldLocation = (team: any): string => {
+  if (!hasTeamField(team)) return "";
+  const fieldName = cleanValue(team?.field_name);
+  const fieldAddress = cleanValue(team?.field_address);
+  if (fieldName && fieldAddress) return `${fieldName} — ${fieldAddress}`;
+  return fieldName || fieldAddress;
+};
+
 
 
 const BuscarAdversarioPage = () => {
@@ -86,7 +97,7 @@ const BuscarAdversarioPage = () => {
   const [newMatchLocation, setNewMatchLocation] = useState("");
   const [newMatchFieldName, setNewMatchFieldName] = useState("");
   const [newMatchFieldAddress, setNewMatchFieldAddress] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | "other">("own");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "other">("other");
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
@@ -116,16 +127,16 @@ const BuscarAdversarioPage = () => {
     if (!challengeTeam) return;
     const mine = matchActionTeam as any;
     const opp = challengeTeam as any;
-    const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
-    const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
+    const myHasField = hasTeamField(mine);
+    const oppHasField = hasTeamField(opp);
     let choice: "own" | "away" | "other" = "other";
     if (myHasField && !oppHasField) choice = "own";
     else if (oppHasField) choice = "away";
     setLocationChoice(choice);
     if (choice === "own") {
-      setChallengeLocation(mine?.field_name || mine?.field_address || "");
+      setChallengeLocation(teamFieldLocation(mine));
     } else if (choice === "away") {
-      setChallengeLocation(opp?.field_name || opp?.field_address || "");
+      setChallengeLocation(teamFieldLocation(opp));
     } else {
       setChallengeLocation("");
     }
@@ -165,11 +176,19 @@ const BuscarAdversarioPage = () => {
     let home_team_id = adminTeam.id;
     let away_team_id = challengeTeam.id;
     if (locationChoice === "own") {
-      location = (challengeLocation.trim() || adminTeam.field_name || adminTeam.field_address || "Campo do mandante");
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(adminTeam);
     } else if (locationChoice === "away") {
+      if (!hasTeamField(challengeTeam)) {
+        toast({ title: "Adversário não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
       home_team_id = challengeTeam.id;
       away_team_id = adminTeam.id;
-      location = (challengeLocation.trim() || challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
+      location = challengeLocation.trim() || teamFieldLocation(challengeTeam);
     } else {
       const nome = challengeFieldName.trim();
       const endereco = challengeFieldAddress.trim();
@@ -211,12 +230,12 @@ const BuscarAdversarioPage = () => {
         return;
       }
       location = `${nome} - ${endereco}`;
-    } else {
-      if (!newMatchLocation.trim()) {
-        toast({ title: "Informe o local", variant: "destructive" });
+    } else if (newMatchLocationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
         return;
       }
-      location = newMatchLocation.trim();
+      location = newMatchLocation.trim() || teamFieldLocation(adminTeam);
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
@@ -231,6 +250,7 @@ const BuscarAdversarioPage = () => {
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
     setNewMatchFieldName(""); setNewMatchFieldAddress("");
+    setNewMatchLocationChoice("other");
     navigate("/agenda");
   };
 
@@ -552,10 +572,11 @@ const BuscarAdversarioPage = () => {
           if (!open) {
             setChallengeTeam(null);
             setChallengeDate(""); setChallengeTime("");
-            setLocationChoice("away"); setChallengeLocation("");
+            setLocationChoice("other"); setChallengeLocation("");
+            setChallengeFieldName(""); setChallengeFieldAddress("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start || "");
-            setChallengeLocation(challengeTeam.field_address || challengeTeam.field_name || "");
+            setChallengeLocation(hasTeamField(challengeTeam) ? teamFieldLocation(challengeTeam) : "");
           }
         }}
       >
@@ -628,8 +649,8 @@ const BuscarAdversarioPage = () => {
               {(() => {
                 const mine = matchActionTeam as any;
                 const opp = challengeTeam as any;
-                const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
-                const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
+                const myHasField = hasTeamField(mine);
+                const oppHasField = hasTeamField(opp);
                 return (
                   <div>
                     <Label className="mb-2 block">Local</Label>
@@ -639,9 +660,9 @@ const BuscarAdversarioPage = () => {
                         const choice = v as "own" | "away" | "other";
                         setLocationChoice(choice);
                         if (choice === "own") {
-                          setChallengeLocation(mine?.field_name || mine?.field_address || "");
+                          setChallengeLocation(teamFieldLocation(mine));
                         } else if (choice === "away") {
-                          setChallengeLocation(opp?.field_name || opp?.field_address || "");
+                          setChallengeLocation(teamFieldLocation(opp));
                         } else {
                           setChallengeLocation("");
                         }
@@ -656,7 +677,7 @@ const BuscarAdversarioPage = () => {
                               <Building2 size={14} /> Meu campo
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {mine?.field_name || mine?.field_address}
+                              {teamFieldLocation(mine)}
                             </div>
                           </div>
                         </label>
@@ -669,7 +690,7 @@ const BuscarAdversarioPage = () => {
                               <Building2 size={14} /> Campo do adversário
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {opp?.field_name || opp?.field_address || "—"}
+                              {teamFieldLocation(opp)}
                             </div>
                           </div>
                         </label>
@@ -729,15 +750,16 @@ const BuscarAdversarioPage = () => {
           setNewMatchOpen(open);
           if (open && matchActionTeam) {
             const t = matchActionTeam as any;
-            const myHasField = t.has_field === true && !!(t.field_name || t.field_address);
+            const myHasField = hasTeamField(t);
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
             if (myHasField) {
               setNewMatchLocationChoice("own");
-              if (!newMatchLocation) setNewMatchLocation(t.field_name || t.field_address || "");
+              if (!newMatchLocation) setNewMatchLocation(teamFieldLocation(t));
             } else {
               setNewMatchLocationChoice("other");
               setNewMatchLocation("");
             }
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           }
         }}>
         <DialogContent className="max-w-sm">
@@ -760,17 +782,17 @@ const BuscarAdversarioPage = () => {
             </div>
             {(() => {
               const t = matchActionTeam as any;
-              const myHasField = t?.has_field === true && !!(t?.field_name || t?.field_address);
+              const myHasField = hasTeamField(t);
               return (
                 <div>
                   <Label className="mb-2 block">Local</Label>
                   <RadioGroup
                     value={newMatchLocationChoice}
                     onValueChange={(v) => {
-                      const choice = v as "own" | "away" | "other";
+                      const choice = v as "own" | "other";
                       setNewMatchLocationChoice(choice);
                       if (choice === "own") {
-                        setNewMatchLocation(t?.field_name || t?.field_address || "");
+                        setNewMatchLocation(teamFieldLocation(t));
                       } else {
                         setNewMatchLocation("");
                       }
@@ -783,7 +805,7 @@ const BuscarAdversarioPage = () => {
                         <div className="text-sm">
                           <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                           <div className="text-xs text-muted-foreground">
-                            {t?.field_name || t?.field_address}
+                            {teamFieldLocation(t)}
                           </div>
                         </div>
                       </label>

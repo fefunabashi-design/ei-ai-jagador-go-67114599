@@ -50,6 +50,17 @@ const DAY_INDEX: Record<string, number> = {
   domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
 };
 
+const cleanValue = (value?: string | null) => String(value || "").trim();
+const hasTeamField = (team: any) =>
+  team?.has_field === true && (!!cleanValue(team?.field_name) || !!cleanValue(team?.field_address));
+const teamFieldLocation = (team: any): string => {
+  if (!hasTeamField(team)) return "";
+  const fieldName = cleanValue(team?.field_name);
+  const fieldAddress = cleanValue(team?.field_address);
+  if (fieldName && fieldAddress) return `${fieldName} — ${fieldAddress}`;
+  return fieldName || fieldAddress;
+};
+
 
 const TimesPage = () => {
   const navigate = useNavigate();
@@ -111,14 +122,18 @@ const TimesPage = () => {
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [locationChoice, setLocationChoice] = useState<"own" | "away" | null>("away");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away" | "other">("other");
   const [challengeLocation, setChallengeLocation] = useState("");
+  const [challengeFieldName, setChallengeFieldName] = useState("");
+  const [challengeFieldAddress, setChallengeFieldAddress] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
   const [newMatchDate, setNewMatchDate] = useState("");
   const [newMatchTime, setNewMatchTime] = useState("");
   const [newMatchLocation, setNewMatchLocation] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | null>("own");
+  const [newMatchFieldName, setNewMatchFieldName] = useState("");
+  const [newMatchFieldAddress, setNewMatchFieldAddress] = useState("");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "other">("other");
 
   const toggleFavorite = async (id: string) => {
     if (!currentUserId) return;
@@ -199,9 +214,13 @@ const TimesPage = () => {
   useEffect(() => {
     if (!challengeTeam) return;
     setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-    const myHasField = (matchActionTeam as any)?.has_field === true;
-    setLocationChoice(myHasField ? "own" : "away");
-    setChallengeLocation("");
+    const myHasField = hasTeamField(matchActionTeam);
+    const oppHasField = hasTeamField(challengeTeam);
+    const initialChoice: "own" | "away" | "other" = myHasField && !oppHasField ? "own" : oppHasField ? "away" : "other";
+    setLocationChoice(initialChoice);
+    setChallengeLocation(initialChoice === "own" ? teamFieldLocation(matchActionTeam) : initialChoice === "away" ? teamFieldLocation(challengeTeam) : "");
+    setChallengeFieldName("");
+    setChallengeFieldAddress("");
     setChallengeDate("");
   }, [challengeTeam, matchActionTeam]);
 
@@ -366,20 +385,6 @@ const TimesPage = () => {
     return !(matchActionTeam as any)?.play_time_start;
   };
 
-  const teamAddress = (t: any): string => {
-    if (!t) return "";
-    const clean = (value?: string | null) => String(value || "").trim();
-    const fieldAddress = clean(t.field_address);
-    const fieldName = clean(t.field_name);
-    const street = [clean(t.addr_rua), clean(t.addr_numero)].filter(Boolean).join(", ");
-    const cityUf = [clean(t.addr_cidade), clean(t.addr_uf)].filter(Boolean).join("/");
-    const registeredAddress = [street, clean(t.addr_bairro), cityUf, clean(t.addr_cep)].filter(Boolean).join(" - ");
-
-    if (fieldAddress) return fieldName ? `${fieldName} — ${fieldAddress}` : fieldAddress;
-    if (registeredAddress) return fieldName ? `${fieldName} — ${registeredAddress}` : registeredAddress;
-    return fieldName;
-  };
-
   const isDateAllowed = (dateStr: string, allowedDays: string[]) => {
     if (!dateStr) return false;
     const d = new Date(dateStr + "T12:00:00");
@@ -406,15 +411,28 @@ const TimesPage = () => {
       toast({ title: "Data ocupada", description: "Adversário já tem jogo confirmado nesse dia.", variant: "destructive" });
       return;
     }
-    const hasCustom = challengeLocation.trim().length > 0;
-    if (!hasCustom && !locationChoice) {
-      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo do adversário ou informe um endereço.", variant: "destructive" });
-      return;
+    let location = "";
+    if (locationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(adminTeam);
+    } else if (locationChoice === "away") {
+      if (!hasTeamField(challengeTeam)) {
+        toast({ title: "Adversário não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(challengeTeam);
+    } else {
+      const nome = challengeFieldName.trim();
+      const endereco = challengeFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
     }
-    const fallbackLocation = locationChoice === "own"
-      ? (teamAddress(adminTeam) || "Campo do mandante")
-      : (teamAddress(challengeTeam) || "Campo do adversário");
-    const location = hasCustom ? challengeLocation.trim() : fallbackLocation;
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     // O time desafiante é sempre o "home_team_id" (mandante do desafio) para passar na RLS.
     // O local (campo do mandante/adversário) é informado em `location`.
@@ -428,7 +446,8 @@ const TimesPage = () => {
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("other"); setChallengeLocation("");
+    setChallengeFieldName(""); setChallengeFieldAddress("");
     navigate("/agenda");
   };
 
@@ -439,15 +458,22 @@ const TimesPage = () => {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
-    const hasCustom = newMatchLocation.trim().length > 0;
-    if (!hasCustom && !newMatchLocationChoice) {
-      toast({ title: "Local obrigatório", description: "Escolha Meu campo, Campo Adversário ou informe um endereço.", variant: "destructive" });
-      return;
+    let location = "";
+    if (newMatchLocationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = newMatchLocation.trim() || teamFieldLocation(adminTeam);
+    } else {
+      const nome = newMatchFieldName.trim();
+      const endereco = newMatchFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
     }
-    const fallbackLoc = newMatchLocationChoice === "own"
-      ? (teamAddress(adminTeam) || "Meu campo")
-      : "Campo do adversário";
-    const location = hasCustom ? newMatchLocation.trim() : fallbackLoc;
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
       home_team_id: adminTeam.id,
@@ -459,7 +485,8 @@ const TimesPage = () => {
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
-    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation(""); setNewMatchLocationChoice("own");
+    setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation(""); setNewMatchLocationChoice("other");
+    setNewMatchFieldName(""); setNewMatchFieldAddress("");
     navigate("/agenda");
   };
 
@@ -1095,13 +1122,16 @@ const TimesPage = () => {
           if (!open) {
             setChallengeTeam(null);
             setChallengeDate(""); setChallengeTime("");
-            setLocationChoice("away"); setChallengeLocation("");
+            setLocationChoice("other"); setChallengeLocation("");
+            setChallengeFieldName(""); setChallengeFieldAddress("");
           } else if (challengeTeam) {
             setChallengeTime(challengeTeam.play_time_start ? String(challengeTeam.play_time_start).slice(0, 5) : "");
-            const myHasField = (matchActionTeam as any)?.has_field === true;
-            const initialChoice: "own" | "away" = myHasField ? "own" : "away";
+            const myHasField = hasTeamField(matchActionTeam);
+            const oppHasField = hasTeamField(challengeTeam);
+            const initialChoice: "own" | "away" | "other" = myHasField && !oppHasField ? "own" : oppHasField ? "away" : "other";
             setLocationChoice(initialChoice);
-            setChallengeLocation("");
+            setChallengeLocation(initialChoice === "own" ? teamFieldLocation(matchActionTeam) : initialChoice === "away" ? teamFieldLocation(challengeTeam) : "");
+            setChallengeFieldName(""); setChallengeFieldAddress("");
           }
         }}
       >
@@ -1237,16 +1267,22 @@ const TimesPage = () => {
 
 
               <div>
+                {(() => {
+                  const myHasField = hasTeamField(matchActionTeam);
+                  const oppHasField = hasTeamField(challengeTeam);
+                  return (
+                    <>
                 <Label className="mb-2 block">Local</Label>
                 <RadioGroup
-                  value={locationChoice ?? ""}
+                  value={locationChoice}
                   onValueChange={(v) => {
-                    const choice = v as "own" | "away";
+                    const choice = v as "own" | "away" | "other";
                     setLocationChoice(choice);
-                    setChallengeLocation("");
+                    setChallengeLocation(choice === "own" ? teamFieldLocation(matchActionTeam) : choice === "away" ? teamFieldLocation(challengeTeam) : "");
                   }}
                   className="space-y-2"
                 >
+                  {myHasField && (
                   <label htmlFor="loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
                     <RadioGroupItem id="loc-own" value="own" className="mt-1" />
                     <div className="text-sm">
@@ -1254,10 +1290,12 @@ const TimesPage = () => {
                         <Building2 size={14} /> Meu campo
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
+                        {teamFieldLocation(matchActionTeam)}
                       </div>
                     </div>
                   </label>
+                  )}
+                  {oppHasField && (
                   <label htmlFor="loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
                     <RadioGroupItem id="loc-away" value="away" className="mt-1" />
                     <div className="text-sm">
@@ -1265,20 +1303,32 @@ const TimesPage = () => {
                         <Building2 size={14} /> Campo do adversário
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {teamAddress(challengeTeam) || "—"}
+                        {teamFieldLocation(challengeTeam)}
                       </div>
                     </div>
                   </label>
+                  )}
+                  <label htmlFor="loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                    <RadioGroupItem id="loc-other" value="other" className="mt-1" />
+                    <div className="text-sm">
+                      <div className="font-semibold flex items-center gap-1">
+                        <Building2 size={14} /> Outro campo
+                      </div>
+                      <div className="text-xs text-muted-foreground">Informe o nome e o endereço abaixo</div>
+                    </div>
+                  </label>
                 </RadioGroup>
-                <Input
-                  className="mt-2"
-                  value={challengeLocation}
-                  onChange={(e) => {
-                    setChallengeLocation(e.target.value);
-                    if (e.target.value.trim()) setLocationChoice(null);
-                  }}
-                  placeholder="Outro endereço (opcional)"
-                />
+                {locationChoice === "other" ? (
+                  <div className="mt-2 space-y-2">
+                    <Input value={challengeFieldName} onChange={(e) => setChallengeFieldName(e.target.value)} placeholder="Nome do campo" />
+                    <Input value={challengeFieldAddress} onChange={(e) => setChallengeFieldAddress(e.target.value)} placeholder="Endereço do campo" />
+                  </div>
+                ) : (
+                  <Input className="mt-2" value={challengeLocation} onChange={(e) => setChallengeLocation(e.target.value)} placeholder="Endereço do local da partida" />
+                )}
+                    </>
+                  );
+                })()}
               </div>
 
               <DialogFooter>
@@ -1302,11 +1352,13 @@ const TimesPage = () => {
             if (t.play_time_start) {
               setNewMatchTime(String(t.play_time_start).slice(0, 5));
             }
-            setNewMatchLocationChoice("own");
-            setNewMatchLocation("");
+            setNewMatchLocationChoice(hasTeamField(t) ? "own" : "other");
+            setNewMatchLocation(hasTeamField(t) ? teamFieldLocation(t) : "");
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           } else if (!open) {
             setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime("");
-            setNewMatchLocation(""); setNewMatchLocationChoice("own");
+            setNewMatchLocation(""); setNewMatchLocationChoice("other");
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           }
         }}>
         <DialogContent className="max-w-sm">
@@ -1416,42 +1468,50 @@ const TimesPage = () => {
               })()}
             </div>
             <div>
+              {(() => {
+                const myHasField = hasTeamField(matchActionTeam);
+                return (
+                  <>
               <Label className="mb-2 block">Local</Label>
               <RadioGroup
-                value={newMatchLocationChoice ?? ""}
+                value={newMatchLocationChoice}
                 onValueChange={(v) => {
-                  const choice = v as "own" | "away";
+                  const choice = v as "own" | "other";
                   setNewMatchLocationChoice(choice);
-                  setNewMatchLocation("");
+                  setNewMatchLocation(choice === "own" ? teamFieldLocation(matchActionTeam) : "");
                 }}
                 className="space-y-2"
               >
+                {myHasField && (
                 <label htmlFor="nm-loc-own" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
                   <RadioGroupItem id="nm-loc-own" value="own" className="mt-1" />
                   <div className="text-sm">
                     <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                     <div className="text-xs text-muted-foreground">
-                      {teamAddress(matchActionTeam) || "Endereço não cadastrado"}
+                      {teamFieldLocation(matchActionTeam)}
                     </div>
                   </div>
                 </label>
-                <label htmlFor="nm-loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                  <RadioGroupItem id="nm-loc-away" value="away" className="mt-1" />
+                )}
+                <label htmlFor="nm-loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                  <RadioGroupItem id="nm-loc-other" value="other" className="mt-1" />
                   <div className="text-sm">
-                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Campo do Adversário</div>
-                    <div className="text-xs text-muted-foreground">Informe o endereço abaixo</div>
+                    <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Outro campo</div>
+                    <div className="text-xs text-muted-foreground">Informe o nome e o endereço abaixo</div>
                   </div>
                 </label>
               </RadioGroup>
-              <Input
-                className="mt-2"
-                value={newMatchLocation}
-                onChange={(e) => {
-                  setNewMatchLocation(e.target.value);
-                  if (e.target.value.trim()) setNewMatchLocationChoice(null);
-                }}
-                placeholder="Outro endereço (opcional)"
-              />
+              {newMatchLocationChoice === "other" ? (
+                <div className="mt-2 space-y-2">
+                  <Input value={newMatchFieldName} onChange={(e) => setNewMatchFieldName(e.target.value)} placeholder="Nome do campo" />
+                  <Input value={newMatchFieldAddress} onChange={(e) => setNewMatchFieldAddress(e.target.value)} placeholder="Endereço do campo" />
+                </div>
+              ) : (
+                <Input className="mt-2" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço do local da partida" />
+              )}
+                  </>
+                );
+              })()}
             </div>
           </div>
           <DialogFooter>
