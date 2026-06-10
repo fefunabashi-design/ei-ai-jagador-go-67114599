@@ -1361,7 +1361,7 @@ const TeamFormDialog = ({
                 <button
                   type="button"
                   onClick={() => setShowAllWeekDays(true)}
-                  className="text-[11px] font-medium text-primary"
+                  className="text-sm font-semibold text-primary py-1.5 px-1"
                 >
                   + Dias
                 </button>
