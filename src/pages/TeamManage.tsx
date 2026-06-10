@@ -1069,6 +1069,7 @@ const TeamFormDialog = ({
   const [showAdmin, setShowAdmin] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [showAllWeekDays, setShowAllWeekDays] = useState(false);
+  const weekDaysPickerRef = useRef<HTMLDivElement | null>(null);
 
   const togglePlayDay = (day: string) => {
     const isAdding = !form.play_days.includes(day);
@@ -1281,7 +1282,7 @@ const TeamFormDialog = ({
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
+            <div ref={weekDaysPickerRef} className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
               {visibleWeekDays.map((day) => (
                 <label key={day.value} className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
@@ -1360,7 +1361,12 @@ const TeamFormDialog = ({
               {form.play_days.length < WEEK_DAYS.length && (
                 <button
                   type="button"
-                  onClick={() => setShowAllWeekDays(true)}
+                  onClick={() => {
+                    setShowAllWeekDays(true);
+                    setTimeout(() => {
+                      weekDaysPickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 50);
+                  }}
                   className="text-sm font-semibold text-primary py-1.5 px-1"
                 >
                   + Dias
