@@ -385,19 +385,6 @@ const TimesPage = () => {
     return !(matchActionTeam as any)?.play_time_start;
   };
 
-  const teamAddress = (t: any): string => {
-    if (!t) return "";
-    const fieldAddress = cleanValue(t.field_address);
-    const fieldName = cleanValue(t.field_name);
-    const street = [cleanValue(t.addr_rua), cleanValue(t.addr_numero)].filter(Boolean).join(", ");
-    const cityUf = [cleanValue(t.addr_cidade), cleanValue(t.addr_uf)].filter(Boolean).join("/");
-    const registeredAddress = [street, cleanValue(t.addr_bairro), cityUf, cleanValue(t.addr_cep)].filter(Boolean).join(" - ");
-
-    if (fieldAddress) return fieldName ? `${fieldName} — ${fieldAddress}` : fieldAddress;
-    if (registeredAddress) return fieldName ? `${fieldName} — ${registeredAddress}` : registeredAddress;
-    return fieldName;
-  };
-
   const isDateAllowed = (dateStr: string, allowedDays: string[]) => {
     if (!dateStr) return false;
     const d = new Date(dateStr + "T12:00:00");
