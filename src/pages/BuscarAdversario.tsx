@@ -161,14 +161,28 @@ const BuscarAdversarioPage = () => {
         return;
       }
     }
-    const fallbackLocation = locationChoice === "own"
-      ? (adminTeam.field_name || adminTeam.field_address || "Campo do mandante")
-      : (challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
-    const location = challengeLocation.trim() || fallbackLocation;
+    let location = "";
+    let home_team_id = adminTeam.id;
+    let away_team_id = challengeTeam.id;
+    if (locationChoice === "own") {
+      location = (challengeLocation.trim() || adminTeam.field_name || adminTeam.field_address || "Campo do mandante");
+    } else if (locationChoice === "away") {
+      home_team_id = challengeTeam.id;
+      away_team_id = adminTeam.id;
+      location = (challengeLocation.trim() || challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
+    } else {
+      const nome = challengeFieldName.trim();
+      const endereco = challengeFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
+    }
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: locationChoice === "own" ? adminTeam.id : challengeTeam.id,
-      away_team_id: locationChoice === "own" ? challengeTeam.id : adminTeam.id,
+      home_team_id,
+      away_team_id,
       match_date,
       location,
       status: "open",
@@ -176,29 +190,47 @@ const BuscarAdversarioPage = () => {
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("other"); setChallengeLocation("");
+    setChallengeFieldName(""); setChallengeFieldAddress("");
     navigate("/agenda");
   };
 
   const handleCreateNewMatch = async () => {
     const adminTeam = matchActionTeam as any;
     if (!adminTeam) return;
-    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
+    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
+    }
+    let location = "";
+    if (newMatchLocationChoice === "other") {
+      const nome = newMatchFieldName.trim();
+      const endereco = newMatchFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
+    } else {
+      if (!newMatchLocation.trim()) {
+        toast({ title: "Informe o local", variant: "destructive" });
+        return;
+      }
+      location = newMatchLocation.trim();
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
       home_team_id: adminTeam.id,
       away_team_id: null,
       match_date,
-      location: newMatchLocation.trim(),
+      location,
       status: "confirmed",
       format: adminTeam.format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
+    setNewMatchFieldName(""); setNewMatchFieldAddress("");
     navigate("/agenda");
   };
 
