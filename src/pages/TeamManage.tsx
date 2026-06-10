@@ -1376,15 +1376,32 @@ const TeamFormDialog = ({
             const hasField = form.has_field === "com";
             return (
               <div className="pt-2 border-t border-border space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="tf-has_field" className="cursor-pointer">
-                    {hasField ? "Possui Arena" : "Não Possui Arena"}
-                  </Label>
-                  <Switch
-                    id="tf-has_field"
-                    checked={hasField}
-                    onCheckedChange={(v) => setField("has_field", v ? "com" : "sem")}
-                  />
+                <div>
+                  <Label className="mb-2 block">Possui Arena?</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setField("has_field", "com")}
+                      className={`h-10 rounded-md border text-sm font-semibold transition-colors ${
+                        hasField
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-border hover:bg-accent"
+                      }`}
+                    >
+                      Sim
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setField("has_field", "sem")}
+                      className={`h-10 rounded-md border text-sm font-semibold transition-colors ${
+                        !hasField
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-border hover:bg-accent"
+                      }`}
+                    >
+                      Não
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="tf-field_name">
