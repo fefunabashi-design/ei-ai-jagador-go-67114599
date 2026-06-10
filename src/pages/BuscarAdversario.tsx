@@ -235,10 +235,6 @@ const BuscarAdversarioPage = () => {
         toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
         return;
       }
-      if (!newMatchLocation.trim()) {
-        toast({ title: "Informe o local", variant: "destructive" });
-        return;
-      }
       location = newMatchLocation.trim() || teamFieldLocation(adminTeam);
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
