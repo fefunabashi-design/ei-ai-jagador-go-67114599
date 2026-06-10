@@ -75,14 +75,18 @@ const BuscarAdversarioPage = () => {
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away" | "other">("other");
   const [challengeLocation, setChallengeLocation] = useState("");
+  const [challengeFieldName, setChallengeFieldName] = useState("");
+  const [challengeFieldAddress, setChallengeFieldAddress] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
   const [newMatchDate, setNewMatchDate] = useState("");
   const [newMatchTime, setNewMatchTime] = useState("");
   const [newMatchLocation, setNewMatchLocation] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away">("own");
+  const [newMatchFieldName, setNewMatchFieldName] = useState("");
+  const [newMatchFieldAddress, setNewMatchFieldAddress] = useState("");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | "other">("own");
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
