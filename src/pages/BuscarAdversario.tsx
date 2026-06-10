@@ -97,7 +97,7 @@ const BuscarAdversarioPage = () => {
   const [newMatchLocation, setNewMatchLocation] = useState("");
   const [newMatchFieldName, setNewMatchFieldName] = useState("");
   const [newMatchFieldAddress, setNewMatchFieldAddress] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | "other">("own");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "other">("other");
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
@@ -254,6 +254,7 @@ const BuscarAdversarioPage = () => {
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
     setNewMatchFieldName(""); setNewMatchFieldAddress("");
+    setNewMatchLocationChoice("other");
     navigate("/agenda");
   };
 
