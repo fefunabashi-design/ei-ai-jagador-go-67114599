@@ -176,11 +176,19 @@ const BuscarAdversarioPage = () => {
     let home_team_id = adminTeam.id;
     let away_team_id = challengeTeam.id;
     if (locationChoice === "own") {
-      location = (challengeLocation.trim() || adminTeam.field_name || adminTeam.field_address || "Campo do mandante");
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
+      location = challengeLocation.trim() || teamFieldLocation(adminTeam);
     } else if (locationChoice === "away") {
+      if (!hasTeamField(challengeTeam)) {
+        toast({ title: "Adversário não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
       home_team_id = challengeTeam.id;
       away_team_id = adminTeam.id;
-      location = (challengeLocation.trim() || challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
+      location = challengeLocation.trim() || teamFieldLocation(challengeTeam);
     } else {
       const nome = challengeFieldName.trim();
       const endereco = challengeFieldAddress.trim();
@@ -222,12 +230,16 @@ const BuscarAdversarioPage = () => {
         return;
       }
       location = `${nome} - ${endereco}`;
-    } else {
+    } else if (newMatchLocationChoice === "own") {
+      if (!hasTeamField(adminTeam)) {
+        toast({ title: "Seu time não tem campo cadastrado", variant: "destructive" });
+        return;
+      }
       if (!newMatchLocation.trim()) {
         toast({ title: "Informe o local", variant: "destructive" });
         return;
       }
-      location = newMatchLocation.trim();
+      location = newMatchLocation.trim() || teamFieldLocation(adminTeam);
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
