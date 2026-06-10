@@ -42,6 +42,17 @@ const DAY_INDEX: Record<string, number> = {
   domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6,
 };
 
+const cleanValue = (value?: string | null) => String(value || "").trim();
+const hasTeamField = (team: any) =>
+  team?.has_field === true && (!!cleanValue(team?.field_name) || !!cleanValue(team?.field_address));
+const teamFieldLocation = (team: any): string => {
+  if (!hasTeamField(team)) return "";
+  const fieldName = cleanValue(team?.field_name);
+  const fieldAddress = cleanValue(team?.field_address);
+  if (fieldName && fieldAddress) return `${fieldName} — ${fieldAddress}`;
+  return fieldName || fieldAddress;
+};
+
 
 
 const BuscarAdversarioPage = () => {
@@ -116,16 +127,16 @@ const BuscarAdversarioPage = () => {
     if (!challengeTeam) return;
     const mine = matchActionTeam as any;
     const opp = challengeTeam as any;
-    const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
-    const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
+    const myHasField = hasTeamField(mine);
+    const oppHasField = hasTeamField(opp);
     let choice: "own" | "away" | "other" = "other";
     if (myHasField && !oppHasField) choice = "own";
     else if (oppHasField) choice = "away";
     setLocationChoice(choice);
     if (choice === "own") {
-      setChallengeLocation(mine?.field_name || mine?.field_address || "");
+      setChallengeLocation(teamFieldLocation(mine));
     } else if (choice === "away") {
-      setChallengeLocation(opp?.field_name || opp?.field_address || "");
+      setChallengeLocation(teamFieldLocation(opp));
     } else {
       setChallengeLocation("");
     }
