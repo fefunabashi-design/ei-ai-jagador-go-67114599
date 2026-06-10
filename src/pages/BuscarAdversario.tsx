@@ -75,14 +75,18 @@ const BuscarAdversarioPage = () => {
   const [challengeTeam, setChallengeTeam] = useState<any | null>(null);
   const [challengeDate, setChallengeDate] = useState("");
   const [challengeTime, setChallengeTime] = useState("");
-  const [locationChoice, setLocationChoice] = useState<"own" | "away">("away");
+  const [locationChoice, setLocationChoice] = useState<"own" | "away" | "other">("other");
   const [challengeLocation, setChallengeLocation] = useState("");
+  const [challengeFieldName, setChallengeFieldName] = useState("");
+  const [challengeFieldAddress, setChallengeFieldAddress] = useState("");
   const [newMatchOpen, setNewMatchOpen] = useState(false);
   const [newMatchOpponent, setNewMatchOpponent] = useState("");
   const [newMatchDate, setNewMatchDate] = useState("");
   const [newMatchTime, setNewMatchTime] = useState("");
   const [newMatchLocation, setNewMatchLocation] = useState("");
-  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away">("own");
+  const [newMatchFieldName, setNewMatchFieldName] = useState("");
+  const [newMatchFieldAddress, setNewMatchFieldAddress] = useState("");
+  const [newMatchLocationChoice, setNewMatchLocationChoice] = useState<"own" | "away" | "other">("own");
 
   // Pré-popular filtros com o cadastro do meu time
   useEffect(() => {
@@ -114,14 +118,19 @@ const BuscarAdversarioPage = () => {
     const opp = challengeTeam as any;
     const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
     const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
-    let choice: "own" | "away" = "away";
+    let choice: "own" | "away" | "other" = "other";
     if (myHasField && !oppHasField) choice = "own";
-    else if (!myHasField && oppHasField) choice = "away";
+    else if (oppHasField) choice = "away";
     setLocationChoice(choice);
-    const name = choice === "own"
-      ? (mine?.field_name || mine?.field_address || "")
-      : (opp?.field_name || opp?.field_address || "");
-    setChallengeLocation(name);
+    if (choice === "own") {
+      setChallengeLocation(mine?.field_name || mine?.field_address || "");
+    } else if (choice === "away") {
+      setChallengeLocation(opp?.field_name || opp?.field_address || "");
+    } else {
+      setChallengeLocation("");
+    }
+    setChallengeFieldName("");
+    setChallengeFieldAddress("");
   }, [challengeTeam, matchActionTeam]);
 
 
@@ -152,14 +161,28 @@ const BuscarAdversarioPage = () => {
         return;
       }
     }
-    const fallbackLocation = locationChoice === "own"
-      ? (adminTeam.field_name || adminTeam.field_address || "Campo do mandante")
-      : (challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
-    const location = challengeLocation.trim() || fallbackLocation;
+    let location = "";
+    let home_team_id = adminTeam.id;
+    let away_team_id = challengeTeam.id;
+    if (locationChoice === "own") {
+      location = (challengeLocation.trim() || adminTeam.field_name || adminTeam.field_address || "Campo do mandante");
+    } else if (locationChoice === "away") {
+      home_team_id = challengeTeam.id;
+      away_team_id = adminTeam.id;
+      location = (challengeLocation.trim() || challengeTeam.field_name || challengeTeam.field_address || "Campo do adversário");
+    } else {
+      const nome = challengeFieldName.trim();
+      const endereco = challengeFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
+    }
     const match_date = new Date(`${challengeDate}T${challengeTime}`).toISOString();
     await createMatch.mutateAsync({
-      home_team_id: locationChoice === "own" ? adminTeam.id : challengeTeam.id,
-      away_team_id: locationChoice === "own" ? challengeTeam.id : adminTeam.id,
+      home_team_id,
+      away_team_id,
       match_date,
       location,
       status: "open",
@@ -167,29 +190,47 @@ const BuscarAdversarioPage = () => {
     });
     toast({ title: "Desafio enviado!", description: `${challengeTeam.name} foi convidado.` });
     setChallengeTeam(null);
-    setChallengeDate(""); setChallengeTime(""); setLocationChoice("away"); setChallengeLocation("");
+    setChallengeDate(""); setChallengeTime(""); setLocationChoice("other"); setChallengeLocation("");
+    setChallengeFieldName(""); setChallengeFieldAddress("");
     navigate("/agenda");
   };
 
   const handleCreateNewMatch = async () => {
     const adminTeam = matchActionTeam as any;
     if (!adminTeam) return;
-    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime || !newMatchLocation.trim()) {
+    if (!newMatchOpponent.trim() || !newMatchDate || !newMatchTime) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
+    }
+    let location = "";
+    if (newMatchLocationChoice === "other") {
+      const nome = newMatchFieldName.trim();
+      const endereco = newMatchFieldAddress.trim();
+      if (!nome || !endereco) {
+        toast({ title: "Informe nome e endereço do campo", variant: "destructive" });
+        return;
+      }
+      location = `${nome} - ${endereco}`;
+    } else {
+      if (!newMatchLocation.trim()) {
+        toast({ title: "Informe o local", variant: "destructive" });
+        return;
+      }
+      location = newMatchLocation.trim();
     }
     const match_date = new Date(`${newMatchDate}T${newMatchTime}`).toISOString();
     await createMatch.mutateAsync({
       home_team_id: adminTeam.id,
       away_team_id: null,
       match_date,
-      location: newMatchLocation.trim(),
+      location,
       status: "confirmed",
       format: adminTeam.format || "8x8",
     });
     toast({ title: "Partida criada e confirmada!", description: `vs ${newMatchOpponent.trim()}` });
     setNewMatchOpen(false);
     setNewMatchOpponent(""); setNewMatchDate(""); setNewMatchTime(""); setNewMatchLocation("");
+    setNewMatchFieldName(""); setNewMatchFieldAddress("");
     navigate("/agenda");
   };
 
@@ -595,12 +636,15 @@ const BuscarAdversarioPage = () => {
                     <RadioGroup
                       value={locationChoice}
                       onValueChange={(v) => {
-                        const choice = v as "own" | "away";
+                        const choice = v as "own" | "away" | "other";
                         setLocationChoice(choice);
-                        const name = choice === "own"
-                          ? (mine?.field_name || mine?.field_address || "")
-                          : (opp?.field_name || opp?.field_address || "");
-                        setChallengeLocation(name);
+                        if (choice === "own") {
+                          setChallengeLocation(mine?.field_name || mine?.field_address || "");
+                        } else if (choice === "away") {
+                          setChallengeLocation(opp?.field_name || opp?.field_address || "");
+                        } else {
+                          setChallengeLocation("");
+                        }
                       }}
                       className="space-y-2"
                     >
@@ -630,16 +674,39 @@ const BuscarAdversarioPage = () => {
                           </div>
                         </label>
                       )}
-                      {!myHasField && !oppHasField && (
-                        <p className="text-xs text-muted-foreground">Nenhum dos times tem campo cadastrado. Informe o endereço abaixo.</p>
-                      )}
+                      <label htmlFor="loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                        <RadioGroupItem id="loc-other" value="other" className="mt-1" />
+                        <div className="text-sm">
+                          <div className="font-semibold flex items-center gap-1">
+                            <Building2 size={14} /> Outro campo
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Informe o nome e o endereço abaixo
+                          </div>
+                        </div>
+                      </label>
                     </RadioGroup>
-                    <Input
-                      className="mt-2"
-                      value={challengeLocation}
-                      onChange={(e) => setChallengeLocation(e.target.value)}
-                      placeholder="Endereço do local da partida"
-                    />
+                    {locationChoice === "other" ? (
+                      <div className="mt-2 space-y-2">
+                        <Input
+                          value={challengeFieldName}
+                          onChange={(e) => setChallengeFieldName(e.target.value)}
+                          placeholder="Nome do campo"
+                        />
+                        <Input
+                          value={challengeFieldAddress}
+                          onChange={(e) => setChallengeFieldAddress(e.target.value)}
+                          placeholder="Endereço do campo"
+                        />
+                      </div>
+                    ) : (
+                      <Input
+                        className="mt-2"
+                        value={challengeLocation}
+                        onChange={(e) => setChallengeLocation(e.target.value)}
+                        placeholder="Endereço do local da partida"
+                      />
+                    )}
                   </div>
                 );
               })()}
@@ -668,7 +735,8 @@ const BuscarAdversarioPage = () => {
               setNewMatchLocationChoice("own");
               if (!newMatchLocation) setNewMatchLocation(t.field_name || t.field_address || "");
             } else {
-              setNewMatchLocationChoice("away");
+              setNewMatchLocationChoice("other");
+              setNewMatchLocation("");
             }
           }
         }}>
@@ -699,7 +767,7 @@ const BuscarAdversarioPage = () => {
                   <RadioGroup
                     value={newMatchLocationChoice}
                     onValueChange={(v) => {
-                      const choice = v as "own" | "away";
+                      const choice = v as "own" | "away" | "other";
                       setNewMatchLocationChoice(choice);
                       if (choice === "own") {
                         setNewMatchLocation(t?.field_name || t?.field_address || "");
@@ -720,16 +788,31 @@ const BuscarAdversarioPage = () => {
                         </div>
                       </label>
                     )}
-                    <label htmlFor="nm-loc-away" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
-                      <RadioGroupItem id="nm-loc-away" value="away" className="mt-1" />
+                    <label htmlFor="nm-loc-other" className="flex items-start gap-3 bg-secondary/40 border border-border rounded-lg p-3 cursor-pointer">
+                      <RadioGroupItem id="nm-loc-other" value="other" className="mt-1" />
                       <div className="text-sm">
-                        <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Campo do Adversário</div>
-                        <div className="text-xs text-muted-foreground">Informe o endereço abaixo</div>
+                        <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Outro campo</div>
+                        <div className="text-xs text-muted-foreground">Informe o nome e o endereço abaixo</div>
                       </div>
                     </label>
                   </RadioGroup>
-                  <Label htmlFor="nm-loc">Endereço do local</Label>
-                  <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
+                  {newMatchLocationChoice === "other" ? (
+                    <div className="space-y-2">
+                      <div>
+                        <Label htmlFor="nm-fname">Nome do campo</Label>
+                        <Input id="nm-fname" value={newMatchFieldName} onChange={(e) => setNewMatchFieldName(e.target.value)} placeholder="Ex: Arena do Zé" />
+                      </div>
+                      <div>
+                        <Label htmlFor="nm-faddr">Endereço do campo</Label>
+                        <Input id="nm-faddr" value={newMatchFieldAddress} onChange={(e) => setNewMatchFieldAddress(e.target.value)} placeholder="Rua, número, bairro" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Label htmlFor="nm-loc">Endereço do local</Label>
+                      <Input id="nm-loc" value={newMatchLocation} onChange={(e) => setNewMatchLocation(e.target.value)} placeholder="Endereço ou nome do campo" />
+                    </>
+                  )}
                 </div>
               );
             })()}
