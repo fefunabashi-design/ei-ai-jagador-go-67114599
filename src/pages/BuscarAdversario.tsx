@@ -118,14 +118,19 @@ const BuscarAdversarioPage = () => {
     const opp = challengeTeam as any;
     const myHasField = mine?.has_field === true && !!(mine?.field_name || mine?.field_address);
     const oppHasField = opp?.has_field === true && !!(opp?.field_name || opp?.field_address);
-    let choice: "own" | "away" = "away";
+    let choice: "own" | "away" | "other" = "other";
     if (myHasField && !oppHasField) choice = "own";
-    else if (!myHasField && oppHasField) choice = "away";
+    else if (oppHasField) choice = "away";
     setLocationChoice(choice);
-    const name = choice === "own"
-      ? (mine?.field_name || mine?.field_address || "")
-      : (opp?.field_name || opp?.field_address || "");
-    setChallengeLocation(name);
+    if (choice === "own") {
+      setChallengeLocation(mine?.field_name || mine?.field_address || "");
+    } else if (choice === "away") {
+      setChallengeLocation(opp?.field_name || opp?.field_address || "");
+    } else {
+      setChallengeLocation("");
+    }
+    setChallengeFieldName("");
+    setChallengeFieldAddress("");
   }, [challengeTeam, matchActionTeam]);
 
 
