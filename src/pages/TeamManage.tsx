@@ -1069,6 +1069,7 @@ const TeamFormDialog = ({
   const [showAdmin, setShowAdmin] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [showAllWeekDays, setShowAllWeekDays] = useState(false);
+  const weekDaysPickerRef = React.useRef<HTMLDivElement | null>(null);
 
   const togglePlayDay = (day: string) => {
     const isAdding = !form.play_days.includes(day);
