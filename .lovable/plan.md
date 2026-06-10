@@ -1,25 +1,47 @@
-## Corrigir exibição "Domingo 09:30, Quarta 21:30" nos cards de Times
+## Objetivo
+No diálogo de "Lançar desafio" (`src/pages/BuscarAdversario.tsx`), quando um time não tem arena cadastrada (`has_field=false`), não oferecer a sede como local. As opções de Local passam a ser:
 
-### Causa do problema
-O código em `src/pages/Times.tsx` (linhas 962–986) já está pronto para montar a string por dia (`Domingo 09:30, Quarta 21:30`) a partir de `team.play_schedule`.
+- **Meu campo** — só aparece se o time mandante tiver `has_field=true`.
+- **Campo do adversário** — só aparece se o adversário tiver `has_field=true`.
+- **Outro campo** — sempre aparece. Ao selecionar, mostra dois inputs: **Nome do campo** e **Endereço do campo**.
 
-Porém os times são carregados a partir da view `public_teams` (linha 218), e essa view **não expõe a coluna `play_schedule`**. Hoje a view só tem `play_days`, `play_time_start`, `play_time_end`.
+Se nenhum dos times tiver campo, "Outro campo" já vem pré-selecionado.
 
-Resultado: `team.play_schedule` chega como `undefined`, `hasPerDaySchedule` é `false` e o card cai no fallback antigo (`Domingo, Quarta · 09:30 até 21:30`), em vez de mostrar por dia.
+## Alteração (apenas frontend)
 
-Confirmei no banco que o SC Corinthians Paulista tem o `play_schedule` salvo corretamente em `teams`:
-`{"quarta": {"start": "21:30", ...}, "domingo": {"start": "09:30", ...}}`.
+Arquivo: `src/pages/BuscarAdversario.tsx`
 
-### Mudança proposta
+1. Mudar o tipo de `locationChoice` de `"own" | "away"` para `"own" | "away" | "other"`. Adicionar dois novos estados:
+   - `challengeFieldName: string`
+   - `challengeFieldAddress: string`
 
-1. **Migração** — recriar a view `public_teams` adicionando a coluna `play_schedule` (jsonb), mantendo todas as outras colunas exatamente como estão. Sem alterar grants/RLS (a view herda do dono e dos privilégios já existentes; só vamos `CREATE OR REPLACE VIEW`).
+2. No `useEffect` de auto-seleção (≈ linhas 110–125):
+   - `myHasField`/`oppHasField` como hoje.
+   - Definir `choice`:
+     - `myHasField && !oppHasField → "own"`
+     - `!myHasField && oppHasField → "away"`
+     - ambos com campo → `"away"` (mantém comportamento atual)
+     - nenhum com campo → `"other"`
+   - Quando `choice === "other"`, limpar `challengeLocation`, `challengeFieldName`, `challengeFieldAddress`.
 
-2. **Nenhuma mudança em código frontend** — a lógica já existente em `Times.tsx` passa a funcionar imediatamente assim que `play_schedule` chega no payload.
+3. No RadioGroup do diálogo (≈ linhas 593–644):
+   - Manter `Meu campo` e `Campo do adversário` apenas quando `myHasField`/`oppHasField` respectivamente.
+   - Adicionar **sempre** a opção `Outro campo`.
+   - Remover o parágrafo "Nenhum dos times tem campo cadastrado..." (substituído por "Outro campo").
+   - Quando `locationChoice === "other"`, ocultar o input atual de "Endereço do local da partida" e mostrar dois inputs novos:
+     - `Nome do campo` (`challengeFieldName`)
+     - `Endereço do campo` (`challengeFieldAddress`)
+   - Quando `locationChoice` for `own`/`away`, manter o input único pré-preenchido (vindo de `field_name`/`field_address` do time correspondente).
 
-### Resultado esperado no card
-- Time com horários iguais para todos os dias → segue mostrando `Domingo, Quarta · 09:30 até 21:30` (fallback).
-- Time com horários diferentes por dia (caso do Corinthians) → passa a mostrar `Domingo 09:30, Quarta 21:30`.
+4. Em `handleConfirmChallenge` (≈ linhas 140–172):
+   - Se `locationChoice === "other"`:
+     - Exigir `challengeFieldName` e `challengeFieldAddress`; senão `toast` de erro.
+     - `location = "<nome> - <endereço>"` (mantém compatibilidade com a coluna `matches.location` que é string única).
+   - Caso contrário, fluxo atual.
+   - Resetar os novos estados ao final.
 
-### Fora de escopo
-- Sem alterar schema da tabela `teams`.
-- Sem mexer em RLS, em outras views ou em outras telas.
+5. Diálogo "Nova Partida" (≈ linhas 658–744): aplicar o mesmo padrão de três opções com os mesmos dois inputs quando `newMatchLocationChoice === "other"`. Validar igualmente em `handleCreateNewMatch`.
+
+## Fora do escopo
+- Sem alterações de schema/RLS. A coluna `matches.location` continua sendo um único texto; nome + endereço são concatenados para preservar compatibilidade com Agenda, Desafios e demais telas que exibem `location`.
+- Cards de Times (`/times`) e demais telas não são tocados.
