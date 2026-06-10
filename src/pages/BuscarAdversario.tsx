@@ -754,15 +754,16 @@ const BuscarAdversarioPage = () => {
           setNewMatchOpen(open);
           if (open && matchActionTeam) {
             const t = matchActionTeam as any;
-            const myHasField = t.has_field === true && !!(t.field_name || t.field_address);
+            const myHasField = hasTeamField(t);
             if (!newMatchTime && t.play_time_start) setNewMatchTime(t.play_time_start);
             if (myHasField) {
               setNewMatchLocationChoice("own");
-              if (!newMatchLocation) setNewMatchLocation(t.field_name || t.field_address || "");
+              if (!newMatchLocation) setNewMatchLocation(teamFieldLocation(t));
             } else {
               setNewMatchLocationChoice("other");
               setNewMatchLocation("");
             }
+            setNewMatchFieldName(""); setNewMatchFieldAddress("");
           }
         }}>
         <DialogContent className="max-w-sm">
@@ -785,17 +786,17 @@ const BuscarAdversarioPage = () => {
             </div>
             {(() => {
               const t = matchActionTeam as any;
-              const myHasField = t?.has_field === true && !!(t?.field_name || t?.field_address);
+              const myHasField = hasTeamField(t);
               return (
                 <div>
                   <Label className="mb-2 block">Local</Label>
                   <RadioGroup
                     value={newMatchLocationChoice}
                     onValueChange={(v) => {
-                      const choice = v as "own" | "away" | "other";
+                      const choice = v as "own" | "other";
                       setNewMatchLocationChoice(choice);
                       if (choice === "own") {
-                        setNewMatchLocation(t?.field_name || t?.field_address || "");
+                        setNewMatchLocation(teamFieldLocation(t));
                       } else {
                         setNewMatchLocation("");
                       }
@@ -808,7 +809,7 @@ const BuscarAdversarioPage = () => {
                         <div className="text-sm">
                           <div className="font-semibold flex items-center gap-1"><Building2 size={14} /> Meu campo</div>
                           <div className="text-xs text-muted-foreground">
-                            {t?.field_name || t?.field_address}
+                            {teamFieldLocation(t)}
                           </div>
                         </div>
                       </label>
