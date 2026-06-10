@@ -1282,7 +1282,7 @@ const TeamFormDialog = ({
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
+            <div ref={weekDaysPickerRef} className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
               {visibleWeekDays.map((day) => (
                 <label key={day.value} className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
