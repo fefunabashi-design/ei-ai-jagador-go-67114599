@@ -721,7 +721,7 @@ const AgendaPage = () => {
                           <Shield size={14} className="text-primary" />
                           <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
                         </button>
-                        {isOwner && view.status !== "cancelled" && !view.isFinalizedByMe && (
+                        {fromAdmin && isOwner && view.status !== "cancelled" && !view.isFinalizedByMe && (
                           <>
                             <button
                               onClick={() => openEdit(match)}

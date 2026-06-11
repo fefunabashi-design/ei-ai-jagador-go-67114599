@@ -1,19 +1,19 @@
-# Refazer status da Agenda
+# Restringir "Reagendar/Cancelar" à agenda do time
 
-## Mudanças em `src/pages/Agenda.tsx`
+## Mudança em `src/pages/Agenda.tsx` (linha ~724)
 
-1. **Remover filtros "Próximas" e "Passadas"** do seletor de status.
-   - Atualizar `FilterType` para: `"all" | "open" | "confirmed" | "completed" | "cancelled"`.
-   - Atualizar `filterOptions` para conter apenas: Todas, Aberto, Confirmado, Finalizado, Cancelado.
+Adicionar `fromAdmin &&` na condição que renderiza os botões "Reagendar partida" e "Cancelar partida" dentro do bloco expandido do card:
 
-2. **Padrão ao abrir a Agenda: "Confirmado"**.
-   - `useState<FilterType>("confirmed")` (mantendo override por `focusMatchId` se aplicável — também passa a abrir em `confirmed`).
-   - Ajustar o `useEffect` de `focusMatchId` para `setFilter("confirmed")`.
+```tsx
+{fromAdmin && isOwner && view.status !== "cancelled" && !view.isFinalizedByMe && (
+  <>
+    {/* Reagendar / Cancelar */}
+  </>
+)}
+```
 
-3. **Lógica de filtragem** (`filtered`): remover os `case "upcoming"` e `case "past"`. Os demais (`open`, `confirmed`, `completed`, `cancelled`, `all`) continuam como hoje, baseados em `getMatchView(m, myTeam?.id).status`.
-
-4. **Limpeza**: remover `statusLabels.past` e `statusStyles.past` se não forem mais usados em outros pontos do arquivo (verificar usos antes de remover).
+Assim, na Agenda pessoal do usuário (acesso fora do Admin), o card mostra apenas Chat, Detalhes e "Detalhar adversário". Os botões de gestão da partida só aparecem quando a Agenda é aberta a partir do Admin do time (`fromAdmin === true`).
 
 ## Fora de escopo
-- Sem mudanças de schema, RLS ou em outras telas.
-- Sem alteração no ciclo de vida da partida (open/confirmed/completed/cancelled permanecem como estão).
+- Sem mudanças em RLS, schema ou outras telas.
+- Outros botões (Chat, Detalhes, Finalização) permanecem como estão.
