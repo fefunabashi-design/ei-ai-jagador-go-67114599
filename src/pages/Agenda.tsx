@@ -55,7 +55,6 @@ const statusStyles: Record<string, string> = {
   confirmed: "bg-success/10 text-success",
   completed: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
-  past: "bg-muted text-muted-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -63,17 +62,14 @@ const statusLabels: Record<string, string> = {
   confirmed: "Confirmado",
   completed: "Finalizado",
   cancelled: "Cancelado",
-  past: "Passada",
 };
 
 
 
 
-type FilterType = "upcoming" | "past" | "all" | "open" | "confirmed" | "completed" | "cancelled";
+type FilterType = "all" | "open" | "confirmed" | "completed" | "cancelled";
 
 const filterOptions: { value: FilterType; label: string }[] = [
-  { value: "upcoming", label: "Próximas" },
-  { value: "past", label: "Passadas" },
   { value: "all", label: "Todas" },
   { value: "open", label: "Aberto" },
   { value: "confirmed", label: "Confirmado" },
@@ -95,7 +91,7 @@ const AgendaPage = () => {
   const focusMatchId = searchParams.get("matchId");
   const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
-  const [filter, setFilter] = useState<FilterType>(focusMatchId ? "upcoming" : "upcoming");
+  const [filter, setFilter] = useState<FilterType>("confirmed");
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
   const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
@@ -288,11 +284,8 @@ const AgendaPage = () => {
     : [2, 4, 6];
 
   const filtered = myMatches.filter((m) => {
-    const matchDate = new Date(m.match_date);
     const view = getMatchView(m, myTeam?.id);
     switch (filter) {
-      case "upcoming": return matchDate >= now && (view.status === "open" || view.status === "confirmed");
-      case "past": return matchDate < now || view.status === "completed";
       case "completed": return view.isFinalizedByMe;
       case "open": case "confirmed": case "cancelled": return view.status === filter;
       default: return true;
@@ -305,7 +298,7 @@ const AgendaPage = () => {
   useEffect(() => {
     if (!focusMatchId) return;
     setView("list");
-    setFilter("upcoming");
+    setFilter("confirmed");
     const t = setTimeout(() => {
       const el = matchRefs.current[focusMatchId];
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
