@@ -284,11 +284,8 @@ const AgendaPage = () => {
     : [2, 4, 6];
 
   const filtered = myMatches.filter((m) => {
-    const matchDate = new Date(m.match_date);
     const view = getMatchView(m, myTeam?.id);
     switch (filter) {
-      case "upcoming": return matchDate >= now && (view.status === "open" || view.status === "confirmed");
-      case "past": return matchDate < now || view.status === "completed";
       case "completed": return view.isFinalizedByMe;
       case "open": case "confirmed": case "cancelled": return view.status === filter;
       default: return true;
