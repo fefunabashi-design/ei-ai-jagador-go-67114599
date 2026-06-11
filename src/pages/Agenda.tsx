@@ -55,7 +55,6 @@ const statusStyles: Record<string, string> = {
   confirmed: "bg-success/10 text-success",
   completed: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
-  past: "bg-muted text-muted-foreground",
 };
 
 const statusLabels: Record<string, string> = {
@@ -63,17 +62,14 @@ const statusLabels: Record<string, string> = {
   confirmed: "Confirmado",
   completed: "Finalizado",
   cancelled: "Cancelado",
-  past: "Passada",
 };
 
 
 
 
-type FilterType = "upcoming" | "past" | "all" | "open" | "confirmed" | "completed" | "cancelled";
+type FilterType = "all" | "open" | "confirmed" | "completed" | "cancelled";
 
 const filterOptions: { value: FilterType; label: string }[] = [
-  { value: "upcoming", label: "Próximas" },
-  { value: "past", label: "Passadas" },
   { value: "all", label: "Todas" },
   { value: "open", label: "Aberto" },
   { value: "confirmed", label: "Confirmado" },
