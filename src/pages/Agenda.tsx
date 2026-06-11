@@ -586,22 +586,16 @@ const AgendaPage = () => {
             }))}
               availableDays={availableDays}
             onDateClick={(date, dateMatches) => {
-              if (dateMatches.length > 0) {
-                const match = myMatches.find((m) => {
-                  const mDate = new Date(m.match_date);
-                  return (
-                    mDate.getDate() === date.getDate() &&
-                    mDate.getMonth() === date.getMonth() &&
-                    mDate.getFullYear() === date.getFullYear()
-                  );
-                });
-                if (match) {
-                  openDetails(match, "details");
-                }
-              } else {
-                setNewDate(date.toISOString().slice(0, 16));
-                setCreateOpen(true);
-              }
+              if (dateMatches.length === 0) return;
+              const match = myMatches.find((m) => {
+                const mDate = new Date(m.match_date);
+                return (
+                  mDate.getDate() === date.getDate() &&
+                  mDate.getMonth() === date.getMonth() &&
+                  mDate.getFullYear() === date.getFullYear()
+                );
+              });
+              if (match) openDetails(match, "details");
             }}
           />
         ) : (

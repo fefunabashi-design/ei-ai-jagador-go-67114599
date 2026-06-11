@@ -1,19 +1,27 @@
-# Restringir "Reagendar/Cancelar" à agenda do time
+# Corrigir clique no calendário da Agenda
 
-## Mudança em `src/pages/Agenda.tsx` (linha ~724)
+## Problema
+No modo Calendário da Agenda, clicar em uma data sem jogo abre o diálogo de "criar partida". Não deve abrir nada.
 
-Adicionar `fromAdmin &&` na condição que renderiza os botões "Reagendar partida" e "Cancelar partida" dentro do bloco expandido do card:
+## Mudança em `src/pages/Agenda.tsx` (linhas ~588-605)
+
+Remover o `else` que chama `setNewDate(...)` + `setCreateOpen(true)`. O `onDateClick` passará a só abrir os detalhes quando houver partida(s) naquela data; caso contrário, não faz nada.
 
 ```tsx
-{fromAdmin && isOwner && view.status !== "cancelled" && !view.isFinalizedByMe && (
-  <>
-    {/* Reagendar / Cancelar */}
-  </>
-)}
+onDateClick={(date, dateMatches) => {
+  if (dateMatches.length === 0) return;
+  const match = myMatches.find((m) => {
+    const mDate = new Date(m.match_date);
+    return (
+      mDate.getDate() === date.getDate() &&
+      mDate.getMonth() === date.getMonth() &&
+      mDate.getFullYear() === date.getFullYear()
+    );
+  });
+  if (match) openDetails(match, "details");
+}}
 ```
 
-Assim, na Agenda pessoal do usuário (acesso fora do Admin), o card mostra apenas Chat, Detalhes e "Detalhar adversário". Os botões de gestão da partida só aparecem quando a Agenda é aberta a partir do Admin do time (`fromAdmin === true`).
-
 ## Fora de escopo
-- Sem mudanças em RLS, schema ou outras telas.
-- Outros botões (Chat, Detalhes, Finalização) permanecem como estão.
+- Botão/fluxo de criar partida existente (continua disponível pelos outros caminhos).
+- Estilo das datas no calendário.
