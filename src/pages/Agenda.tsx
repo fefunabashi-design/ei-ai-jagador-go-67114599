@@ -298,7 +298,7 @@ const AgendaPage = () => {
   useEffect(() => {
     if (!focusMatchId) return;
     setView("list");
-    setFilter("upcoming");
+    setFilter("confirmed");
     const t = setTimeout(() => {
       const el = matchRefs.current[focusMatchId];
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
