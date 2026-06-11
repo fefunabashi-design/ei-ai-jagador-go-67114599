@@ -91,7 +91,7 @@ const AgendaPage = () => {
   const focusMatchId = searchParams.get("matchId");
   const focusView = searchParams.get("view");
   const [view, setView] = useState<"list" | "calendar">("list");
-  const [filter, setFilter] = useState<FilterType>(focusMatchId ? "upcoming" : "upcoming");
+  const [filter, setFilter] = useState<FilterType>("confirmed");
   const [highlightedMatchId, setHighlightedMatchId] = useState<string | null>(focusMatchId);
   const matchRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
