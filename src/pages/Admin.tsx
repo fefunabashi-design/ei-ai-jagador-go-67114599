@@ -355,10 +355,6 @@ const AdminPage = () => {
     setCancelReason("");
   };
 
-  const handleDecline = async (matchId: string) => {
-    await deleteMatchMut.mutateAsync(matchId);
-    toast({ title: "Pedido recusado." });
-  };
 
   const toggleFilter = (
     value: string,
