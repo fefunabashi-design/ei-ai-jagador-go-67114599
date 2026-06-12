@@ -463,6 +463,7 @@ const AdminPage = () => {
     { icon: CalendarDays, label: "Agenda Time", path: "/agenda" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
+    { icon: Trophy, label: "Artilharia", path: "/ranking" },
   ];
 
   return (
