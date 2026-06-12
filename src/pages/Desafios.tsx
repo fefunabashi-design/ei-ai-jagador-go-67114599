@@ -258,6 +258,14 @@ const DesafiosPage = () => {
                           Detalhes do time
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="basis-full h-8 text-[11px] px-2"
+                        onClick={() => navigate(`/chat/${m.id}`)}
+                      >
+                        Chat
+                      </Button>
                     </div>
                   </div>
                 );
