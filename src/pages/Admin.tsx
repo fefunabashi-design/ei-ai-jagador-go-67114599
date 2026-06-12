@@ -19,7 +19,7 @@ import BottomNav from "@/components/BottomNav";
 import { AdminGate } from "@/components/AdminGate";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
-  useMyTeam, useMatches, usePlayers, useAcceptMatch,
+  useMyTeam, useMatches, usePlayers,
   useMyAdminTeams, useSetActiveTeam,
   useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
