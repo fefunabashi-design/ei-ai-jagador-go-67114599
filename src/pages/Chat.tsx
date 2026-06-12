@@ -84,8 +84,43 @@ const ChatPage = () => {
     return () => { alive = false; };
   }, [homeTeam?.id, awayTeam?.id]);
 
+  // Extra team lookup for senders who aren't owners or roster of home/away
+  const [extraUserTeam, setExtraUserTeam] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const senderIds = Array.from(new Set((messages || []).map((m: any) => m.user_id).filter(Boolean))) as string[];
+    if (!senderIds.length) { setExtraUserTeam({}); return; }
+    let alive = true;
+    (async () => {
+      const [{ data: pp }, { data: tOwn }] = await Promise.all([
+        supabase.from("public_players").select("user_id, team_id").in("user_id", senderIds),
+        supabase.from("teams").select("id, name, owner_id").in("owner_id", senderIds),
+      ]);
+      const teamIds = Array.from(new Set([...(pp || []).map((p: any) => p.team_id)])).filter(Boolean);
+      let teamMap: Record<string, { id: string; name: string }> = {};
+      (tOwn || []).forEach((t: any) => { teamMap[t.id] = t; });
+      const missingTeamIds = teamIds.filter((id) => !teamMap[id]);
+      if (missingTeamIds.length) {
+        const { data: ts } = await supabase.from("teams").select("id, name").in("id", missingTeamIds);
+        (ts || []).forEach((t: any) => { teamMap[t.id] = t; });
+      }
+      const result: Record<string, string> = {};
+      for (const uid of senderIds) {
+        const ownerTeam = (tOwn || []).find((t: any) => t.owner_id === uid);
+        const playerRows = (pp || []).filter((p: any) => p.user_id === uid);
+        const preferred =
+          playerRows.find((p: any) => p.team_id === homeTeam?.id || p.team_id === awayTeam?.id) ||
+          playerRows[0];
+        const team = ownerTeam || (preferred ? teamMap[preferred.team_id] : null);
+        if (team?.name) result[uid] = getShortTeamName(team.name);
+      }
+      if (alive) setExtraUserTeam(result);
+    })();
+    return () => { alive = false; };
+  }, [messages, homeTeam?.id, awayTeam?.id]);
+
   // Map user_id -> short team name for chat message attribution
   const userTeamMap = new Map<string, string>();
+  Object.entries(extraUserTeam).forEach(([uid, name]) => userTeamMap.set(uid, name));
   if (homeTeam?.name) {
     const short = getShortTeamName(homeTeam.name);
     if (homeTeam.owner_id) userTeamMap.set(homeTeam.owner_id, short);
