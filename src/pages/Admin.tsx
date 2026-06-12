@@ -258,34 +258,6 @@ const AdminPage = () => {
     return (creditosMensalidades + manualCredits) - totalDebitos;
   })();
 
-  // Artilharia calculada a partir dos eventos das partidas do time
-  const myTeamMatchIds = typedMatches
-    .filter((m) => myTeam && (m.home_team_id === myTeam.id || m.away_team_id === myTeam.id))
-    .map((m) => m.id);
-
-  const { data: teamGoalEvents = [] } = useQuery<any[]>({
-    queryKey: ["team-goal-events", myTeam?.id, myTeamMatchIds.join(",")],
-    enabled: !!myTeam?.id && myTeamMatchIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("match_events")
-        .select("player_id, type, match_id")
-        .in("match_id", myTeamMatchIds)
-        .eq("type", "goal");
-      return data || [];
-    },
-  });
-
-  const goalsByPlayer = new Map<string, number>();
-  teamGoalEvents.forEach((e: any) => {
-    if (!e.player_id) return;
-    goalsByPlayer.set(e.player_id, (goalsByPlayer.get(e.player_id) || 0) + 1);
-  });
-  const topScorers = [...players]
-    .map((p) => ({ ...p, goals: goalsByPlayer.get(p.id) || 0 }))
-    .filter((p) => p.goals > 0)
-    .sort((a, b) => b.goals - a.goals)
-    .slice(0, 3);
 
   const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
     .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
