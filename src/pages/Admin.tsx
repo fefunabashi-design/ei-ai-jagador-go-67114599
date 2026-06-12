@@ -19,7 +19,7 @@ import BottomNav from "@/components/BottomNav";
 import { AdminGate } from "@/components/AdminGate";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import {
-  useMyTeam, useMatches, usePlayers, useAcceptMatch,
+  useMyTeam, useMatches, usePlayers,
   useMyAdminTeams, useSetActiveTeam,
   useCreateMatch, useUpdateMatch, useDeleteMatch,
   useDebitos, useMensalidades, useMensalidadeConfig,
@@ -57,7 +57,7 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
-  const acceptMatch = useAcceptMatch();
+  
   const { data: adminTeams = [] } = useMyAdminTeams();
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
@@ -199,18 +199,6 @@ const AdminPage = () => {
   }).length;
   const losses = completedMatches.length - wins - draws;
 
-  // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
-  // OU matches abertos sem adversário definido criados por outro time
-  const pendingRequests = typedMatches.filter((m) => {
-    if (!myTeam || m.status !== "open") return false;
-    const homeTeam = m.home_team;
-    if (homeTeam?.id === myTeam.id) return false;
-    // Desafio direcionado ao meu time
-    if (m.away_team_id === myTeam.id) return true;
-    // Convite aberto (sem adversário)
-    if (!m.away_team_id) return true;
-    return false;
-  }).slice(0, 5);
 
   // Desafios RECEBIDOS (lista completa para o card Desafios)
   const receivedChallenges = typedMatches.filter((m) => {
@@ -258,34 +246,6 @@ const AdminPage = () => {
     return (creditosMensalidades + manualCredits) - totalDebitos;
   })();
 
-  // Artilharia calculada a partir dos eventos das partidas do time
-  const myTeamMatchIds = typedMatches
-    .filter((m) => myTeam && (m.home_team_id === myTeam.id || m.away_team_id === myTeam.id))
-    .map((m) => m.id);
-
-  const { data: teamGoalEvents = [] } = useQuery<any[]>({
-    queryKey: ["team-goal-events", myTeam?.id, myTeamMatchIds.join(",")],
-    enabled: !!myTeam?.id && myTeamMatchIds.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("match_events")
-        .select("player_id, type, match_id")
-        .in("match_id", myTeamMatchIds)
-        .eq("type", "goal");
-      return data || [];
-    },
-  });
-
-  const goalsByPlayer = new Map<string, number>();
-  teamGoalEvents.forEach((e: any) => {
-    if (!e.player_id) return;
-    goalsByPlayer.set(e.player_id, (goalsByPlayer.get(e.player_id) || 0) + 1);
-  });
-  const topScorers = [...players]
-    .map((p) => ({ ...p, goals: goalsByPlayer.get(p.id) || 0 }))
-    .filter((p) => p.goals > 0)
-    .sort((a, b) => b.goals - a.goals)
-    .slice(0, 3);
 
   const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
     .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
@@ -298,10 +258,6 @@ const AdminPage = () => {
     })
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
-  const handleAccept = (matchId: string) => {
-    if (!myTeam) return;
-    acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
-  };
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
@@ -399,10 +355,6 @@ const AdminPage = () => {
     setCancelReason("");
   };
 
-  const handleDecline = async (matchId: string) => {
-    await deleteMatchMut.mutateAsync(matchId);
-    toast({ title: "Pedido recusado." });
-  };
 
   const toggleFilter = (
     value: string,
@@ -463,6 +415,7 @@ const AdminPage = () => {
     { icon: CalendarDays, label: "Agenda Time", path: "/agenda" },
     { icon: CreditCard, label: "Mensalidade", path: "/mensalidades" },
     { icon: Swords, label: "Desafios", path: "/desafios", badge: totalChallenges },
+    { icon: Trophy, label: "Artilharia", path: "/ranking" },
   ];
 
   return (
@@ -673,85 +626,6 @@ const AdminPage = () => {
 
 
 
-        {pendingRequests.length > 0 && (
-          <div>
-            <h2 className="text-sm font-display text-foreground mb-2">PEDIDOS DE MATCH RECEBIDOS</h2>
-            <div className="space-y-2">
-              {pendingRequests.map((m) => {
-                const homeTeam = m.home_team;
-                const date = new Date(m.match_date);
-                return (
-                  <div key={m.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                        {homeTeam?.logo_url ? (
-                          <img src={homeTeam.logo_url} alt={homeTeam.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Shield size={14} className="text-primary" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{homeTeam?.name} desafiou</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {getFieldDisplayName(m)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() => handleAccept(m.id)}
-                        disabled={acceptMatch.isPending}
-                        className="flex-1 h-7 text-[10px] px-2 bg-gradient-primary text-primary-foreground border-0"
-                      >
-                        Confirmar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 h-7 text-[10px] px-2"
-                        onClick={() => openReschedule(m)}
-                      >
-                        Reagendar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 h-7 text-[10px] px-2 text-destructive border-destructive/40 hover:bg-destructive/10"
-                        onClick={() => handleDecline(m.id)}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {topScorers.length > 0 && (
-          <div>
-            <h2 className="text-sm font-display text-foreground mb-2">ARTILHARIA · {myTeam?.name?.toUpperCase()}</h2>
-            <div className="space-y-1.5">
-              {topScorers.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-3 bg-card rounded-xl border border-border p-3">
-                  <span className={`text-lg font-display w-6 text-center ${i === 0 ? "text-warning" : "text-muted-foreground"}`}>
-                    {i + 1}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                    {p.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-foreground">{p.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.position || "—"}</p>
-                  </div>
-                  <span className="text-sm font-display text-foreground">{p.goals} gols</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <Dialog
