@@ -57,7 +57,7 @@ const AdminPage = () => {
   const { data: myTeam } = useMyTeam();
   const { data: players = [] } = usePlayers(myTeam?.id);
   const { data: matches = [] } = useMatches();
-  const acceptMatch = useAcceptMatch();
+  
   const { data: adminTeams = [] } = useMyAdminTeams();
   const setActiveTeam = useSetActiveTeam();
   const [switchTeamOpen, setSwitchTeamOpen] = useState(false);
