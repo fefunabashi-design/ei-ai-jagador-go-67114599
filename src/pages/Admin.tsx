@@ -199,18 +199,6 @@ const AdminPage = () => {
   }).length;
   const losses = completedMatches.length - wins - draws;
 
-  // Pedidos recebidos: matches abertos onde meu time foi desafiado diretamente (away_team_id === myTeam.id)
-  // OU matches abertos sem adversário definido criados por outro time
-  const pendingRequests = typedMatches.filter((m) => {
-    if (!myTeam || m.status !== "open") return false;
-    const homeTeam = m.home_team;
-    if (homeTeam?.id === myTeam.id) return false;
-    // Desafio direcionado ao meu time
-    if (m.away_team_id === myTeam.id) return true;
-    // Convite aberto (sem adversário)
-    if (!m.away_team_id) return true;
-    return false;
-  }).slice(0, 5);
 
   // Desafios RECEBIDOS (lista completa para o card Desafios)
   const receivedChallenges = typedMatches.filter((m) => {
