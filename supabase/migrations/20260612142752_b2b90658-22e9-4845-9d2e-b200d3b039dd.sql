@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Players can update own payment" ON public.match_payments;
