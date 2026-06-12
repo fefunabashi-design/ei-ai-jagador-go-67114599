@@ -258,10 +258,6 @@ const AdminPage = () => {
     })
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
 
-  const handleAccept = (matchId: string) => {
-    if (!myTeam) return;
-    acceptMatch.mutate({ matchId, awayTeamId: myTeam.id });
-  };
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
