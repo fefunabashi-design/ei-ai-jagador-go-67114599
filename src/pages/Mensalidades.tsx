@@ -426,18 +426,24 @@ const MensalidadesPage = () => {
                     </div>
 
                     {/* Financial summary */}
-                    {valorMensal > 0 && (
-                      <div className="flex gap-3 mb-2 text-[10px]">
-                        <span className="text-emerald-600 font-medium">
-                          💰 {formatCurrency(paid * valorMensal)}
-                        </span>
-                        {unpaid > 0 && (
-                          <span className="text-destructive font-medium">
-                            ⚠️ {formatCurrency(unpaid * valorMensal)} em aberto
+                    {(() => {
+                      const pagoVal = valorPagoPlayer(player.id);
+                      const abertoVal = valorEmAbertoPlayer(player.id);
+                      if (pagoVal <= 0 && abertoVal <= 0) return null;
+                      return (
+                        <div className="flex gap-3 mb-2 text-[10px]">
+                          <span className="text-emerald-600 font-medium">
+                            💰 {formatCurrency(pagoVal)}
                           </span>
-                        )}
-                      </div>
-                    )}
+                          {abertoVal > 0 && (
+                            <span className="text-destructive font-medium">
+                              ⚠️ {formatCurrency(abertoVal)} em aberto
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
 
                     {/* Month grid */}
                     <div className="grid grid-cols-6 gap-1.5">
