@@ -1,42 +1,44 @@
-# Botão Chat nos Desafios + Nome/Time correto no Chat
+# Valor da mensalidade vigente por faixa de meses
 
-A entrega anterior ficou só em planejamento — nada foi escrito em código. Esta passagem implementa de fato as duas correções.
+## Comportamento atual
+Hoje o campo "VALOR" funciona em dois modos:
+- "Ano todo" salva um valor padrão do ano (linha com `mes = null`).
+- Mês específico salva um valor só para aquele mês; outros meses caem no padrão do ano.
 
-## 1. `src/pages/Desafios.tsx` — botão "Chat" nos cards
+Os cálculos de arrecadação e por jogador usam um único `valorMensal` para todos os meses pagos.
 
-Em cada card de **Recebidos** (linha ~154) e **Enviados** (linha ~231), adicionar um botão "Chat" com o mesmo estilo do botão "Detalhes do time" (`variant="outline"`, `basis-full h-8 text-[11px] px-2`), navegando para `/chat/{m.id}`. Ficará logo abaixo do botão "Detalhes do time" — um por linha, ambos ocupando largura total.
+## Novo comportamento solicitado
+Quando o usuário define um valor com um mês selecionado, esse valor passa a valer **a partir daquele mês** e segue vigente nos meses seguintes do mesmo ano, **até** o próximo mês que tenha uma nova edição de valor.
 
-```tsx
-<Button
-  size="sm"
-  variant="outline"
-  className="basis-full h-8 text-[11px] px-2"
-  onClick={() => navigate(`/chat/${m.id}`)}
->
-  Chat
-</Button>
-```
+Exemplo (ano 2026):
+- Jan → R$ 50 → vale de Jan a Mai.
+- Jun → R$ 70 → vale de Jun a Set.
+- Out → R$ 80 → vale de Out a Dez.
 
-## 2. `src/pages/Chat.tsx` — nome e time do outro usuário
+Se não houver nenhuma edição mensal e existir um padrão do ano (linha com `mes = null`), ele continua sendo usado como base/fallback para os meses sem regra.
 
-Hoje o card do outro usuário mostra "Usuário" / sem time, porque:
+## Mudanças
 
-- `senderProfile` cai no fallback `"Usuário"` quando `public_profiles` não tem linha.
-- `userTeamMap` só é populado com `owner_id` do mandante/visitante e com `public_players` filtrados por `team_id IN (home, away)` — então quem não é dono e não está cadastrado nesses dois times fica sem time.
+### 1. `src/hooks/useSupabaseData.ts`
+- `useMensalidadeConfig` (quando `mes` for específico): em vez de cair direto no padrão do ano, buscar a linha mais recente com `mes <= selectedMonth` no mesmo ano. Se não houver, usar a linha com `mes = null` (padrão do ano). Se ainda assim não houver, retornar `null`.
+- Adicionar um novo hook `useMensalidadeConfigsAno(teamId, ano)` que retorna todas as linhas de `mensalidade_config` daquele ano (incluindo a padrão `mes = null`), para o cálculo de vigência mês a mês.
+- Manter `useUpsertMensalidadeConfig` como está (já grava por `team_id, ano, mes`).
 
-Correções:
-
-a) **Nome** — usar a mesma lógica do usuário logado: `senderProfile?.nickname || senderProfile?.display_name || "Usuário"`.
-
-b) **Time** — adicionar busca complementar para remetentes que não estão no `userTeamMap`:
-   - Coletar `user_id` distintos das mensagens que ainda não têm time mapeado.
-   - Buscar em `public_players` (`select user_id, team_id` `in user_id`) e em `teams` (`select id, name, owner_id` `in owner_id`).
-   - Para cada usuário, preferir o time que coincide com `homeTeam.id` ou `awayTeam.id`; caso não bata, usar o primeiro time encontrado.
-   - Aplicar `getShortTeamName(name)` antes de salvar no `userTeamMap`.
-
-Esse map estendido é calculado num `useEffect` que dispara quando `messages`, `homeTeam?.id` ou `awayTeam?.id` mudam, e guarda o resultado num `useState<Record<string,string>>` para re-render.
+### 2. `src/pages/Mensalidades.tsx`
+- Usar `useMensalidadeConfigsAno` e calcular um helper `valorDoMes(mes)`:
+  - Pega a maior `mes <= alvo` entre as linhas com `mes` não nulo.
+  - Se não houver, usa a linha com `mes = null`.
+  - Se nada existir, retorna 0.
+- Substituir o uso de `valorMensal` único nos cálculos:
+  - `totalArrecadado` no modo "Ano todo": soma `valorDoMes(m)` para cada mês `m` pago, por jogador.
+  - `totalArrecadado` no modo mês específico: usa `valorDoMes(selectedMonth)`.
+  - `totalExpected`: soma `valorDoMes(m)` para cada mês considerado, multiplicado pelo número de jogadores.
+  - Por jogador (resumo "💰 arrecadado" e "⚠️ em aberto"): somar `valorDoMes(m)` por mês pago/em aberto, em vez de `paid * valorMensal`.
+- O campo "VALOR" do mês selecionado continua exibindo o valor vigente daquele mês (vindo de `useMensalidadeConfig` ajustado). Salvar continua gravando exatamente em `(ano, mes)` selecionado, criando o ponto de virada.
+- Ajustar o texto auxiliar abaixo do campo para: "A partir de {Mês}/{Ano} esse valor passa a valer até que outro mês tenha um novo valor definido."
+- Diálogo de confirmação ao salvar: trocar a frase para refletir a nova semântica ("vigente a partir de {Mês}/{Ano}").
 
 ## Fora de escopo
-
-- Estilo do chat, hooks (`useChatMessages`), RLS, tabela `match_chat_messages`.
-- Rotas e demais botões dos cards de desafio.
+- Não alterar schema do banco nem RLS; a tabela `mensalidade_config` já suporta `(team_id, ano, mes)` com `mes` nulo.
+- Não mexer em `mensalidades` (registro de pagamentos por jogador/mês continua igual).
+- Não mexer em outras telas (Caixa, Admin etc.).

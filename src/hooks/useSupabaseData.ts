@@ -681,10 +681,13 @@ export const useMensalidadeConfig = (teamId: string | undefined, ano: number, me
     let alive = true;
     const load = async () => {
       if (mes != null) {
-        const { data: row } = await supabase
+        // Pega a edição mais recente com mes <= alvo (vigência por faixa)
+        const { data: rows } = await supabase
           .from("mensalidade_config").select("*")
-          .eq("team_id", teamId).eq("ano", ano).eq("mes", mes).maybeSingle();
-        if (row) { if (alive) setData(row); return; }
+          .eq("team_id", teamId).eq("ano", ano)
+          .not("mes", "is", null).lte("mes", mes)
+          .order("mes", { ascending: false }).limit(1);
+        if (rows && rows[0]) { if (alive) setData(rows[0]); return; }
         const { data: fallback } = await supabase
           .from("mensalidade_config").select("*")
           .eq("team_id", teamId).eq("ano", ano).is("mes", null).maybeSingle();
@@ -705,6 +708,26 @@ export const useMensalidadeConfig = (teamId: string | undefined, ano: number, me
   }, [teamId, ano, mes]);
   return { data };
 };
+
+export const useMensalidadeConfigsAno = (teamId: string | undefined, ano: number) => {
+  const [data, setData] = useState<any[]>([]);
+  useEffect(() => {
+    if (!teamId) { setData([]); return; }
+    let alive = true;
+    const load = async () => {
+      const { data: rows = [] } = await supabase
+        .from("mensalidade_config").select("*")
+        .eq("team_id", teamId).eq("ano", ano);
+      if (alive) setData(rows || []);
+    };
+    load();
+    const h = () => load();
+    window.addEventListener("supabase-data-change", h);
+    return () => { alive = false; window.removeEventListener("supabase-data-change", h); };
+  }, [teamId, ano]);
+  return { data };
+};
+
 
 export const useUpsertMensalidadeConfig = () => {
   const mutate = async (payload: { team_id: string; ano: number; valor_mensal: number; mes?: number | null }) => {
