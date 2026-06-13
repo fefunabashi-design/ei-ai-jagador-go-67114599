@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   useMyTeam, usePlayers,
-  useMensalidades, useMensalidadeConfig,
+  useMensalidades, useMensalidadeConfig, useMensalidadeConfigsAno,
   useUpsertMensalidade, useUpsertMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
+
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
@@ -58,6 +59,7 @@ const MensalidadesPage = () => {
   const playerIds = players.map((p) => p.id);
   const { data: mensalidades = [] } = useMensalidades(playerIds, selectedYear);
   const { data: config } = useMensalidadeConfig(myTeam?.id, selectedYear, selectedMonth);
+  const { data: configsAno = [] } = useMensalidadeConfigsAno(myTeam?.id, selectedYear);
   const upsertConfigMut = useUpsertMensalidadeConfig();
   const upsertMensalidadeMut = useUpsertMensalidade();
   const mensalidadesLoading = false;
@@ -68,6 +70,20 @@ const MensalidadesPage = () => {
   }, [config, selectedYear, selectedMonth]);
 
   const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
+
+  // Valor vigente para um mês específico, respeitando edições anteriores no mesmo ano
+  const monthlyConfigs = (configsAno as any[]).filter((c) => c.mes != null);
+  const yearDefault = (configsAno as any[]).find((c) => c.mes == null);
+  const valorDoMes = (mes: number): number => {
+    const candidates = monthlyConfigs.filter((c) => c.mes <= mes);
+    if (candidates.length > 0) {
+      const latest = candidates.reduce((a, b) => (a.mes > b.mes ? a : b));
+      return Number(latest.valor_mensal) || 0;
+    }
+    if (yearDefault) return Number(yearDefault.valor_mensal) || 0;
+    return 0;
+  };
+
 
   const upsertConfig = {
     mutate: async (valor: number) => {
@@ -134,16 +150,35 @@ const MensalidadesPage = () => {
   const emDiaCount = players.filter((p) => !isInadimplente(p.id)).length;
   const inadimplenteCount = players.filter((p) => isInadimplente(p.id)).length;
 
+  // Soma dos valores vigentes para os meses pagos por um jogador
+  const valorPagoPlayer = (playerId: string) =>
+    MONTH_LABELS.reduce((acc, _, i) => acc + (isMonthPaid(playerId, i + 1) ? valorDoMes(i + 1) : 0), 0);
+
+  const valorEmAbertoPlayer = (playerId: string) => {
+    const limit = selectedYear === currentYear ? currentMonth - 1 : 12;
+    let total = 0;
+    for (let m = 1; m <= limit; m++) {
+      if (!isMonthPaid(playerId, m)) total += valorDoMes(m);
+    }
+    return total;
+  };
+
   // Arrecadação: por mês selecionado ou total do ano
   const totalArrecadado = selectedMonth != null
-    ? players.reduce((acc, p) => acc + (isMonthPaid(p.id, selectedMonth) ? valorMensal : 0), 0)
-    : players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
+    ? players.reduce((acc, p) => acc + (isMonthPaid(p.id, selectedMonth) ? valorDoMes(selectedMonth) : 0), 0)
+    : players.reduce((acc, p) => acc + valorPagoPlayer(p.id), 0);
 
   const monthsUntilNow = selectedYear === currentYear ? currentMonth - 1 : 12;
+  const expectedYearPerPlayer = (() => {
+    let total = 0;
+    for (let m = 1; m <= monthsUntilNow; m++) total += valorDoMes(m);
+    return total;
+  })();
   const totalExpected = selectedMonth != null
-    ? (selectedYear === currentYear && selectedMonth > currentMonth ? 0 : players.length * valorMensal)
-    : players.length * monthsUntilNow * valorMensal;
+    ? (selectedYear === currentYear && selectedMonth > currentMonth ? 0 : players.length * valorDoMes(selectedMonth))
+    : players.length * expectedYearPerPlayer;
   const aArrecadar = Math.max(0, totalExpected - totalArrecadado);
+
 
   const filteredPlayers = players.filter((p) => {
     if (filter === "ok") return !isInadimplente(p.id);
@@ -288,9 +323,10 @@ const MensalidadesPage = () => {
             </div>
             {selectedMonth != null && (
               <p className="text-[10px] text-muted-foreground -mt-2">
-                Valor específico de {MONTH_LABELS[selectedMonth - 1]}/{selectedYear}. Se não definido, usa o valor padrão do ano.
+                A partir de {MONTH_LABELS[selectedMonth - 1]}/{selectedYear} esse valor passa a valer, até que outro mês tenha um novo valor definido.
               </p>
             )}
+
 
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-2">
@@ -391,18 +427,24 @@ const MensalidadesPage = () => {
                     </div>
 
                     {/* Financial summary */}
-                    {valorMensal > 0 && (
-                      <div className="flex gap-3 mb-2 text-[10px]">
-                        <span className="text-emerald-600 font-medium">
-                          💰 {formatCurrency(paid * valorMensal)}
-                        </span>
-                        {unpaid > 0 && (
-                          <span className="text-destructive font-medium">
-                            ⚠️ {formatCurrency(unpaid * valorMensal)} em aberto
+                    {(() => {
+                      const pagoVal = valorPagoPlayer(player.id);
+                      const abertoVal = valorEmAbertoPlayer(player.id);
+                      if (pagoVal <= 0 && abertoVal <= 0) return null;
+                      return (
+                        <div className="flex gap-3 mb-2 text-[10px]">
+                          <span className="text-emerald-600 font-medium">
+                            💰 {formatCurrency(pagoVal)}
                           </span>
-                        )}
-                      </div>
-                    )}
+                          {abertoVal > 0 && (
+                            <span className="text-destructive font-medium">
+                              ⚠️ {formatCurrency(abertoVal)} em aberto
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
 
                     {/* Month grid */}
                     <div className="grid grid-cols-6 gap-1.5">
@@ -491,10 +533,13 @@ const MensalidadesPage = () => {
             <AlertDialogDescription>
               {confirmValor != null && (
                 <>
-                  Confirmar novo valor de {formatCurrency(confirmValor)} para{" "}
-                  {selectedMonth ? `${MONTH_LABELS[selectedMonth - 1]}/${selectedYear}` : `o ano de ${selectedYear}`}?
+                  Confirmar novo valor de {formatCurrency(confirmValor)}{" "}
+                  {selectedMonth
+                    ? `vigente a partir de ${MONTH_LABELS[selectedMonth - 1]}/${selectedYear} (até que outro mês tenha um novo valor)?`
+                    : `como valor padrão do ano de ${selectedYear}?`}
                 </>
               )}
+
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
