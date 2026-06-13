@@ -323,9 +323,10 @@ const MensalidadesPage = () => {
             </div>
             {selectedMonth != null && (
               <p className="text-[10px] text-muted-foreground -mt-2">
-                Valor específico de {MONTH_LABELS[selectedMonth - 1]}/{selectedYear}. Se não definido, usa o valor padrão do ano.
+                A partir de {MONTH_LABELS[selectedMonth - 1]}/{selectedYear} esse valor passa a valer, até que outro mês tenha um novo valor definido.
               </p>
             )}
+
 
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-2">
