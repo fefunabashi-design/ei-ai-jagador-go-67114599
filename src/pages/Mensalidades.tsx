@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   useMyTeam, usePlayers,
-  useMensalidades, useMensalidadeConfig,
+  useMensalidades, useMensalidadeConfig, useMensalidadeConfigsAno,
   useUpsertMensalidade, useUpsertMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
+
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 
