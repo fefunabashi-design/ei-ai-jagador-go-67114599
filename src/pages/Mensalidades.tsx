@@ -533,10 +533,13 @@ const MensalidadesPage = () => {
             <AlertDialogDescription>
               {confirmValor != null && (
                 <>
-                  Confirmar novo valor de {formatCurrency(confirmValor)} para{" "}
-                  {selectedMonth ? `${MONTH_LABELS[selectedMonth - 1]}/${selectedYear}` : `o ano de ${selectedYear}`}?
+                  Confirmar novo valor de {formatCurrency(confirmValor)}{" "}
+                  {selectedMonth
+                    ? `vigente a partir de ${MONTH_LABELS[selectedMonth - 1]}/${selectedYear} (até que outro mês tenha um novo valor)?`
+                    : `como valor padrão do ano de ${selectedYear}?`}
                 </>
               )}
+
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
