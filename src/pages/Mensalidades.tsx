@@ -134,8 +134,7 @@ const MensalidadesPage = () => {
   // Inadimplência considera o mês selecionado, se houver
   const isInadimplente = (playerId: string) => {
     if (selectedMonth != null) {
-      // Mês futuro do ano atual ainda não é cobrável
-      if (selectedYear === currentYear && selectedMonth > currentMonth) return false;
+      // Se o mês não está marcado como pago, é inadimplente (inclusive meses futuros)
       return !isMonthPaid(playerId, selectedMonth);
     }
     if (selectedYear < currentYear) {
