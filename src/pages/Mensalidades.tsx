@@ -150,16 +150,35 @@ const MensalidadesPage = () => {
   const emDiaCount = players.filter((p) => !isInadimplente(p.id)).length;
   const inadimplenteCount = players.filter((p) => isInadimplente(p.id)).length;
 
+  // Soma dos valores vigentes para os meses pagos por um jogador
+  const valorPagoPlayer = (playerId: string) =>
+    MONTH_LABELS.reduce((acc, _, i) => acc + (isMonthPaid(playerId, i + 1) ? valorDoMes(i + 1) : 0), 0);
+
+  const valorEmAbertoPlayer = (playerId: string) => {
+    const limit = selectedYear === currentYear ? currentMonth - 1 : 12;
+    let total = 0;
+    for (let m = 1; m <= limit; m++) {
+      if (!isMonthPaid(playerId, m)) total += valorDoMes(m);
+    }
+    return total;
+  };
+
   // Arrecadação: por mês selecionado ou total do ano
   const totalArrecadado = selectedMonth != null
-    ? players.reduce((acc, p) => acc + (isMonthPaid(p.id, selectedMonth) ? valorMensal : 0), 0)
-    : players.reduce((acc, p) => acc + paidMonthsCount(p.id) * valorMensal, 0);
+    ? players.reduce((acc, p) => acc + (isMonthPaid(p.id, selectedMonth) ? valorDoMes(selectedMonth) : 0), 0)
+    : players.reduce((acc, p) => acc + valorPagoPlayer(p.id), 0);
 
   const monthsUntilNow = selectedYear === currentYear ? currentMonth - 1 : 12;
+  const expectedYearPerPlayer = (() => {
+    let total = 0;
+    for (let m = 1; m <= monthsUntilNow; m++) total += valorDoMes(m);
+    return total;
+  })();
   const totalExpected = selectedMonth != null
-    ? (selectedYear === currentYear && selectedMonth > currentMonth ? 0 : players.length * valorMensal)
-    : players.length * monthsUntilNow * valorMensal;
+    ? (selectedYear === currentYear && selectedMonth > currentMonth ? 0 : players.length * valorDoMes(selectedMonth))
+    : players.length * expectedYearPerPlayer;
   const aArrecadar = Math.max(0, totalExpected - totalArrecadado);
+
 
   const filteredPlayers = players.filter((p) => {
     if (filter === "ok") return !isInadimplente(p.id);
