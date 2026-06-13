@@ -59,6 +59,7 @@ const MensalidadesPage = () => {
   const playerIds = players.map((p) => p.id);
   const { data: mensalidades = [] } = useMensalidades(playerIds, selectedYear);
   const { data: config } = useMensalidadeConfig(myTeam?.id, selectedYear, selectedMonth);
+  const { data: configsAno = [] } = useMensalidadeConfigsAno(myTeam?.id, selectedYear);
   const upsertConfigMut = useUpsertMensalidadeConfig();
   const upsertMensalidadeMut = useUpsertMensalidade();
   const mensalidadesLoading = false;
@@ -69,6 +70,20 @@ const MensalidadesPage = () => {
   }, [config, selectedYear, selectedMonth]);
 
   const valorMensal = config?.valor_mensal ? Number(config.valor_mensal) : 0;
+
+  // Valor vigente para um mês específico, respeitando edições anteriores no mesmo ano
+  const monthlyConfigs = (configsAno as any[]).filter((c) => c.mes != null);
+  const yearDefault = (configsAno as any[]).find((c) => c.mes == null);
+  const valorDoMes = (mes: number): number => {
+    const candidates = monthlyConfigs.filter((c) => c.mes <= mes);
+    if (candidates.length > 0) {
+      const latest = candidates.reduce((a, b) => (a.mes > b.mes ? a : b));
+      return Number(latest.valor_mensal) || 0;
+    }
+    if (yearDefault) return Number(yearDefault.valor_mensal) || 0;
+    return 0;
+  };
+
 
   const upsertConfig = {
     mutate: async (valor: number) => {
