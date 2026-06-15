@@ -102,21 +102,16 @@ export function getMatchView(match: any, myTeamId?: string | null): MatchView {
   };
 }
 
-// Retorna apenas o nome do campo (sem endereço completo).
-// Prioriza `home_team.field_name`; senão extrai a primeira parte de `location`
-// cortando em separadores comuns: em-dash, hífen com espaços, vírgula, bullet.
+// Retorna apenas o nome do campo da partida.
+// Sempre derivado de `match.location` — que guarda o local escolhido na criação
+// do desafio (arena própria, arena do adversário ou "outro campo" digitado).
+// Nunca usa `home_team.field_name`/sede como fallback: um time sem arena
+// que joga no campo do adversário não deve aparecer com o nome da própria sede.
 export function getFieldDisplayName(match: any): string {
   const loc = String(match?.location ?? "").trim();
-  if (loc) {
-    const parts = loc.split(/\s+[—–-]\s+|·|,/);
-    const first = (parts[0] || loc).trim();
-    if (first) return first;
-  }
-  const home = match?.home_team as any;
-  if (home?.has_field === true) {
-    const fieldName = home?.field_name;
-    if (fieldName && String(fieldName).trim()) return String(fieldName).trim();
-  }
-  return loc;
+  if (!loc) return "";
+  const parts = loc.split(/\s+[—–-]\s+|·|,/);
+  const first = (parts[0] || loc).trim();
+  return first || loc;
 }
 
