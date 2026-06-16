@@ -134,8 +134,21 @@ const Index = () => {
 
 
 
-  // Aggregate season stats across ALL teams the user belongs to
-  const myTeamIds = new Set((myTeams || []).map((t: any) => t.id));
+  // Apenas times em que o usuário está cadastrado como JOGADOR (não só admin)
+  const { data: myPlayerTeamIds = [] } = useQuery({
+    queryKey: ["my-player-team-ids", profile?.user_id || ""],
+    queryFn: async () => {
+      if (!profile?.user_id) return [] as string[];
+      const { data } = await supabase
+        .from("players").select("team_id").eq("user_id", profile.user_id);
+      return Array.from(new Set((data || []).map((r: any) => r.team_id).filter(Boolean)));
+    },
+    enabled: !!profile?.user_id,
+  });
+  const teamsAsPlayer = (myTeams || []).filter((t: any) => myPlayerTeamIds.includes(t.id));
+
+  // Aggregate season stats across teams the user PLAYS in
+  const myTeamIds = new Set(teamsAsPlayer.map((t: any) => t.id));
   const allMyMatches = matches.filter((m) => {
     const homeTeam = m.home_team as any;
     const awayTeam = m.away_team as any;
