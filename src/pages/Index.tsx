@@ -278,7 +278,7 @@ const Index = () => {
       // Vínculo do jogador logado, em ordem de prioridade:
       //   1) players.user_id == profile.user_id
       //   2) players.cpf == profile.cpf  (CPF é único por usuário)
-      //   3) players.email == profile.email — apenas se houver exatamente 1 jogador com esse e-mail
+      //   3) players.email == profile.email
       const profileEmail = String(profile?.email || "").trim().toLowerCase();
       const profileCpf = String((profile as any)?.cpf || "").replace(/\D/g, "");
       const { data: allPlayers = [] } = await supabase
