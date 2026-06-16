@@ -293,10 +293,9 @@ const Index = () => {
         personalPlayers = (allPlayers || []).filter((p: any) => normCpf(p?.cpf) === profileCpf);
       }
       if (personalPlayers.length === 0 && profileEmail) {
-        const byEmail = (allPlayers || []).filter(
+        personalPlayers = (allPlayers || []).filter(
           (p: any) => String(p?.email || "").trim().toLowerCase() === profileEmail
         );
-        if (byEmail.length === 1) personalPlayers = byEmail;
       }
 
 
