@@ -195,7 +195,7 @@ const Index = () => {
     return () => { alive = false; };
   }, [completedAllMatches.map((m) => m.id).join(",")]);
 
-  const perTeamStats = (myTeams || []).map((t: any) => {
+  const perTeamStats = teamsAsPlayer.map((t: any) => {
     const teamMatches = completedAllMatches.filter((m) => {
       const h = m.home_team as any; const a = m.away_team as any;
       return h?.id === t.id || a?.id === t.id;
