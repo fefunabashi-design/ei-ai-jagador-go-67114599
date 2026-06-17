@@ -846,7 +846,6 @@ export const useChatMessages = (matchId?: string) => {
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
-    const poll = window.setInterval(load, 5000);
     let ch: any = null;
     (async () => {
       if (!matchId) return;
@@ -859,7 +858,6 @@ export const useChatMessages = (matchId?: string) => {
     return () => {
       alive = false;
       window.removeEventListener("supabase-data-change", h);
-      window.clearInterval(poll);
       if (ch) supabase.removeChannel(ch);
     };
   }, [matchId]);
