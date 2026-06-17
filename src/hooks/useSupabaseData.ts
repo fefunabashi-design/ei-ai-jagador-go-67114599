@@ -102,7 +102,11 @@ export const useProfile = () => {
     staleTime: 60_000,
   });
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { query.refetch(); });
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        query.refetch();
+      }
+    });
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
