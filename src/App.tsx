@@ -323,6 +323,14 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: 
 }
 
 const App = () => {
+  useEffect(() => {
+    window.addEventListener("supabase-data-change", invalidateAll);
+    window.addEventListener("mock-db-change", invalidateAll);
+    return () => {
+      window.removeEventListener("supabase-data-change", invalidateAll);
+      window.removeEventListener("mock-db-change", invalidateAll);
+    };
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
