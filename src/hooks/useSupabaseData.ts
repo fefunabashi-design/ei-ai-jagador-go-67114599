@@ -102,7 +102,11 @@ export const useProfile = () => {
     staleTime: 60_000,
   });
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { query.refetch(); });
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        query.refetch();
+      }
+    });
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -842,7 +846,6 @@ export const useChatMessages = (matchId?: string) => {
     load();
     const h = () => load();
     window.addEventListener("supabase-data-change", h);
-    const poll = window.setInterval(load, 5000);
     let ch: any = null;
     (async () => {
       if (!matchId) return;
@@ -855,7 +858,6 @@ export const useChatMessages = (matchId?: string) => {
     return () => {
       alive = false;
       window.removeEventListener("supabase-data-change", h);
-      window.clearInterval(poll);
       if (ch) supabase.removeChannel(ch);
     };
   }, [matchId]);

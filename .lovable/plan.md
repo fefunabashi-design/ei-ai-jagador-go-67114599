@@ -1,47 +1,36 @@
-## Problema
+## Plano
 
-Na tela inicial, os cards **Jogos da temporada**, **Gols da temporada** e **Lembretes** somam dados de todos os times retornados por `useMyTeams()`, que inclui tanto times onde o usuário é dono/administrador quanto times onde ele é jogador vinculado.
+Piscar em todas as telas, mesmo parado, indica fonte global de atualização. Vou atacar 3 causas globais identificadas no código, sem tocar em regras de negócio nem em layout.
 
-Resultado: a usuária Nide, que é administradora de dois times mas só está cadastrada como jogadora em um deles (ou em nenhum), vê estatísticas/lembretes de times onde ela não joga.
+### 1. Bridge de invalidação global registrado fora do React (`src/App.tsx`)
 
-A regra correta:
-- Os 3 cards da Home devem considerar **apenas os times em que o usuário está cadastrado como jogador** (`players.user_id = profile.user_id`).
-- Se ela for só administradora de um time (sem registro como jogadora), aquele time **não** entra nos cards.
-- A página **Agenda** (fora do menu Admin) já segue essa regra (`myPlayerTeamIds`), então só validamos.
+Os listeners `supabase-data-change` e `mock-db-change` que invalidam queries do React Query estão registrados no topo do módulo, fora de qualquer `useEffect`. Sempre que o módulo é reavaliado (hot reload, navegação que toque o módulo), um novo listener é adicionado sem remover o anterior. Resultado: uma única mutação dispara invalidação 2x, 3x, N vezes → todas as listas globais refazem fetch → re-render em cascata.
 
-## Mudanças
+Vou mover esse registro para dentro de um `useEffect([], ...)` no componente `App`, com `removeEventListener` no cleanup.
 
-### 1. `src/pages/Index.tsx`
+### 2. Refetch em cada renovação de token (`src/hooks/useSupabaseData.ts` → `useProfile` e `src/hooks/useAdminAccess.ts`)
 
-Adicionar um query para os times em que o usuário é jogador e usar esse conjunto como filtro em todos os cálculos dos cards:
+Ambos chamam `refetch()`/`load()` em qualquer evento de `onAuthStateChange`, inclusive `TOKEN_REFRESHED` (Supabase dispara periodicamente em segundo plano) e `INITIAL_SESSION` (às vezes duplicado). Cada refetch troca a referência de `profile`/`admin state` → re-render de toda a árvore que depende deles (Home, BottomNav, gates de Admin, etc.).
 
-- Nova query `useQuery(["my-player-team-ids", profile.user_id])` que retorna `Set<string>` de `team_id` distintos onde existe `players.user_id == profile.user_id` (mesma lógica usada hoje em `Agenda.tsx`).
-- Substituir a derivação atual:
-  ```ts
-  const myTeamIds = new Set((myTeams || []).map((t) => t.id));
-  ```
-  por:
-  ```ts
-  const playerTeamIds = new Set(myPlayerTeamIds);
-  const teamsAsPlayer = (myTeams || []).filter((t) => playerTeamIds.has(t.id));
-  const myTeamIds = new Set(teamsAsPlayer.map((t) => t.id));
-  ```
-- Usar `teamsAsPlayer` (em vez de `myTeams`) ao montar `perTeamStats` (breakdown por time exibido nos cards).
-- `allMyMatches`, `completedAllMatches`, `golsByTeam`, `meusGolsByTeam`, `lembretes` e `lembretesPerTeam` continuam funcionando porque dependem de `myTeamIds`, agora restrito.
-- Card **Jogos da temporada**: `jogosTemporada` continua sendo a soma de `perTeamStats[].jogos` (já fica zerado para times onde ela é só admin).
-- Card **Gols da temporada**: usa `meusGolsTemporada`, que já filtra por `players` desses times — ao restringir `myTeamIds` automaticamente passa a ignorar times onde ela só administra.
-- Card **Lembretes**: `lembretesPerTeam` é montado por `teamIds = Array.from(myTeamIds)`, então o time onde ela só é admin some da lista.
+Vou filtrar para refetch só em `SIGNED_IN`, `SIGNED_OUT` e `USER_UPDATED`, como o `AuthProvider` já faz.
 
-Nenhuma outra área da Home muda (próximo jogo, header, ações, etc.).
+### 3. Polling redundante no chat (`src/hooks/useSupabaseData.ts` → `useChatMessages`)
 
-### 2. `src/pages/Agenda.tsx`
+O hook atualiza a lista de mensagens por três caminhos simultâneos: Realtime, listener global de mutações e `setInterval(load, 5000)`. O polling de 5s recarrega `setData` continuamente. Embora o chat só rode quando aberto, ele dispara `setData` que pode pesar em cascata se houver outros listeners.
 
-Sem mudanças de comportamento — já filtra por `myPlayerTeamIds` quando `fromAdmin === false` (linhas 248-267). Apenas validar visualmente:
-- Quando ela acessa Agenda pelo bottom nav (sem `?from=admin`), só aparecem partidas dos times em que ela é jogadora.
-- Acessando via menu Admin, continua mostrando partidas do time ativo administrado.
+Vou remover o `setInterval` fixo. Realtime + listener global cobrem o caso. Mantém `removeChannel` no cleanup.
 
-## Fora do escopo
+### Verificação final
 
-- Painel **Admin** e telas internas dele (continuam mostrando o time administrado).
-- Lógica de criação de partidas, escalação, chat, finanças.
-- Mudanças em `useMyTeams` (continua útil para seleção de time ativo no header).
+Após as edições, vou reler os trechos para confirmar que: listeners globais têm cleanup, subscriptions Realtime continuam com `removeChannel`, e os filtros de evento de auth estão corretos.
+
+## Fora de escopo
+
+- Não vou refatorar `useSubscribe`/`createListHook` — funcionam corretamente; corrijo o gatilho, não o consumidor.
+- Não vou mexer em subscriptions Realtime de lineups/payments — já têm cleanup correto e não têm polling.
+- Não vou memoizar componentes de página agora — esperado que o flicker pare só com as 3 correções acima.
+- Não altero design, cores, regras de negócio nem queries.
+
+## Explicação que darei ao usuário depois da implementação
+
+> O app piscava em todas as telas porque três coisas globais ficavam recarregando dados sem necessidade: o registro de invalidação de queries estava fora do React e acumulava handlers duplicados, o perfil e o status de assinante refaziam fetch toda vez que o Supabase renovava o token em segundo plano, e o chat tinha polling de 5s além do realtime. Corrigi os três pontos para que recarregamentos só aconteçam quando algo realmente muda.

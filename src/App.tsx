@@ -87,10 +87,6 @@ const INVALIDATE_KEYS = ["profile", "my-teams", "my-admin-teams", "matches", "pl
 const invalidateAll = () => {
   INVALIDATE_KEYS.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
 };
-if (typeof window !== "undefined") {
-  window.addEventListener("supabase-data-change", invalidateAll);
-  window.addEventListener("mock-db-change", invalidateAll);
-}
 
 const REQUIRED_PROFILE_FIELDS = ["display_name", "last_name", "phone", "birth_date", "city"];
 const PROFILE_CHECK_TIMEOUT_MS = 4000;
@@ -327,6 +323,14 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, { hasError: 
 }
 
 const App = () => {
+  useEffect(() => {
+    window.addEventListener("supabase-data-change", invalidateAll);
+    window.addEventListener("mock-db-change", invalidateAll);
+    return () => {
+      window.removeEventListener("supabase-data-change", invalidateAll);
+      window.removeEventListener("mock-db-change", invalidateAll);
+    };
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

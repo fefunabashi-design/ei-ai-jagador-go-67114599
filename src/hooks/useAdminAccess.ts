@@ -45,7 +45,11 @@ export const useAdminAccess = (): AdminAccess => {
 
   useEffect(() => {
     load();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => load());
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        load();
+      }
+    });
     return () => subscription.unsubscribe();
   }, [load]);
 
