@@ -371,6 +371,7 @@ const App = () => {
                   <Route path="/super-admin/pagamentos" element={<ProtectedRoute><SuperAdminPagamentos /></ProtectedRoute>} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/privacidade" element={<Privacidade />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
