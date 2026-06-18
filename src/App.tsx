@@ -111,14 +111,16 @@ type AuthCtxValue = {
   status: AuthStatus;
   session: Session | null;
   sessionReady: boolean;
+  profileChecked: boolean;
   stuck: boolean;
 };
-const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, sessionReady: false, stuck: false });
+const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, sessionReady: false, profileChecked: false, stuck: false });
 export const useAuthContext = () => useContext(AuthCtx);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const [profileChecked, setProfileChecked] = useState(false);
   const [stuck, setStuck] = useState(false);
   const statusRef = useRef<AuthStatus>("loading");
 
@@ -133,25 +135,52 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // verificação de profile roda em segundo plano e nunca trava a UI.
     let stuckTimer = window.setTimeout(() => { if (alive && session === undefined) setStuck(true); }, 8000);
 
-    const checkProfile = async (s: Session | null) => {
-      const id = ++requestId;
-      if (!s) {
-        if (alive) { setStatus("anon"); setStuck(false); window.clearTimeout(stuckTimer); }
-        return;
-      }
-      const result = await withTimeout(
+    const fetchProfile = (uid: string) =>
+      withTimeout(
         supabase
           .from("profiles")
           .select("display_name,last_name,phone,birth_date,city,is_active")
-          .eq("user_id", s.user.id)
+          .eq("user_id", uid)
           .maybeSingle()
       ).catch(() => null);
+
+    const checkProfile = async (s: Session | null) => {
+      const id = ++requestId;
+      if (!s) {
+        if (alive) {
+          setStatus("anon");
+          setProfileChecked(true);
+          setStuck(false);
+          window.clearTimeout(stuckTimer);
+        }
+        return;
+      }
+      let result = await fetchProfile(s.user.id);
       if (!alive || id !== requestId) return;
 
-      // Network/timeout failure: keep the user where they are instead of forcing
-      // a redirect to /profile that would break navigation.
-      if (!result) {
+      // Resposta transitória (timeout/erro de rede ou data null sem erro):
+      // tenta novamente em 400ms antes de tomar qualquer decisão. Nunca
+      // marcamos "incomplete" baseado em uma única resposta anômala.
+      const isTransient = !result || (!result.error && result.data == null);
+      if (isTransient) {
+        await new Promise((r) => window.setTimeout(r, 400));
+        if (!alive || id !== requestId) return;
+        result = await fetchProfile(s.user.id);
+        if (!alive || id !== requestId) return;
+      }
+
+      // Ainda transitório após o retry: preserva o status anterior (não
+      // redireciona para /profile por causa de uma falha de rede). Só marca
+      // profileChecked quando já tivemos ao menos uma decisão definitiva.
+      if (!result || (!result.error && result.data == null && statusRef.current === "loading")) {
         setStatus((prev) => (prev === "loading" ? "ok" : prev));
+        setProfileChecked(true);
+        setStuck(false);
+        window.clearTimeout(stuckTimer);
+        return;
+      }
+
+      if (!result) {
         setStuck(false);
         window.clearTimeout(stuckTimer);
         return;
@@ -160,7 +189,10 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const p = result.data;
       if (p && (p as any).is_active === false) {
         await supabase.auth.signOut();
-        if (alive) setStatus("deactivated");
+        if (alive) {
+          setStatus("deactivated");
+          setProfileChecked(true);
+        }
         return;
       }
       const incomplete = !p || REQUIRED_PROFILE_FIELDS.some((f) => {
@@ -168,6 +200,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return v === null || v === undefined || String(v).trim() === "";
       });
       setStatus(incomplete ? "incomplete" : "ok");
+      setProfileChecked(true);
       setStuck(false);
       window.clearTimeout(stuckTimer);
     };
@@ -206,14 +239,14 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const sessionReady = session !== undefined;
   return (
-    <AuthCtx.Provider value={{ status, session: session ?? null, sessionReady, stuck }}>
+    <AuthCtx.Provider value={{ status, session: session ?? null, sessionReady, profileChecked, stuck }}>
       {children}
     </AuthCtx.Provider>
   );
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { status, sessionReady, session, stuck } = useContext(AuthCtx);
+  const { status, sessionReady, profileChecked, session, stuck } = useContext(AuthCtx);
   const location = useLocation();
 
   // Enquanto não sabemos se há sessão, só mostramos fallback se a verificação
@@ -229,10 +262,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
-  // Perfil ainda em verificação: renderiza a página imediatamente. As páginas
-  // mostram skeletons enquanto seus próprios dados chegam. Se a verificação
-  // concluir como "incomplete", o efeito abaixo redireciona para /profile.
-  if (status === "incomplete" && location.pathname !== "/profile") {
+  // Só redireciona para /profile depois que a checagem definitiva concluiu —
+  // evita kick por resposta transitória (timeout/null) durante a primeira
+  // carga em redes lentas.
+  if (profileChecked && status === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
 
