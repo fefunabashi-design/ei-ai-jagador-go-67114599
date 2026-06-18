@@ -246,7 +246,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { status, sessionReady, session, stuck } = useContext(AuthCtx);
+  const { status, sessionReady, profileChecked, session, stuck } = useContext(AuthCtx);
   const location = useLocation();
 
   // Enquanto não sabemos se há sessão, só mostramos fallback se a verificação
@@ -262,10 +262,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
-  // Perfil ainda em verificação: renderiza a página imediatamente. As páginas
-  // mostram skeletons enquanto seus próprios dados chegam. Se a verificação
-  // concluir como "incomplete", o efeito abaixo redireciona para /profile.
-  if (status === "incomplete" && location.pathname !== "/profile") {
+  // Só redireciona para /profile depois que a checagem definitiva concluiu —
+  // evita kick por resposta transitória (timeout/null) durante a primeira
+  // carga em redes lentas.
+  if (profileChecked && status === "incomplete" && location.pathname !== "/profile") {
     return <Navigate to="/profile" replace state={{ requireComplete: true }} />;
   }
 
