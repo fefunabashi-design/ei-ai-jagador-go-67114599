@@ -111,9 +111,10 @@ type AuthCtxValue = {
   status: AuthStatus;
   session: Session | null;
   sessionReady: boolean;
+  profileChecked: boolean;
   stuck: boolean;
 };
-const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, sessionReady: false, stuck: false });
+const AuthCtx = createContext<AuthCtxValue>({ status: "loading", session: null, sessionReady: false, profileChecked: false, stuck: false });
 export const useAuthContext = () => useContext(AuthCtx);
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
