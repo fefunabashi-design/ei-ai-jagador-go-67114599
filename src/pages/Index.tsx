@@ -429,6 +429,7 @@ const Index = () => {
               { icon: User, label: "Meus dados", desc: "Cadastrar, editar e excluir", path: "/profile" },
               { icon: Users, label: "Meus Times", desc: "Times em que você joga", path: "/team" },
               { icon: BellIcon, label: "Notificações", desc: "Avisos do app e do administrador", path: "/notifications" },
+              { icon: Shield, label: "Privacidade e Segurança", desc: "Como tratamos seus dados", path: "/privacidade" },
             ].map((item) => (
               <button
                 key={item.label}
