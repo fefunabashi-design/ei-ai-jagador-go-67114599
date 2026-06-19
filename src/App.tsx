@@ -406,6 +406,9 @@ const App = () => {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/privacidade" element={<Privacidade />} />
+                  <Route path="/trust" element={<Privacidade />} />
+                  <Route path="/security" element={<Privacidade />} />
+                  <Route path="/privacy" element={<Privacidade />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
