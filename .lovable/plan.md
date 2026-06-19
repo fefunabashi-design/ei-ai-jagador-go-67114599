@@ -1,36 +1,55 @@
-## Plano
+## Plano: E-mails de autenticação com domínio próprio
 
-Piscar em todas as telas, mesmo parado, indica fonte global de atualização. Vou atacar 3 causas globais identificadas no código, sem tocar em regras de negócio nem em layout.
+### Situação atual
+- Domínio de envio já adicionado: **suporte.eaijogador.funando.com.br** (status: pendente de DNS).
+- Você optou por manter este domínio e aplicar a identidade visual do app nos templates.
 
-### 1. Bridge de invalidação global registrado fora do React (`src/App.tsx`)
+### Passo 1 — Verificar DNS do domínio
+A verificação acontece via delegação de subdomínio (NS records) do Lovable. Você precisa adicionar, no seu provedor de DNS de `funando.com.br`, registros NS apontando o subdomínio `suporte.eaijogador` para os nameservers do Lovable. Os valores exatos estão em **Cloud → Emails → Manage Domains** (ex.: `ns3.lovable.cloud`, `ns4.lovable.cloud`).
 
-Os listeners `supabase-data-change` e `mock-db-change` que invalidam queries do React Query estão registrados no topo do módulo, fora de qualquer `useEffect`. Sempre que o módulo é reavaliado (hot reload, navegação que toque o módulo), um novo listener é adicionado sem remover o anterior. Resultado: uma única mutação dispara invalidação 2x, 3x, N vezes → todas as listas globais refazem fetch → re-render em cascata.
+Vou abrir um botão direto para essa tela para você conferir/copiar os registros. Após adicionar, a propagação pode levar até 72h; o Lovable verifica automaticamente.
 
-Vou mover esse registro para dentro de um `useEffect([], ...)` no componente `App`, com `removeEventListener` no cleanup.
+Importante: o remetente exibido aos destinatários será `algo@suporte.eaijogador.funando.com.br` (e não `@funando.com.br`), por ser o subdomínio delegado já configurado. Trocar para `@funando.com.br` puro exigiria remover o domínio atual e configurar um novo na raiz — você pediu para manter o atual, então sigo com este.
 
-### 2. Refetch em cada renovação de token (`src/hooks/useSupabaseData.ts` → `useProfile` e `src/hooks/useAdminAccess.ts`)
+### Passo 2 — Scaffold dos templates de auth
+Rodar `scaffold_auth_email_templates`, que cria:
+- `supabase/functions/auth-email-hook/` (hook que enfileira na pgmq).
+- `supabase/functions/_shared/email-templates/` com os 6 templates: `signup`, `magic-link`, `recovery` (redefinição de senha), `invite`, `email-change`, `reauthentication`.
 
-Ambos chamam `refetch()`/`load()` em qualquer evento de `onAuthStateChange`, inclusive `TOKEN_REFRESHED` (Supabase dispara periodicamente em segundo plano) e `INITIAL_SESSION` (às vezes duplicado). Cada refetch troca a referência de `profile`/`admin state` → re-render de toda a árvore que depende deles (Home, BottomNav, gates de Admin, etc.).
+A infraestrutura de fila (pgmq, cron, `process-email-queue`) já está instalada neste projeto, então não será recriada.
 
-Vou filtrar para refetch só em `SIGNED_IN`, `SIGNED_OUT` e `USER_UPDATED`, como o `AuthProvider` já faz.
+### Passo 3 — Aplicar identidade visual nos templates
+Ler `src/index.css` e usar os tokens já definidos:
+- Primary `hsl(145, 68%, 36%)` (verde menta), accent `hsl(42, 90%, 52%)` (dourado), foreground/muted conforme `:root`.
+- Fonte: Nunito (com fallback `Arial, sans-serif` para clientes de e-mail).
+- Border radius do botão CTA conforme `--radius`.
+- Body do e-mail sempre `#ffffff` (regra do sistema, mesmo em apps com tema escuro).
+- Logo: procurar em `public/` e `src/assets/`; se houver, subir para bucket `email-assets` e inserir no topo de cada template. Se não houver, usar texto "E Aí Jogador" estilizado.
+- Copy em PT-BR, tom amistoso coerente com o app (ex.: "Redefina sua senha", "Confirme seu e-mail").
 
-### 3. Polling redundante no chat (`src/hooks/useSupabaseData.ts` → `useChatMessages`)
+Atenção especial ao **recovery** (redefinição de senha):
+- Preview text claro ("Link para criar uma nova senha").
+- CTA "Redefinir senha" usando `confirmationUrl`.
+- Aviso de expiração e instrução "se você não solicitou, ignore este e-mail".
+- Link alternativo em texto caso o botão não funcione.
 
-O hook atualiza a lista de mensagens por três caminhos simultâneos: Realtime, listener global de mutações e `setInterval(load, 5000)`. O polling de 5s recarrega `setData` continuamente. Embora o chat só rode quando aberto, ele dispara `setData` que pode pesar em cascata se houver outros listeners.
+### Passo 4 — Deploy
+Deploy do `auth-email-hook` para ativar a integração. Enquanto o DNS não verifica, o Lovable continua enviando os e-mails de auth padrão; após verificação, passam a sair com seus templates a partir do seu subdomínio.
 
-Vou remover o `setInterval` fixo. Realtime + listener global cobrem o caso. Mantém `removeChannel` no cleanup.
+### Passo 5 — Preview e acompanhamento
+Vou fornecer botões para:
+- Abrir a tela de Emails (status do domínio e DNS).
+- Pré-visualizar os templates de signup e recovery.
 
-### Verificação final
+### Detalhes técnicos
+- Arquivos criados/editados:
+  - `supabase/functions/auth-email-hook/index.ts`, `deno.json`
+  - `supabase/functions/_shared/email-templates/{signup,magic-link,recovery,invite,email-change,reauthentication}.tsx`
+  - `supabase/config.toml` (entrada da função, automática)
+  - Possível upload em Storage `email-assets` (logo)
+- Sem alterações no app React em si.
+- Sem novas migrations (infra já existe).
 
-Após as edições, vou reler os trechos para confirmar que: listeners globais têm cleanup, subscriptions Realtime continuam com `removeChannel`, e os filtros de evento de auth estão corretos.
-
-## Fora de escopo
-
-- Não vou refatorar `useSubscribe`/`createListHook` — funcionam corretamente; corrijo o gatilho, não o consumidor.
-- Não vou mexer em subscriptions Realtime de lineups/payments — já têm cleanup correto e não têm polling.
-- Não vou memoizar componentes de página agora — esperado que o flicker pare só com as 3 correções acima.
-- Não altero design, cores, regras de negócio nem queries.
-
-## Explicação que darei ao usuário depois da implementação
-
-> O app piscava em todas as telas porque três coisas globais ficavam recarregando dados sem necessidade: o registro de invalidação de queries estava fora do React e acumulava handlers duplicados, o perfil e o status de assinante refaziam fetch toda vez que o Supabase renovava o token em segundo plano, e o chat tinha polling de 5s além do realtime. Corrigi os três pontos para que recarregamentos só aconteçam quando algo realmente muda.
+### Fora do escopo
+- Trocar para `@funando.com.br` puro (requer remover o domínio atual).
+- Templates de e-mail transacional do app (contato, notificações). Posso configurar depois se quiser.
