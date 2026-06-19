@@ -8,8 +8,12 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
+  Img,
+  Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -22,21 +26,33 @@ export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
 }: MagicLinkEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Your login link for {siteName}</Preview>
+    <Preview>Seu link de acesso ao {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Your login link</Heading>
+        <Section style={header}>
+          <Img src={LOGO_URL} alt={siteName} width="64" height="64" style={logo} />
+        </Section>
+        <Heading style={h1}>Seu link de acesso</Heading>
         <Text style={text}>
-          Click the button below to log in to {siteName}. This link will expire
-          shortly.
+          Toque no botão abaixo para entrar no <strong>{siteName}</strong>. Este
+          link é único e expira em alguns minutos.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Log In
-        </Button>
+        <Section style={{ textAlign: 'center' as const, margin: '28px 0' }}>
+          <Button style={button} href={confirmationUrl}>
+            Entrar agora
+          </Button>
+        </Section>
+        <Text style={smallText}>Se o botão não funcionar, use este endereço:</Text>
+        <Text style={linkFallback}>
+          <Link href={confirmationUrl} style={link}>
+            {confirmationUrl}
+          </Link>
+        </Text>
+        <Hr style={hr} />
         <Text style={footer}>
-          If you didn't request this link, you can safely ignore this email.
+          Se você não solicitou este link, pode ignorar este e-mail. ⚽
         </Text>
       </Container>
     </Body>
@@ -45,26 +61,45 @@ export const MagicLinkEmail = ({
 
 export default MagicLinkEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const LOGO_URL =
+  'https://fbcviuapotdfenycjgtz.supabase.co/storage/v1/object/public/team-logos/email%2Flogo.png'
+
+const main = {
+  backgroundColor: '#ffffff',
+  fontFamily: 'Nunito, "Helvetica Neue", Helvetica, Arial, sans-serif',
+}
+const container = {
+  maxWidth: '560px',
+  margin: '0 auto',
+  padding: '32px 28px',
+  backgroundColor: '#ffffff',
+}
+const header = { textAlign: 'center' as const, marginBottom: '24px' }
+const logo = { display: 'inline-block', borderRadius: '12px' }
 const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  fontSize: '24px',
+  fontWeight: 800 as const,
+  color: '#26402E',
+  margin: '0 0 16px',
+  textAlign: 'center' as const,
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+const text = { fontSize: '15px', color: '#576B5D', lineHeight: '1.6', margin: '0 0 20px' }
+const smallText = { fontSize: '13px', color: '#576B5D', lineHeight: '1.5', margin: '0 0 8px' }
+const linkFallback = {
+  fontSize: '12px',
+  wordBreak: 'break-all' as const,
+  margin: '0 0 24px',
 }
+const link = { color: '#1D9A51', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#1D9A51',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 700 as const,
+  borderRadius: '12px',
+  padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const hr = { borderColor: '#E3EBE5', margin: '28px 0 16px' }
+const footer = { fontSize: '12px', color: '#9CA3AF', lineHeight: '1.5', margin: '0' }
