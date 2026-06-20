@@ -523,14 +523,6 @@ const AdminPage = () => {
               <span>{nextMatch.location}</span>
             </div>
 
-            <Button
-              onClick={() => navigate(`/escalacao?matchId=${nextMatch.id}`)}
-              className="w-full bg-gradient-primary text-primary-foreground border-0 font-semibold h-10"
-            >
-              <Pencil size={14} className="mr-1" /> ESCALAR TIME
-            </Button>
-
-
             <div className="pt-2 border-t border-border">
               <Button
                 onClick={() => setShowNextActions((v) => !v)}
