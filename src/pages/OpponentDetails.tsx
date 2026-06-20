@@ -20,20 +20,24 @@ const OpponentDetails = () => {
   const [opponent, setOpponent] = useState<any>(null);
   const [opponentPlayers, setOpponentPlayers] = useState<any[]>([]);
   const [avatarMap, setAvatarMap] = useState<Record<string, string>>({});
-  const { data: myTeam } = useMyTeam();
+  const { data: myTeam, isLoading: myTeamLoading } = useMyTeam();
+  const myTeamId = myTeam?.id ?? null;
 
+  // 1) Resolve opponent (and match) — wait for myTeam to finish loading so we
+  //    don't pick the wrong side on first render and then re-pick on second.
   useEffect(() => {
+    if (!teamIdParam && !matchId) return;
+    if (!teamIdParam && myTeamLoading) return; // need myTeam to pick opposing side
     let cancelled = false;
     (async () => {
       let opp: any = null;
       if (teamIdParam) {
-        const { data: full } = await supabase.from("public_teams").select("*").eq("id", teamIdParam).maybeSingle();
+        const { data: full } = await supabase
+          .from("public_teams").select("*").eq("id", teamIdParam).maybeSingle();
         opp = full;
       } else if (matchId) {
         const { data: m } = await supabase
-          .from("matches")
-          .select("*")
-          .eq("id", matchId).maybeSingle();
+          .from("matches").select("*").eq("id", matchId).maybeSingle();
         if (cancelled) return;
         const ids = [m?.home_team_id, m?.away_team_id].filter(Boolean) as string[];
         const { data: teamsData = [] } = ids.length
@@ -42,31 +46,43 @@ const OpponentDetails = () => {
         const tMap = new Map((teamsData || []).map((t: any) => [t.id, t]));
         const home = m?.home_team_id ? tMap.get(m.home_team_id) : null;
         const away = m?.away_team_id ? tMap.get(m.away_team_id) : null;
-        setMatch({ ...(m || {}), home_team: home, away_team: away });
-        if (myTeam && home?.id === myTeam.id) opp = away;
-        else if (myTeam && away?.id === myTeam.id) opp = home;
+        if (!cancelled) setMatch({ ...(m || {}), home_team: home, away_team: away });
+        if (myTeamId && home?.id === myTeamId) opp = away;
+        else if (myTeamId && away?.id === myTeamId) opp = home;
         else opp = away || home;
       }
-      if (opp?.id) {
-        const { data: pls } = await supabase.from("public_players" as any).select("*").eq("team_id", opp.id);
-        if (!cancelled) setOpponentPlayers(pls || []);
-        const userIds = (pls || []).map((p: any) => p.user_id).filter(Boolean);
-        if (userIds.length) {
-          const { data: profs } = await supabase
-            .from("public_profiles")
-            .select("user_id, avatar_url")
-            .in("user_id", userIds);
-          if (!cancelled) {
-            const map: Record<string, string> = {};
-            (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
-            setAvatarMap(map);
-          }
-        }
-      }
-      if (!cancelled) setOpponent(opp);
+      if (!cancelled) setOpponent(opp ?? null);
     })();
     return () => { cancelled = true; };
-  }, [matchId, teamIdParam, myTeam?.id]);
+  }, [matchId, teamIdParam, myTeamId, myTeamLoading]);
+
+  // 2) Fetch players + avatars whenever opponent id changes (stable key, no flicker).
+  const opponentId = opponent?.id ?? null;
+  useEffect(() => {
+    if (!opponentId) { setOpponentPlayers([]); setAvatarMap({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data: pls, error } = await supabase
+        .from("public_players" as any)
+        .select("*")
+        .eq("team_id", opponentId);
+      if (error) console.error("[OpponentDetails] public_players error:", error);
+      if (cancelled) return;
+      const list = pls || [];
+      setOpponentPlayers(list);
+      const userIds = list.map((p: any) => p.user_id).filter(Boolean);
+      if (!userIds.length) { setAvatarMap({}); return; }
+      const { data: profs } = await supabase
+        .from("public_profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", userIds);
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      setAvatarMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [opponentId]);
 
   const activePlayers = opponentPlayers;
 
