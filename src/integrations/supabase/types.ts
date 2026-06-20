@@ -1399,10 +1399,8 @@ export type Database = {
       public_players: {
         Row: {
           birth_date: string | null
-          cpf: string | null
           created_at: string | null
           display_name: string | null
-          email: string | null
           goals: number | null
           id: string | null
           jersey_number: number | null
@@ -1410,7 +1408,6 @@ export type Database = {
           matches: number | null
           name: string | null
           nickname: string | null
-          phone: string | null
           position: string | null
           rating: number | null
           region: string | null
@@ -1420,10 +1417,8 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
-          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
-          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1431,7 +1426,6 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
-          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
@@ -1441,10 +1435,8 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
-          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
-          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1452,7 +1444,6 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
-          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
@@ -1494,10 +1485,8 @@ export type Database = {
       public_players_unrestricted: {
         Row: {
           birth_date: string | null
-          cpf: string | null
           created_at: string | null
           display_name: string | null
-          email: string | null
           goals: number | null
           id: string | null
           jersey_number: number | null
@@ -1505,7 +1494,6 @@ export type Database = {
           matches: number | null
           name: string | null
           nickname: string | null
-          phone: string | null
           position: string | null
           rating: number | null
           region: string | null
@@ -1515,10 +1503,8 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
-          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
-          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1526,7 +1512,6 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
-          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
@@ -1536,10 +1521,8 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
-          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
-          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1547,7 +1530,6 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
-          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
