@@ -77,12 +77,9 @@ const OpponentDetails = () => {
         .from("public_profiles")
         .select("user_id, avatar_url")
         .in("user_id", userIds);
-      console.log("[OpponentDetails] userIds:", userIds);
-      console.log("[OpponentDetails] public_profiles response:", profs);
       if (cancelled) return;
       const map: Record<string, string> = {};
       (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
-      console.log("[OpponentDetails] avatarMap:", map);
       setAvatarMap(map);
     })();
     return () => { cancelled = true; };
