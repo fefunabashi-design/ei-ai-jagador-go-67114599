@@ -55,7 +55,7 @@ const OpponentDetails = () => {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, teamIdParam, myTeamId]);
+  }, [matchId, teamIdParam]);
 
   // 2) Fetch players + avatars whenever opponent id changes (stable key, no flicker).
   const opponentId = opponent?.id ?? null;
@@ -207,9 +207,9 @@ const OpponentDetails = () => {
                           key={p.id}
                           className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2 flex items-center gap-3"
                         >
-                          <Avatar className="w-8 h-8">
-                            {avatarUrl && <AvatarImage src={avatarUrl} alt={display} />}
-                            <AvatarFallback className="text-xs">{initial}</AvatarFallback>
+                          <Avatar className="w-10 h-10 ring-2 ring-border shadow-sm">
+                            {avatarUrl && <AvatarImage src={avatarUrl} alt={display} className="object-cover" />}
+                            <AvatarFallback className="text-sm font-medium">{initial}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="truncate">{display}</p>
