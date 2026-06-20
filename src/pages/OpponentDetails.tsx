@@ -55,7 +55,7 @@ const OpponentDetails = () => {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, teamIdParam]);
+  }, [matchId, teamIdParam, myTeamLoading]);
 
   // 2) Fetch players + avatars whenever opponent id changes (stable key, no flicker).
   const opponentId = opponent?.id ?? null;
