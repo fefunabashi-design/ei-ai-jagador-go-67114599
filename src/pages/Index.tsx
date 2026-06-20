@@ -37,6 +37,7 @@ const Index = () => {
   const createResenhaPost = useCreateResenhaPost();
   const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmationMatchId, setConfirmationMatchId] = useState<string | null>(null);
   const { toast } = useToast();
 
 
