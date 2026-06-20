@@ -785,6 +785,17 @@ const Index = () => {
                         <MessageCircle size={10} className="mr-1" /> Detalhes
                       </Button>
 
+                      {mView.status !== "completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-[10px] h-6 px-2 rounded-md"
+                          onClick={() => navigate(`/agenda?matchId=${m.id}`)}
+                        >
+                          <ListChecks size={10} className="mr-1" /> Confirmações
+                        </Button>
+                      )}
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
