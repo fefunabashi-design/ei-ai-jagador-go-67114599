@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import BottomNav from "@/components/BottomNav";
+import MatchConfirmationList from "@/components/MatchConfirmationList";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useProfile, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 
 import { generateMatchShareImage } from "@/lib/matchShareImage";
