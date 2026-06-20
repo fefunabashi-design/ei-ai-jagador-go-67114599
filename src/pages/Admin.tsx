@@ -247,7 +247,7 @@ const AdminPage = () => {
   })();
 
 
-  const nextMatch = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
+  const nextMatchRaw = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
     .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
     .filter((m) => m.status === "confirmed" && !!m.away_team_id)
     .filter((m) => {
@@ -257,6 +257,20 @@ const AdminPage = () => {
       return isHome ? !m.home_finalized_at : !m.away_finalized_at;
     })
     .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())[0];
+
+  // Hydrate home/away teams from registeredTeams (public_teams view) since useMatches may not include them
+  const findTeam = (id?: string | null) => {
+    if (!id) return null;
+    if (myTeam && myTeam.id === id) return myTeam as any;
+    return (registeredTeams as any[]).find((t) => t.id === id) || null;
+  };
+  const nextMatch = nextMatchRaw
+    ? {
+        ...nextMatchRaw,
+        home_team: (nextMatchRaw as any).home_team ?? findTeam(nextMatchRaw.home_team_id),
+        away_team: (nextMatchRaw as any).away_team ?? findTeam(nextMatchRaw.away_team_id),
+      }
+    : undefined;
 
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
