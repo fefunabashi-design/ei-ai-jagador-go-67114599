@@ -792,7 +792,7 @@ const Index = () => {
                           size="sm"
                           variant="outline"
                           className="text-[10px] h-6 px-2 rounded-md"
-                          onClick={() => navigate(`/agenda?matchId=${m.id}`)}
+                          onClick={() => setConfirmationMatchId(m.id)}
                         >
                           <ListChecks size={10} className="mr-1" /> Confirmações
                         </Button>
