@@ -304,9 +304,9 @@ const Column = ({
         <span className="text-xs font-semibold">{title}</span>
         <Badge variant="secondary" className="text-[10px]">{count}</Badge>
       </div>
-      <ScrollArea className="max-h-60 pr-2">
+      <div className="max-h-60 overflow-y-auto pr-2">
         <div className="space-y-1">{children}</div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };
