@@ -68,18 +68,23 @@ const OpponentDetails = () => {
         .select("*")
         .eq("team_id", opponentId);
       if (error) console.error("[OpponentDetails] public_players error:", error);
+      console.log("[OpponentDetails] Players fetched:", pls);
       if (cancelled) return;
       const list = pls || [];
       setOpponentPlayers(list);
       const userIds = list.map((p: any) => p.user_id).filter(Boolean);
+      console.log("[OpponentDetails] userIds to fetch:", userIds);
       if (!userIds.length) { setAvatarMap({}); return; }
-      const { data: profs } = await supabase
+      const { data: profs, error: profileError } = await supabase
         .from("public_profiles")
         .select("user_id, avatar_url")
         .in("user_id", userIds);
+      console.log("[OpponentDetails] public_profiles error:", profileError);
+      console.log("[OpponentDetails] public_profiles data:", profs);
       if (cancelled) return;
       const map: Record<string, string> = {};
       (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      console.log("[OpponentDetails] Final avatarMap:", map);
       setAvatarMap(map);
     })();
     return () => { cancelled = true; };
