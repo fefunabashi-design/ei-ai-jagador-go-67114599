@@ -40,10 +40,12 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
     const deactivated = profile ? profile.is_active === false : false;
+    // Note: we intentionally do NOT delete the auth user here. This endpoint is
+    // unauthenticated (used in the pre-auth flow), so any destructive side
+    // effect would let attackers permanently remove accounts by guessing emails.
+    // Cleanup of deactivated accounts must happen via an authenticated/admin path.
     if (deactivated) {
-      const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
-      if (deleteError) throw deleteError;
-      return new Response(JSON.stringify({ exists: false, deactivated: true, cleaned: true }), {
+      return new Response(JSON.stringify({ exists: false, deactivated: true }), {
         headers: { ...corsHeaders, "content-type": "application/json" },
       });
     }
