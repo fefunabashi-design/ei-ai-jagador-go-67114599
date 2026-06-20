@@ -523,8 +523,6 @@ const AdminPage = () => {
               <span>{nextMatch.location}</span>
             </div>
 
-
-
             <div className="pt-2 border-t border-border">
               <Button
                 onClick={() => setShowNextActions((v) => !v)}
