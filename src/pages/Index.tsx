@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import BottomNav from "@/components/BottomNav";
+import MatchConfirmationList from "@/components/MatchConfirmationList";
 import { useMyTeam, useMyTeams, useMatches, usePlayers, useProfile, useCreateResenhaPost } from "@/hooks/useSupabaseData";
 
 import { generateMatchShareImage } from "@/lib/matchShareImage";
@@ -36,6 +37,7 @@ const Index = () => {
   const createResenhaPost = useCreateResenhaPost();
   const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmationMatchId, setConfirmationMatchId] = useState<string | null>(null);
   const { toast } = useToast();
 
 
@@ -790,7 +792,7 @@ const Index = () => {
                           size="sm"
                           variant="outline"
                           className="text-[10px] h-6 px-2 rounded-md"
-                          onClick={() => navigate(`/agenda?matchId=${m.id}`)}
+                          onClick={() => setConfirmationMatchId(m.id)}
                         >
                           <ListChecks size={10} className="mr-1" /> Confirmações
                         </Button>
@@ -969,6 +971,14 @@ const Index = () => {
 
 
       <BottomNav />
+      {confirmationMatchId && myTeam?.id && (
+        <MatchConfirmationList
+          matchId={confirmationMatchId}
+          teamId={myTeam.id}
+          open={!!confirmationMatchId}
+          onOpenChange={(o) => { if (!o) setConfirmationMatchId(null); }}
+        />
+      )}
     </div>
   );
 };

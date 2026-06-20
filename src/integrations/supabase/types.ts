@@ -302,25 +302,31 @@ export type Database = {
       }
       match_lineups: {
         Row: {
+          absence_reason: string | null
           created_at: string
           id: string
           match_id: string
           player_id: string
           position: string | null
+          status: string
         }
         Insert: {
+          absence_reason?: string | null
           created_at?: string
           id?: string
           match_id: string
           player_id: string
           position?: string | null
+          status?: string
         }
         Update: {
+          absence_reason?: string | null
           created_at?: string
           id?: string
           match_id?: string
           player_id?: string
           position?: string | null
+          status?: string
         }
         Relationships: [
           {
