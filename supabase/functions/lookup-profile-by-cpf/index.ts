@@ -11,6 +11,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require authenticated caller — this endpoint exposes PII.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerId = claimsData.claims.sub as string;
+
     const { cpf } = await req.json();
     const onlyDigits = String(cpf || "").replace(/\D/g, "");
     if (onlyDigits.length !== 11) {
@@ -20,14 +46,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const admin = createClient(supabaseUrl, serviceKey);
 
+    // Only callers who own at least one team may use this lookup (it's used
+    // to prefill the "add player" form on the team management screen).
+    const { data: ownedTeams, error: ownedErr } = await admin
+      .from("teams")
+      .select("id")
+      .eq("owner_id", callerId)
+      .limit(1);
+    if (ownedErr || !ownedTeams?.length) {
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Return only the minimum fields the caller needs to prefill the form.
     const { data: profile } = await admin
       .from("profiles")
-      .select("*")
+      .select("user_id, display_name, last_name, nickname, birth_date, phone")
       .eq("cpf", onlyDigits)
       .maybeSingle();
 
@@ -41,10 +79,21 @@ Deno.serve(async (req) => {
     const email = userResp?.user?.email || null;
 
     return new Response(
-      JSON.stringify({ found: true, user_id: profile.user_id, email, profile }),
+      JSON.stringify({
+        found: true,
+        user_id: profile.user_id,
+        email,
+        profile: {
+          display_name: profile.display_name,
+          last_name: profile.last_name,
+          nickname: profile.nickname,
+          birth_date: profile.birth_date,
+          phone: profile.phone,
+        },
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (_err) {
     return new Response(JSON.stringify({ error: "server_error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
