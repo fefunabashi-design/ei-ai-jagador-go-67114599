@@ -971,6 +971,14 @@ const Index = () => {
 
 
       <BottomNav />
+      {confirmationMatchId && myTeam?.id && (
+        <MatchConfirmationList
+          matchId={confirmationMatchId}
+          teamId={myTeam.id}
+          open={!!confirmationMatchId}
+          onOpenChange={(o) => { if (!o) setConfirmationMatchId(null); }}
+        />
+      )}
     </div>
   );
 };
