@@ -352,6 +352,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lineups_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_lineups_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
@@ -370,6 +377,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_lineups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
             referencedColumns: ["id"]
           },
         ]
@@ -425,6 +439,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_payments_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_match_fk"
             columns: ["match_id"]
             isOneToOne: false
@@ -443,6 +464,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
             referencedColumns: ["id"]
           },
         ]
@@ -659,6 +687,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "mensalidades_player_fk"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mensalidades_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
@@ -670,6 +705,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "public_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensalidades_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_players_unrestricted"
             referencedColumns: ["id"]
           },
         ]
@@ -1357,8 +1399,10 @@ export type Database = {
       public_players: {
         Row: {
           birth_date: string | null
+          cpf: string | null
           created_at: string | null
           display_name: string | null
+          email: string | null
           goals: number | null
           id: string | null
           jersey_number: number | null
@@ -1366,6 +1410,7 @@ export type Database = {
           matches: number | null
           name: string | null
           nickname: string | null
+          phone: string | null
           position: string | null
           rating: number | null
           region: string | null
@@ -1375,8 +1420,10 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
+          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1384,6 +1431,7 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
+          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
@@ -1393,8 +1441,10 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          cpf?: string | null
           created_at?: string | null
           display_name?: string | null
+          email?: string | null
           goals?: number | null
           id?: string | null
           jersey_number?: number | null
@@ -1402,6 +1452,102 @@ export type Database = {
           matches?: number | null
           name?: string | null
           nickname?: string | null
+          phone?: string | null
+          position?: string | null
+          rating?: number | null
+          region?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_fk"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "public_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_players_unrestricted: {
+        Row: {
+          birth_date: string | null
+          cpf: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          goals: number | null
+          id: string | null
+          jersey_number: number | null
+          last_name: string | null
+          matches: number | null
+          name: string | null
+          nickname: string | null
+          phone: string | null
+          position: string | null
+          rating: number | null
+          region: string | null
+          team_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          goals?: number | null
+          id?: string | null
+          jersey_number?: number | null
+          last_name?: string | null
+          matches?: number | null
+          name?: string | null
+          nickname?: string | null
+          phone?: string | null
+          position?: string | null
+          rating?: number | null
+          region?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          goals?: number | null
+          id?: string | null
+          jersey_number?: number | null
+          last_name?: string | null
+          matches?: number | null
+          name?: string | null
+          nickname?: string | null
+          phone?: string | null
           position?: string | null
           rating?: number | null
           region?: string | null
