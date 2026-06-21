@@ -536,9 +536,9 @@ const Index = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`bg-card rounded-lg border p-1 text-center hover:border-primary/40 transition-colors ${stat.highlight ? "border-destructive/50" : "border-border"}`}
+              className={`bg-card rounded-lg border p-1 text-center hover:border-primary/40 transition-colors ${stat.highlight ? "border-destructive/50" : "border-primary/20"}`}
             >
-              <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-foreground"}`}>{stat.value}</p>
+              <p className={`text-xs font-bold font-display leading-tight ${stat.highlight ? "text-destructive" : "text-primary"}`}>{stat.value}</p>
               <p className="text-xs text-muted-foreground font-semibold leading-tight">{stat.label}</p>
             </motion.button>
           ))}
@@ -781,7 +781,7 @@ const Index = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[10px] h-6 px-2 rounded-md"
+                        className="text-[10px] h-6 px-2 rounded-md border-primary/40 text-primary"
                         onClick={() => mView.status === "completed" ? setDetailsMatchId(m.id) : navigate(`/match/${m.id}`)}
                       >
                         <MessageCircle size={10} className="mr-1" /> Detalhes
@@ -791,7 +791,7 @@ const Index = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-[10px] h-6 px-2 rounded-md"
+                          className="text-[10px] h-6 px-2 rounded-md border-primary/40 text-primary"
                           onClick={() => setConfirmationMatchId(m.id)}
                         >
                           <ListChecks size={10} className="mr-1" /> Confirmações
@@ -800,7 +800,7 @@ const Index = () => {
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md">
+                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 rounded-md border-primary/40 text-primary">
                             <Share2 size={10} className="mr-1" /> Compartilhar
                           </Button>
                         </DropdownMenuTrigger>
