@@ -77,6 +77,34 @@ const filterOptions: { value: FilterType; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
+type PeriodType = "next30" | "thisMonth" | "next3months" | "all";
+
+const periodOptions: { value: PeriodType; label: string }[] = [
+  { value: "next30", label: "Próximos 30 dias" },
+  { value: "thisMonth", label: "Este mês" },
+  { value: "next3months", label: "Próximos 3 meses" },
+  { value: "all", label: "Histórico completo" },
+];
+
+const computeRange = (period: PeriodType): { from?: string; to?: string } => {
+  const now = new Date();
+  if (period === "all") return {};
+  if (period === "next30") {
+    const to = new Date(now);
+    to.setDate(to.getDate() + 30);
+    return { from: now.toISOString(), to: to.toISOString() };
+  }
+  if (period === "next3months") {
+    const to = new Date(now);
+    to.setMonth(to.getMonth() + 3);
+    return { from: now.toISOString(), to: to.toISOString() };
+  }
+  // thisMonth
+  const from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { from: from.toISOString(), to: to.toISOString() };
+};
+
 const allPositions = [
   "Goleiro", "Zagueiro", "Lateral Esquerdo", "Lateral Direito",
   "Volante", "Meia", "Atacante",
