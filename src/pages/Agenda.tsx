@@ -583,24 +583,42 @@ const AgendaPage = () => {
           </div>
         </div>
 
-        {/* Filters (only show in list view) */}
-        {view === "list" && (
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {filterOptions.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                  filter === f.value
-                    ? "bg-gradient-primary text-primary-foreground"
-                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+        {/* Filters */}
+        <div className="space-y-2">
+          {view === "list" && (
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {filterOptions.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    filter === f.value
+                      ? "bg-gradient-primary text-primary-foreground"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <CalendarClock size={14} className="text-muted-foreground shrink-0" />
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+              <SelectTrigger className="h-8 text-xs w-auto min-w-[170px] rounded-full bg-card border-border">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((p) => (
+                  <SelectItem key={p.value} value={p.value} className="text-xs">
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-8">
