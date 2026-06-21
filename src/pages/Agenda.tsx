@@ -137,7 +137,9 @@ const AgendaPage = () => {
   const [resultEvents, setResultEvents] = useState<any[]>([]);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
-  const { data: matches = [], isLoading } = useMatches();
+  const [period, setPeriod] = useState<PeriodType>("next30");
+  const dateRange = useMemo(() => computeRange(period), [period]);
+  const { data: matches = [], isLoading } = useMatches(dateRange);
   const { data: myTeam } = useMyTeam();
   const { data: profile } = useProfile();
   const createMatch = useCreateMatch();
