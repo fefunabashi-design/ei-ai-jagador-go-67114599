@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -77,6 +77,34 @@ const filterOptions: { value: FilterType; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
+type PeriodType = "next30" | "thisMonth" | "next3months" | "all";
+
+const periodOptions: { value: PeriodType; label: string }[] = [
+  { value: "next30", label: "Próximos 30 dias" },
+  { value: "thisMonth", label: "Este mês" },
+  { value: "next3months", label: "Próximos 3 meses" },
+  { value: "all", label: "Histórico completo" },
+];
+
+const computeRange = (period: PeriodType): { from?: string; to?: string } => {
+  const now = new Date();
+  if (period === "all") return {};
+  if (period === "next30") {
+    const to = new Date(now);
+    to.setDate(to.getDate() + 30);
+    return { from: now.toISOString(), to: to.toISOString() };
+  }
+  if (period === "next3months") {
+    const to = new Date(now);
+    to.setMonth(to.getMonth() + 3);
+    return { from: now.toISOString(), to: to.toISOString() };
+  }
+  // thisMonth
+  const from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { from: from.toISOString(), to: to.toISOString() };
+};
+
 const allPositions = [
   "Goleiro", "Zagueiro", "Lateral Esquerdo", "Lateral Direito",
   "Volante", "Meia", "Atacante",
@@ -109,7 +137,9 @@ const AgendaPage = () => {
   const [resultEvents, setResultEvents] = useState<any[]>([]);
   const [matchEvents, setMatchEvents] = useState<any[]>([]);
 
-  const { data: matches = [], isLoading } = useMatches();
+  const [period, setPeriod] = useState<PeriodType>("next30");
+  const dateRange = useMemo(() => computeRange(period), [period]);
+  const { data: matches = [], isLoading } = useMatches(dateRange);
   const { data: myTeam } = useMyTeam();
   const { data: profile } = useProfile();
   const createMatch = useCreateMatch();
@@ -553,24 +583,42 @@ const AgendaPage = () => {
           </div>
         </div>
 
-        {/* Filters (only show in list view) */}
-        {view === "list" && (
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {filterOptions.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                  filter === f.value
-                    ? "bg-gradient-primary text-primary-foreground"
-                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+        {/* Filters */}
+        <div className="space-y-2">
+          {view === "list" && (
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {filterOptions.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    filter === f.value
+                      ? "bg-gradient-primary text-primary-foreground"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <CalendarClock size={14} className="text-muted-foreground shrink-0" />
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+              <SelectTrigger className="h-8 text-xs w-auto min-w-[170px] rounded-full bg-card border-border">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((p) => (
+                  <SelectItem key={p.value} value={p.value} className="text-xs">
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-8">

@@ -348,9 +348,11 @@ export const useDeletePlayer = createMutationHook<{ id: string; teamId?: string 
 });
 
 // =================== MATCHES ===================
-export const useMatches = () => {
+export const useMatches = (range?: { from?: string; to?: string }) => {
+  const from = range?.from;
+  const to = range?.to;
   const query = useQuery({
-    queryKey: ["matches"],
+    queryKey: ["matches", from ?? null, to ?? null],
     queryFn: async () => {
       const uid = await getUserId();
       if (!uid) return [] as any[];
@@ -364,11 +366,13 @@ export const useMatches = () => {
         ...(playerLinks || []).map((p: any) => p.team_id),
       ]));
       if (!teamIds.length) return [];
-      const { data: rows = [] } = await supabase
+      let q = supabase
         .from("matches")
         .select("*")
-        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-        .order("match_date", { ascending: true });
+        .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`);
+      if (from) q = q.gte("match_date", from);
+      if (to) q = q.lte("match_date", to);
+      const { data: rows = [] } = await q.order("match_date", { ascending: true });
       // Fetch team data via public_teams view (bypasses owner-only RLS on base teams table)
       const allTeamIds = Array.from(new Set(
         (rows || []).flatMap((m: any) => [m.home_team_id, m.away_team_id]).filter(Boolean)
