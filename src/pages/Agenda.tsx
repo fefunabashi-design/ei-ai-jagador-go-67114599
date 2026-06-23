@@ -651,7 +651,7 @@ const AgendaPage = () => {
             {filtered.map((match, i) => {
               const homeTeam = match.home_team as any;
               const awayTeam = match.away_team as any;
-              const isOwner = myTeam && homeTeam?.owner_id === myTeam.owner_id;
+              const isOwner = !!myTeam && !!profile?.user_id && myTeam.owner_id === profile.user_id;
               const view = getMatchView(match, myTeam?.id);
               const date = new Date(match.match_date);
               const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -743,7 +743,9 @@ const AgendaPage = () => {
                           <Trophy size={12} className="mr-1" /> Finalização
                         </Button>
                       )}
-                      {(!fromAdmin || view.status === "confirmed") && (
+
+                      {/* Player view: small Detalhes toggle (only "Detalhar adversário") */}
+                      {!fromAdmin && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -756,7 +758,7 @@ const AgendaPage = () => {
                       )}
                     </div>
 
-                    {expandedActionsId === match.id && (!fromAdmin || view.status === "confirmed") && (
+                    {!fromAdmin && expandedActionsId === match.id && (
                       <div className="mt-1 space-y-1.5">
                         <button
                           onClick={() => openDetails(match, "details")}
@@ -765,8 +767,31 @@ const AgendaPage = () => {
                           <Shield size={14} className="text-primary" />
                           <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
                         </button>
-                        {fromAdmin && isOwner && view.status === "confirmed" && !view.isFinalizedByMe && (
-                          <>
+                      </div>
+                    )}
+
+                    {/* Admin view: full-width DETALHES card (only for CONFIRMED matches) */}
+                    {fromAdmin && isOwner && view.status === "confirmed" && !view.isFinalizedByMe && (
+                      <div className="pt-2 border-t border-border">
+                        <Button
+                          onClick={() => setExpandedActionsId((cur) => (cur === match.id ? null : match.id))}
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-8 text-[11px] font-semibold border-primary/40 text-primary"
+                        >
+                          <Eye size={12} className="mr-1" /> DETALHES
+                          {expandedActionsId === match.id ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+                        </Button>
+
+                        {expandedActionsId === match.id && (
+                          <div className="mt-2 space-y-1.5">
+                            <button
+                              onClick={() => openDetails(match, "details")}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                            >
+                              <Shield size={14} className="text-primary" />
+                              <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
+                            </button>
                             <button
                               onClick={() => openEdit(match)}
                               className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
@@ -788,7 +813,7 @@ const AgendaPage = () => {
                               <XCircle size={14} className="text-destructive" />
                               <span className="text-xs font-semibold text-destructive">Cancelar partida</span>
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
