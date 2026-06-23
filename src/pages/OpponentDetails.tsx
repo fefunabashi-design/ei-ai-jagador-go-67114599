@@ -79,7 +79,11 @@ const OpponentDetails = () => {
         .in("user_id", userIds);
       if (cancelled) return;
       const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      (profs || []).forEach((p: any) => {
+        if (p.user_id && p.avatar_url && String(p.avatar_url).trim().length > 0) {
+          map[p.user_id] = p.avatar_url;
+        }
+      });
       setAvatarMap(map);
     })();
     return () => { cancelled = true; };
@@ -205,11 +209,11 @@ const OpponentDetails = () => {
                       return (
                         <li
                           key={p.id}
-                          className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2 flex items-center gap-3"
+                          className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2.5 flex items-center gap-3"
                         >
-                          <Avatar className="w-10 h-10 ring-2 ring-border shadow-sm">
+                          <Avatar className="w-14 h-14 rounded-xl ring-2 ring-border shadow-sm">
                             {avatarUrl && <AvatarImage src={avatarUrl} alt={display} className="object-cover" />}
-                            <AvatarFallback className="text-sm font-medium">{initial}</AvatarFallback>
+                            <AvatarFallback className="rounded-xl text-base font-semibold bg-primary/15 text-primary">{initial}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="truncate">{display}</p>
