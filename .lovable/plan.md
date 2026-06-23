@@ -1,46 +1,55 @@
-# Restaurar funcionalidade do botão "Confirmações"
+## Diagnóstico
 
-O botão continua no card da próxima partida em `src/pages/Index.tsx`, mas hoje apenas navega para `/agenda`. A funcionalidade antiga (diálogo com confirmados/ausentes/convidados) foi perdida em reversões anteriores e o componente `MatchConfirmationList` não existe mais. Além disso, a tabela `match_lineups` atual não guarda status nem motivo de ausência.
+A alteração anterior **foi feita** em `src/pages/Agenda.tsx` (linhas 746–795): o botão "Detalhes" expande mostrando as 4 opções (Detalhar adversário, Reagendar, Finalizar, Cancelar) quando `fromAdmin && isOwner && view.status === "confirmed"`.
 
-## O que será feito
+Investigando por que você não está vendo as 4 opções, encontrei um bug na verificação de propriedade do time, na linha 654:
 
-### 1. Migration de banco
-Adicionar campos em `public.match_lineups` para suportar confirmação de presença:
-- `status` (texto: `confirmed` ou `absent`, padrão `confirmed`)
-- `absence_reason` (texto: `machucado`, `viagem`, `trabalho`, nulo quando confirmado)
+```tsx
+const isOwner = myTeam && homeTeam?.owner_id === myTeam.owner_id;
+```
 
-A tabela `match_guests` (já existente) será usada para os convidados.
+Isso compara o `owner_id` do **time mandante** com o do meu time. Em partidas **fora de casa**, `homeTeam` é o adversário — então `isOwner` vira `false` e os botões Reagendar/Finalizar/Cancelar somem. Esse é o motivo mais provável de você ver "só dados do time e jogador".
 
-### 2. Novo componente `src/components/MatchConfirmationList.tsx`
-Diálogo (shadcn `Dialog`) acionado pelo botão "Confirmações", recebendo `matchId` e `teamId`. Conteúdo:
+O segundo ponto: o estilo do botão "Detalhes" hoje em Agenda é um botão pequeno (`h-7 px-2.5`, lado a lado com Chat), diferente do botão grande full-width amarelo de `Admin.tsx` (linhas 540–583). Vou alinhar o visual ao do Admin dentro do card de partida confirmada.
 
-- **Topo (ações do usuário logado)**: botões grandes
-  - `Confirmado` (verde) → upsert em `match_lineups` com `status='confirmed'`
-  - `Ausente` (vermelho) → upsert com `status='absent'` e abre seletor de motivo:
-    - Machucado (cruz vermelha)
-    - Viagem (avião)
-    - Trabalho (maleta)
-  - `Convidado` → abre input para digitar o nome → insert em `match_guests`
+## Arquivos a editar
 
-- **Três colunas** (`grid grid-cols-3`):
-  1. **Jogadores** — todos os players ativos do time que ainda não responderam
-  2. **Confirmados** — players com `status='confirmed'` + convidados (com badge "Convidado por X")
-  3. **Ausentes** — players com `status='absent'` mostrando o ícone do motivo
+Só **`src/pages/Agenda.tsx`** (e nada mais — `Admin.tsx`, `MatchDetails.tsx`, `FinalizeMatchDialog.tsx` ficam como estão).
 
-Usa React Query (`useQuery` para `match_lineups` + `match_guests` + `players`, `useMutation` para upsert/insert/delete) e Realtime para atualizar a lista ao vivo.
+## O que vai mudar
 
-### 3. Integração em `src/pages/Index.tsx`
-- Manter o botão `Confirmações` no card da próxima partida.
-- Trocar o `onClick` que faz `navigate("/agenda?matchId=...")` por um estado local `confirmOpen` que abre `<MatchConfirmationList matchId={m.id} teamId={myTeam.id} open={confirmOpen} onOpenChange={setConfirmOpen} />`.
-- Continua visível apenas para partidas com `status !== 'completed'`.
+1. **Corrigir `isOwner`** (linha 654) para validar ownership do **meu time**, não do mandante:
+   ```tsx
+   const isOwner = !!myTeam && myTeam.owner_id === currentUserId;
+   ```
+   (usando o `user.id` já disponível via `useProfile`/auth no arquivo).
 
-## Detalhes técnicos
-- Identificação do `player_id` do usuário logado via `players.user_id = auth.uid()` e `team_id = myTeam.id`.
-- Upsert em `match_lineups` por `(match_id, player_id)` — adicionar índice único se ainda não existir na migration.
-- Políticas RLS: permitir `SELECT` para membros do time (via `is_team_member`) e `INSERT/UPDATE/DELETE` do próprio registro do jogador; convidados podem ser inseridos por qualquer membro do time da partida.
-- Localização PT-BR em todos os textos e toasts.
-- Mobile-first: em telas pequenas, as 3 colunas viram cards empilhados verticalmente.
+2. **Reestruturar o bloco de ações do card** (linhas 730–795) para partidas confirmadas no modo admin:
+   - Manter os botões pequenos atuais (Chat, Finalização quando aplicável).
+   - **Remover** o botão pequeno "Detalhes" atual.
+   - **Adicionar**, logo abaixo da linha de info da partida, um bloco separado por borda superior — idêntico ao de `Admin.tsx` linhas 540–583 — com:
+     - Botão full-width amarelo "DETALHES" (`variant="outline" w-full h-8 text-[11px] font-semibold`) que expande/recolhe.
+     - Painel expandido com as 4 opções verticais (Detalhar adversário, Reagendar partida, Finalizar partida, Cancelar partida).
+   - Esse bloco só aparece quando `fromAdmin && isOwner && view.status === "confirmed" && !view.isFinalizedByMe`.
 
-## Fora de escopo
-- Não mexer na tela `/agenda` nem na escalação visual (SoccerField).
-- Não alterar lógica de pagamento ou chat.
+3. **Modo jogador (não-admin)**: manter o botão pequeno "Detalhes" + "Detalhar adversário" como está hoje (sem mudança de comportamento).
+
+## Resultado esperado
+
+```text
+┌─ Card da partida (Agenda admin, status=CONFIRMADA) ─┐
+│ [escudo] MEU TIME  VS  ADVERSÁRIO [escudo]          │
+│ 📅 data  ⏰ hora  📍 local                          │
+│ [Chat]                                              │
+│ ─────────────────────────────────────────────────── │
+│ [        ⌕ DETALHES         ▼ ]                     │
+│   ├─ 🛡  Detalhar adversário                        │
+│   ├─ 📅  Reagendar partida                          │
+│   ├─ 🏆  Finalizar partida                          │
+│   └─ ✖  Cancelar partida                            │
+└─────────────────────────────────────────────────────┘
+```
+
+Partidas não-confirmadas (open/cancelled/completed) e a visão do jogador comum continuam sem esse bloco.
+
+Quer que eu prossiga com essa abordagem ou prefere outro recorte (ex.: deixar o painel sempre aberto sem o toggle "DETALHES")?
