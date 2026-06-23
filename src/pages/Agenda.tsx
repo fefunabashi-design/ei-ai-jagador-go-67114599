@@ -743,18 +743,20 @@ const AgendaPage = () => {
                           <Trophy size={12} className="mr-1" /> Finalização
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7 px-2.5 rounded-lg"
-                        onClick={() => setExpandedActionsId((cur) => (cur === match.id ? null : match.id))}
-                      >
-                        <Eye size={12} className="mr-1" /> Detalhes
-                        {expandedActionsId === match.id ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
-                      </Button>
+                      {(!fromAdmin || view.status === "confirmed") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2.5 rounded-lg"
+                          onClick={() => setExpandedActionsId((cur) => (cur === match.id ? null : match.id))}
+                        >
+                          <Eye size={12} className="mr-1" /> Detalhes
+                          {expandedActionsId === match.id ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+                        </Button>
+                      )}
                     </div>
 
-                    {expandedActionsId === match.id && (
+                    {expandedActionsId === match.id && (!fromAdmin || view.status === "confirmed") && (
                       <div className="mt-1 space-y-1.5">
                         <button
                           onClick={() => openDetails(match, "details")}
@@ -763,7 +765,7 @@ const AgendaPage = () => {
                           <Shield size={14} className="text-primary" />
                           <span className="text-xs font-semibold text-foreground">Detalhar adversário</span>
                         </button>
-                        {fromAdmin && isOwner && view.status !== "cancelled" && !view.isFinalizedByMe && (
+                        {fromAdmin && isOwner && view.status === "confirmed" && !view.isFinalizedByMe && (
                           <>
                             <button
                               onClick={() => openEdit(match)}
@@ -771,6 +773,13 @@ const AgendaPage = () => {
                             >
                               <CalendarClock size={14} className="text-primary" />
                               <span className="text-xs font-semibold text-foreground">Reagendar partida</span>
+                            </button>
+                            <button
+                              onClick={() => { setFinalizeMatch(match); setExpandedActionsId(null); }}
+                              className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border hover:border-primary/40 text-left transition-colors"
+                            >
+                              <Trophy size={14} className="text-primary" />
+                              <span className="text-xs font-semibold text-foreground">Finalizar partida</span>
                             </button>
                             <button
                               onClick={() => { setCancelMatch(match); setCancelReason(""); }}
