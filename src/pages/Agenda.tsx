@@ -36,7 +36,7 @@ import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
   usePlayers, useCreateLineup, useMatchLineups, useDeleteLineup,
-  useProfile,
+  useProfile, useCreateResenhaPost,
 } from "@/hooks/useSupabaseData";
 
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
