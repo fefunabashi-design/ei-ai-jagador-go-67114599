@@ -79,7 +79,11 @@ const OpponentDetails = () => {
         .in("user_id", userIds);
       if (cancelled) return;
       const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => { if (p.user_id && p.avatar_url) map[p.user_id] = p.avatar_url; });
+      (profs || []).forEach((p: any) => {
+        if (p.user_id && p.avatar_url && String(p.avatar_url).trim().length > 0) {
+          map[p.user_id] = p.avatar_url;
+        }
+      });
       setAvatarMap(map);
     })();
     return () => { cancelled = true; };
