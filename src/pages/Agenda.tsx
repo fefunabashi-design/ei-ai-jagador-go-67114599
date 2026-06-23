@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, Eye, Pencil, UserCheck,
   XCircle, Trash2, Plus, Shield, CheckCircle2, AlertCircle, MessageCircle, CreditCard, List,
-  ChevronDown, ChevronUp, CalendarClock,
+  ChevronDown, ChevronUp, CalendarClock, Share2, Instagram,
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { generateMatchShareImage } from "@/lib/matchShareImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +36,7 @@ import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
   usePlayers, useCreateLineup, useMatchLineups, useDeleteLineup,
-  useProfile,
+  useProfile, useCreateResenhaPost,
 } from "@/hooks/useSupabaseData";
 
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
@@ -145,6 +147,7 @@ const AgendaPage = () => {
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const hideMatch = useHideMatch();
+  const createResenhaPost = useCreateResenhaPost();
   const { data: players = [] } = usePlayers(myTeam?.id);
 
 
@@ -732,6 +735,87 @@ const AgendaPage = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
                       </Button>
+
+                      {fromAdmin && (view.status === "confirmed" || view.status === "completed") && (() => {
+                        const homeT = homeTeam;
+                        const awayT = awayTeam;
+                        const shareText = view.status === "completed"
+                          ? `🏁 ${homeT?.name || "Mandante"} ${view.homeScore ?? 0} x ${view.awayScore ?? 0} ${awayT?.name || "Visitante"}\n📅 ${date.toLocaleDateString("pt-BR")}\n📍 ${getFieldDisplayName(match)}`
+                          : `⚽ Próxima partida: ${homeT?.name || "Meu time"} x ${awayT?.name || "Adversário"}\n📅 ${date.toLocaleDateString("pt-BR")} às ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n📍 ${getFieldDisplayName(match)}`;
+                        const buildBlob = () => generateMatchShareImage({
+                          homeName: homeT?.name,
+                          awayName: awayT?.name,
+                          homeLogoUrl: homeT?.logo_url,
+                          awayLogoUrl: awayT?.logo_url,
+                          matchDate: date,
+                          location: getFieldDisplayName(match),
+                        });
+                        const shareVia = async (fallbackUrl: string, fallbackToastDesc: string) => {
+                          try {
+                            toast({ title: "Gerando imagem..." });
+                            const blob = await buildBlob();
+                            const file = new File([blob], `partida-${match.id}.png`, { type: "image/png" });
+                            try { await navigator.clipboard.writeText(shareText); } catch {}
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                              await navigator.share({ files: [file], text: shareText, title: "Partida" });
+                            } else {
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url; a.download = file.name; a.click();
+                              URL.revokeObjectURL(url);
+                              window.open(fallbackUrl, "_blank");
+                              toast({ title: "Imagem baixada", description: fallbackToastDesc });
+                            }
+                          } catch (e: any) {
+                            toast({ title: "Erro ao compartilhar", description: e?.message, variant: "destructive" });
+                          }
+                        };
+                        const handleResenha = async () => {
+                          try {
+                            toast({ title: "Gerando imagem da partida..." });
+                            const blob = await buildBlob();
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) throw new Error("Sessão expirada. Faça login novamente.");
+                            const path = `${user.id}/match-share/${match.id}-${Date.now()}.png`;
+                            const { error: upErr } = await supabase.storage.from("post-media").upload(path, blob, {
+                              contentType: "image/png", upsert: true,
+                            });
+                            if (upErr) throw upErr;
+                            const { data: pub } = supabase.storage.from("post-media").getPublicUrl(path);
+                            await createResenhaPost.mutateAsync({
+                              photo_url: pub.publicUrl,
+                              caption: shareText,
+                              match_id: match.id,
+                              match_label: `${homeT?.name || "Time"} vs ${awayT?.name || "Adversário"}`,
+                              team_id: myTeam?.id || null,
+                            });
+                            toast({ title: "Publicado na Resenha da Várzea! 🎉" });
+                            navigate("/resenha");
+                          } catch (e: any) {
+                            toast({ title: "Erro ao publicar", description: e?.message, variant: "destructive" });
+                          }
+                        };
+                        return (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg border-primary/40 text-primary">
+                                <Share2 size={12} className="mr-1" /> Compartilhar
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem onClick={() => shareVia(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "Anexe a imagem no WhatsApp.")}>
+                                <MessageCircle size={14} className="mr-2" /> WhatsApp
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => shareVia("https://www.instagram.com/", "Abra o Instagram e publique a imagem (texto já copiado).")}>
+                                <Instagram size={14} className="mr-2" /> Instagram
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleResenha}>
+                                <Users size={14} className="mr-2" /> Resenha da Várzea
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
 
                       {isOwner && view.isFinalizedByMe && (
                         <Button
