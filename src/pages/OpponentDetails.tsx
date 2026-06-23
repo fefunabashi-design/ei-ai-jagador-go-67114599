@@ -268,23 +268,6 @@ const OpponentDetails = () => {
         onIndexChange={setViewerIndex}
         onClose={() => setViewerIndex(null)}
       />
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate">{display}</p>
-                            {age !== null && (
-                              <p className="text-[10px] text-muted-foreground">{age} anos</p>
-                            )}
-                          </div>
-                          <NotaBadge nota={ps.nota} played={ps.played} />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
 
       <BottomNav />
     </div>
