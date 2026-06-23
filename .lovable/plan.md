@@ -1,23 +1,42 @@
-## Objetivo
-Na tela "Detalhar Adversário" (acessada pelo botão "Detalhar adversário" dentro de uma partida), na aba **Jogadores**, exibir as fotos dos jogadores adversários de forma mais visível.
+# Modal fullscreen de fotos — Jogadores adversários
 
-## Situação atual
-O arquivo `src/pages/OpponentDetails.tsx` já busca os avatares (`avatar_url`) de `public_profiles` via `user_id` de cada `public_players`, e os exibe num `Avatar` pequeno (40x40px) ao lado do nome. Porém:
+Adicionar visualização em tela cheia das fotos dos jogadores na aba "Jogadores" de `src/pages/OpponentDetails.tsx`, com zoom (pinch/double-tap/botões) e navegação entre fotos (swipe e setas).
 
-1. Strings vazias (`avatar_url = ""`) caem no `AvatarImage` e quebram a renderização, mostrando só o fallback com a inicial.
-2. O tamanho está pequeno (10×10 em Tailwind = 40px), pouco destacado para uma aba dedicada a "Jogadores".
-3. Jogadores convidados/sem `user_id` não têm forma de exibir foto (continuam só com inicial — comportamento esperado).
+## Comportamento
 
-## Mudanças (apenas `src/pages/OpponentDetails.tsx`)
+- Clicar no avatar de um jogador (na lista da aba Jogadores) abre um modal fullscreen.
+- Apenas jogadores **com foto** entram na lista navegável do modal. Jogadores sem avatar continuam mostrando o fallback com inicial, mas não são clicáveis.
+- Header do modal: nome do jogador atual + contador "X / N" + botão fechar (X).
+- Navegação:
+  - Setas laterais (◀ ▶) em desktop.
+  - Swipe horizontal em mobile.
+  - Teclado: ←, →, Esc.
+  - Loop opcional: não — para nas extremidades (botões desabilitados nas pontas).
+- Zoom:
+  - Pinch-to-zoom no mobile.
+  - Double-tap/double-click alterna entre 1x e 2.5x no ponto tocado.
+  - Botões "+" e "−" no canto inferior, com botão "Reset".
+  - Pan (arrastar) quando estiver com zoom > 1.
+  - Ao trocar de foto, o zoom reseta para 1x.
+- Fundo preto, foto centralizada com `object-contain`, ocupando viewport inteira.
 
-1. **Filtrar `avatar_url` vazio** ao montar o `avatarMap`: só incluir quando `avatar_url` tiver conteúdo não-vazio (`p.avatar_url && p.avatar_url.trim()`).
-2. **Aumentar o avatar** na lista de jogadores de `w-10 h-10` para `w-14 h-14`, com `rounded-xl` (mais destaque, mantendo padrão do app).
-3. **Ajustar o item da lista** para acomodar o avatar maior:
-   - Padding `py-2.5`
-   - Manter nome + idade à direita, `NotaBadge` no canto.
-4. **Fallback visual**: quando não houver foto, manter a inicial em `AvatarFallback` com `bg-primary/15 text-primary` para ficar consistente com o resto do app (em vez de `bg-muted` cinza).
+## Implementação técnica
+
+- Reusar `Dialog` de `src/components/ui/dialog.tsx` com `DialogContent` customizado: `max-w-none w-screen h-screen p-0 bg-black border-0 rounded-none` e sem overlay translúcido (override para `bg-black`).
+- Estado local em `OpponentDetails`:
+  - `viewerIndex: number | null` — índice na lista filtrada de jogadores com foto.
+  - Lista derivada `photoPlayers = activePlayers.filter(p => p.user_id && avatarMap[p.user_id])`.
+- Componente novo `src/components/PlayerPhotoViewer.tsx`:
+  - Props: `open`, `players` (com `display`, `avatarUrl`), `index`, `onIndexChange`, `onClose`.
+  - Estado interno: `scale`, `tx`, `ty` (translate) para zoom/pan; reseta no change de `index`.
+  - Gestos: handlers de `pointerdown/move/up` para pan + pinch (2 pointers) calculando distância; double-click toggle.
+  - Swipe: quando `scale === 1`, deltaX > threshold dispara prev/next.
+  - Atalhos: `useEffect` com listener de `keydown` global enquanto aberto.
+- Acessibilidade: `DialogTitle` visualmente oculto com nome do jogador (sr-only) para satisfazer Radix.
+- Mobile-first, `touch-action: none` na área da imagem para evitar scroll da página durante gestos.
 
 ## Fora do escopo
-- Não alterar a aba "Dados do Time".
-- Não mexer em `MatchDetails.tsx`, `Agenda.tsx` ou no card de partidas.
-- Não criar upload de foto para jogadores convidados (sem `user_id`).
+
+- Não altera a aba "Dados do Time", `Agenda.tsx`, `MatchDetails.tsx`, nem o upload de fotos.
+- Não muda o tamanho/estilo atual dos avatars na lista.
+- Não adiciona carregamento de fotos de jogadores convidados sem `user_id`.
