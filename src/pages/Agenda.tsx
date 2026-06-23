@@ -147,6 +147,7 @@ const AgendaPage = () => {
   const createMatch = useCreateMatch();
   const updateMatch = useUpdateMatch();
   const hideMatch = useHideMatch();
+  const createResenhaPost = useCreateResenhaPost();
   const { data: players = [] } = usePlayers(myTeam?.id);
 
 
