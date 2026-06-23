@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, MapPin, Phone, Users, UserCog, User } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import PlayerPhotoViewer, { type ViewerPhoto } from "@/components/PlayerPhotoViewer";
 import { getTeamStats, getPlayerStats } from "@/lib/stats";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyTeam } from "@/hooks/useSupabaseData";
