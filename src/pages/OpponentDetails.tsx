@@ -92,6 +92,17 @@ const OpponentDetails = () => {
 
   const activePlayers = opponentPlayers;
 
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const photoPlayers = useMemo<ViewerPhoto[]>(() => {
+    return activePlayers
+      .map((p: any) => {
+        const display = p.nickname?.trim() || p.name || "Jogador";
+        const avatarUrl = p.user_id ? avatarMap[p.user_id] : undefined;
+        return avatarUrl ? { id: p.id, display, avatarUrl } : null;
+      })
+      .filter(Boolean) as ViewerPhoto[];
+  }, [activePlayers, avatarMap]);
+
   const addressParts = [
     opponent?.field_address,
     [opponent?.addr_rua, opponent?.addr_numero].filter(Boolean).join(", "),
