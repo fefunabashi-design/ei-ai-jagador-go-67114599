@@ -651,7 +651,7 @@ const AgendaPage = () => {
             {filtered.map((match, i) => {
               const homeTeam = match.home_team as any;
               const awayTeam = match.away_team as any;
-              const isOwner = myTeam && homeTeam?.owner_id === myTeam.owner_id;
+              const isOwner = !!myTeam && !!profile?.user_id && myTeam.owner_id === profile.user_id;
               const view = getMatchView(match, myTeam?.id);
               const date = new Date(match.match_date);
               const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
