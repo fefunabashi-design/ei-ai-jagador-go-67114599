@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, MapPin, Phone, Users, UserCog, User } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
+import PlayerPhotoViewer, { type ViewerPhoto } from "@/components/PlayerPhotoViewer";
 import { getTeamStats, getPlayerStats } from "@/lib/stats";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyTeam } from "@/hooks/useSupabaseData";
@@ -90,6 +91,17 @@ const OpponentDetails = () => {
   }, [opponentId]);
 
   const activePlayers = opponentPlayers;
+
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const photoPlayers = useMemo<ViewerPhoto[]>(() => {
+    return activePlayers
+      .map((p: any) => {
+        const display = p.nickname?.trim() || p.name || "Jogador";
+        const avatarUrl = p.user_id ? avatarMap[p.user_id] : undefined;
+        return avatarUrl ? { id: p.id, display, avatarUrl } : null;
+      })
+      .filter(Boolean) as ViewerPhoto[];
+  }, [activePlayers, avatarMap]);
 
   const addressParts = [
     opponent?.field_address,
@@ -211,10 +223,26 @@ const OpponentDetails = () => {
                           key={p.id}
                           className="text-sm text-foreground bg-secondary/40 border border-border rounded-lg px-3 py-2.5 flex items-center gap-3"
                         >
-                          <Avatar className="w-14 h-14 rounded-xl ring-2 ring-border shadow-sm">
-                            {avatarUrl && <AvatarImage src={avatarUrl} alt={display} className="object-cover" />}
-                            <AvatarFallback className="rounded-xl text-base font-semibold bg-primary/15 text-primary">{initial}</AvatarFallback>
-                          </Avatar>
+                          {avatarUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const idx = photoPlayers.findIndex((ph) => ph.id === p.id);
+                                if (idx >= 0) setViewerIndex(idx);
+                              }}
+                              aria-label={`Ver foto de ${display}`}
+                              className="rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              <Avatar className="w-14 h-14 rounded-xl ring-2 ring-border shadow-sm">
+                                <AvatarImage src={avatarUrl} alt={display} className="object-cover" />
+                                <AvatarFallback className="rounded-xl text-base font-semibold bg-primary/15 text-primary">{initial}</AvatarFallback>
+                              </Avatar>
+                            </button>
+                          ) : (
+                            <Avatar className="w-14 h-14 rounded-xl ring-2 ring-border shadow-sm">
+                              <AvatarFallback className="rounded-xl text-base font-semibold bg-primary/15 text-primary">{initial}</AvatarFallback>
+                            </Avatar>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="truncate">{display}</p>
                             {age !== null && (
@@ -232,6 +260,14 @@ const OpponentDetails = () => {
           </Tabs>
         )}
       </div>
+
+      <PlayerPhotoViewer
+        open={viewerIndex !== null}
+        players={photoPlayers}
+        index={viewerIndex ?? 0}
+        onIndexChange={setViewerIndex}
+        onClose={() => setViewerIndex(null)}
+      />
 
       <BottomNav />
     </div>
