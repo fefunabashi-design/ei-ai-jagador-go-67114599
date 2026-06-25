@@ -1,24 +1,15 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImageIcon, Plus, ThumbsDown, ThumbsUp, Send, Trash2, Clock, CornerDownRight } from "lucide-react";
+import { ArrowLeft, ThumbsDown, ThumbsUp, Send, Trash2, Clock, CornerDownRight } from "lucide-react";
 import { motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useProfile, useResenhaPosts, useAppSharedImages, useMatches, useMyTeams,
-  useCreateResenhaPost, useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
+  useProfile, useResenhaPosts, useMyTeams,
+  useToggleResenhaReaction, useAddResenhaComment, useDeleteResenhaPost,
   useToggleResenhaCommentReaction,
 } from "@/hooks/useSupabaseData";
 import { getShortTeamName } from "@/lib/teamName";
@@ -60,8 +51,6 @@ const Resenha = () => {
   const { toast } = useToast();
   const { data: profile } = useProfile();
   const { data: posts } = useResenhaPosts();
-  const { data: gallery } = useAppSharedImages();
-  const { data: matches } = useMatches();
   const { data: myTeams } = useMyTeams();
   const role = (profile?.role || "player").toLowerCase();
   const myEmail = norm((profile as any)?.email);
@@ -75,17 +64,11 @@ const Resenha = () => {
   );
   const canPublish = STAFF_ROLES.includes(role) || isTeamStaff;
 
-  const [matchPickerOpen, setMatchPickerOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState<any | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [pickedImage, setPickedImage] = useState<string>("");
-  const [caption, setCaption] = useState("");
   // Per-post comment input: { [postId]: text }
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   // Reply target per post: { [postId]: { id, name } | null }
   const [replyTarget, setReplyTarget] = useState<Record<string, { id: string; name: string } | null>>({});
 
-  const createPost = useCreateResenhaPost();
   const toggleReaction = useToggleResenhaReaction();
   const toggleCommentReaction = useToggleResenhaCommentReaction();
   const addComment = useAddResenhaComment();
@@ -93,47 +76,6 @@ const Resenha = () => {
 
   const myUid = profile?.user_id || "mock-user-id";
   const orderedPosts = useMemo(() => posts, [posts]);
-
-  const eligibleMatches = useMemo(() => {
-    return (matches || [])
-      .filter((m: any) => m.status === "confirmed" || m.status === "completed")
-      .sort((a: any, b: any) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
-  }, [matches]);
-
-  const openPublishFlow = () => {
-    setSelectedMatch(null);
-    setPickedImage("");
-    setCaption("");
-    setMatchPickerOpen(true);
-  };
-
-  const handleSelectMatch = (m: any) => {
-    setSelectedMatch(m);
-    setMatchPickerOpen(false);
-    setCreateOpen(true);
-  };
-
-  const handlePublish = async () => {
-    if (!pickedImage) {
-      toast({ title: "Escolha uma imagem", description: "Selecione uma imagem da galeria do App." });
-      return;
-    }
-    const matchLabel = selectedMatch
-      ? `${selectedMatch.home_team?.name || "Time"} vs ${selectedMatch.away_team?.name || "Adversário"}`
-      : null;
-    await createPost.mutateAsync({
-      photo_url: pickedImage,
-      caption: caption.trim(),
-      match_id: selectedMatch?.id || null,
-      match_label: matchLabel,
-      team_id: (myTeams || [])[0]?.id || null,
-    });
-    toast({ title: "Resenha publicada! 🎉" });
-    setCaption("");
-    setPickedImage("");
-    setSelectedMatch(null);
-    setCreateOpen(false);
-  };
 
   const handleSendComment = (postId: string) => {
     const text = (commentDrafts[postId] || "").trim();
@@ -199,15 +141,6 @@ const Resenha = () => {
           <h1 className="text-lg font-display text-foreground">RESENHA DA VÁRZEA</h1>
           <p className="text-[10px] text-muted-foreground">Posts ficam visíveis por 7 dias</p>
         </div>
-        {canPublish && (
-          <Button
-            size="sm"
-            onClick={openPublishFlow}
-            className="bg-gradient-primary text-primary-foreground border-0 h-8"
-          >
-            <Plus size={14} className="mr-1" /> Publicar
-          </Button>
-        )}
       </div>
 
       {/* Feed */}
@@ -359,142 +292,6 @@ const Resenha = () => {
           );
         })}
       </div>
-
-      {/* Match picker dialog */}
-      <Dialog open={matchPickerOpen} onOpenChange={setMatchPickerOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Publicar resenha</DialogTitle>
-            <DialogDescription>
-              Escolha a partida sobre a qual você quer publicar. Apenas partidas confirmadas e
-              finalizadas aparecem aqui.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {eligibleMatches.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                Nenhuma partida confirmada ou finalizada disponível.
-              </p>
-            )}
-            {eligibleMatches.map((m: any) => {
-              const date = new Date(m.match_date);
-              const isFinished = m.status === "completed";
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => handleSelectMatch(m)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {m.home_team?.name || "Time"} vs {m.away_team?.name || "Adversário"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {date.toLocaleDateString("pt-BR")} ·{" "}
-                      {date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                      isFinished ? "bg-muted text-muted-foreground" : "bg-success/15 text-success"
-                    }`}
-                  >
-                    {isFinished ? "Finalizada" : "Confirmada"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMatchPickerOpen(false)}>
-              Cancelar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nova resenha</DialogTitle>
-            <DialogDescription>
-              Escolha uma imagem já compartilhada no App. Não é permitido enviar arquivos do
-              dispositivo nem usar a câmera.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            {selectedMatch && (
-              <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Partida</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {selectedMatch.home_team?.name || "Time"} vs{" "}
-                  {selectedMatch.away_team?.name || "Adversário"}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {new Date(selectedMatch.match_date).toLocaleDateString("pt-BR")} ·{" "}
-                  {new Date(selectedMatch.match_date).toLocaleTimeString("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                <ImageIcon size={12} /> Imagens compartilhadas
-              </p>
-              {gallery.length === 0 ? (
-                <div className="text-xs text-muted-foreground border border-dashed border-border rounded-lg p-4 text-center">
-                  Ainda não há imagens compartilhadas no App. Publique fotos pelo módulo de Fotos
-                  do time para usá-las aqui.
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
-                  {gallery.map((img: any) => {
-                    const selected = pickedImage === img.url;
-                    return (
-                      <button
-                        key={img.id}
-                        type="button"
-                        onClick={() => setPickedImage(img.url)}
-                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                          selected ? "border-primary ring-2 ring-primary/40" : "border-border"
-                        }`}
-                      >
-                        <img src={img.url} alt={img.label || "Imagem"} className="w-full h-full object-cover" />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                Comentário (opcional)
-              </p>
-              <Textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Conte a resenha..."
-                rows={3}
-                maxLength={500}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handlePublish} disabled={!pickedImage}>
-              Publicar resenha
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <BottomNav />
     </div>
