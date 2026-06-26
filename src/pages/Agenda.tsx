@@ -36,7 +36,7 @@ import FinalizeMatchDialog from "@/components/FinalizeMatchDialog";
 import {
   useMatches, useMyTeam, useCreateMatch, useUpdateMatch, useHideMatch,
   usePlayers, useCreateLineup, useMatchLineups, useDeleteLineup,
-  useProfile, useCreateResenhaPost,
+  useProfile, useCreateResenhaPost, useUnreadChatCounts,
 } from "@/hooks/useSupabaseData";
 
 import { getMatchView, getFieldDisplayName } from "@/lib/matchView";
@@ -149,6 +149,8 @@ const AgendaPage = () => {
   const hideMatch = useHideMatch();
   const createResenhaPost = useCreateResenhaPost();
   const { data: players = [] } = usePlayers(myTeam?.id);
+  const matchIds = matches.map((m: any) => m.id);
+  const { data: unreadChats } = useUnreadChatCounts(matchIds);
 
 
   useEffect(() => {
@@ -732,8 +734,11 @@ const AgendaPage = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
+                      <Button size="sm" variant="outline" className="relative text-xs h-7 px-2.5 rounded-lg" onClick={() => navigate(`/chat/${match.id}`)}>
                         <MessageCircle size={12} className="mr-1" /> Chat
+                        {unreadChats.get(match.id)?.has_unread && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500" />
+                        )}
                       </Button>
 
                       {fromAdmin && (view.status === "confirmed" || view.status === "completed") && (() => {

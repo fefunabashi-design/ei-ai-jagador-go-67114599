@@ -189,6 +189,32 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      
+      chat_read_status: {
+        Row: {
+          last_read_at: string
+          match_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          match_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          match_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_read_status_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_chat_messages: {
         Row: {
@@ -1355,6 +1381,18 @@ export type Database = {
       can_access_match_realtime: {
         Args: { _match_id: string }
         Returns: boolean
+      }
+      get_unread_chat_counts: {
+        Args: { p_match_ids: string[] }
+        Returns: {
+          match_id: string
+          unread_count: number
+          has_unread: boolean
+        }[]
+      }
+      mark_chat_as_read: {
+        Args: { p_match_id: string }
+        Returns: undefined
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }

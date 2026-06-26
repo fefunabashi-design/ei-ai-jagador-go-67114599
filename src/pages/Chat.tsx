@@ -60,6 +60,12 @@ const ChatPage = () => {
   const sendMessage = useSendChatMessage();
   const updateMatch = useUpdateMatch();
 
+  // Marca mensagens como lidas ao abrir o chat e ao receber novas mensagens
+  useEffect(() => {
+    if (!matchId) return;
+    supabase.rpc("mark_chat_as_read", { p_match_id: matchId }).then(() => {});
+  }, [matchId, messages.length]);
+
 
   const homeTeam = match?.home_team as any;
   const awayTeam = match?.away_team as any;
@@ -154,8 +160,6 @@ const ChatPage = () => {
     }
   };
 
-  // Permission: only Admin / Coach / Sub-Coach can "Escalar Time".
-  // Plain players cannot. Owner of the home team is always allowed.
   const role = (profile?.role || "player").toLowerCase();
   const isStaff = ["admin", "coach", "assistant_coach", "sub_coach", "tecnico", "subtecnico"].includes(role);
   const isHomeOwner = !!(myTeam && homeTeam?.id === myTeam.id && myTeam.owner_id === profile?.user_id);
@@ -270,9 +274,6 @@ const ChatPage = () => {
         </div>
       </div>
 
-
-
-
       {/* Finalize match dialog */}
       <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
         <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
@@ -308,7 +309,6 @@ const ChatPage = () => {
             <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Gols e Cartões</p>
             {teamPlayers.length === 0 ? (
               <p className="text-xs text-muted-foreground">Nenhum jogador disponível para selecionar.</p>
-
             ) : (
               <div className="grid grid-cols-[1fr_1.3fr_auto] gap-2 items-end">
                 <div>
@@ -333,7 +333,6 @@ const ChatPage = () => {
                           {p.nickname || p.name || "Jogador"}
                         </SelectItem>
                       ))}
-
                     </SelectContent>
                   </Select>
                 </div>
