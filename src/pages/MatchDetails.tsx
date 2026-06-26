@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, MessageCircle, Shield, MapPin, Clock } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
-import { useMatches, useMyTeam } from "@/hooks/useSupabaseData";
+import { useMatches, useMyTeam, useUnreadChatCounts } from "@/hooks/useSupabaseData";
 
 const MatchDetails = () => {
   const { matchId = "" } = useParams();
@@ -14,6 +14,7 @@ const MatchDetails = () => {
   const { data: myTeam } = useMyTeam();
 
   const match = useMemo(() => matches.find((m: any) => m.id === matchId), [matches, matchId]);
+  const { data: unreadChats } = useUnreadChatCounts(matchId ? [matchId] : []);
 
   if (!match) {
     return (
@@ -37,6 +38,7 @@ const MatchDetails = () => {
       description: "Conversar com o grupo",
       onClick: () => navigate(`/chat/${match.id}`),
       disabled: false,
+      hasUnread: unreadChats.get(match.id)?.has_unread ?? false,
     },
     {
       icon: Shield,
@@ -87,8 +89,11 @@ const MatchDetails = () => {
               disabled={a.disabled}
               className="w-full flex items-center gap-3 p-4 rounded-xl border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-card border-border hover:border-primary/40"
             >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/15 text-primary">
+              <div className="relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-primary/15 text-primary">
                 <a.icon size={18} />
+                {a.hasUnread && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-foreground">{a.label}</p>

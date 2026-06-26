@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getFieldDisplayName } from "@/lib/matchView";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Swords, Inbox, Send } from "lucide-react";
+import { ArrowLeft, Shield, Swords, Inbox, Send, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import NotaBadge from "@/components/NotaBadge";
 import { getTeamStats } from "@/lib/stats";
-import { useMyTeam, useMatches, useAcceptMatch, useDeleteMatch, useUpdateMatch } from "@/hooks/useSupabaseData";
+import { useMyTeam, useMatches, useAcceptMatch, useDeleteMatch, useUpdateMatch, useUnreadChatCounts } from "@/hooks/useSupabaseData";
 import type { Database } from "@/integrations/supabase/types";
 
 type Team = Database["public"]["Tables"]["teams"]["Row"];
@@ -40,6 +40,7 @@ const DesafiosPage = () => {
   const updateMatchMut = useUpdateMatch();
 
   const typedMatches = matches as Match[];
+  const { data: unreadChats } = useUnreadChatCounts(typedMatches.map((m) => m.id));
 
   const receivedChallenges = typedMatches.filter((m) => {
     if (!myTeam || m.status !== "open") return false;
@@ -184,10 +185,13 @@ const DesafiosPage = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="basis-full h-8 text-[11px] px-2"
+                        className="relative basis-full h-8 text-[11px] px-2"
                         onClick={() => navigate(`/chat/${m.id}`)}
                       >
-                        Chat
+                        <MessageCircle size={11} className="mr-1" /> Chat
+                        {unreadChats.get(m.id)?.has_unread && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -261,10 +265,13 @@ const DesafiosPage = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="basis-full h-8 text-[11px] px-2"
+                        className="relative basis-full h-8 text-[11px] px-2"
                         onClick={() => navigate(`/chat/${m.id}`)}
                       >
-                        Chat
+                        <MessageCircle size={11} className="mr-1" /> Chat
+                        {unreadChats.get(m.id)?.has_unread && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500" />
+                        )}
                       </Button>
                     </div>
                   </div>

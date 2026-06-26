@@ -882,6 +882,30 @@ export const useSendChatMessage = () => {
   return { mutate, mutateAsync: mutate };
 };
 
+// =================== CHAT UNREAD STATUS ===================
+
+/**
+ * Consulta se há mensagens não lidas nos chats das partidas fornecidas.
+ * Retorna um Map<match_id, { has_unread: boolean; unread_count: number }>.
+ * Reage automaticamente a mudanças globais (novas mensagens, abrir chat).
+ */
+export const useUnreadChatCounts = (matchIds: string[]) => {
+  const [data, setData] = useState<Map<string, { has_unread: boolean; unread_count: number }>>(new Map());
+  const key = matchIds.join(",");
+  const load = useCallback(async () => {
+    if (!matchIds.length) { setData(new Map()); return; }
+    const { data: rows } = await supabase.rpc("get_unread_chat_counts", { p_match_ids: matchIds });
+    const map = new Map<string, { has_unread: boolean; unread_count: number }>();
+    (rows || []).forEach((r: any) => {
+      map.set(r.match_id, { has_unread: Boolean(r.has_unread), unread_count: Number(r.unread_count) });
+    });
+    setData(map);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  useEffect(() => { load(); }, [load]);
+  useSubscribe(load);
+  return { data };
+};
 // =================== PHOTOS / RESENHA ===================
 
 export const usePhotoPosts = (teamId?: string) => {
