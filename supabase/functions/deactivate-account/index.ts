@@ -26,10 +26,21 @@ Deno.serve(async (req) => {
       });
     }
     const userId = userData.user.id;
+
     // Mark profile as deactivated (kept for historical references)
     await admin.from("profiles").update({ is_active: false, display_name: "[Conta Desativada]" }).eq("user_id", userId);
-    await admin.auth.admin.signOut(token, "global");
-    // Fully delete the auth user so the email can be reused for a new account
+
+    // B-2 fix: signOut is best-effort. If it fails (e.g. token already expired),
+    // we log the error and continue — deleteUser is the authoritative step that
+    // revokes all sessions. Aborting here would leave the account active.
+    try {
+      await admin.auth.admin.signOut(token, "global");
+    } catch (signOutErr) {
+      console.error("deactivate-account: signOut failed (continuing to deleteUser)", signOutErr);
+    }
+
+    // Fully delete the auth user so the email can be reused for a new account.
+    // This also invalidates all remaining sessions for this user.
     const { error: delErr } = await admin.auth.admin.deleteUser(userId);
     if (delErr) {
       return new Response(JSON.stringify({ error: delErr.message }), {

@@ -5,8 +5,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Security trade-off (CS-2 audit finding):
+// This endpoint intentionally operates without authentication because it is called
+// during the pre-auth signup flow — the user has no session yet. The risk of
+// user-enumeration is accepted and mitigated by:
+//   1. Rate limiting (5 requests / 15 min per IP, per-instance).
+//   2. The response distinguishes only "exists / deactivated", not the user id.
+//   3. The endpoint is not usable for credential stuffing — it returns no secrets.
+// A fully anonymous "does this email exist?" endpoint is a common pattern in auth
+// UX (e.g., Google, GitHub). The rate limit is the primary countermeasure.
+
+// In-memory rate limiter — 5 attempts per IP per 15 minutes.
+// Per-instance: partial bypass is possible across edge replicas but the risk
+// is low given the endpoint reveals no secrets.
+const RL_MAX = 5;
+const RL_WINDOW_MS = 15 * 60 * 1000;
+const rlMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rlMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rlMap.set(ip, { count: 1, resetAt: now + RL_WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= RL_MAX) return true;
+  entry.count++;
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (isRateLimited(ip)) {
+    return new Response(JSON.stringify({ error: "too_many_requests" }), {
+      status: 429,
+      headers: { ...corsHeaders, "content-type": "application/json" },
+    });
+  }
+
   try {
     const { email } = await req.json();
     if (!email || typeof email !== "string") {
@@ -40,10 +78,6 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
     const deactivated = profile ? profile.is_active === false : false;
-    // Note: we intentionally do NOT delete the auth user here. This endpoint is
-    // unauthenticated (used in the pre-auth flow), so any destructive side
-    // effect would let attackers permanently remove accounts by guessing emails.
-    // Cleanup of deactivated accounts must happen via an authenticated/admin path.
     if (deactivated) {
       return new Response(JSON.stringify({ exists: false, deactivated: true }), {
         headers: { ...corsHeaders, "content-type": "application/json" },
@@ -53,9 +87,12 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "content-type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ exists: false, deactivated: false, error: String(e) }), {
+    // B-1 fix: return 500 so callers can distinguish server failures from
+    // a valid "does not exist" response (previously this returned 200).
+    console.error("check-email-status error", e);
+    return new Response(JSON.stringify({ error: "server_error" }), {
       headers: { ...corsHeaders, "content-type": "application/json" },
-      status: 200,
+      status: 500,
     });
   }
 });
