@@ -63,7 +63,7 @@ const ChatPage = () => {
   // Marca mensagens como lidas ao abrir o chat e ao receber novas mensagens
   useEffect(() => {
     if (!matchId) return;
-    supabase.rpc("mark_chat_as_read", { p_match_id: matchId }).then(() => {});
+    (supabase.rpc as any)("mark_chat_as_read", { p_match_id: matchId }).then(() => {});
   }, [matchId, messages.length]);
 
 
