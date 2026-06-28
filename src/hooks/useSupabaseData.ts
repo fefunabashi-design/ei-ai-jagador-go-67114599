@@ -894,9 +894,9 @@ export const useUnreadChatCounts = (matchIds: string[]) => {
   const key = matchIds.join(",");
   const load = useCallback(async () => {
     if (!matchIds.length) { setData(new Map()); return; }
-    const { data: rows } = await supabase.rpc("get_unread_chat_counts", { p_match_ids: matchIds });
+    const { data: rows } = await (supabase.rpc as any)("get_unread_chat_counts", { p_match_ids: matchIds });
     const map = new Map<string, { has_unread: boolean; unread_count: number }>();
-    (rows || []).forEach((r: any) => {
+    ((rows as any[]) || []).forEach((r: any) => {
       map.set(r.match_id, { has_unread: Boolean(r.has_unread), unread_count: Number(r.unread_count) });
     });
     setData(map);
