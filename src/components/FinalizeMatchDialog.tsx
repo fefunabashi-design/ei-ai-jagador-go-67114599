@@ -94,7 +94,7 @@ const FinalizeMatchDialog = ({ open, onOpenChange, match, myTeamId, onFinalized 
       setCards(mine.filter((e: any) => ["yellow", "red", "blue"].includes(e.type)).map(toDraft));
     })();
     return () => { alive = false; };
-  }, [open, match?.id, myTeamId, mySide, match?.home_reported_home_score, match?.away_reported_home_score]);
+  }, [open, match?.id, myTeamId, mySide, match?.home_reported_home_score, match?.away_reported_home_score, match?.home_reported_away_score, match?.away_reported_away_score, match?.home_score, match?.away_score]);
 
   const myScore = useMemo(() => {
     const v = parseInt(mySide === "home" ? homeScore : awayScore, 10);

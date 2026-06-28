@@ -69,18 +69,25 @@ const createMutationHook = <I,>(opts: {
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 };
 
-const createListHook = <T,>(fetcher: () => Promise<T[]>) => (): { data: T[]; isLoading: boolean } => {
+const createListHook = <T,>(fetcher: () => Promise<T[]>) => (): { data: T[]; isLoading: boolean; isError: boolean; errorMessage: string | null } => {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   useSubscribe(async () => {
     try {
       const rows = await fetcher();
       setData(rows);
+      setIsError(false);
+      setErrorMessage(null);
+    } catch (err) {
+      setIsError(true);
+      setErrorMessage(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
   });
-  return { data, isLoading };
+  return { data, isLoading, isError, errorMessage };
 };
 
 // =================== PROFILE ===================
@@ -174,16 +181,12 @@ export const useMyTeams = () => {
     queryFn: async () => {
       const uid = await getUserId();
       if (!uid) return [] as any[];
+      // P-2: use relational join to fetch player-linked teams in one round-trip
       const [{ data: owned = [] }, { data: playerLinks = [] }] = await Promise.all([
         supabase.from("teams").select("*").eq("owner_id", uid),
-        supabase.from("players").select("team_id").eq("user_id", uid),
+        supabase.from("players").select("team:teams!team_id(*)").eq("user_id", uid),
       ]);
-      const playerTeamIds = (playerLinks || []).map((p: any) => p.team_id);
-      let playerTeams: any[] = [];
-      if (playerTeamIds.length) {
-        const { data: pt = [] } = await supabase.from("teams").select("*").in("id", playerTeamIds);
-        playerTeams = pt || [];
-      }
+      const playerTeams: any[] = (playerLinks || []).map((p: any) => p.team).filter(Boolean);
       const map = new Map<string, any>();
       [...(owned || []), ...playerTeams].forEach((t) => map.set(t.id, t));
       return Array.from(map.values());
@@ -804,22 +807,12 @@ export const useMatchDetail = (matchId?: string) => {
     if (!matchId) { setData(null); return; }
     let alive = true;
     const load = async () => {
+      // P-4: single query with embedded team joins (PostgREST resolves home/away FKs)
       const { data: row } = await supabase
         .from("matches")
-        .select("*")
+        .select("*, home_team:teams!home_team_id(*), away_team:teams!away_team_id(*)")
         .eq("id", matchId).maybeSingle();
-      if (!row) { if (alive) setData(null); return; }
-      const ids = [row.home_team_id, row.away_team_id].filter(Boolean);
-      const { data: teamsData = [] } = ids.length
-        ? await supabase.from("public_teams").select("*").in("id", ids)
-        : { data: [] as any[] };
-      const teamMap = new Map((teamsData || []).map((t: any) => [t.id, t]));
-      const merged = {
-        ...row,
-        home_team: row.home_team_id ? teamMap.get(row.home_team_id) || null : null,
-        away_team: row.away_team_id ? teamMap.get(row.away_team_id) || null : null,
-      };
-      if (alive) setData(merged);
+      if (alive) setData(row ?? null);
     };
     load();
 
@@ -836,6 +829,8 @@ export const useChatMessages = (matchId?: string) => {
     if (!matchId) { setData([]); return; }
     let alive = true;
     const load = async () => {
+      // P-3: match_chat_messages.user_id has no FK to profiles, so PostgREST
+      // cannot resolve the join server-side. Two sequential queries is the minimum.
       const { data: rows = [] } = await supabase
         .from("match_chat_messages").select("*").eq("match_id", matchId).order("created_at", { ascending: true });
       if (!alive) return;
@@ -986,17 +981,21 @@ export const useResenhaPosts = () => {
       teamIds.length ? supabase.from("public_teams").select("id, name").in("id", teamIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const commentIds = (comments || []).map((c: any) => c.id);
-    const { data: commentReactions } = commentIds.length
-      ? await supabase.from("resenha_comment_reactions").select("*").in("comment_id", commentIds)
-      : { data: [] as any[] };
-    const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    const teamMap = new Map((teams || []).map((t: any) => [t.id, t]));
     const commentAuthorIds = Array.from(new Set((comments || []).map((c: any) => c.author_id)));
-    const missing = commentAuthorIds.filter((id) => !profMap.has(id));
-    if (missing.length) {
-      const { data: cps } = await supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", missing);
-      (cps || []).forEach((p: any) => profMap.set(p.user_id, p));
-    }
+    // P-1: fetch commentReactions and missing comment-author profiles in parallel
+    const knownAuthorIds = new Set(authorIds);
+    const missingAuthorIds = commentAuthorIds.filter((id) => !knownAuthorIds.has(id));
+    const [{ data: commentReactions }, { data: extraProfiles }] = await Promise.all([
+      commentIds.length
+        ? supabase.from("resenha_comment_reactions").select("*").in("comment_id", commentIds)
+        : Promise.resolve({ data: [] as any[] }),
+      missingAuthorIds.length
+        ? supabase.from("public_profiles").select("user_id, display_name, avatar_url").in("user_id", missingAuthorIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    (extraProfiles || []).forEach((p: any) => profMap.set(p.user_id, p));
+    const teamMap = new Map((teams || []).map((t: any) => [t.id, t]));
     const mapComment = (c: any) => {
       const ca = profMap.get(c.author_id) as any;
       const reacts = (commentReactions || []).filter((r: any) => r.comment_id === c.id);
