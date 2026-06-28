@@ -138,6 +138,9 @@ const AuthPage = () => {
   const isValidEmail = (e: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
+  // CPF entered in login mode → password-less magic-link flow
+  const isLoginCpf = isLogin && looksLikeCpf(identifier.trim());
+
   useEffect(() => {
     let alive = true;
 
@@ -222,19 +225,24 @@ const AuthPage = () => {
       };
 
       if (isLogin) {
-        // Se CPF, descobre o e-mail real cadastrado
+        // CPF login: trigger a magic-link server-side without exposing the email.
+        // The backend always returns { sent: true } for a valid CPF format to
+        // prevent enumeration — so we cannot show a definitive "not found" message.
         if (isCpf) {
-          const { data: lookup, error: lkErr } = await invokePublicFunction<{ email?: string; error?: string }>(
+          const { error: lkErr } = await invokePublicFunction<{ sent?: boolean; error?: string }>(
             "lookup-email-by-cpf",
             { cpf: cpfDigits },
             "A busca pelo CPF demorou mais do que o esperado. Tente novamente."
           );
-          if (lkErr || !lookup?.email) {
-            toast({ title: "CPF não encontrado", description: "Nenhuma conta com esse CPF.", variant: "destructive" });
-            setAuthError("CPF não encontrado. Confira os números ou entre com seu e-mail.");
+          if (lkErr) {
+            toast({ title: "Erro", description: "Não foi possível processar o CPF. Tente novamente.", variant: "destructive" });
             return;
           }
-          loginEmail = lookup.email as string;
+          toast({
+            title: "Link enviado! ✉️",
+            description: "Se houver uma conta com esse CPF, você receberá um link de acesso no e-mail cadastrado.",
+          });
+          return;
         }
 
         await signInWithPasswordFetch(loginEmail, password);
@@ -429,28 +437,34 @@ const AuthPage = () => {
             </div>
           </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Senha</Label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="pl-9 pr-10 bg-card border-border"
-                required
-                minLength={isLogin ? 6 : 8}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          {isLoginCpf ? (
+            <div className="rounded-lg border border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground">
+              Enviaremos um link de acesso para o e-mail cadastrado com esse CPF.
             </div>
-          </div>
+          ) : (
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Senha</Label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-9 pr-10 bg-card border-border"
+                  required={!isLoginCpf}
+                  minLength={isLogin ? 6 : 8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+          )}
 
 
           {isLogin && (
