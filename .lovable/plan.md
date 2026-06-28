@@ -1,42 +1,31 @@
-# Modal fullscreen de fotos — Jogadores adversários
+## Diagnóstico
 
-Adicionar visualização em tela cheia das fotos dos jogadores na aba "Jogadores" de `src/pages/OpponentDetails.tsx`, com zoom (pinch/double-tap/botões) e navegação entre fotos (swipe e setas).
+O e-mail de recuperação de senha está sendo enviado por `no-reply@auth.lovable.cloud` (remetente padrão genérico do Lovable), e **não** pelo seu domínio `notify.funando.com.br`.
 
-## Comportamento
+Motivos do aviso "Esta mensagem pode ser perigosa" no Gmail:
+1. **Domínio do remetente ≠ domínio do link de reset** (auth.lovable.cloud vs sua app). O Gmail desconfia desse desalinhamento.
+2. **`auth.lovable.cloud` é um remetente compartilhado** de baixa reputação para a sua conta, sem SPF/DKIM/DMARC alinhados ao seu domínio.
+3. O template customizado de recuperação ainda **não está ativo** porque o domínio `notify.funando.com.br` está com status **DNS pendente** ("Setting up — Verifying your domain").
 
-- Clicar no avatar de um jogador (na lista da aba Jogadores) abre um modal fullscreen.
-- Apenas jogadores **com foto** entram na lista navegável do modal. Jogadores sem avatar continuam mostrando o fallback com inicial, mas não são clicáveis.
-- Header do modal: nome do jogador atual + contador "X / N" + botão fechar (X).
-- Navegação:
-  - Setas laterais (◀ ▶) em desktop.
-  - Swipe horizontal em mobile.
-  - Teclado: ←, →, Esc.
-  - Loop opcional: não — para nas extremidades (botões desabilitados nas pontas).
-- Zoom:
-  - Pinch-to-zoom no mobile.
-  - Double-tap/double-click alterna entre 1x e 2.5x no ponto tocado.
-  - Botões "+" e "−" no canto inferior, com botão "Reset".
-  - Pan (arrastar) quando estiver com zoom > 1.
-  - Ao trocar de foto, o zoom reseta para 1x.
-- Fundo preto, foto centralizada com `object-contain`, ocupando viewport inteira.
+Enquanto o DNS não verificar, o Lovable cai no fallback (template e remetente padrão) — exatamente o que você está vendo.
 
-## Implementação técnica
+## O que precisa ser feito
 
-- Reusar `Dialog` de `src/components/ui/dialog.tsx` com `DialogContent` customizado: `max-w-none w-screen h-screen p-0 bg-black border-0 rounded-none` e sem overlay translúcido (override para `bg-black`).
-- Estado local em `OpponentDetails`:
-  - `viewerIndex: number | null` — índice na lista filtrada de jogadores com foto.
-  - Lista derivada `photoPlayers = activePlayers.filter(p => p.user_id && avatarMap[p.user_id])`.
-- Componente novo `src/components/PlayerPhotoViewer.tsx`:
-  - Props: `open`, `players` (com `display`, `avatarUrl`), `index`, `onIndexChange`, `onClose`.
-  - Estado interno: `scale`, `tx`, `ty` (translate) para zoom/pan; reseta no change de `index`.
-  - Gestos: handlers de `pointerdown/move/up` para pan + pinch (2 pointers) calculando distância; double-click toggle.
-  - Swipe: quando `scale === 1`, deltaX > threshold dispara prev/next.
-  - Atalhos: `useEffect` com listener de `keydown` global enquanto aberto.
-- Acessibilidade: `DialogTitle` visualmente oculto com nome do jogador (sr-only) para satisfazer Radix.
-- Mobile-first, `touch-action: none` na área da imagem para evitar scroll da página durante gestos.
+O código (`auth-email-hook`, templates em PT-BR com identidade do app, infraestrutura de fila) **já está pronto e implantado**. Não há mudança de código necessária. O que falta é apenas a propagação/verificação DNS dos registros NS de `notify.funando.com.br` no seu registrador (Registro.br / provedor onde `funando.com.br` está hospedado).
 
-## Fora do escopo
+### Passos
 
-- Não altera a aba "Dados do Time", `Agenda.tsx`, `MatchDetails.tsx`, nem o upload de fotos.
-- Não muda o tamanho/estilo atual dos avatars na lista.
-- Não adiciona carregamento de fotos de jogadores convidados sem `user_id`.
+1. Abrir **Cloud → Emails → Manage Domains** no Lovable e copiar os 2 registros **NS** indicados para `notify.funando.com.br` (algo como `ns3.lovable.cloud` e `ns4.lovable.cloud`).
+2. No painel DNS do `funando.com.br`, criar/garantir o subdomínio `notify` apontando para esses NS (registros do tipo NS, não A/CNAME).
+3. Aguardar propagação (alguns minutos até algumas horas; pode chegar a 72h em casos raros).
+4. Clicar em **Verify Domain** no Lovable até o status virar **Active**.
+5. Testar novamente o "Esqueci a senha". O e-mail passará a sair de `no-reply@notify.funando.com.br` com SPF/DKIM/DMARC alinhados e o aviso vermelho do Gmail desaparece.
+
+### Verificação extra (após DNS Active)
+
+- Confirmar no Gmail que o cabeçalho mostra "assinado por: notify.funando.com.br" e "enviado por: notify.funando.com.br".
+- Marcar a primeira mensagem como "Não é spam" para acelerar a reputação na sua caixa.
+
+## Observação
+
+Não vou alterar arquivos do projeto neste plano — o problema é puramente de DNS/configuração de domínio. Se preferir, posso, em vez disso, **trocar para um subdomínio diferente** (ex.: `mail.funando.com.br`) caso `notify.funando.com.br` esteja com conflito de DNS existente. Me avise se quer seguir por esse caminho.
