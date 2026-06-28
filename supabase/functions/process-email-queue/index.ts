@@ -145,6 +145,17 @@ Deno.serve(async (req) => {
 
     if (readError) {
       console.error('Failed to read email batch', { queue, error: readError })
+      // Write a trackable record so the failure is visible in the Supabase
+      // dashboard (email_send_log) and not silently lost in ephemeral logs.
+      await supabase.from('email_send_log').insert({
+        message_id: `queue-read-error-${queue}-${Date.now()}`,
+        recipient_email: 'system',
+        template_name: queue,
+        status: 'failed',
+        error_message: `Failed to read batch from queue: ${readError.message ?? String(readError)}`,
+      }).then(({ error: logErr }) => {
+        if (logErr) console.error('Failed to log batch read error to email_send_log', logErr)
+      })
       continue
     }
 
