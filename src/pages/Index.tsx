@@ -38,6 +38,7 @@ const Index = () => {
   const updateProfile = useUpdateProfile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmationMatchId, setConfirmationMatchId] = useState<string | null>(null);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const { toast } = useToast();
 
 
@@ -122,6 +123,16 @@ const Index = () => {
     return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedIdsKey]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && avatarModalOpen) {
+        setAvatarModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [avatarModalOpen]);
 
   const [detailsMatchId, setDetailsMatchId] = useState<string | null>(null);
 
@@ -499,7 +510,10 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-            <div className="w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0">
+            <div
+              onClick={() => profile?.avatar_url && setAvatarModalOpen(true)}
+              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 ${profile?.avatar_url ? "cursor-pointer" : ""}`}
+            >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] rounded-full object-cover" />
               ) : (
@@ -900,6 +914,20 @@ const Index = () => {
 
 
 
+
+      {avatarModalOpen && profile?.avatar_url && (
+        <div
+          onClick={() => setAvatarModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center transition-opacity duration-200"
+        >
+          <img
+            src={profile.avatar_url}
+            alt={firstName}
+            className="rounded-full max-w-md max-h-md w-[300px] h-[300px] object-cover"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       <BottomNav />
       {confirmationMatchId && myTeam?.id && (
