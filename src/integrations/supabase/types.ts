@@ -232,6 +232,41 @@ export type Database = {
           },
         ]
       }
+      match_chat_reads: {
+        Row: {
+          created_at: string
+          id: string
+          last_read_at: string
+          match_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          match_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          match_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_chat_reads_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_events: {
         Row: {
           created_at: string
@@ -1421,6 +1456,13 @@ export type Database = {
           war_cry: string
         }[]
       }
+      get_unread_chat_counts: {
+        Args: never
+        Returns: {
+          match_id: string
+          unread_count: number
+        }[]
+      }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_team_member: {
@@ -1431,6 +1473,7 @@ export type Database = {
         Args: { _email: string; _team_name?: string }
         Returns: boolean
       }
+      mark_chat_as_read: { Args: { _match_id: string }; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
