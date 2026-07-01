@@ -18,6 +18,7 @@ import NotaBadge from "@/components/NotaBadge";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -513,7 +514,7 @@ const Index = () => {
             <button
               onClick={() => profile?.avatar_url && setAvatarModalOpen(true)}
               disabled={!profile?.avatar_url}
-              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
+              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default touch-action-manipulation`}
               aria-label="View avatar"
             >
               {profile?.avatar_url ? (
@@ -917,10 +918,10 @@ const Index = () => {
 
 
 
-      {avatarModalOpen && profile?.avatar_url && (
+      {avatarModalOpen && profile?.avatar_url && createPortal(
         <div
           onClick={() => setAvatarModalOpen(false)}
-          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center transition-opacity duration-200"
+          className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center transition-opacity duration-200"
         >
           <img
             src={profile.avatar_url}
@@ -928,7 +929,8 @@ const Index = () => {
             className="rounded-full max-w-md max-h-md w-[300px] h-[300px] object-cover"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       <BottomNav />
