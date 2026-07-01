@@ -55,6 +55,7 @@ const BR_HOLIDAYS_2026: string[] = [
 const statusStyles: Record<string, string> = {
   open: "bg-warning/10 text-warning",
   confirmed: "bg-success/10 text-success",
+  past: "bg-amber-500/10 text-amber-500",
   completed: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
 };
@@ -62,6 +63,7 @@ const statusStyles: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   open: "Aberto",
   confirmed: "Confirmado",
+  past: "Passada",
   completed: "Finalizado",
   cancelled: "Cancelado",
 };
@@ -69,12 +71,13 @@ const statusLabels: Record<string, string> = {
 
 
 
-type FilterType = "all" | "open" | "confirmed" | "completed" | "cancelled";
+type FilterType = "all" | "open" | "confirmed" | "past" | "completed" | "cancelled";
 
 const filterOptions: { value: FilterType; label: string }[] = [
   { value: "all", label: "Todas" },
   { value: "open", label: "Aberto" },
   { value: "confirmed", label: "Confirmado" },
+  { value: "past", label: "Passadas" },
   { value: "completed", label: "Finalizado" },
   { value: "cancelled", label: "Cancelado" },
 ];
@@ -322,7 +325,7 @@ const AgendaPage = () => {
     const view = getMatchView(m, myTeam?.id);
     switch (filter) {
       case "completed": return view.isFinalizedByMe;
-      case "open": case "confirmed": case "cancelled": return view.status === filter;
+      case "open": case "confirmed": case "past": case "cancelled": return view.status === filter;
       default: return true;
     }
   });
@@ -677,10 +680,17 @@ const AgendaPage = () => {
                 >
                   {/* Header bar */}
                   <div className="bg-secondary/50 px-4 py-2 flex items-center justify-between">
-                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[view.status] || ""}`}>
-                      {statusLabels[view.status] || view.status}
-                      {view.status === "completed" && !view.isFinalizedByMe ? " (pelo adversário)" : ""}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${statusStyles[view.status] || ""}`}>
+                        {statusLabels[view.status] || view.status}
+                        {view.status === "completed" && !view.isFinalizedByMe ? " (pelo adversário)" : ""}
+                      </span>
+                      {view.status === "past" && (
+                        <span className="text-[10px] font-semibold text-amber-500">
+                          Aguardando finalização
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-muted-foreground font-semibold">{match.format}</span>
                   </div>
 
