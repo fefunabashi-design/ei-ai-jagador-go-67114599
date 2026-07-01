@@ -513,9 +513,10 @@ const Index = () => {
           <div className="flex items-center gap-3 mt-2">
             <button
               onClick={() => { alert('clicked'); if (profile?.avatar_url) setAvatarModalOpen(true); }}
+              onTouchStart={() => alert('touch')}
               disabled={!profile?.avatar_url}
               className={`w-[60px] h-[60px] bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation", position: 'relative', zIndex: 9999 }}
               aria-label="View avatar"
             >
               {profile?.avatar_url ? (
