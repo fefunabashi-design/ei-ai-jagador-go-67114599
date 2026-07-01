@@ -510,16 +510,18 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-            <div
+            <button
               onClick={() => profile?.avatar_url && setAvatarModalOpen(true)}
-              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 ${profile?.avatar_url ? "cursor-pointer" : ""}`}
+              disabled={!profile?.avatar_url}
+              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
+              aria-label="View avatar"
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] rounded-full object-cover" />
               ) : (
                 getInitials(firstName)
               )}
-            </div>
+            </button>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl text-foreground font-display tracking-wide truncate">{firstName.toUpperCase()}</h1>
               <button
