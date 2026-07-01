@@ -157,6 +157,21 @@ const BuscarAdversarioPage = () => {
     return allowedDays.some((day) => DAY_INDEX[day] === d.getDay());
   };
 
+  const WEEK_DAY_KEYS = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+
+  const dayTimeLabel = (team: any, day: string): string => {
+    const sched = team?.play_schedule?.[day];
+    if (sched?.start) return sched.start;
+    return team?.play_time_start || "";
+  };
+
+  const timeForDate = (team: any, dateStr: string): string => {
+    if (!team || !dateStr) return "";
+    const d = new Date(dateStr + "T12:00:00");
+    const day = WEEK_DAY_KEYS[d.getDay()];
+    return dayTimeLabel(team, day);
+  };
+
   const handleConfirmChallenge = async () => {
     const adminTeam = matchActionTeam as any;
     if (!adminTeam || !challengeTeam) return;
@@ -575,7 +590,7 @@ const BuscarAdversarioPage = () => {
             setLocationChoice("other"); setChallengeLocation("");
             setChallengeFieldName(""); setChallengeFieldAddress("");
           } else if (challengeTeam) {
-            setChallengeTime(challengeTeam.play_time_start || "");
+            setChallengeTime("");
             setChallengeLocation(hasTeamField(challengeTeam) ? teamFieldLocation(challengeTeam) : "");
           }
         }}
@@ -605,7 +620,18 @@ const BuscarAdversarioPage = () => {
                     ? challengeTeam.play_days.map((d: string) => WEEK_DAY_LABEL[d]).join(", ")
                     : "Não informado"}
                 </p>
-                <p><strong>Horário:</strong> {challengeTeam.play_time_start ? `${challengeTeam.play_time_start} (fixo)` : "Livre"}</p>
+                <p>
+                  <strong>Horário:</strong>{" "}
+                  {Array.isArray(challengeTeam.play_days) && challengeTeam.play_days.length > 0
+                    ? challengeTeam.play_days
+                        .map((d: string) => {
+                          const t = dayTimeLabel(challengeTeam, d);
+                          return t ? `${WEEK_DAY_LABEL[d]} ${t}` : "";
+                        })
+                        .filter(Boolean)
+                        .join(" · ") || "Livre"
+                    : "Livre"}
+                </p>
               </div>
 
               <div>
@@ -628,21 +654,23 @@ const BuscarAdversarioPage = () => {
                       return;
                     }
                     setChallengeDate(v);
+                    setChallengeTime(v ? timeForDate(challengeTeam, v) : "");
                   }}
                 />
               </div>
 
               <div>
                 <Label htmlFor="ch-time" className="flex items-center gap-1">
-                  <Clock size={14} /> Horário {challengeTeam.play_time_start ? "(fixo)" : ""}
+                  <Clock size={14} /> Horário {challengeDate && timeForDate(challengeTeam, challengeDate) ? "(fixo)" : ""}
                 </Label>
                 <Input
                   id="ch-time"
                   type="time"
+                  placeholder="Selecione uma data"
                   value={challengeTime}
-                  readOnly={!!challengeTeam.play_time_start}
+                  readOnly={!!challengeDate && !!timeForDate(challengeTeam, challengeDate)}
                   onChange={(e) => setChallengeTime(e.target.value)}
-                  className={challengeTeam.play_time_start ? "opacity-80 cursor-not-allowed" : ""}
+                  className={challengeDate && timeForDate(challengeTeam, challengeDate) ? "opacity-80 cursor-not-allowed" : ""}
                 />
               </div>
 
