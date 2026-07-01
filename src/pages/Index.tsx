@@ -432,6 +432,44 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
 
+      {/* Avatar zoom button - outside Sheet to avoid touch interception on iOS */}
+      <div className="relative px-5 pt-3 pb-4">
+        <div className="relative">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
+          </div>
+
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={() => { if (profile?.avatar_url) setAvatarModalOpen(true); }}
+              onTouchEnd={(e) => { e.preventDefault(); if (profile?.avatar_url) setAvatarModalOpen(true); }}
+              disabled={!profile?.avatar_url}
+              className={`w-[60px] h-[60px] bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "none" }}
+              aria-label="View avatar"
+            >
+              {profile?.avatar_url ? (
+                <div className="w-[60px] h-[60px] rounded-full overflow-hidden flex items-center justify-center">
+                  <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] object-cover" />
+                </div>
+              ) : (
+                getInitials(firstName)
+              )}
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl text-foreground font-display tracking-wide truncate">{firstName.toUpperCase()}</h1>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Editar"
+                className="mt-1 text-xs text-primary font-semibold hover:underline"
+              >
+                Editar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Settings quick menu */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
         <SheetContent side="right" className="w-[85vw] sm:max-w-sm bg-background border-border">
@@ -503,44 +541,6 @@ const Index = () => {
           </div>
         </SheetContent>
       </Sheet>
-
-      <div className="relative px-5 pt-3 pb-4">
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm text-muted-foreground">{greeting}, craque! ⚽</p>
-          </div>
-
-          <div className="flex items-center gap-3 mt-2">
-            <button
-              onClick={() => { if (profile?.avatar_url) setAvatarModalOpen(true); }}
-              onTouchEnd={(e) => { e.preventDefault(); if (profile?.avatar_url) setAvatarModalOpen(true); }}
-              disabled={!profile?.avatar_url}
-              className={`w-[60px] h-[60px] bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "none" }}
-              aria-label="View avatar"
-            >
-              {profile?.avatar_url ? (
-                <div className="w-[60px] h-[60px] rounded-full overflow-hidden flex items-center justify-center">
-                  <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] object-cover" />
-                </div>
-              ) : (
-                getInitials(firstName)
-              )}
-            </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl text-foreground font-display tracking-wide truncate">{firstName.toUpperCase()}</h1>
-              <button
-                onClick={() => setSettingsOpen(true)}
-                aria-label="Editar"
-                className="mt-1 text-xs text-primary font-semibold hover:underline"
-              >
-                Editar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
 
       {/* Team Season Stats */}
       <div className="px-5 mt-3">
