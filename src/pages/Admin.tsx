@@ -1,5 +1,5 @@
 import { startsWithNorm } from "@/lib/normalize";
-import { getFieldDisplayName } from "@/lib/matchView";
+import { getFieldDisplayName, getMatchView } from "@/lib/matchView";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ import {
   useMyTeam, useMatches, usePlayers,
   useMyAdminTeams, useSetActiveTeam,
   useCreateMatch, useUpdateMatch, useDeleteMatch,
+  useFinalizeMatchForTeam,
   useDebitos, useMensalidades, useMensalidadeConfig,
 } from "@/hooks/useSupabaseData";
 
@@ -65,6 +66,7 @@ const AdminPage = () => {
   const createMatchMut = useCreateMatch();
   const updateMatchMut = useUpdateMatch();
   const deleteMatchMut = useDeleteMatch();
+  const finalizeMatchForTeam = useFinalizeMatchForTeam();
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -272,6 +274,20 @@ const AdminPage = () => {
       }
     : undefined;
 
+  // Partidas "Passadas": confirmadas cujo horário já passou, aguardando finalização.
+  const pastMatches = [...myMatches, ...typedMatches.filter((m) => myTeam && m.away_team_id === myTeam.id)]
+    .filter((m, idx, arr) => arr.findIndex((x) => x.id === m.id) === idx)
+    .map((m) => ({
+      match: {
+        ...m,
+        home_team: (m as any).home_team ?? findTeam(m.home_team_id),
+        away_team: (m as any).away_team ?? findTeam(m.away_team_id),
+      },
+      view: getMatchView(m, myTeam?.id),
+    }))
+    .filter(({ view }) => view.status === "past")
+    .sort((a, b) => new Date(a.match.match_date).getTime() - new Date(b.match.match_date).getTime());
+
 
   const [rescheduleMatch, setRescheduleMatch] = useState<any | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
@@ -323,22 +339,26 @@ const AdminPage = () => {
   const [cancelMatch, setCancelMatch] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [finalizeMatch, setFinalizeMatch] = useState<any | null>(null);
+  const [pastScores, setPastScores] = useState<Record<string, { homeScore: string; awayScore: string }>>({});
 
-  // Auto-mark confirmed matches as "past" after 12h
-  useEffect(() => {
-    if (!myTeam) return;
-    const overdue = typedMatches.filter((m: any) => {
-      if (m.status !== "confirmed") return false;
-      if (m.home_team_id !== myTeam.id) return false;
-      return Date.now() - new Date(m.match_date).getTime() > 12 * 60 * 60 * 1000;
+  const handleFinalizePastMatch = async (
+    matchId: string,
+    mySide: "home" | "away",
+    scores: { homeScore: string; awayScore: string }
+  ) => {
+    const hs = parseInt(scores.homeScore, 10);
+    const as = parseInt(scores.awayScore, 10);
+    if (Number.isNaN(hs) || Number.isNaN(as) || hs < 0 || as < 0) {
+      toast({ title: "Informe o placar das duas equipes", variant: "destructive" });
+      return;
+    }
+    await finalizeMatchForTeam.mutateAsync({ matchId, mySide, homeScore: hs, awayScore: as });
+    setPastScores((prev) => {
+      const next = { ...prev };
+      delete next[matchId];
+      return next;
     });
-    if (!overdue.length) return;
-    (async () => {
-      await Promise.all(overdue.map((m: any) => supabase.from("matches").update({ status: "past" }).eq("id", m.id)));
-      window.dispatchEvent(new CustomEvent("supabase-data-change"));
-    })();
-  }, [myTeam?.id, typedMatches.length]);
-
+  };
 
   const handleConfirmCancelMatch = async () => {
     if (!cancelMatch) return;
@@ -582,6 +602,75 @@ const AdminPage = () => {
               )}
             </div>
           </motion.div>
+        )}
+
+        {pastMatches.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Passadas</h2>
+            <div className="space-y-2">
+              {pastMatches.map(({ match, view }) => {
+                const mySide: "home" | "away" = match.home_team_id === myTeam?.id ? "home" : "away";
+                const scores = pastScores[match.id] || { homeScore: "", awayScore: "" };
+                return (
+                  <div key={match.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {match.home_team?.name || "Mandante"} vs {match.away_team?.name || "Visitante"}
+                      </span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 uppercase tracking-wider shrink-0">
+                        Aguardando finalização
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {new Date(match.match_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às{" "}
+                      {new Date(match.match_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {match.location}
+                    </p>
+                    {view.isFinalizedByMe ? (
+                      <p className="text-[11px] text-success">Você já finalizou. Aguardando o adversário.</p>
+                    ) : (
+                      <div className="flex items-end gap-2 pt-1">
+                        <div className="flex-1">
+                          <p className="text-[9px] text-muted-foreground mb-1 truncate">{match.home_team?.name || "Mandante"}</p>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={scores.homeScore}
+                            onChange={(e) => setPastScores((prev) => ({
+                              ...prev,
+                              [match.id]: { ...scores, homeScore: e.target.value },
+                            }))}
+                            className="h-8 text-xs text-center"
+                          />
+                        </div>
+                        <span className="text-muted-foreground text-xs pb-2">x</span>
+                        <div className="flex-1">
+                          <p className="text-[9px] text-muted-foreground mb-1 truncate">{match.away_team?.name || "Visitante"}</p>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={scores.awayScore}
+                            onChange={(e) => setPastScores((prev) => ({
+                              ...prev,
+                              [match.id]: { ...scores, awayScore: e.target.value },
+                            }))}
+                            className="h-8 text-xs text-center"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={finalizeMatchForTeam.isPending}
+                          onClick={() => handleFinalizePastMatch(match.id, mySide, scores)}
+                          className="h-8 text-[11px] bg-gradient-primary text-primary-foreground border-0"
+                        >
+                          <Trophy size={12} className="mr-1" /> Finalizar Partida
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         <div>

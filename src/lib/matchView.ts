@@ -4,7 +4,7 @@
 // `getMatchView(match, myTeamId)` em vez de ler `match.status`/`home_score`
 // diretamente.
 
-export type MatchViewStatus = "open" | "confirmed" | "cancelled" | "completed";
+export type MatchViewStatus = "open" | "confirmed" | "past" | "cancelled" | "completed";
 
 export interface MatchView {
   status: MatchViewStatus;
@@ -71,6 +71,7 @@ export function getMatchView(match: any, myTeamId?: string | null): MatchView {
   let status: MatchViewStatus;
   if (isCancelled) status = "cancelled";
   else if (isFinalizedAny || rawStatus === "completed") status = "completed";
+  else if (rawStatus === "past") status = "past";
   else if (rawStatus === "confirmed") status = "confirmed";
   else status = "open";
 
