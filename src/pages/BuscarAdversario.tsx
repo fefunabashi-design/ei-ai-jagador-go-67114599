@@ -161,15 +161,25 @@ const BuscarAdversarioPage = () => {
 
   const dayTimeLabel = (team: any, day: string): string => {
     const sched = team?.play_schedule?.[day];
-    if (sched?.start) return sched.start;
-    return team?.play_time_start || "";
+    if (sched?.mode === "flexible" && sched?.start) {
+      return `${sched.start}/${sched.end || sched.start} (flexível)`;
+    }
+    if (sched?.mode === "fixed" && sched?.start) {
+      return `${sched.start} (fixo)`;
+    }
+    if (team?.play_time_start) return `${team.play_time_start} (fixo)`;
+    return "";
   };
 
   const timeForDate = (team: any, dateStr: string): string => {
     if (!team || !dateStr) return "";
     const d = new Date(dateStr + "T12:00:00");
     const day = WEEK_DAY_KEYS[d.getDay()];
-    return dayTimeLabel(team, day);
+    const sched = team?.play_schedule?.[day];
+    if (sched?.mode === "flexible") return "";
+    if (sched?.mode === "fixed" && sched?.start) return sched.start;
+    if (!sched && team?.play_time_start) return team.play_time_start;
+    return "";
   };
 
   const handleConfirmChallenge = async () => {
@@ -626,10 +636,10 @@ const BuscarAdversarioPage = () => {
                     ? challengeTeam.play_days
                         .map((d: string) => {
                           const t = dayTimeLabel(challengeTeam, d);
-                          return t ? `${WEEK_DAY_LABEL[d]} ${t}` : "";
+                          return t ? `${WEEK_DAY_LABEL[d]}- ${t}` : "";
                         })
                         .filter(Boolean)
-                        .join(" · ") || "Livre"
+                        .join(", ") || "Livre"
                     : "Livre"}
                 </p>
               </div>
