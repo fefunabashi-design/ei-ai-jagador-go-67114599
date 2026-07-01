@@ -62,10 +62,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Return only the minimum fields the caller needs to prefill the form.
+    // Return only the minimum fields the caller needs to link a player record.
+    // PII (email, phone, birth_date) is intentionally NOT returned — those
+    // fields are populated from the linked user's own profile after linking.
     const { data: profile } = await admin
       .from("profiles")
-      .select("user_id, display_name, last_name, nickname, birth_date, phone")
+      .select("user_id, display_name, last_name, nickname")
       .eq("cpf", onlyDigits)
       .maybeSingle();
 
@@ -75,20 +77,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: userResp } = await admin.auth.admin.getUserById(profile.user_id);
-    const email = userResp?.user?.email || null;
-
     return new Response(
       JSON.stringify({
         found: true,
         user_id: profile.user_id,
-        email,
         profile: {
           display_name: profile.display_name,
           last_name: profile.last_name,
           nickname: profile.nickname,
-          birth_date: profile.birth_date,
-          phone: profile.phone,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
