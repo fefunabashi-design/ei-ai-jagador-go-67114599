@@ -1,31 +1,46 @@
-## Diagnóstico
+# Sincronizar nome social do perfil com o cadastro de jogador
 
-O e-mail de recuperação de senha está sendo enviado por `no-reply@auth.lovable.cloud` (remetente padrão genérico do Lovable), e **não** pelo seu domínio `notify.funando.com.br`.
+## Objetivo
+Quando o usuário editar seu **nome social** (e sobrenome/apelido) no perfil, atualizar automaticamente o registro correspondente em `players` — o mesmo que aparece em **Admin → Meu Time**.
 
-Motivos do aviso "Esta mensagem pode ser perigosa" no Gmail:
-1. **Domínio do remetente ≠ domínio do link de reset** (auth.lovable.cloud vs sua app). O Gmail desconfia desse desalinhamento.
-2. **`auth.lovable.cloud` é um remetente compartilhado** de baixa reputação para a sua conta, sem SPF/DKIM/DMARC alinhados ao seu domínio.
-3. O template customizado de recuperação ainda **não está ativo** porque o domínio `notify.funando.com.br` está com status **DNS pendente** ("Setting up — Verifying your domain").
+## Como funciona hoje
+- `profiles.display_name` / `last_name` / `nickname` guardam a identidade do usuário.
+- `players` tem colunas próprias `display_name`, `last_name`, `nickname` e `name`, preenchidas no cadastro do jogador no time. Elas **não** são recalculadas quando o perfil muda, por isso o "Meu Time" continua com o nome antigo.
 
-Enquanto o DNS não verificar, o Lovable cai no fallback (template e remetente padrão) — exatamente o que você está vendo.
+## Solução (backend, via migração)
+Criar um **trigger** em `public.profiles` que, após `UPDATE`, propaga os campos de identidade para todas as linhas de `public.players` do mesmo `user_id`.
 
-## O que precisa ser feito
+1. Função `public.sync_player_identity_from_profile()` `SECURITY DEFINER`, `search_path = public`:
+   - Se `display_name`, `last_name` ou `nickname` mudarem, executar:
+     ```sql
+     UPDATE public.players
+       SET display_name = NEW.display_name,
+           last_name    = NEW.last_name,
+           nickname     = NEW.nickname,
+           name         = TRIM(COALESCE(NEW.display_name,'') || ' ' || COALESCE(NEW.last_name,'')),
+           updated_at   = now()
+     WHERE user_id = NEW.user_id;
+     ```
+   - `name` continua sendo o "nome completo" já usado em telas legadas.
+2. Trigger `AFTER UPDATE OF display_name, last_name, nickname ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.sync_player_identity_from_profile();`
+3. **Backfill único** no mesmo migration para alinhar registros existentes:
+   ```sql
+   UPDATE public.players p
+     SET display_name = pr.display_name,
+         last_name    = pr.last_name,
+         nickname     = pr.nickname,
+         name         = TRIM(COALESCE(pr.display_name,'') || ' ' || COALESCE(pr.last_name,'')),
+         updated_at   = now()
+   FROM public.profiles pr
+   WHERE pr.user_id = p.user_id
+     AND (p.display_name IS DISTINCT FROM pr.display_name
+       OR p.last_name    IS DISTINCT FROM pr.last_name
+       OR p.nickname     IS DISTINCT FROM pr.nickname);
+   ```
 
-O código (`auth-email-hook`, templates em PT-BR com identidade do app, infraestrutura de fila) **já está pronto e implantado**. Não há mudança de código necessária. O que falta é apenas a propagação/verificação DNS dos registros NS de `notify.funando.com.br` no seu registrador (Registro.br / provedor onde `funando.com.br` está hospedado).
+## Fora de escopo
+- Não altera nada no frontend (Profile.tsx continua salvando só em `profiles`).
+- Não mexe em `email`, `phone`, `cpf`, `birth_date`, `region` do jogador — esses continuam gerenciados pelo cadastro do time.
+- Não toca em RLS, grants nem em outros triggers existentes.
 
-### Passos
-
-1. Abrir **Cloud → Emails → Manage Domains** no Lovable e copiar os 2 registros **NS** indicados para `notify.funando.com.br` (algo como `ns3.lovable.cloud` e `ns4.lovable.cloud`).
-2. No painel DNS do `funando.com.br`, criar/garantir o subdomínio `notify` apontando para esses NS (registros do tipo NS, não A/CNAME).
-3. Aguardar propagação (alguns minutos até algumas horas; pode chegar a 72h em casos raros).
-4. Clicar em **Verify Domain** no Lovable até o status virar **Active**.
-5. Testar novamente o "Esqueci a senha". O e-mail passará a sair de `no-reply@notify.funando.com.br` com SPF/DKIM/DMARC alinhados e o aviso vermelho do Gmail desaparece.
-
-### Verificação extra (após DNS Active)
-
-- Confirmar no Gmail que o cabeçalho mostra "assinado por: notify.funando.com.br" e "enviado por: notify.funando.com.br".
-- Marcar a primeira mensagem como "Não é spam" para acelerar a reputação na sua caixa.
-
-## Observação
-
-Não vou alterar arquivos do projeto neste plano — o problema é puramente de DNS/configuração de domínio. Se preferir, posso, em vez disso, **trocar para um subdomínio diferente** (ex.: `mail.funando.com.br`) caso `notify.funando.com.br` esteja com conflito de DNS existente. Me avise se quer seguir por esse caminho.
+Responda **aprovar** para eu aplicar a migração.
