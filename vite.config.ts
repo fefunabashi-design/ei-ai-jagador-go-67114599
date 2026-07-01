@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       devOptions: { enabled: false },
       includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png", "pwa-512x512-maskable.png"],
       manifest: {
@@ -48,7 +48,17 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            urlPattern: /\.(?:js|css|woff2?|png|jpg|jpeg|svg|ico)$/i,
+            urlPattern: /\.(?:js|css)$/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "app-cache",
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\.(?:woff2?|png|jpg|jpeg|svg|ico)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "static-assets-cache",
