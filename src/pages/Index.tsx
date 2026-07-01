@@ -514,11 +514,14 @@ const Index = () => {
             <button
               onClick={() => profile?.avatar_url && setAvatarModalOpen(true)}
               disabled={!profile?.avatar_url}
-              className={`w-[60px] h-[60px] rounded-full overflow-hidden bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default touch-action-manipulation`}
+              className={`w-[60px] h-[60px] bg-gradient-primary flex items-center justify-center text-primary-foreground font-display text-2xl shrink-0 cursor-pointer disabled:cursor-default`}
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
               aria-label="View avatar"
             >
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] rounded-full object-cover" />
+                <div className="w-[60px] h-[60px] rounded-full overflow-hidden flex items-center justify-center">
+                  <img src={profile.avatar_url} alt={firstName} className="w-[60px] h-[60px] object-cover" />
+                </div>
               ) : (
                 getInitials(firstName)
               )}
