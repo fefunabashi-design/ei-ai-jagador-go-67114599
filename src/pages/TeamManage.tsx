@@ -172,6 +172,7 @@ const EMPTY_PLAYER_FORM = {
   email: "",
   is_active: "true",
   observacoes: "",
+  user_id: "",
 };
 
 
@@ -282,6 +283,7 @@ const TeamPage = () => {
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [playerForm, setPlayerForm] = useState({ ...EMPTY_PLAYER_FORM });
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+  const [cpfLookupStatus, setCpfLookupStatus] = useState<"idle" | "checking" | "found" | "not_found">("idle");
 
   // Filter
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -480,16 +482,21 @@ const TeamPage = () => {
     setEditingPlayer(null);
     setPlayerForm({ ...EMPTY_PLAYER_FORM });
     setSelectedPositions([]);
+    setCpfLookupStatus("idle");
     setPlayerDialogOpen(true);
   };
 
   const handleCpfLookup = async (rawCpf: string) => {
     if (!isValidCpf(rawCpf)) return;
+    setCpfLookupStatus("checking");
     try {
       const { data, error } = await supabase.functions.invoke("lookup-profile-by-cpf", {
         body: { cpf: rawCpf.replace(/\D/g, "") },
       });
-      if (error || !data?.found) return;
+      if (error || !data?.found) {
+        setCpfLookupStatus("not_found");
+        return;
+      }
       const p = data.profile || {};
       setPlayerForm((prev) => ({
         ...prev,
@@ -499,10 +506,12 @@ const TeamPage = () => {
         birth_date: p.birth_date || prev.birth_date,
         phone: p.phone || prev.phone,
         email: data.email || prev.email,
+        user_id: data.user_id || prev.user_id,
       }));
+      setCpfLookupStatus("found");
       toast({ title: "Dados encontrados", description: "Informações preenchidas a partir do cadastro." });
     } catch {
-      // silent
+      setCpfLookupStatus("not_found");
     }
   };
 
@@ -519,10 +528,12 @@ const TeamPage = () => {
       email: player.email || "",
       is_active: player.is_active === false ? "false" : "true",
       observacoes: player.observacoes || "",
+      user_id: player.user_id || "",
     });
     setSelectedPositions(
       Array.isArray(player.positions) ? player.positions : player.position ? [player.position] : []
     );
+    setCpfLookupStatus("idle");
     setPlayerDialogOpen(true);
   };
 
@@ -567,6 +578,7 @@ const TeamPage = () => {
       positions: selectedPositions,
       position: selectedPositions[0] || null,
       observacoes: playerForm.observacoes || null,
+      ...(cpfLookupStatus === "found" && playerForm.user_id ? { user_id: playerForm.user_id } : {}),
     };
     if (editingPlayer) {
       updatePlayer.mutate({ id: editingPlayer.id, team_id: team.id, ...data } as any);
@@ -904,16 +916,30 @@ const TeamPage = () => {
                 onChange={(e) => {
                   const formatted = formatCpf(e.target.value);
                   setPF("cpf", formatted);
-                  if (isValidCpf(formatted)) handleCpfLookup(formatted);
+                  if (!formatted) {
+                    setCpfLookupStatus("idle");
+                  } else if (isValidCpf(formatted)) {
+                    handleCpfLookup(formatted);
+                  }
                 }}
                 onBlur={(e) => handleCpfLookup(e.target.value)}
                 placeholder="000.000.000-00"
                 inputMode="numeric"
                 className="bg-secondary border-border"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Ao informar um CPF válido, buscamos os dados já cadastrados no app.
-              </p>
+              {cpfLookupStatus === "not_found" ? (
+                <p className="text-[10px] text-amber-500 mt-1">
+                  Esse CPF ainda não tem cadastro de usuário. Você pode continuar preenchendo os
+                  dados manualmente — quando o jogador se cadastrar no app com esse CPF, os dados
+                  serão vinculados automaticamente.
+                </p>
+              ) : cpfLookupStatus === "checking" ? (
+                <p className="text-[10px] text-muted-foreground mt-1">Buscando cadastro...</p>
+              ) : cpfLookupStatus === "idle" ? (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Ao informar um CPF válido, buscamos os dados já cadastrados no app.
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
