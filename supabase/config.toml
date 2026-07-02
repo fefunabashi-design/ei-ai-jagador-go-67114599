@@ -5,8 +5,6 @@ project_id = "fbcviuapotdfenycjgtz"
     verify_jwt = false
   [functions.check-email-status]
     verify_jwt = false
-  [functions.create-cpf-test-users]
-    verify_jwt = false
   [functions.deactivate-account]
     verify_jwt = false
   [functions.process-email-queue]
