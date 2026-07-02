@@ -70,7 +70,7 @@ export function getMatchView(match: any, myTeamId?: string | null): MatchView {
 
   let status: MatchViewStatus;
   if (isCancelled) status = "cancelled";
-  else if (isFinalizedAny || rawStatus === "completed") status = "completed";
+  else if (isFinalizedByMe || rawStatus === "completed") status = "completed";
   else if (rawStatus === "past") status = "past";
   else if (rawStatus === "confirmed") status = "confirmed";
   else status = "open";
